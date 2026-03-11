@@ -1,10 +1,15 @@
 import Dashboard from "./dashboard/Dashboard";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
+
+
   return (
-    <div style={{ padding: 20 }}>
-      <Dashboard />
-    </div>
+   <BrowserRouter>
+   <Routes>
+    <Route path="/" element={<Dashboard  />}   />
+   </Routes>
+   </BrowserRouter>
   );
 }
 
