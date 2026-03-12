@@ -72,6 +72,12 @@ export default function Dashboard() {
     loading: false,
   });
 
+  const [primarySales, setPrimarySales] = useState({
+  mtd: "",
+  ytd: "",
+  loading: false,
+});
+
   const [bookingYear, setBookingYear] = useState(dayjs().year());
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -88,20 +94,10 @@ export default function Dashboard() {
       //     />
       //   ),
       // },
-      {
-        widget_id: 1,
-        title: "Open Sales Order",
-        icon: (
-          <FaCartShopping
-            color="#808080"
-            fontSize={52}
-            style={{ marginTop: "0.35rem", cursor: "pointer" }}
-          />
-        ),
-      },
+      
       {
         widget_id: 2,
-        title: "Ready To Ship",
+        title: "Sales Order Ready to Ship",
         icon: (
           <FaTruck
             color="#808080"
@@ -112,7 +108,7 @@ export default function Dashboard() {
       },
       {
         widget_id: 3,
-        title: "Invoice MTD",
+        title: "Sales Order Partially Ready",
         icon: (
           <FaTruck
             color="#808080"
@@ -243,8 +239,30 @@ export default function Dashboard() {
     }
   };
 
+  const fetchPrimarySales = async () => {
+  setPrimarySales((prev) => ({ ...prev, loading: true }));
+
+  try {
+    const res = await api.post("/primary_sales");
+
+    const data = res.data?.tbldta || [];
+
+    if (data.length > 0) {
+      setPrimarySales({
+        mtd: data[0].mtd_val,
+        ytd: data[0].ytd_val,
+        loading: false,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    setPrimarySales((prev) => ({ ...prev, loading: false }));
+  }
+};
+
   useEffect(() => {
     fetchSalesOrderBooking(isFlipped ? 1 : 0, bookingYear);
+    fetchPrimarySales();
   }, [isFlipped, bookingYear]);
 
   return (
@@ -267,9 +285,21 @@ export default function Dashboard() {
                     alignItems: "center",
                   }}
                 >
-                  <StatTitle>Sales Order Booking</StatTitle>
+                  <StatTitle>Primary Order Booking</StatTitle>
+                  <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "0.8rem",
+                    color: "text.secondary",
+                    fontWeight: 400,
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Break-up
+                </Typography>
 
-                  <Box
+                  {/* <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
@@ -289,7 +319,7 @@ export default function Dashboard() {
                         }}
                       />
                     </LocalizationProvider>
-                  </Box>
+                  </Box> */}
                 </Box>
 
                 <Divider />
@@ -297,7 +327,7 @@ export default function Dashboard() {
                 {!soBooking.loading ? (
                   <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                     <Box sx={{ textAlign: "center", flex: 1 }}>
-                      <Typography variant="caption">MTD (INR Cr.)</Typography>
+                      <Typography variant="caption">MTD (INR Lacs.)</Typography>
                       <Typography
                         variant="h5"
                         sx={{ color: "rgb(0, 86, 171)" }}
@@ -309,7 +339,7 @@ export default function Dashboard() {
                     <Divider orientation="vertical" flexItem />
 
                     <Box sx={{ textAlign: "center", flex: 1 }}>
-                      <Typography variant="caption">YTD (INR Cr.)</Typography>
+                      <Typography variant="caption">YTD (INR Lacs.)</Typography>
                       <Typography
                         variant="h5"
                         sx={{ color: "rgb(0, 86, 171)" }}
@@ -324,6 +354,42 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          <div style={{ padding: "10px" }}>
+  <Card
+    sx={{
+      width: "97%",
+      borderRadius: "12px",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+    }}
+  >
+    <CardContent>
+      <StatTitle>Primary Sales Order</StatTitle>
+      <Divider />
+      {!primarySales.loading ? (
+        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+          <Box sx={{ textAlign: "center", flex: 1 }}>
+            <Typography variant="caption">MTD (INR Lacs.)</Typography>
+            <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+              {primarySales.mtd}
+            </Typography>
+          </Box>
+
+          <Divider orientation="vertical" flexItem />
+
+          <Box sx={{ textAlign: "center", flex: 1 }}>
+            <Typography variant="caption">YTD (INR Lacs.)</Typography>
+            <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+              {primarySales.ytd}
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <CircularProgress />
+      )}
+    </CardContent>
+  </Card>
+</div>
 
           {widgets.map((widget) => (
             <div key={widget.widget_id} style={{ padding: "10px" }}>
