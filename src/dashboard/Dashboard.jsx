@@ -1,16 +1,39 @@
 import { useEffect, useState, useCallback } from "react";
 import Slider from "react-slick";
 import TopWidget from "../widgets/TopWidget";
-import api from "../services/api"
+import api from "../services/api";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import Layout from '../layout'
+import Layout from "../layout";
 // Line 8 - change your import:
-import { Box, Paper, Tabs, Tab, Stack, Typography, Grid, IconButton, Table, TableContainer, Collapse, TableBody, TableRow, TableCell } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Tabs,
+  Tab,
+  Stack,
+  Typography,
+  Grid,
+  IconButton,
+  Table,
+  TableContainer,
+  Collapse,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@mui/material";
 import { FaTruck } from "react-icons/fa";
 import { FaCartShopping, FaMoneyBill, FaChartBar } from "react-icons/fa6";
 import { styled } from "@mui/material/styles";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
+
+import dayjs from "dayjs";
+import { Card, CardContent, Divider } from "@mui/material";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { CircularProgress } from "@mui/material";
 
 const StatTitle = styled(Typography)({
   fontSize: "14px",
@@ -25,7 +48,6 @@ const StatTitle = styled(Typography)({
   justifyContent: "center",
 });
 
-
 const GalleryImage = styled("img")({
   width: "100%",
   height: "200px",
@@ -38,38 +60,92 @@ const GalleryImage = styled("img")({
   },
 });
 
-
 export default function Dashboard() {
   const [widgets, setWidgets] = useState([]);
   const [tabIndex, setTabIndex] = useState(1);
-  const [showLogs, setShowLogs] = useState(false)
+  const [showLogs, setShowLogs] = useState(false);
 
+  const [soBooking, setSoBooking] = useState({
+    mtd: "",
+    ytd: "",
+    regions: [],
+    loading: false,
+  });
+
+  const [bookingYear, setBookingYear] = useState(dayjs().year());
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
     setWidgets([
-      { widget_id: 1, title: "Open Sales Order", icon: <FaCartShopping color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
-      { widget_id: 2, title: "Ready To Ship", icon: <FaTruck color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
-      { widget_id: 3, title: "Invoice MTD", icon: <FaTruck color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
-      { widget_id: 4, title: "Pending Invoices", icon: <FaMoneyBill color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
-      { widget_id: 5, title: "Completed Projects", icon: <FaChartBar color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
-      { widget_id: 6, title: "Active Users", icon: <FaTruck color="#808080" fontSize={52} style={{ marginTop: "0.35rem", cursor: "pointer" }} /> },
+      // {
+      //   widget_id: "sales_booking",
+      //   title: "Sales Order Booking",
+      //   icon: (
+      //     <FaCartShopping
+      //       color="#808080"
+      //       fontSize={52}
+      //       style={{ marginTop: "0.35rem" }}
+      //     />
+      //   ),
+      // },
+      {
+        widget_id: 1,
+        title: "Open Sales Order",
+        icon: (
+          <FaCartShopping
+            color="#808080"
+            fontSize={52}
+            style={{ marginTop: "0.35rem", cursor: "pointer" }}
+          />
+        ),
+      },
+      {
+        widget_id: 2,
+        title: "Ready To Ship",
+        icon: (
+          <FaTruck
+            color="#808080"
+            fontSize={52}
+            style={{ marginTop: "0.35rem", cursor: "pointer" }}
+          />
+        ),
+      },
+      {
+        widget_id: 3,
+        title: "Invoice MTD",
+        icon: (
+          <FaTruck
+            color="#808080"
+            fontSize={52}
+            style={{ marginTop: "0.35rem", cursor: "pointer" }}
+          />
+        ),
+      },
+      {
+        widget_id: 4,
+        title: "Pending Invoices",
+        icon: (
+          <FaMoneyBill
+            color="#808080"
+            fontSize={52}
+            style={{ marginTop: "0.35rem", cursor: "pointer" }}
+          />
+        ),
+      },
     ]);
   }, []);
 
-
   useEffect(() => {
     let testbackend = async () => {
-
       try {
-        let response = await api.get('/testres')
-        console.log("camlin backend res", response)
+        let response = await api.get("/testres");
+        console.log("camlin backend res", response);
+      } catch (err) {
+        console.log(err);
       }
-      catch (err) {
-        console.log(err)
-      }
-    }
-    testbackend()
-  }, [])
+    };
+    testbackend();
+  }, []);
 
   const toggleLogs = useCallback(() => {
     setShowLogs((prev) => !prev);
@@ -80,22 +156,34 @@ export default function Dashboard() {
     return (
       <div
         className={className}
-        style={{ ...style, display: "block", marginRight: '6px', filter: 'brightness(0.8)' }}
+        style={{
+          ...style,
+          display: "block",
+          marginRight: "6px",
+          filter: "brightness(0.8)",
+        }}
         onClick={onClick}
       />
     );
-  }
+  };
 
   const SamplePrevArrow = (props) => {
     const { className, style, onClick } = props;
     return (
       <div
         className={className}
-        style={{ ...style, display: "block", marginLeft: '6px', zIndex: '10', opacity: 10, filter: 'brightness(0.8)' }}
+        style={{
+          ...style,
+          display: "block",
+          marginLeft: "6px",
+          zIndex: "10",
+          opacity: 10,
+          filter: "brightness(0.8)",
+        }}
         onClick={onClick}
       />
     );
-  }
+  };
 
   const handleTabChange = useCallback((event, newValue) => {
     setTabIndex(newValue);
@@ -107,6 +195,9 @@ export default function Dashboard() {
     speed: 400,
     slidesToShow: 4,
     slidesToScroll: 1,
+    draggable: false,
+    swipe: false,
+    touchMove: false,
     arrows: true,
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
@@ -127,19 +218,131 @@ export default function Dashboard() {
     ],
   };
 
+  const fetchSalesOrderBooking = async (status, year) => {
+    setSoBooking((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const res = await api.post("/primary_ord_boooking", {
+        status: String(status),
+        year: String(year),
+      });
+
+      const data = res.data?.tbldta || [];
+
+      if (data.length > 0) {
+        setSoBooking({
+          mtd: data[0].mtd_val,
+          ytd: data[0].ytd_val,
+          regions: [],
+          loading: false,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setSoBooking((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  useEffect(() => {
+    fetchSalesOrderBooking(isFlipped ? 1 : 0, bookingYear);
+  }, [isFlipped, bookingYear]);
+
   return (
     <Layout>
-      <Box sx={{ padding: '20px' }}>
-        <Slider  {...settings}>
+      <Box sx={{ padding: "20px" }}>
+        <Slider {...settings}>
+          <div style={{ padding: "10px" }}>
+            <Card
+              sx={{
+                width: "97%",
+                borderRadius: "12px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <StatTitle>Sales Order Booking</StatTitle>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {bookingYear}
+                    <CalendarMonthIcon sx={{ fontSize: 16, ml: 0.5 }} />
+
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        views={["year"]}
+                        value={dayjs().year(bookingYear)}
+                        onChange={(val) => val && setBookingYear(val.year())}
+                        slotProps={{
+                          textField: { sx: { display: "none" } },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </Box>
+                </Box>
+
+                <Divider />
+
+                {!soBooking.loading ? (
+                  <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                    <Box sx={{ textAlign: "center", flex: 1 }}>
+                      <Typography variant="caption">MTD (INR Cr.)</Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ color: "rgb(0, 86, 171)" }}
+                      >
+                        {soBooking.mtd}
+                      </Typography>
+                    </Box>
+
+                    <Divider orientation="vertical" flexItem />
+
+                    <Box sx={{ textAlign: "center", flex: 1 }}>
+                      <Typography variant="caption">YTD (INR Cr.)</Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ color: "rgb(0, 86, 171)" }}
+                      >
+                        {soBooking.ytd}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <CircularProgress />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {widgets.map((widget) => (
             <div key={widget.widget_id} style={{ padding: "10px" }}>
+              {/* <TopWidget
+                widget={widget}
+                salesBooking={
+                  widget.widget_id === "sales_booking" ? soBooking : null
+                }
+                bookingYear={bookingYear}
+                setBookingYear={setBookingYear}
+              /> */}
               <TopWidget widget={widget} />
             </div>
           ))}
         </Slider>
+
         <Box sx={{ pt: 0, pr: 0.75, pb: 0.75, pl: 0.75 }}>
           <Grid container spacing={0.75}>
-            <Grid item md={9} xs={12}>
+            <Grid size={{ md: 9, xs: 12 }}>
               <Paper
                 elevation={3}
                 sx={{ borderRadius: 2, overflow: "hidden", mb: 1 }}
@@ -164,13 +367,19 @@ export default function Dashboard() {
                       fontSize: "0.83rem",
                       transition: "all 0.2s ease-in-out",
                       color: "#666",
-                      "&:hover": { backgroundColor: "#e3f2fd", color: "#1976d2" },
-                      "&.Mui-selected": { color: "#1976d2", backgroundColor: "#e3f2fd" },
+                      "&:hover": {
+                        backgroundColor: "#e3f2fd",
+                        color: "#1976d2",
+                      },
+                      "&.Mui-selected": {
+                        color: "#1976d2",
+                        backgroundColor: "#e3f2fd",
+                      },
                     },
                   }}
                 >
                   <Tab
-                    sx={{ fontSize: '1.083rem' }}
+                    sx={{ fontSize: "1.083rem" }}
                     label="Performance Reports"
                     iconPosition="end"
                     icon={<FaChartBar />}
@@ -181,16 +390,12 @@ export default function Dashboard() {
                     iconPosition="end"
                     icon={<FaMoneyBill fontSize={15} />}
                   />
-
                 </Tabs>
               </Paper>
-              <Box sx={{ mt: 0.75 }}>
-
-              </Box>
+              <Box sx={{ mt: 0.75 }}></Box>
             </Grid>
 
-
-            <Grid item md={3} xs={12}>
+            <Grid size={{ md: 3, xs: 12 }}>
               <Paper sx={{ p: 0.75, boxShadow: 3 }}>
                 <StatTitle sx={{ justifyContent: "flex-start" }}>
                   Gallery
@@ -215,10 +420,8 @@ export default function Dashboard() {
                     {showLogs ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
                 </Box>
-
               </Paper>
             </Grid>
-
           </Grid>
         </Box>
       </Box>
