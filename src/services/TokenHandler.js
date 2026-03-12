@@ -7,10 +7,14 @@ export default function TokenHandler() {
 
   useEffect(() => {
     if (token) {
-      localStorage.setItem("session-token", token);
+      try {
+        const decodedToken = atob(token);
+        localStorage.setItem("session-token", decodedToken);
+        navigate("/");
+      } catch (err) {
+        console.error("Invalid Base64 token", err);
+      }
     }
-
-    navigate("/");
   }, [token, navigate]);
 
   return null;
