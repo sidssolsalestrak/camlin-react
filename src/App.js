@@ -2,7 +2,6 @@ import './App.css'
 import Dashboard from "./dashboard/Dashboard";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import TokenHandler from "./services/TokenHandler";
-import TestTable from "./dashboard/TestTable";
 import { SnackbarProvider } from 'notistack';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@emotion/react';
@@ -24,7 +23,6 @@ function App() {
    <Routes>
     <Route path="/:token" element={<TokenHandler />} />
     <Route path="/" element={<Dashboard  />}   />
-    <Route path="/testTable"  element={<TestTable />}  />
     <Route path='/masters/zone_mas' element={<Zone />}  />
     <Route path='/masters/region' element={<Region />} />
     <Route path='/masters/ter_mas'  element={<Territory />} />
