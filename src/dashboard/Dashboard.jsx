@@ -1,11 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Slider from "react-slick";
 import TopWidget from "../widgets/TopWidget";
 import api from "../services/api";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Layout from "../layout";
-// Line 8 - change your import:
 import {
   Box,
   Paper,
@@ -60,6 +59,48 @@ const GalleryImage = styled("img")({
   },
 });
 
+const SampleNextArrow = (props) => {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{
+        ...style,
+        display: "block",
+        marginRight: "6px",
+        filter: "brightness(0.8)",
+      }}
+      onClick={onClick}
+    />
+  );
+};
+
+const SamplePrevArrow = (props) => {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{
+        ...style,
+        display: "block",
+        marginLeft: "6px",
+        zIndex: "10",
+        opacity: 10,
+        filter: "brightness(0.8)",
+      }}
+      onClick={onClick}
+    />
+  );
+};
+
+// Helper: compute slidesToShow based on container width
+const getSlidesToShow = (width) => {
+  if (width < 440) return 1;
+  if (width < 730) return 2;
+  if (width < 984) return 3;
+  return 4;
+};
+
 export default function Dashboard() {
   const [widgets, setWidgets] = useState([]);
   const [tabIndex, setTabIndex] = useState(1);
@@ -73,28 +114,32 @@ export default function Dashboard() {
   });
 
   const [primarySales, setPrimarySales] = useState({
-  mtd: "",
-  ytd: "",
-  loading: false,
-});
+    mtd: "",
+    ytd: "",
+    loading: false,
+  });
 
   const [bookingYear, setBookingYear] = useState(dayjs().year());
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // ResizeObserver to track actual container width
+  const sliderContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    if (sliderContainerRef.current) {
+      observer.observe(sliderContainerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     setWidgets([
-      // {
-      //   widget_id: "sales_booking",
-      //   title: "Sales Order Booking",
-      //   icon: (
-      //     <FaCartShopping
-      //       color="#808080"
-      //       fontSize={52}
-      //       style={{ marginTop: "0.35rem" }}
-      //     />
-      //   ),
-      // },
-      
       {
         widget_id: 2,
         title: "Sales Order Ready to Ship",
@@ -147,49 +192,16 @@ export default function Dashboard() {
     setShowLogs((prev) => !prev);
   }, []);
 
-  const SampleNextArrow = (props) => {
-    const { className, style, onClick } = props;
-    return (
-      <div
-        className={className}
-        style={{
-          ...style,
-          display: "block",
-          marginRight: "6px",
-          filter: "brightness(0.8)",
-        }}
-        onClick={onClick}
-      />
-    );
-  };
-
-  const SamplePrevArrow = (props) => {
-    const { className, style, onClick } = props;
-    return (
-      <div
-        className={className}
-        style={{
-          ...style,
-          display: "block",
-          marginLeft: "6px",
-          zIndex: "10",
-          opacity: 10,
-          filter: "brightness(0.8)",
-        }}
-        onClick={onClick}
-      />
-    );
-  };
-
   const handleTabChange = useCallback((event, newValue) => {
     setTabIndex(newValue);
   }, []);
 
+  // Settings with responsive removed — handled manually via containerWidth
   const settings = {
     dots: false,
     infinite: false,
     speed: 400,
-    slidesToShow: 4,
+    slidesToShow: getSlidesToShow(containerWidth),  // ← driven by container width
     slidesToScroll: 1,
     draggable: false,
     swipe: false,
@@ -197,34 +209,17 @@ export default function Dashboard() {
     arrows: true,
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
-    autoplay: false, // no auto sliding
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: { slidesToShow: 3 },
-      },
-      {
-        breakpoint: 768,
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: 480,
-        settings: { slidesToShow: 1 },
-      },
-    ],
+    autoplay: false,
   };
 
   const fetchSalesOrderBooking = async (status, year) => {
     setSoBooking((prev) => ({ ...prev, loading: true }));
-
     try {
       const res = await api.post("/primary_ord_boooking", {
         status: String(status),
         year: String(year),
       });
-
       const data = res.data?.tbldta || [];
-
       if (data.length > 0) {
         setSoBooking({
           mtd: data[0].mtd_val,
@@ -240,25 +235,22 @@ export default function Dashboard() {
   };
 
   const fetchPrimarySales = async () => {
-  setPrimarySales((prev) => ({ ...prev, loading: true }));
-
-  try {
-    const res = await api.post("/primary_sales");
-
-    const data = res.data?.tbldta || [];
-
-    if (data.length > 0) {
-      setPrimarySales({
-        mtd: data[0].mtd_val,
-        ytd: data[0].ytd_val,
-        loading: false,
-      });
-    }
-  } catch (err) {
-    console.error(err);
-    setPrimarySales((prev) => ({ ...prev, loading: false }));
-  }
-};
+          setPrimarySales((prev) => ({ ...prev, loading: true }));
+          try {
+            const res = await api.post("/primary_sales");
+            const data = res.data?.tbldta || [];
+            if (data.length > 0) {
+              setPrimarySales({
+                mtd: data[0].mtd_val,
+                ytd: data[0].ytd_val,
+                loading: false,
+              });
+            }
+          } catch (err) {
+            console.error(err);
+            setPrimarySales((prev) => ({ ...prev, loading: false }));
+          }
+        };
 
   useEffect(() => {
     fetchSalesOrderBooking(isFlipped ? 1 : 0, bookingYear);
@@ -268,143 +260,107 @@ export default function Dashboard() {
   return (
     <Layout>
       <Box sx={{ padding: "20px" }}>
-        <Slider {...settings}>
-          <div style={{ padding: "10px" }}>
-            <Card
-              sx={{
-                width: "97%",
-                borderRadius: "12px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-              }}
-            >
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <StatTitle>Primary Order Booking</StatTitle>
-                  <Typography
-                  component="span"
-                  sx={{
-                    fontSize: "0.8rem",
-                    color: "text.secondary",
-                    fontWeight: 400,
-                    cursor: 'pointer',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Break-up
-                </Typography>
 
-                  {/* <Box
+        {/* ↓ Attach ref here so ResizeObserver watches this container */}
+        <Box ref={sliderContainerRef}>
+          <Slider {...settings}>
+            <div style={{ padding: "10px" }}>
+              <Card
+                sx={{
+                  width: "97%",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                }}
+              >
+                <CardContent>
+                  <Box
                     sx={{
                       display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      cursor: "pointer",
                     }}
                   >
-                    {bookingYear}
-                    <CalendarMonthIcon sx={{ fontSize: 16, ml: 0.5 }} />
-
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        views={["year"]}
-                        value={dayjs().year(bookingYear)}
-                        onChange={(val) => val && setBookingYear(val.year())}
-                        slotProps={{
-                          textField: { sx: { display: "none" } },
-                        }}
-                      />
-                    </LocalizationProvider>
-                  </Box> */}
-                </Box>
-
-                <Divider />
-
-                {!soBooking.loading ? (
-                  <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                    <Box sx={{ textAlign: "center", flex: 1 }}>
-                      <Typography variant="caption">MTD (INR Lacs.)</Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ color: "rgb(0, 86, 171)" }}
-                      >
-                        {soBooking.mtd}
-                      </Typography>
-                    </Box>
-
-                    <Divider orientation="vertical" flexItem />
-
-                    <Box sx={{ textAlign: "center", flex: 1 }}>
-                      <Typography variant="caption">YTD (INR Lacs.)</Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ color: "rgb(0, 86, 171)" }}
-                      >
-                        {soBooking.ytd}
-                      </Typography>
-                    </Box>
+                    <StatTitle>Primary Order Booking</StatTitle>
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontSize: "0.9rem",
+                        color: "text.secondary",
+                        fontWeight: 400,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Break-up
+                    </Typography>
                   </Box>
-                ) : (
-                  <CircularProgress />
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
-          <div style={{ padding: "10px" }}>
-  <Card
-    sx={{
-      width: "97%",
-      borderRadius: "12px",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-    }}
-  >
-    <CardContent>
-      <StatTitle>Primary Sales Order</StatTitle>
-      <Divider />
-      {!primarySales.loading ? (
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Box sx={{ textAlign: "center", flex: 1 }}>
-            <Typography variant="caption">MTD (INR Lacs.)</Typography>
-            <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
-              {primarySales.mtd}
-            </Typography>
-          </Box>
+                  <Divider />
 
-          <Divider orientation="vertical" flexItem />
-
-          <Box sx={{ textAlign: "center", flex: 1 }}>
-            <Typography variant="caption">YTD (INR Lacs.)</Typography>
-            <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
-              {primarySales.ytd}
-            </Typography>
-          </Box>
-        </Box>
-      ) : (
-        <CircularProgress />
-      )}
-    </CardContent>
-  </Card>
-</div>
-
-          {widgets.map((widget) => (
-            <div key={widget.widget_id} style={{ padding: "10px" }}>
-              {/* <TopWidget
-                widget={widget}
-                salesBooking={
-                  widget.widget_id === "sales_booking" ? soBooking : null
-                }
-                bookingYear={bookingYear}
-                setBookingYear={setBookingYear}
-              /> */}
-              <TopWidget widget={widget} />
+                  {!soBooking.loading ? (
+                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography variant="caption">MTD (INR Lacs.)</Typography>
+                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                          {soBooking.mtd}
+                        </Typography>
+                      </Box>
+                      <Divider orientation="vertical" flexItem />
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography variant="caption">YTD (INR Lacs.)</Typography>
+                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                          {soBooking.ytd}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <CircularProgress />
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          ))}
-        </Slider>
+
+            <div style={{ padding: "10px" }}>
+              <Card
+                sx={{
+                  width: "97%",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                }}
+              >
+                <CardContent>
+                  <StatTitle>Primary Sales Order</StatTitle>
+                  <Divider />
+                  {!primarySales.loading ? (
+                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography variant="caption">MTD (INR Lacs.)</Typography>
+                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                          {primarySales.mtd}
+                        </Typography>
+                      </Box>
+                      <Divider orientation="vertical" flexItem />
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography variant="caption">YTD (INR Lacs.)</Typography>
+                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                          {primarySales.ytd}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <CircularProgress />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {widgets.map((widget) => (
+              <div key={widget.widget_id} style={{ padding: "10px" }}>
+                <TopWidget widget={widget} />
+              </div>
+            ))}
+          </Slider>
+        </Box>
 
         <Box sx={{ pt: 0, pr: 0.75, pb: 0.75, pl: 0.75 }}>
           <Grid container spacing={0.75}>
@@ -430,7 +386,6 @@ export default function Dashboard() {
                       fontWeight: "bold",
                       pb: 4,
                       textTransform: "none",
-                      fontSize: "0.83rem",
                       transition: "all 0.2s ease-in-out",
                       color: "#666",
                       "&:hover": {
@@ -445,13 +400,13 @@ export default function Dashboard() {
                   }}
                 >
                   <Tab
-                    sx={{ fontSize: "1.083rem" }}
+                    sx={{ fontSize: "1rem" }}
                     label="Performance Reports"
                     iconPosition="end"
                     icon={<FaChartBar />}
                   />
                   <Tab
-                    sx={{ fontSize: "1.083rem" }}
+                    sx={{ fontSize: "1rem" }}
                     label="Outstandings"
                     iconPosition="end"
                     icon={<FaMoneyBill fontSize={15} />}
