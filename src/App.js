@@ -23,8 +23,8 @@ function App() {
    <Routes>
     <Route path="/:token" element={<TokenHandler />} />
     <Route path="/" element={<Dashboard  />}   />
-    <Route path='/masters/zone_mas' element={<Zone />}  />
-    <Route path='/masters/region' element={<Region />} />
+    <Route path='/masters/zone_mas/:editZoneid?' element={<Zone />}  />
+    <Route path='/masters/region/:editRegionId?' element={<Region />} />
     <Route path='/masters/ter_mas'  element={<Territory />} />
     <Route path='/masters/beat_mas' element={<Beat />}  />
     <Route path='/masters/area_mas' element={<Area />}   />
