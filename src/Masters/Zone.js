@@ -227,31 +227,17 @@ export default function Zone() {
                     <IconButton
                         size="small"
                         onClick={() => handleEdit(row.row.id)}
-                        sx={{
-                            ml: 0.5,
-                            backgroundColor: '#3c8dbc',
-                            borderRadius: '4px',
-                            padding: '6px',
-                            marginRight: '6px',
-                            '&:hover': { backgroundColor: '#2a6f99' }
-                        }}
                     >
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                        <FaPencilAlt style={{color:'green',fontSize: '14.5px' }} />
                     </IconButton>
 
                     {/* Delete Button */}
                     <IconButton
                         size="small"
-                        onClick={() => showDeleteConfirmation(row.row.id)}  // ✅ fixed
-                        sx={{
-                            ml: 2,
-                            backgroundColor: '#dd4b39',
-                            borderRadius: '4px',
-                            padding: '6px',
-                            '&:hover': { backgroundColor: '#c0392b' }
-                        }}
+                        onClick={() => showDeleteConfirmation(row.row.id)}
+                        sx={{ml:1}}
                     >
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '14px' }} />
+                        <LiaTrashAltSolid style={{color:'red', fontSize: '17.5px' }} />
                     </IconButton>
                 </>
             )
@@ -263,7 +249,7 @@ export default function Zone() {
             <PageHeader
                 title="Zone"
             />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
                 {/* Tabs */}
                 {!decodedEditZoneid ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>

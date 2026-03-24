@@ -27,7 +27,7 @@ function App() {
     <Route path='/masters/region/:editRegionId?' element={<Region />} />
     <Route path='/masters/ter_mas'  element={<Territory />} />
     <Route path='/masters/beat_mas' element={<Beat />}  />
-    <Route path='/masters/area_mas' element={<Area />}   />
+    <Route path='/masters/area_mas/:editAreaId?' element={<Area />}   />
    </Routes>
    </BrowserRouter>
     </SnackbarProvider>
