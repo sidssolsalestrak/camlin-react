@@ -37,10 +37,10 @@ export default function Region() {
 
     
 
-    useEffect(() => { fetchRegData() }, [])
 
     useEffect(() => {
         fetchZoneNames()
+        fetchRegData()
     }, [])
 
     useEffect(() => {
@@ -171,7 +171,7 @@ export default function Region() {
 
 
     const showConfirmationDialog = (config) => {
-        setConfirmationDialog(prev => ({ ...prev, ...config, open: true,loading:modifyLoading }))
+        setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
     }
 
     const closeConfirmationDialog = () => {
@@ -184,6 +184,7 @@ export default function Region() {
             message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this Region?`,
             confirmText: decodedEditRegionId ? "Update" : "Add",
             confirmColor: "primary",
+            loading:modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -243,7 +244,7 @@ export default function Region() {
                         <FormControl sx={{ width: '100%' }}>
                             <InputLabel id="zone_name">Zone Name</InputLabel>
                             <Select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}
-                                labelId="zone_name" label="Zone Name" size="small">
+                                labelId="zone_name" label="Zone Name" size="small" error={zoneError}>
                                 <MenuItem value="0">Select Zone</MenuItem>
                                 {zoneName.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
@@ -274,7 +275,10 @@ export default function Region() {
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData} loading={loading} />
+                        <DataTable columns={columns} data={regData} 
+                        loading={loading}
+                        showHeader={false}
+                         />
                     </Box>
                 )}
             </Box>
