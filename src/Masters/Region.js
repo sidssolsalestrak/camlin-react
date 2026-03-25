@@ -22,6 +22,7 @@ export default function Region() {
     const [selectedZone, setSelectedZone] = useState("0")
     const [regData, setRegData] = useState([])
     const [regionName, setRegionName] = useState("")
+    const [hdnRegionName, setHdnRegionName]=useState("")
     const [editId, setEditId] = useState(null)
     const [zoneError, setZoneError] = useState(false)
     const [zoneErrMsg, setZoneErrMsg] = useState("")
@@ -47,6 +48,7 @@ export default function Region() {
         if (!decodedEditRegionId) {
             setRegionName("")
             setSelectedZone("0")
+            setHdnRegionName("")
             setTabValue(1)
             return
         }
@@ -83,6 +85,7 @@ export default function Region() {
             setEditId(regId)
             setSelectedZone(data.zone_id)
             setRegionName(data.reg_name)
+            setHdnRegionName(data.reg_name)
             setZoneError(false)
             setRegionError(false)
             setTabValue(0)
@@ -119,7 +122,11 @@ export default function Region() {
         try {
             setmodifyLoading(true)
             if (decodedEditRegionId) {
-                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName })
+                let check=1
+                if(hdnRegionName.toLowerCase()===regionName.toLowerCase()){
+                    check=0
+                }
+                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check:check })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: "success",anchorOrigin:{vertical:'top',horizontal:'center'} })
                     navigate('/masters/region')
@@ -209,16 +216,16 @@ export default function Region() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <>
+                <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:1}}>
                     <IconButton size="small" onClick={() => handleEdit(row.row.id)}
-                        sx={{ ml: 0.5, backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
+                        sx={{  backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
                     <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{ ml: 2, backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
+                        sx={{  backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px',marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
                         <LiaTrashAltSolid style={{ color: 'white', fontSize: '14px' }} />
                     </IconButton>
-                </>
+                </Box>
             )
         }
     ]
@@ -228,7 +235,7 @@ export default function Region() {
     return (
         <Layout>
             <PageHeader title="Region" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: {lg:'60%',md:'80%',sm:'90%',xs:'90%'} }}>
                 {!decodedEditRegionId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>

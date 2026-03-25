@@ -12,6 +12,7 @@ import ConfirmationDialog from "../utils/confirmDialog";
 
 export default function Zone() {
     const [zoneName, setZoneName] = useState("")
+    const [hdnZoneName,setHdnZoneName]=useState("")
     const [zoneError, setZoneError] = useState(false)
     const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required")
     const [zoneList, setZoneList] = useState([])
@@ -32,6 +33,7 @@ export default function Zone() {
         if (!decodedEditZoneid){
             setZoneName("")
             setTabValue(1)
+            setHdnZoneName("")
             return
         } 
         collectEditData(decodedEditZoneid)
@@ -80,7 +82,11 @@ export default function Zone() {
             if (!validateZone()) return
 
             if (decodedEditZoneid) {
-                let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim() })
+                let check=1;
+                if(hdnZoneName.toLowerCase()===zoneName.toLowerCase()){
+                    check=0
+                }
+                let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(),check:check })
                 if(response.data.success){
                 enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 navigate('/masters/zone_mas')
@@ -124,6 +130,7 @@ export default function Zone() {
             let data = response.data.data[0]
             setEditId(zoneid)           // ✅ added
             setZoneName(data.zone_name)
+            setHdnZoneName(data.zone_name)
             setZoneError(false)
             setTabValue(0)
         } catch (err) {
@@ -222,7 +229,7 @@ export default function Zone() {
             headerName: "Action",
             filterable: false,
             renderCell: (row) => (
-                <>
+                 <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:1}}>
                     {/* Edit Button */}
                     <IconButton
                         size="small"
@@ -235,11 +242,10 @@ export default function Zone() {
                     <IconButton
                         size="small"
                         onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{ml:1}}
                     >
                         <LiaTrashAltSolid style={{color:'red', fontSize: '17.5px' }} />
                     </IconButton>
-                </>
+                </Box>
             )
         }
     ]
@@ -249,7 +255,7 @@ export default function Zone() {
             <PageHeader
                 title="Zone"
             />
-            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: {lg:'60%',md:'80%',sm:'90%',xs:'90%'} }}>
                 {/* Tabs */}
                 {!decodedEditZoneid ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
