@@ -13,21 +13,22 @@ import ConfirmationDialog from "../utils/confirmDialog";
 export default function Area() {
 
     const { editAreaId } = useParams()
-    const decodedAreaId = editAreaId !== undefined && editAreaId !== null ? Number(atob(editAreaId)) : null
+    const decodedAreaId  = editAreaId !== undefined && editAreaId !== null ? Number(atob(editAreaId)) : null
     const { enqueueSnackbar } = useSnackbar()
     const navigate = useNavigate()
 
-    const [tabValue, setTabValue] = useState(1)
+    const [tabValue, setTabValue]   = useState(1)
     const [selRegion, setSelRegion] = useState("0")
-    const [selState, setSelState] = useState("0")
-    const [areaName, setAreaName] = useState("")
+    const [selState, setSelState]   = useState("0")
+    const [areaName, setAreaName]   = useState("")
     const [allRegion, setAllRegion] = useState([])
-    const [allState, setAllState] = useState([])
-    const [allArea, setAllArea] = useState([])
-    const [loading, setLoading] = useState(true)
+    const [allState, setAllState]   = useState([])
+    const [allArea, setAllArea]     = useState([])
+    const [loading, setLoading]     = useState(true)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const [regionError, setRegionError] = useState(false)
-    const [stateError, setStateError] = useState(false)
-    const [areaError, setAreaError] = useState(false)
+    const [stateError, setStateError]   = useState(false)
+    const [areaError, setAreaError]     = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -41,14 +42,22 @@ export default function Area() {
 
     useEffect(() => {
         if (!decodedAreaId) {
-            setSelRegion("0")
-            setSelState("0")
-            setAreaName("")
+            resetFields()   // ← clears all fields + errors to empty/0
             setTabValue(1)
-            return
+            return          // ← early return so collectEditData(null) never runs
         }
         collectEditData(decodedAreaId)
     }, [decodedAreaId])
+
+    // ── centralised field reset ──────────────────────────────────────────────
+    const resetFields = () => {
+        setSelRegion("0")
+        setSelState("0")
+        setAreaName("")
+        setRegionError(false)
+        setStateError(false)
+        setAreaError(false)
+    }
 
     const fetchArea = async () => {
         try {
@@ -83,7 +92,8 @@ export default function Area() {
     const collectEditData = async (id) => {
         try {
             let response = await api.post("/read_area", { areaId: id })
-            let data = response.data.regIdres[0]
+            let data = response.data.data[0]
+            console.log(data, "collection Data")
             setSelRegion(data.reg_id)
             setSelState(data.state_id)
             setAreaName(data.area_name)
@@ -103,7 +113,7 @@ export default function Area() {
         setAreaError(false)
 
         if (selRegion == 0) { setRegionError(true); isValid = false }
-        if (selState == 0) { setStateError(true); isValid = false }
+        if (selState == 0)  { setStateError(true);  isValid = false }
         if (!areaName || areaName.trim() === "") { setAreaError(true); isValid = false }
 
         return isValid
@@ -111,34 +121,32 @@ export default function Area() {
 
     const handleSubmit = async () => {
         try {
+            setModifyLoading(true)
             if (decodedAreaId) {
+                // ── UPDATE ───────────────────────────────────────────────────
                 let response = await api.post("/areaUpdate", {
-                    id: decodedAreaId,
-                    reg_name: selRegion,
-                    state_name: selState,
-                    area_name: areaName
+                    updId      : decodedAreaId,
+                    reg_name   : selRegion,
+                    state_name : selState,
+                    area_name  : areaName
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    navigate('/masters/area_mas')
-                    setTabValue(1)
-                    setAreaName("")
-                    setSelRegion("0")
-                    setSelState("0")
+                    fetchArea()
+                    navigate('/masters/area_mas') // triggers useEffect → resetFields() + setTabValue(1)
                 } else {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
+                // ── CREATE ───────────────────────────────────────────────────
                 let response = await api.post("/areaCreate", {
-                    reg_name: selRegion,
-                    state_name: selState,
-                    area_name: areaName
+                    reg_name   : selRegion,
+                    state_name : selState,
+                    area_name  : areaName
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    setSelRegion("0")
-                    setSelState("0")
-                    setAreaName("")
+                    resetFields()   // ← clear form after successful create
                     fetchArea()
                     setTabValue(1)
                 } else {
@@ -149,8 +157,13 @@ export default function Area() {
             console.log(err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
+            setModifyLoading(false)
             closeConfirmationDialog()
         }
+    }
+
+    const handleEdit = (editAreaId) => {
+        navigate(`/masters/area_mas/${btoa(editAreaId)}`)
     }
 
     const handleDelete = async (id) => {
@@ -166,10 +179,6 @@ export default function Area() {
         }
     }
 
-    const handleEdit = (editAreaId) => {
-        navigate(`/masters/area_mas/${btoa(editAreaId)}`)
-    }
-
     const showConfirmationDialog = (config) => {
         setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
     }
@@ -180,30 +189,31 @@ export default function Area() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedAreaId ? "Edit" : "Add"} Area`,
-            message: `Are you sure you want to ${decodedAreaId ? "Edit" : "Add"} this Area?`,
-            confirmText: decodedAreaId ? "Update" : "Add",
+            title       : `${decodedAreaId ? "Edit" : "Add"} Area`,
+            message     : `Are you sure you want to ${decodedAreaId ? "Edit" : "Add"} this Area?`,
+            confirmText : decodedAreaId ? "Update" : "Add",
             confirmColor: "primary",
-            onConfirm: () => handleSubmit()
+            loading     : modifyLoading,
+            onConfirm   : () => handleSubmit()
         })
     }
 
     const showDeleteConfirmation = (id) => {
         showConfirmationDialog({
-            title: "Confirmation",
-            message: "Are you sure you want to delete this record?",
-            confirmText: "OK",
-            cancelText: "Close",
+            title       : "Confirmation",
+            message     : "Are you sure you want to delete this record?",
+            confirmText : "OK",
+            cancelText  : "Close",
             confirmColor: "primary",
-            onConfirm: () => handleDelete(id)
+            onConfirm   : () => handleDelete(id)
         })
     }
 
     const columns = [
-        { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "reg_name", headerName: "REGION", filterable: true, sortable: true },
-        { field: "state_name", headerName: "STATE", filterable: true, sortable: true },
-        { field: "area_name", headerName: "AREA", filterable: true, sortable: true },
+        { field: "si_no",      headerName: "#",      filterable: true, sortable: true },
+        { field: "reg_name",   headerName: "REGION", filterable: true, sortable: true },
+        { field: "state_name", headerName: "STATE",  filterable: true, sortable: true },
+        { field: "area_name",  headerName: "AREA",   filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -274,7 +284,7 @@ export default function Area() {
                 )}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allArea} loading={loading} />
+                        <DataTable columns={columns} data={allArea} loading={loading} showHeader={false} />
                     </Box>
                 )}
             </Box>

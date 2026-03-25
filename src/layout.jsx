@@ -1996,29 +1996,18 @@ const Layout = ({ children }) => {
                         <Box
                             sx={{
                                 display: "flex",
-                                mr: 2,
                                 visibility: isMobile
                                     ? { xs: "hidden", sm: "visible" }
                                     : "visible",
-                                width: isMobile ? { xs: '15%' } : null
+                                width: isMobile ? { xs: '15%' } : null,
+                                ml:1
                             }}
                         >
-                            <Typography
-                                sx={{
-                                    color: '#000000',
-                                    fontSize: '1.7rem',
-                                    mt: 0.1,
-                                    fontFamily: "'Poppins', sans-serif",
-                                    fontWeight: 500
-                                }}
-                            >
-                                salestrak
-                            </Typography>
                             <Box>
                                 <img
-                                    src={statincreaseimg}
+                                    src={SalesTrekimg}
                                     alt=" Logo"
-                                    style={{ width: isMobile ? "2rem" : "2rem", alignSelf: 'start', marginTop: '0.1rem' }}
+                                    style={{ width: isMobile ? "5rem" : "6rem", alignSelf: 'center'}}
                                 />
                             </Box>
                         </Box>
