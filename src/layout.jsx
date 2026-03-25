@@ -2172,7 +2172,7 @@ const Layout = ({ children }) => {
                 >
                     {children}
                 </Box>
-                <div className="footer">
+               {location.pathname.startsWith("/dashboard") && <div className="footer">
                     <div className="float-right"></div>
                     <div style={{ padding: 8 }}>
                         <div
@@ -2187,6 +2187,7 @@ const Layout = ({ children }) => {
                         </div>
                     </div>
                 </div>
+                }
 
             </Box>
             <ConfirmationDialog

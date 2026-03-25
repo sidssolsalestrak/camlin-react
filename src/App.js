@@ -26,15 +26,15 @@ function App() {
           <Routes>
             <Route path="/:token" element={<TokenHandler />} />
             <Route path="/" element={<Dashboard />} />
-            <Route path='/masters/zone_mas' element={<Zone />} />
-            <Route path='/masters/region' element={<Region />} />
+            <Route path='/masters/zone_mas/:editZoneid?' element={<Zone />} />
+            <Route path='/masters/region/:editRegionId?' element={<Region />} />
             <Route path='/masters/ter_mas' element={<Territory />} />
             <Route path='/masters/beat_mas' element={<Beat />} />
-            <Route path='/masters/area_mas' element={<Area />} />
+            <Route path='/masters/area_mas/:editAreaId?' element={<Area />} />
 
-            <Route path='/masters/cat' element={<ProductCategory />} />
-            <Route path='/masters/catSub' element={<ProductSubCategory />} />
-            <Route path='/masters/dept' element={<Department />} />
+            <Route path='/masters/cat/:id?' element={<ProductCategory />} />
+            <Route path='/masters/catSub/:id?' element={<ProductSubCategory />} />
+            <Route path='/masters/dept/:id?' element={<Department />} />
             <Route path='/masters/designation' element={<Designation />} />
             <Route path='/masters/city_mas' element={<City />} />
           </Routes>
