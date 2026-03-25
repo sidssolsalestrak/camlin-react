@@ -21,6 +21,7 @@ export default function Area() {
     const [selRegion, setSelRegion] = useState("0")
     const [selState, setSelState]   = useState("0")
     const [areaName, setAreaName]   = useState("")
+    const [hdnAreaName,setHdnAreaName]=useState("")
     const [allRegion, setAllRegion] = useState([])
     const [allState, setAllState]   = useState([])
     const [allArea, setAllArea]     = useState([])
@@ -42,18 +43,18 @@ export default function Area() {
 
     useEffect(() => {
         if (!decodedAreaId) {
-            resetFields()   // ← clears all fields + errors to empty/0
+            resetFields()   
             setTabValue(1)
-            return          // ← early return so collectEditData(null) never runs
+            return         
         }
         collectEditData(decodedAreaId)
     }, [decodedAreaId])
 
-    // ── centralised field reset ──────────────────────────────────────────────
     const resetFields = () => {
         setSelRegion("0")
         setSelState("0")
         setAreaName("")
+        setHdnAreaName("")
         setRegionError(false)
         setStateError(false)
         setAreaError(false)
@@ -97,6 +98,7 @@ export default function Area() {
             setSelRegion(data.reg_id)
             setSelState(data.state_id)
             setAreaName(data.area_name)
+            setHdnAreaName(data.area_name)
             setRegionError(false)
             setStateError(false)
             setAreaError(false)
@@ -123,22 +125,26 @@ export default function Area() {
         try {
             setModifyLoading(true)
             if (decodedAreaId) {
-                // ── UPDATE ───────────────────────────────────────────────────
+                let check=1
+                if(hdnAreaName.toLowerCase()===areaName.toLowerCase()){
+                    check=0
+                }
                 let response = await api.post("/areaUpdate", {
-                    updId      : decodedAreaId,
-                    reg_name   : selRegion,
-                    state_name : selState,
-                    area_name  : areaName
+                    updId: decodedAreaId,
+                    reg_name: selRegion,
+                    state_name: selState,
+                    area_name : areaName,
+                    check:check
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                     fetchArea()
-                    navigate('/masters/area_mas') // triggers useEffect → resetFields() + setTabValue(1)
+                    navigate('/masters/area_mas') 
                 } else {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-                // ── CREATE ───────────────────────────────────────────────────
+               
                 let response = await api.post("/areaCreate", {
                     reg_name   : selRegion,
                     state_name : selState,
@@ -168,7 +174,7 @@ export default function Area() {
 
     const handleDelete = async (id) => {
         try {
-            let response = await api.post("/areaDelete", { id })
+            let response = await api.post("/deleteArea", { id })
             enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
             fetchArea()
         } catch (err) {
@@ -217,16 +223,16 @@ export default function Area() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <>
+                  <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:1}}>
                     <IconButton size="small" onClick={() => handleEdit(row.row.id)}
-                        sx={{ ml: 0.5, backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
+                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
                     <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{ ml: 2, backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '14px' }} />
+                        sx={{backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px',marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
+                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
-                </>
+                </Box>
             )
         }
     ]
@@ -234,7 +240,7 @@ export default function Area() {
     return (
         <Layout>
             <PageHeader title="Area" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh',width: {lg:'60%',md:'80%',sm:'90%',xs:'90%'} }}>
                 {!decodedAreaId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
