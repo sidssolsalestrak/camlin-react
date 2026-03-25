@@ -259,10 +259,10 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Box sx={{ padding: "20px" }}>
+      <Box sx={{ padding: "20px"}}>
 
         {/* ↓ Attach ref here so ResizeObserver watches this container */}
-        <Box ref={sliderContainerRef}>
+        <Box ref={sliderContainerRef} >
           <Slider {...settings}>
             <div style={{ padding: "10px" }}>
               <Card
@@ -270,6 +270,7 @@ export default function Dashboard() {
                   width: "97%",
                   borderRadius: "12px",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  height: "140px"
                 }}
               >
                 <CardContent>
@@ -326,6 +327,7 @@ export default function Dashboard() {
                   width: "97%",
                   borderRadius: "12px",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  height: "140px"
                 }}
               >
                 <CardContent>

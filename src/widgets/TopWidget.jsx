@@ -33,6 +33,7 @@ export default function TopWidget({
         borderRadius: "12px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         width: "97%",
+        height: "140px"
       }}
     >
       <CardContent>
