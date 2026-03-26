@@ -249,6 +249,12 @@ export default function Beat() {
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                         <FormControl>
+                            <InputLabel id="area_name">Area Name</InputLabel>
+                            <Select>
+                                <MenuItem>Select Area</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl>
                             <InputLabel id="territory">Territory Name</InputLabel>
                             <Select value={selTerritory} labelId="territory" label="Territory Name"
                                 onChange={(e) => setSelTerritory(e.target.value)} size="small" error={territoryError}>
