@@ -9,6 +9,7 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import DataTable from "../utils/dataTable";
 import ConfirmationDialog from "../utils/confirmDialog";
+import { jwtDecode } from "jwt-decode";
 
 export default function Region() {
 
@@ -22,26 +23,41 @@ export default function Region() {
     const [selectedZone, setSelectedZone] = useState("0")
     const [regData, setRegData] = useState([])
     const [regionName, setRegionName] = useState("")
-    const [hdnRegionName, setHdnRegionName]=useState("")
+    const [hdnRegionName, setHdnRegionName] = useState("")
     const [editId, setEditId] = useState(null)
     const [zoneError, setZoneError] = useState(false)
     const [zoneErrMsg, setZoneErrMsg] = useState("")
     const [regionError, setRegionError] = useState(false)
     const [regionErrMsg, setRegionErrMsg] = useState("")
     const [loading, setLoading] = useState(true)
-    const [modifyLoading,setmodifyLoading]=useState(false)
+    const [modifyLoading, setmodifyLoading] = useState(false)
+    const [userType, setUserType] = useState(null)
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
-    
+
 
 
     useEffect(() => {
         fetchZoneNames()
         fetchRegData()
+    }, [])
+
+    useEffect(() => {
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token)
+                setUserType(decoded.user_type)
+                console.log(decoded.user_type)
+            }
+            catch (err) {
+                console.log(err)
+            }
+        }
     }, [])
 
     useEffect(() => {
@@ -55,7 +71,7 @@ export default function Region() {
         collectEditData(decodedEditRegionId)
     }, [decodedEditRegionId])
 
-   
+
 
     const fetchZoneNames = async () => {
         try {
@@ -94,7 +110,7 @@ export default function Region() {
         }
     }
 
-   
+
 
     const validateRegion = () => {
         let isValid = true
@@ -116,42 +132,42 @@ export default function Region() {
         return isValid
     }
 
-    
+
 
     const handleSubmit = async () => {
         try {
             setmodifyLoading(true)
             if (decodedEditRegionId) {
-                let check=1
-                if(hdnRegionName.toLowerCase()===regionName.toLowerCase()){
-                    check=0
+                let check = 1
+                if (hdnRegionName.toLowerCase() === regionName.toLowerCase()) {
+                    check = 0
                 }
-                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check:check })
+                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check: check })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: "success",anchorOrigin:{vertical:'top',horizontal:'center'} })
+                    enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                     navigate('/masters/region')
                     setTabValue(1)
                     setRegionName("")
                     setSelectedZone("0")
                 } else {
-                    enqueueSnackbar(response.data.message || "Update Failed", { variant: "error",anchorOrigin:{vertical:'top',horizontal:'center'} })
+                    enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
                 // Create
                 let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName })
                 if (response.data.success) {
-                    enqueueSnackbar("Region added successfully", { variant: "success",anchorOrigin:{vertical:'top',horizontal:'center'} })
+                    enqueueSnackbar("Region added successfully", { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                     setSelectedZone("0")
                     setRegionName("")
                     fetchRegData()
                     setTabValue(1)
                 } else {
-                    enqueueSnackbar(response.data.message || "Insert Failed", { variant: "error",anchorOrigin:{vertical:'top',horizontal:'center'} })
+                    enqueueSnackbar(response.data.message || "Insert Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             }
             fetchRegData()
         } catch (err) {
-            enqueueSnackbar("Something went wrong", { variant: "error",anchorOrigin:{vertical:'top',horizontal:'center'} })
+            enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             setmodifyLoading(false)
             closeConfirmationDialog()
@@ -162,15 +178,15 @@ export default function Region() {
         navigate(`/masters/region/${btoa(regId)}`)
     }
 
-   
+
 
     const handleDelete = async (id) => {
         try {
             let response = await api.post("/regionDelete", { id })
-            enqueueSnackbar(response.data.message, { variant: "success",anchorOrigin:{vertical:'top',horizontal:'center'} })
+            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
             fetchRegData()
         } catch (err) {
-            enqueueSnackbar("Something went wrong", { variant: "error",anchorOrigin:{vertical:'top',horizontal:'center'} })
+            enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
         }
@@ -191,7 +207,7 @@ export default function Region() {
             message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this Region?`,
             confirmText: decodedEditRegionId ? "Update" : "Add",
             confirmColor: "primary",
-            loading:modifyLoading,
+            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -207,7 +223,7 @@ export default function Region() {
         })
     }
 
-    
+
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
@@ -216,13 +232,13 @@ export default function Region() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:1}}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
                     <IconButton size="small" onClick={() => handleEdit(row.row.id)}
-                        sx={{  backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
+                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
                     <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{  backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px',marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
+                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
                         <LiaTrashAltSolid style={{ color: 'white', fontSize: '14px' }} />
                     </IconButton>
                 </Box>
@@ -230,12 +246,12 @@ export default function Region() {
         }
     ]
 
-   
+
 
     return (
         <Layout>
             <PageHeader title="Region" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: {lg:'60%',md:'80%',sm:'90%',xs:'90%'} }}>
+            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditRegionId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -282,10 +298,10 @@ export default function Region() {
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData} 
-                        loading={loading}
-                        showHeader={false}
-                         />
+                        <DataTable columns={columns} data={regData}
+                            loading={loading}
+                            showHeader={false}
+                        />
                     </Box>
                 )}
             </Box>

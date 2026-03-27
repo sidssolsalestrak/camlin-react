@@ -34,6 +34,8 @@ import api from "./services/api";
 import { useNavigate } from "react-router-dom";
 import { SiChatbot } from "react-icons/si";
 import { getUserFromToken } from "./utils/getUserFromToken";
+import 'font-awesome/css/font-awesome.min.css';
+ 
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -102,6 +104,60 @@ const Layout = ({ children }) => {
     }, 100);
     return () => clearTimeout(timer);
   }, [menuHtml]);
+
+// Highlight active menu item based on current path
+useEffect(() => {
+  if (!menuHtml) return;
+  const timer = setTimeout(() => {
+    const allLinks = document.querySelectorAll(".php-menu a");
+
+    // ✅ Step 1: Clean up ALL previous active classes at every level
+    allLinks.forEach((link) => {
+      link.classList.remove("menu-active");
+
+      // Walk up and remove both parent-active and parent-active-main from ALL ancestor treeviews
+      let currentEl = link.closest(".treeview");
+      while (currentEl) {
+        currentEl.querySelector(":scope > a")?.classList.remove("parent-active");
+        currentEl.querySelector(":scope > a")?.classList.remove("parent-active-main"); // ✅ new
+        currentEl = currentEl.closest(".treeview-menu")?.parentElement?.closest(".treeview");
+      }
+    });
+
+    // ✅ Step 2: Find the matching link and apply active classes
+    allLinks.forEach((link) => {
+      const onclick = link.getAttribute("onclick") || "";
+      const href = link.getAttribute("href") || "";
+
+      const urlMatch = onclick.match(/acc_stat_view\([^,]+,\s*[^,]+,\s*'([^']+)'\)/);
+      const url = urlMatch ? urlMatch[1] : href.replace(/^\//, "");
+
+      if (url && location.pathname === `/${url}`) {
+        // ✅ Highlight the active child link
+        link.classList.add("menu-active");
+
+        // ✅ Walk up ALL ancestor treeviews — open and mark each one
+        let currentEl = link.closest(".treeview-menu")?.parentElement;
+        while (currentEl && currentEl.classList.contains("treeview")) {
+          currentEl.classList.add("active");
+          currentEl.querySelector(":scope > .treeview-menu")?.classList.add("open");
+
+          // ✅ Top-level parent gets different class than sub-parents
+          const isTopLevel = !currentEl.closest(".treeview-menu");
+          if (isTopLevel) {
+            currentEl.querySelector(":scope > a")?.classList.add("parent-active-main");
+          } else {
+            currentEl.querySelector(":scope > a")?.classList.add("parent-active");
+          }
+
+          // Move up to next ancestor
+          currentEl = currentEl.closest(".treeview-menu")?.parentElement;
+        }
+      }
+    });
+  }, 150);
+  return () => clearTimeout(timer);
+}, [menuHtml, location.pathname]);
 
   // Global click handler used by menu items
   useEffect(() => {

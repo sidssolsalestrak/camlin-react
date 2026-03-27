@@ -4,21 +4,23 @@ import { TextField, Box, Typography, Button, Tabs, Tab, IconButton } from "@mui/
 import DataTable from "../utils/dataTable";
 import api from "../services/api";
 import { useSnackbar } from "notistack";
-import { FaPencilAlt} from "react-icons/fa";
+import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { useParams, useNavigate } from "react-router-dom";
 import PageHeader from "../utils/PageHeader";
 import ConfirmationDialog from "../utils/confirmDialog";
+import { jwtDecode } from "jwt-decode";
 
 export default function Zone() {
     const [zoneName, setZoneName] = useState("")
-    const [hdnZoneName,setHdnZoneName]=useState("")
+    const [hdnZoneName, setHdnZoneName] = useState("")
     const [zoneError, setZoneError] = useState(false)
+    const [userType, setUserType] = useState(null)
     const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required")
     const [zoneList, setZoneList] = useState([])
     const [editId, setEditId] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [addLoading,setAddLoading]=useState(false)
+    const [addLoading, setAddLoading] = useState(false)
     const [tabValue, setTabValue] = useState(1)
     const { editZoneid } = useParams()
     const decodedEditZoneid = editZoneid !== undefined && editZoneid !== null ? Number(atob(editZoneid)) : null
@@ -30,12 +32,25 @@ export default function Zone() {
     }, [])
 
     useEffect(() => {
-        if (!decodedEditZoneid){
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token)
+                setUserType(decoded.user_type)
+            }
+            catch (err) {
+                console.log(err)
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!decodedEditZoneid) {
             setZoneName("")
             setTabValue(1)
             setHdnZoneName("")
             return
-        } 
+        }
         collectEditData(decodedEditZoneid)
     }, [decodedEditZoneid])
 
@@ -82,43 +97,43 @@ export default function Zone() {
             if (!validateZone()) return
 
             if (decodedEditZoneid) {
-                let check=1;
-                if(hdnZoneName.toLowerCase()===zoneName.toLowerCase()){
-                    check=0
+                let check = 1;
+                if (hdnZoneName.toLowerCase() === zoneName.toLowerCase()) {
+                    check = 0
                 }
-                let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(),check:check })
-                if(response.data.success){
-                enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                navigate('/masters/zone_mas')
-                setTabValue(1)
-                setZoneName("")
-           
-                 }
-                else{
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                 }
+                let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(), check: check })
+                if (response.data.success) {
+                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    navigate('/masters/zone_mas')
+                    setTabValue(1)
+                    setZoneName("")
+
+                }
+                else {
+                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                }
                 setEditId(null)
             } else {
                 let response = await api.post("/addZone", { newZone: zoneName.trim() })
-                if(response.data.success){
-                enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                navigate('/masters/zone_mas')
-                setTabValue(1)
-                setZoneName("")
-           
+                if (response.data.success) {
+                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    navigate('/masters/zone_mas')
+                    setTabValue(1)
+                    setZoneName("")
+
                 }
-                else{
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-               }
+                else {
+                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                }
             }
-          
+
             fetchZones()
-           
+
         } catch (err) {
             console.log("addzone error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         }
-        finally{
+        finally {
             setAddLoading(false)
             closeConfirmationDialog()
         }
@@ -163,7 +178,7 @@ export default function Zone() {
             ...confirmationDialog,
             ...config,
             open: true,
-            loading:addLoading
+            loading: addLoading
         });
     };
 
@@ -177,20 +192,20 @@ export default function Zone() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedEditZoneid?"Edit":"Add"} Zone`,
-            message:`Are you sure you want to ${decodedEditZoneid?"Edit":"Add"} this Zone?`,
-            confirmText: decodedEditZoneid?"Update":"Add",
+            title: `${decodedEditZoneid ? "Edit" : "Add"} Zone`,
+            message: `Are you sure you want to ${decodedEditZoneid ? "Edit" : "Add"} this Zone?`,
+            confirmText: decodedEditZoneid ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleAddZone()
         });
     };
 
-    const showDeleteConfirmation=(id)=>{
-          showConfirmationDialog({
+    const showDeleteConfirmation = (id) => {
+        showConfirmationDialog({
             title: `Confirmation`,
-            message:`Are you sure you want to delete this record?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "OK",
-            cancelText:"Close",
+            cancelText: "Close",
             confirmColor: "primary",
             onConfirm: () => handleDelete(id)
         });
@@ -205,7 +220,7 @@ export default function Zone() {
             console.log("deleteZone error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         }
-        finally{
+        finally {
             closeConfirmationDialog()
         }
     }
@@ -229,13 +244,13 @@ export default function Zone() {
             headerName: "Action",
             filterable: false,
             renderCell: (row) => (
-                 <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:1}}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
                     {/* Edit Button */}
                     <IconButton
                         size="small"
                         onClick={() => handleEdit(row.row.id)}
                     >
-                        <FaPencilAlt style={{color:'green',fontSize: '14.5px' }} />
+                        <FaPencilAlt style={{ color: 'green', fontSize: '14.5px' }} />
                     </IconButton>
 
                     {/* Delete Button */}
@@ -243,7 +258,7 @@ export default function Zone() {
                         size="small"
                         onClick={() => showDeleteConfirmation(row.row.id)}
                     >
-                        <LiaTrashAltSolid style={{color:'red', fontSize: '17.5px' }} />
+                        <LiaTrashAltSolid style={{ color: 'red', fontSize: '17.5px' }} />
                     </IconButton>
                 </Box>
             )
@@ -255,7 +270,7 @@ export default function Zone() {
             <PageHeader
                 title="Zone"
             />
-            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: {lg:'60%',md:'80%',sm:'90%',xs:'90%'} }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {/* Tabs */}
                 {!decodedEditZoneid ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -264,7 +279,7 @@ export default function Zone() {
                             <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                         </Tabs>
                     </Box> :
-                    <Typography sx={{ px: 3, mt:3, color: '#212121', fontSize: '18px' }}>Edit Zone Details</Typography>
+                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Zone Details</Typography>
                 }
 
                 {/* ADD NEW TAB */}
@@ -285,14 +300,14 @@ export default function Zone() {
                         <Button
                             sx={{ ml: 1, width: '2rem' }}
                             variant="contained"
-                            onClick={()=>{
-                                if(validateZone()){
-                                 showSubmitConfirmation()
+                            onClick={() => {
+                                if (validateZone()) {
+                                    showSubmitConfirmation()
                                 }
-                                else{
+                                else {
                                     return
                                 }
-                                }}
+                            }}
                         >
                             {editId ? "Update" : "Submit"}
                         </Button>
@@ -309,9 +324,9 @@ export default function Zone() {
                         />
                     </Box>
                 )}
-            
+
             </Box>
-              <ConfirmationDialog
+            <ConfirmationDialog
                 open={confirmationDialog.open}
                 onClose={closeConfirmationDialog}
                 onConfirm={confirmationDialog.onConfirm}

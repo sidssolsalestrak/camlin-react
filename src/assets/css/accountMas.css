@@ -1,0 +1,9 @@
+.mainTitle {
+  font-size: 1.3em;
+  line-height: 29px;
+  margin: 0;
+  padding: 0;
+  float: left !important;
+  color: #026cb6;
+  font-weight: 500;
+}
