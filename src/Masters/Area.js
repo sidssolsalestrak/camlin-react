@@ -255,7 +255,7 @@ export default function Area() {
 
     return (
         <Layout>
-            <PageHeader title="Area" />
+            <PageHeader title="Area" url="/masters/zone_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedAreaId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>

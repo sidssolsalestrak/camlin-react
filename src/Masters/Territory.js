@@ -233,7 +233,7 @@ export default function Territory() {
 
     return (
         <Layout>
-            <PageHeader title="Territory" />
+            <PageHeader title="Territory" url="/masters/ter_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditTerritoryId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>

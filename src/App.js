@@ -29,8 +29,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
             <Route path="/masters/region/:editRegionId?" element={<Region />} />
-            <Route path="/masters/ter_mas" element={<Territory />} />
-            <Route path="/masters/beat_mas" element={<Beat />} />
+            <Route path="/masters/ter_mas/:editTeritoryId?" element={<Territory />} />
+            <Route path="/masters/beat_mas/:editBeatId?" element={<Beat />} />
             <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
             {/* main master routes */}
             <Route path='/masters/cat/:id?' element={<ProductCategory />} />

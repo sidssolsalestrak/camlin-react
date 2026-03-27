@@ -23,23 +23,27 @@ export default function Beat() {
 
     const [tabValue, setTabValue] = useState(1)
     const [selTerritory, setSelTerritory] = useState("0")
+    const [selArea, setSelArea] = useState("0")
     const [beatName, setBeatName] = useState("")
     const [hdnBeatName, setHdnBeatName] = useState("")
     const [allTerritory, setAllTerritory] = useState([])
     const [allBeatData, setAllBeatData] = useState([])
+    const [allArea, setAllArea] = useState([])
+    const [regId, setRegId] = useState(null)
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
     const [beatError, setBeatError] = useState(false)
     const [userType, setUserType] = useState(null)
+    const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
+    // On mount: fetch beat list and decode JWT
     useEffect(() => {
         fetchAllBeat()
-        fetchAllTerritory()
     }, [])
 
     useEffect(() => {
@@ -48,14 +52,25 @@ export default function Beat() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
     }, [])
 
+    // Fetch areas whenever regId changes
+    useEffect(() => {
+        fetchAllArea()
+    }, [regId])
+
+    // When selArea changes — only act if the user manually changed it
+    useEffect(() => {
+        if (!isAreaChanged) return
+        // Always fetch territories when user changes area (even if area is "0")
+        fetchAllTerritory(Number(selArea) !== 0 ? selArea : null)
+    }, [selArea])
+
+    // On route param change — load edit data or reset for add
     useEffect(() => {
         if (!decodedEditBeatId) {
             resetFields()
@@ -68,7 +83,11 @@ export default function Beat() {
     const resetFields = () => {
         setSelTerritory("0")
         setBeatName("")
+        setRegId(null)
+        setSelArea("0")
         setHdnBeatName("")
+        setAllTerritory([])      // clear territory list on reset
+        setIsAreaChanged(false)  // reset flag so territory stays empty until area is picked
         setTerritoryError(false)
         setBeatError(false)
     }
@@ -85,26 +104,62 @@ export default function Beat() {
         }
     }
 
-    const fetchAllTerritory = async () => {
+    // Fetches territory list and auto-selects the first item.
+    // Called only when the user actively changes the area dropdown.
+    const fetchAllTerritory = async (area_id) => {
         try {
-            let response = await api.post("/readTerritory", { ter_id: null, area_id: null })
+            let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllTerritory(data)
+            // Auto-select the first territory from the new list
+            setSelTerritory(data.length > 0 ? data[0].id : "0")
         } catch (err) {
             console.log("fetchAllTerritory error", err)
         }
     }
 
+    const fetchAllArea = async () => {
+        try {
+            let response = await api.post("/getAreatb", { area_id: null, reg_id: regId })
+            let data = Array.isArray(response.data.data) ? response.data.data : []
+            setAllArea(data)
+        } catch (err) {
+            console.log("fetchAllArea error", err)
+        }
+    }
+
+    // For edit: fetch territories separately (no auto-select — restore saved territory instead)
+    const fetchTerritoriesForEdit = async (area_id) => {
+        try {
+            let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
+            let data = Array.isArray(response.data.data) ? response.data.data : []
+            setAllTerritory(data)
+        } catch (err) {
+            console.log("fetchTerritoriesForEdit error", err)
+        }
+    }
+
     const collectEditData = async (id) => {
         try {
-            let response = await api.post("/readBeat", { beat_id: id, ter_id: null })
+            let response = await api.post("/readBeat", { beat_id: id })
             let data = response.data.data[0]
-            setSelTerritory(data.ter_id)
+
+            setRegId(data.reg_id)
+            setSelArea(data.area_id)
             setBeatName(data.beat_name)
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
             setBeatError(false)
             setTabValue(0)
+
+            // Fetch territories for the saved area WITHOUT triggering auto-select
+            await fetchTerritoriesForEdit(data.area_id)
+
+            // Restore the originally saved territory
+            setSelTerritory(data.ter_id)
+
+            // Keep isAreaChanged false so the useEffect doesn't interfere
+            setIsAreaChanged(false)
         } catch (err) {
             console.log("collectEditData error", err)
         }
@@ -125,11 +180,8 @@ export default function Beat() {
         try {
             setModifyLoading(true)
             if (decodedEditBeatId) {
-                let check = 1
-                if (hdnBeatName.toLowerCase() === beatName.toLowerCase()) {
-                    check = 0
-                }
-                let response = await api.post("/beatMasUpdate", {
+                let check = hdnBeatName.toLowerCase() === beatName.toLowerCase() ? 0 : 1
+                let response = await api.post("/beatUpdate", {
                     id: decodedEditBeatId,
                     beat_name: beatName,
                     ter_id: selTerritory,
@@ -143,7 +195,7 @@ export default function Beat() {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-                let response = await api.post("/beatMasCreate", {
+                let response = await api.post("/beatCreate", {
                     beat_name: beatName,
                     ter_id: selTerritory
                 })
@@ -220,11 +272,11 @@ export default function Beat() {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}
+                    <IconButton size="small" onClick={() => handleEdit(row.row.beatID)}
                         sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
+                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}
                         sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
                         <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
@@ -235,7 +287,7 @@ export default function Beat() {
 
     return (
         <Layout>
-            <PageHeader title="Beat" />
+            <PageHeader title="Beat" url="/masters/beat_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditBeatId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -250,22 +302,49 @@ export default function Beat() {
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                         <FormControl>
                             <InputLabel id="area_name">Area Name</InputLabel>
-                            <Select>
-                                <MenuItem>Select Area</MenuItem>
+                            <Select
+                                value={selArea}
+                                labelId="area_name"
+                                label="Area Name"
+                                onChange={(e) => {
+                                    setSelArea(e.target.value)
+                                    setIsAreaChanged(true)
+                                }}
+                                size="small"
+                            >
+                                {!decodedEditBeatId && (
+                                    <MenuItem value="0">Select Area</MenuItem>
+                                )}
+                                {allArea.map((val) => (
+                                    <MenuItem value={val.id} key={val.id}>{val.area_name}</MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                         <FormControl>
                             <InputLabel id="territory">Territory Name</InputLabel>
-                            <Select value={selTerritory} labelId="territory" label="Territory Name"
-                                onChange={(e) => setSelTerritory(e.target.value)} size="small" error={territoryError}>
+                            <Select
+                                value={selTerritory}
+                                labelId="territory"
+                                label="Territory Name"
+                                onChange={(e) => setSelTerritory(e.target.value)}
+                                size="small"
+                                error={territoryError}
+                            >
                                 <MenuItem value="0">Select Territory</MenuItem>
                                 {allTerritory.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val.ter_name}</MenuItem>
                                 ))}
                             </Select>
-                            {territoryError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>Territory Name is required.</Typography>}
+                            {territoryError && (
+                                <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>
+                                    Territory Name is required.
+                                </Typography>
+                            )}
                         </FormControl>
-                        <TextField label="Beat Name" size="small" value={beatName}
+                        <TextField
+                            label="Beat Name"
+                            size="small"
+                            value={beatName}
                             onChange={(e) => {
                                 setBeatName(e.target.value)
                                 if (beatError) setBeatError(false)
@@ -273,15 +352,18 @@ export default function Beat() {
                             error={!!beatError}
                             helperText={beatError ? "Beat Name is required." : ""}
                         />
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                            onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}>
+                        <Button
+                            variant="contained"
+                            sx={{ width: '2rem', textTransform: 'none' }}
+                            onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
+                        >
                             {decodedEditBeatId ? "Update" : "Create"}
                         </Button>
                     </Box>
                 )}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allBeatData} loading={loading} showHeader={false} />
+                        <DataTable columns={columns} data={allBeatData} loading={loading} />
                     </Box>
                 )}
             </Box>
