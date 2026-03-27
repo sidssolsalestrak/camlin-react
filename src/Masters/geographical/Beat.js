@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import Layout from "../layout";
+import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab,
     IconButton, Select, InputLabel, MenuItem, FormControl
 } from "@mui/material";
-import api from "../services/api";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
-import PageHeader from "../utils/PageHeader";
+import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable from "../utils/dataTable";
+import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
-import ConfirmationDialog from "../utils/confirmDialog";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Beat() {
