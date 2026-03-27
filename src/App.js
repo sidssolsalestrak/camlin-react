@@ -35,8 +35,8 @@ function App() {
             <Route path='/masters/cat/:id?' element={<ProductCategory />} />
             <Route path='/masters/catSub/:id?' element={<ProductSubCategory />} />
             <Route path='/masters/dept/:id?' element={<Department />} />
-            <Route path='/masters/designation' element={<Designation />} />
-            <Route path='/masters/city_mas' element={<City />} />
+            <Route path='/masters/designation/:id?' element={<Designation />} />
+            <Route path='/masters/city_mas/:id?' element={<City />} />
           </Routes>
         </BrowserRouter>
       </SnackbarProvider>

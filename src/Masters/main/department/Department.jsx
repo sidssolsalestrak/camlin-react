@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Layout from '../../../layout'
 import PageHeader from '../../../utils/PageHeader'
-import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem, IconButton, Typography } from '@mui/material'
+import { Box, TextField, Button, IconButton, Typography } from '@mui/material'
 import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -21,6 +21,7 @@ const Department = () => {
     const navigate = useNavigate();
     const [tableData, settableData] = useState([])
     const [value, setValue] = React.useState('1');
+    const [loading, setLoading] = useState(true)
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         departmentName: ""
@@ -29,7 +30,7 @@ const Department = () => {
     const [validation, setValidations] = useState({
         departmentName: "",
     })
-    /*---------- original cat code and name for edit---------*/
+    /*---------- original departmentName name for edit---------*/
     const [original, setoriginal] = useState({
         deptName: "",
     })
@@ -81,7 +82,7 @@ const Department = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Category`,
+            title: `Delete Department`,
             message: `Are you sure you want to delete this Department?`,
             confirmText: "Yes",
             confirmColor: "primary",
@@ -119,7 +120,7 @@ const Department = () => {
             console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert("Successfully Added Department")
-                setFormData({ departmentName: ""});
+                setFormData({ departmentName: "" });
                 fetchTableData();
                 resetValidations();
             }
@@ -162,6 +163,7 @@ const Department = () => {
             }
         } finally {
             closeConfirmationDialog();
+            fetchTableData();
         }
     }
 
@@ -234,6 +236,7 @@ const Department = () => {
     /*---------- fetch table data ---------*/
     const fetchTableData = async () => {
         try {
+            setLoading(true)
             const res = await axios.post("/dept");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row, index) => ({
                 ...row,
@@ -244,6 +247,8 @@ const Department = () => {
         } catch (error) {
             console.error(error);
             settableData([]);
+        }finally{
+            setLoading(false)
         }
     }
 
@@ -266,28 +271,27 @@ const Department = () => {
         }
     }
 
+    /*---------- Fetch table data ---------*/
     useEffect(() => {
-        const initializeData = async () => {
-            await fetchTableData();
-            // If there's an ID in URL, fetch edit data (similar to Zone component)
-            if (decodedId) {
-                setValue('1')
-                await getEditData(decodedId);
-            } else {
-                // Reset form when no edit ID
-                setFormData({
-                    departmentName: "",
-                });
-            }
+        fetchTableData();
+    }, []);
+
+    /*---------- Handle edit params ---------*/
+    useEffect(() => {
+        if (!decodedId) {
+            setFormData({ departmentName: "" });
+            setoriginal({ deptName: "" })
+            resetValidations();
+            return;
         }
-        initializeData();
-        resetValidations();
-    }, [decodedId])
+        setValue('1');
+        getEditData(decodedId);
+    }, [decodedId]);
 
     return (
         <Layout>
             <PageHeader title="Department" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -314,6 +318,7 @@ const Department = () => {
                         <DataTable
                             columns={columns}
                             data={tableData}
+                            loading={loading}
                         />
                     </TabPanel>
                 </TabContext>

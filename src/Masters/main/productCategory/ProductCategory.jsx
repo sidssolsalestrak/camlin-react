@@ -21,6 +21,7 @@ const ProductCategory = () => {
     const [tableData, settableData] = useState([]);
     const [brandData, setbrandData] = useState([]);
     const [value, setValue] = React.useState('1');
+    const [loading, setLoading] = useState(true)
     /*---------- form fields ---------*/
     const [formData, setFormData] = useState({
         brand: "",
@@ -192,6 +193,7 @@ const ProductCategory = () => {
             }
         } finally {
             closeConfirmationDialog();
+            fetchTableData();
         }
     }
 
@@ -307,6 +309,7 @@ const ProductCategory = () => {
     /*---------- fetch table data ---------*/
     const fetchTableData = async () => {
         try {
+            setLoading(true)
             const res = await axios.post("/getCat");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row, index) => ({
                 ...row,
@@ -316,39 +319,33 @@ const ProductCategory = () => {
         } catch (error) {
             console.error(error);
             settableData([]);
+        }finally{
+            setLoading(false)
         }
     }
 
-    /*---------- initial render ---------*/
+    /*---------- Fetch table data ---------*/
     useEffect(() => {
-        const initializeData = async () => {
-            await Promise.all([
-                fetchBrand(),
-                fetchTableData()
-            ]);
+        fetchTableData();
+        fetchBrand();
+    }, []);
 
-            // If there's an ID in URL, fetch edit data (similar to Zone component)
-            if (decodedId) {
-                setValue('1');
-                await getEditData(decodedId);
-            } else {
-                // Reset form when no edit ID
-                setFormData({
-                    brand: "",
-                    categoryCode: "",
-                    categoryName: ""
-                });
-            }
-        };
-
-        initializeData();
-        resetValidations();
-    }, [decodedId]); // Re-run when decodedId changes
+    /*---------- Handle edit params ---------*/
+    useEffect(() => {
+        if (!decodedId) {
+            setFormData({ brand: "", categoryCode: "", categoryName: "" });
+            setoriginal({ catcode: "", catname: "" })
+            resetValidations();
+            return;
+        }
+        setValue('1');
+        getEditData(decodedId);
+    }, [decodedId]);
 
     return (
         <Layout>
             <PageHeader title="Product Category" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -396,6 +393,7 @@ const ProductCategory = () => {
                         <DataTable
                             columns={columns}
                             data={tableData}
+                            loading={loading}
                         />
                     </TabPanel>
                 </TabContext>

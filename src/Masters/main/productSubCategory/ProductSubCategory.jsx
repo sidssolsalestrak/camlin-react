@@ -22,6 +22,7 @@ const ProductSubCategory = () => {
     const [tableData, settableData] = useState([])
     const [catData, setCatData] = useState([])
     const [value, setValue] = React.useState('1');
+    const [loading, setLoading] = useState(true)
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         category: "",
@@ -212,6 +213,7 @@ const ProductSubCategory = () => {
             }
         } finally {
             closeConfirmationDialog();
+            fetchTableData();
         }
     }
 
@@ -309,6 +311,7 @@ const ProductSubCategory = () => {
     /*---------- fetch table data ---------*/
     const fetchTableData = async () => {
         try {
+            setLoading(true)
             const res = await axios.post("/getSubCat");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row, index) => ({
                 ...row,
@@ -319,37 +322,33 @@ const ProductSubCategory = () => {
         } catch (error) {
             console.error(error);
             settableData([]);
+        }finally{
+            setLoading(false)
         }
     }
 
+    /*---------- Fetch table data ---------*/
     useEffect(() => {
-        const initializeData = async () => {
-            await Promise.all([
-                fetchBrand(),
-                fetchTableData(),
-            ])
+        fetchTableData();
+        fetchBrand();
+    }, []);
 
-            // If there's an ID in URL, fetch edit data (similar to Zone component)
-            if (decodedId) {
-                setValue('1')
-                await getEditData(decodedId);
-            } else {
-                // Reset form when no edit ID
-                setFormData({
-                    category: "",
-                    categoryCode: "",
-                    categoryName: ""
-                });
-            }
+    /*---------- Handle edit params ---------*/
+    useEffect(() => {
+        if (!decodedId) {
+            setFormData({ category: "", categoryCode: "", categoryName: "" });
+            setoriginal({ catcode: "", catname: "" })
+            resetValidations();
+            return;
         }
-        initializeData();
-        resetValidations();
-    }, [decodedId])
+        setValue('1');
+        getEditData(decodedId);
+    }, [decodedId]);
 
     return (
         <Layout>
             <PageHeader title="Product Sub Category" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: '60%' }}>
+            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -399,6 +398,7 @@ const ProductSubCategory = () => {
                         <DataTable
                             columns={columns}
                             data={tableData}
+                            loading={loading}
                         />
                     </TabPanel>
                 </TabContext>
