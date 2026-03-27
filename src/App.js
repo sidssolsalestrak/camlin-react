@@ -29,7 +29,7 @@ function App() {
             <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
 
             <Route
-              path="/masters/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"
+              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"
               element={<AccountMas />}
             />
           </Routes>
