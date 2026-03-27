@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import Layout from "../layout";
+import Layout from "../../layout";
 import { TextField, Box, Typography, Button, Tabs, Tab, IconButton } from "@mui/material";
-import DataTable from "../utils/dataTable";
-import api from "../services/api";
+import DataTable from "../../utils/dataTable";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
 import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { useParams, useNavigate } from "react-router-dom";
-import PageHeader from "../utils/PageHeader";
-import ConfirmationDialog from "../utils/confirmDialog";
+import PageHeader from "../../utils/PageHeader";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Zone() {
