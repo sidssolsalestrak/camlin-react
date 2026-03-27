@@ -269,6 +269,7 @@ export default function Zone() {
         <Layout>
             <PageHeader
                 title="Zone"
+                url="/masters/zone_mas"
             />
             <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {/* Tabs */}

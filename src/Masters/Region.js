@@ -250,7 +250,7 @@ export default function Region() {
 
     return (
         <Layout>
-            <PageHeader title="Region" />
+            <PageHeader title="Region" url="/masters/region" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditRegionId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>

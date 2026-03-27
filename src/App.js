@@ -26,7 +26,7 @@ function App() {
     <Route path='/masters/zone_mas/:editZoneid?' element={<Zone />}  />
     <Route path='/masters/region/:editRegionId?' element={<Region />} />
     <Route path='/masters/ter_mas/:editTeritoryId?'  element={<Territory />} />
-    <Route path='/masters/beat_mas' element={<Beat />}  />
+    <Route path='/masters/beat_mas/:editBeatId?' element={<Beat />}  />
     <Route path='/masters/area_mas/:editAreaId?' element={<Area />}   />
    </Routes>
    </BrowserRouter>
