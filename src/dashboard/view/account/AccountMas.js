@@ -74,7 +74,8 @@ function AccountMas() {
       const res = await api.post("/getUsersByRegion", {
         country: selectedRegion,
         cus_req: decodedParams.cusReq,
-      }); // your API
+        req_type: reqType,
+      });
       setUserData(res.data.data || []);
     } catch (err) {
       console.error(err);
@@ -86,6 +87,12 @@ function AccountMas() {
     fetchUserType();
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (cusReq !== 2) {
+      setReqType(0);
+    }
+  }, [cusReq]);
 
   useEffect(() => {
     if (regionData.length > 0 && decodedParams.country) {
@@ -193,19 +200,46 @@ function AccountMas() {
             </Grid>
 
             <Grid size={{ xs: 12, md: 2 }}>
-              <Box>
-                <label className="lbl-form">Customers / Requests</label>
+              <FormControl fullWidth size="small">
+                <InputLabel id="cusReq-label">Customers / Requests</InputLabel>
 
                 <Select
-                  fullWidth
-                  size="small"
+                  labelId="cusReq-label"
                   value={cusReq}
+                  label="Customers / Requests"
                   onChange={(e) => setCusReq(e.target.value)}
                 >
                   <MenuItem value={1}>All Current Customers</MenuItem>
                   <MenuItem value={2}>Requests</MenuItem>
                 </Select>
-              </Box>
+              </FormControl>
+            </Grid>
+
+            <Grid
+              size={{ xs: 12, md: 2 }}
+              style={{ display: cusReq == 2 ? "block" : "none" }}
+            >
+              <FormControl fullWidth size="small">
+                <InputLabel id="reqType-label">Request Type</InputLabel>
+
+                <Select
+                  labelId="reqType-label"
+                  value={reqType}
+                  label="Request Type"
+                  onChange={(e) => setReqType(e.target.value)}
+                >
+                  {decodedParams.userType == 1 ||
+                  decodedParams.userType == 2 ? (
+                    <MenuItem value={4}>All</MenuItem>
+                  ) : (
+                    <MenuItem value={0}>All</MenuItem>
+                  )}
+
+                  <MenuItem value={1}>Add New</MenuItem>
+                  <MenuItem value={2}>Update</MenuItem>
+                  <MenuItem value={3}>Delete</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
         </Box>
