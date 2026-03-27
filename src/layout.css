@@ -1,0 +1,67 @@
+.php-menu ul {
+  list-style: none;
+  padding-left: 10px;
+  margin: 0;
+}
+
+.php-menu li {
+  color: white;
+}
+
+
+
+.php-menu a {
+  display: block;
+  padding: 4px 6px;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.php-menu a:hover {
+  background-color: rgba(21, 13, 48, 0.79);
+}
+
+.treeview-menu {
+  display: none;
+}
+
+.treeview.active > .treeview-menu {
+  display: block;
+}
+
+.treeview > a {
+  cursor: pointer;
+}
+
+.treeview-menu {
+  display: none;
+  list-style: none;
+  padding-left: 15px;
+}
+
+.treeview-menu.open {
+  display: block;
+}
+
+.treeview > a {
+  cursor: pointer;
+}
+
+.treeview > a.parent-active {
+  margin-top: 0.5px;
+  background-color: rgba(21, 13, 48, 0.63);
+}
+
+
+.php-menu a.menu-active {
+  background-color: #FFFFFF33;
+  border-radius: 4px;
+}
+
+.php-menu li a i.fa-circle-o {
+  font-size: 10px;
+}
+
+
+
