@@ -17,6 +17,7 @@ import ProductSubCategory from './Masters/main/productSubCategory/ProductSubCate
 import Department from './Masters/main/department/Department';
 import Designation from './Masters/main/designation/Designation';
 import City from './Masters/main/city/City';
+import ReportingTabs from "./Masters/AdminPanel/ReportingTabs";
 
 function App() {
   return (
@@ -38,6 +39,8 @@ function App() {
             <Route path='/masters/dept/:id?' element={<Department />} />
             <Route path='/masters/designation/:id?' element={<Designation />} />
             <Route path='/masters/city_mas/:id?' element={<City />} />
+             {/* Admin Panel master routes */}
+             <Route path="/masters/repTabs/:userId?/:cusId?"   element={<ReportingTabs />}    />
 
             <Route
               path="/masters/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"

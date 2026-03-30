@@ -33,7 +33,7 @@ export default function Territory() {
     const [terError, setTerError] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
     useEffect(() => {
@@ -47,8 +47,7 @@ export default function Territory() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -123,10 +122,7 @@ export default function Territory() {
         try {
             setModifyLoading(true)
             if (decodedEditTerritoryId) {
-                let check = 1
-                if (hdnTerName.toLowerCase() === terName.toLowerCase()) {
-                    check = 0
-                }
+                let check = hdnTerName.toLowerCase() === terName.toLowerCase() ? 0 : 1
                 let response = await api.post("/terMasUpdate", {
                     id: decodedEditTerritoryId,
                     ter_name: terName,
@@ -168,15 +164,21 @@ export default function Territory() {
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteTerritory", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchAllTerritory()
         } catch (err) {
             console.log("deleteTerritory error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
@@ -185,7 +187,7 @@ export default function Territory() {
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -194,7 +196,6 @@ export default function Territory() {
             message: `Are you sure you want to ${decodedEditTerritoryId ? "Edit" : "Add"} this Territory?`,
             confirmText: decodedEditTerritoryId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -285,7 +286,7 @@ export default function Territory() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>

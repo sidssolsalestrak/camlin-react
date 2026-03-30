@@ -38,10 +38,9 @@ export default function Beat() {
     const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
-    // On mount: fetch beat list and decode JWT
     useEffect(() => {
         fetchAllBeat()
     }, [])
@@ -58,19 +57,15 @@ export default function Beat() {
         }
     }, [])
 
-    // Fetch areas whenever regId changes
     useEffect(() => {
         fetchAllArea()
     }, [regId])
 
-    // When selArea changes — only act if the user manually changed it
     useEffect(() => {
         if (!isAreaChanged) return
-        // Always fetch territories when user changes area (even if area is "0")
         fetchAllTerritory(Number(selArea) !== 0 ? selArea : null)
     }, [selArea])
 
-    // On route param change — load edit data or reset for add
     useEffect(() => {
         if (!decodedEditBeatId) {
             resetFields()
@@ -86,8 +81,8 @@ export default function Beat() {
         setRegId(null)
         setSelArea("0")
         setHdnBeatName("")
-        setAllTerritory([])      // clear territory list on reset
-        setIsAreaChanged(false)  // reset flag so territory stays empty until area is picked
+        setAllTerritory([])
+        setIsAreaChanged(false)
         setTerritoryError(false)
         setBeatError(false)
     }
@@ -104,14 +99,11 @@ export default function Beat() {
         }
     }
 
-    // Fetches territory list and auto-selects the first item.
-    // Called only when the user actively changes the area dropdown.
     const fetchAllTerritory = async (area_id) => {
         try {
             let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllTerritory(data)
-            // Auto-select the first territory from the new list
             setSelTerritory(data.length > 0 ? data[0].id : "0")
         } catch (err) {
             console.log("fetchAllTerritory error", err)
@@ -128,7 +120,6 @@ export default function Beat() {
         }
     }
 
-    // For edit: fetch territories separately (no auto-select — restore saved territory instead)
     const fetchTerritoriesForEdit = async (area_id) => {
         try {
             let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
@@ -143,7 +134,6 @@ export default function Beat() {
         try {
             let response = await api.post("/readBeat", { beat_id: id })
             let data = response.data.data[0]
-
             setRegId(data.reg_id)
             setSelArea(data.area_id)
             setBeatName(data.beat_name)
@@ -151,14 +141,8 @@ export default function Beat() {
             setTerritoryError(false)
             setBeatError(false)
             setTabValue(0)
-
-            // Fetch territories for the saved area WITHOUT triggering auto-select
             await fetchTerritoriesForEdit(data.area_id)
-
-            // Restore the originally saved territory
             setSelTerritory(data.ter_id)
-
-            // Keep isAreaChanged false so the useEffect doesn't interfere
             setIsAreaChanged(false)
         } catch (err) {
             console.log("collectEditData error", err)
@@ -169,10 +153,8 @@ export default function Beat() {
         let isValid = true
         setTerritoryError(false)
         setBeatError(false)
-
         if (selTerritory == 0) { setTerritoryError(true); isValid = false }
         if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
-
         return isValid
     }
 
@@ -222,15 +204,21 @@ export default function Beat() {
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteBeat", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchAllBeat()
         } catch (err) {
             console.log("deleteBeat error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
@@ -239,7 +227,7 @@ export default function Beat() {
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -248,7 +236,6 @@ export default function Beat() {
             message: `Are you sure you want to ${decodedEditBeatId ? "Edit" : "Add"} this Beat?`,
             confirmText: decodedEditBeatId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -375,7 +362,7 @@ export default function Beat() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>
