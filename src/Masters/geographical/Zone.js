@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import { TextField, Box, Typography, Button, Tabs, Tab, IconButton } from "@mui/material";
 import DataTable from "../../utils/dataTable";
@@ -20,12 +20,17 @@ export default function Zone() {
     const [zoneList, setZoneList] = useState([])
     const [editId, setEditId] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [addLoading, setAddLoading] = useState(false)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const [tabValue, setTabValue] = useState(1)
     const { editZoneid } = useParams()
     const decodedEditZoneid = editZoneid !== undefined && editZoneid !== null ? Number(atob(editZoneid)) : null
     const { enqueueSnackbar } = useSnackbar()
     const navigate = useNavigate()
+
+    const [confirmationDialog, setConfirmationDialog] = useState({
+        open: false, title: "", message: "", onConfirm: null,
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+    })
 
     useEffect(() => {
         fetchZones()
@@ -37,8 +42,7 @@ export default function Zone() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -47,8 +51,9 @@ export default function Zone() {
     useEffect(() => {
         if (!decodedEditZoneid) {
             setZoneName("")
-            setTabValue(1)
             setHdnZoneName("")
+            setZoneError(false)
+            setTabValue(1)
             return
         }
         collectEditData(decodedEditZoneid)
@@ -61,7 +66,6 @@ export default function Zone() {
                 ...item,
                 si_no: index + 1
             }))
-            console.log("all zonedata", dataWithSiNo)
             setZoneList(dataWithSiNo)
         } catch (err) {
             console.log("fetchZones error", err)
@@ -92,24 +96,17 @@ export default function Zone() {
 
     const handleAddZone = async () => {
         try {
-            setAddLoading(true)
+            setModifyLoading(true)
             setZoneError(false)
-            if (!validateZone()) return
 
             if (decodedEditZoneid) {
-                let check = 1;
-                if (hdnZoneName.toLowerCase() === zoneName.toLowerCase()) {
-                    check = 0
-                }
+                let check = hdnZoneName.toLowerCase() === zoneName.toLowerCase() ? 0 : 1
                 let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(), check: check })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    fetchZones()
                     navigate('/masters/zone_mas')
-                    setTabValue(1)
-                    setZoneName("")
-
-                }
-                else {
+                } else {
                     enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
                 setEditId(null)
@@ -117,24 +114,18 @@ export default function Zone() {
                 let response = await api.post("/addZone", { newZone: zoneName.trim() })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    navigate('/masters/zone_mas')
-                    setTabValue(1)
                     setZoneName("")
-
-                }
-                else {
+                    fetchZones()
+                    setTabValue(1)
+                } else {
                     enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             }
-
-            fetchZones()
-
         } catch (err) {
             console.log("addzone error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-        }
-        finally {
-            setAddLoading(false)
+        } finally {
+            setModifyLoading(false)
             closeConfirmationDialog()
         }
     }
@@ -143,7 +134,7 @@ export default function Zone() {
         try {
             let response = await api.post("/read_zone", { zone_id: zoneid })
             let data = response.data.data[0]
-            setEditId(zoneid)           // ✅ added
+            setEditId(zoneid)
             setZoneName(data.zone_name)
             setHdnZoneName(data.zone_name)
             setZoneError(false)
@@ -153,42 +144,17 @@ export default function Zone() {
         }
     }
 
-    const handleEdit = async (zoneId) => {
-        try {
-            navigate(`/masters/zone_mas/${btoa(zoneId)}`)
-        }
-        catch (err) {
-            console.log("Editzone error", err)
-        }
+    const handleEdit = (zoneId) => {
+        navigate(`/masters/zone_mas/${btoa(zoneId)}`)
     }
 
-    const [confirmationDialog, setConfirmationDialog] = useState({
-        open: false,
-        title: "",
-        message: "",
-        onConfirm: null,
-        loading: false,
-        confirmText: "Confirm",
-        cancelText: "Cancel",
-        confirmColor: "primary"
-    });
-
     const showConfirmationDialog = (config) => {
-        setConfirmationDialog({
-            ...confirmationDialog,
-            ...config,
-            open: true,
-            loading: addLoading
-        });
-    };
+        setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
+    }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog({
-            ...confirmationDialog,
-            open: false,
-            loading: false
-        });
-    };
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
+    }
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
@@ -197,67 +163,52 @@ export default function Zone() {
             confirmText: decodedEditZoneid ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleAddZone()
-        });
-    };
+        })
+    }
 
     const showDeleteConfirmation = (id) => {
         showConfirmationDialog({
-            title: `Confirmation`,
-            message: `Are you sure you want to delete this record?`,
+            title: "Confirmation",
+            message: "Are you sure you want to delete this record?",
             confirmText: "OK",
             cancelText: "Close",
             confirmColor: "primary",
             onConfirm: () => handleDelete(id)
-        });
+        })
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteZone", { id })
-            enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
+            else {
+                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+
+            }
             fetchZones()
         } catch (err) {
             console.log("deleteZone error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-        }
-        finally {
+        } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
-
     const columns = [
+        { field: "si_no", headerName: "#", filterable: true, sortable: true },
+        { field: "zone_name", headerName: "Zone Name", filterable: true, sortable: true },
         {
-            field: "si_no",
-            headerName: "#",
-            filterable: true,
-            sortable: true,
-        },
-        {
-            field: "zone_name",
-            headerName: "Zone Name",
-            filterable: true,
-            sortable: true,
-        },
-        {
-            field: "action",
-            headerName: "Action",
-            filterable: false,
+            field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    {/* Edit Button */}
-                    <IconButton
-                        size="small"
-                        onClick={() => handleEdit(row.row.id)}
-                    >
+                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}>
                         <FaPencilAlt style={{ color: 'green', fontSize: '14.5px' }} />
                     </IconButton>
-
-                    {/* Delete Button */}
-                    <IconButton
-                        size="small"
-                        onClick={() => showDeleteConfirmation(row.row.id)}
-                    >
+                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
                         <LiaTrashAltSolid style={{ color: 'red', fontSize: '17.5px' }} />
                     </IconButton>
                 </Box>
@@ -267,12 +218,8 @@ export default function Zone() {
 
     return (
         <Layout>
-            <PageHeader
-                title="Zone"
-                url="/masters/zone_mas"
-            />
+            <PageHeader title="Zone" url="/masters/zone_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {/* Tabs */}
                 {!decodedEditZoneid ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -283,7 +230,6 @@ export default function Zone() {
                     <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Zone Details</Typography>
                 }
 
-                {/* ADD NEW TAB */}
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <TextField
@@ -301,32 +247,20 @@ export default function Zone() {
                         <Button
                             sx={{ ml: 1, width: '2rem' }}
                             variant="contained"
-                            onClick={() => {
-                                if (validateZone()) {
-                                    showSubmitConfirmation()
-                                }
-                                else {
-                                    return
-                                }
-                            }}
+                            onClick={() => { if (validateZone()) showSubmitConfirmation() }}
                         >
                             {editId ? "Update" : "Submit"}
                         </Button>
                     </Box>
                 )}
 
-                {/* VIEW LIST TAB */}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable
-                            columns={columns}
-                            data={zoneList}
-                            loading={loading}
-                        />
+                        <DataTable columns={columns} data={zoneList} loading={loading} />
                     </Box>
                 )}
-
             </Box>
+
             <ConfirmationDialog
                 open={confirmationDialog.open}
                 onClose={closeConfirmationDialog}
@@ -335,7 +269,7 @@ export default function Zone() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>

@@ -30,16 +30,13 @@ export default function Region() {
     const [regionError, setRegionError] = useState(false)
     const [regionErrMsg, setRegionErrMsg] = useState("")
     const [loading, setLoading] = useState(true)
-    const [modifyLoading, setmodifyLoading] = useState(false)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const [userType, setUserType] = useState(null)
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
-
-
-
 
     useEffect(() => {
         fetchZoneNames()
@@ -52,9 +49,7 @@ export default function Region() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -65,13 +60,13 @@ export default function Region() {
             setRegionName("")
             setSelectedZone("0")
             setHdnRegionName("")
+            setZoneError(false)
+            setRegionError(false)
             setTabValue(1)
             return
         }
         collectEditData(decodedEditRegionId)
     }, [decodedEditRegionId])
-
-
 
     const fetchZoneNames = async () => {
         try {
@@ -110,8 +105,6 @@ export default function Region() {
         }
     }
 
-
-
     const validateRegion = () => {
         let isValid = true
         setZoneError(false); setZoneErrMsg("")
@@ -132,28 +125,20 @@ export default function Region() {
         return isValid
     }
 
-
-
     const handleSubmit = async () => {
         try {
-            setmodifyLoading(true)
+            setModifyLoading(true)
             if (decodedEditRegionId) {
-                let check = 1
-                if (hdnRegionName.toLowerCase() === regionName.toLowerCase()) {
-                    check = 0
-                }
+                let check = hdnRegionName.toLowerCase() === regionName.toLowerCase() ? 0 : 1
                 let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check: check })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    fetchRegData()
                     navigate('/masters/region')
-                    setTabValue(1)
-                    setRegionName("")
-                    setSelectedZone("0")
                 } else {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-                // Create
                 let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName })
                 if (response.data.success) {
                     enqueueSnackbar("Region added successfully", { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
@@ -165,11 +150,10 @@ export default function Region() {
                     enqueueSnackbar(response.data.message || "Insert Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             }
-            fetchRegData()
         } catch (err) {
             enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
-            setmodifyLoading(false)
+            setModifyLoading(false)
             closeConfirmationDialog()
         }
     }
@@ -178,27 +162,30 @@ export default function Region() {
         navigate(`/masters/region/${btoa(regId)}`)
     }
 
-
-
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/regionDelete", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchRegData()
         } catch (err) {
             enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
-
 
     const showConfirmationDialog = (config) => {
         setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -207,7 +194,6 @@ export default function Region() {
             message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this Region?`,
             confirmText: decodedEditRegionId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -222,8 +208,6 @@ export default function Region() {
             onConfirm: () => handleDelete(id)
         })
     }
-
-
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
@@ -245,8 +229,6 @@ export default function Region() {
             )
         }
     ]
-
-
 
     return (
         <Layout>
@@ -298,10 +280,7 @@ export default function Region() {
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData}
-                            loading={loading}
-                            showHeader={false}
-                        />
+                        <DataTable columns={columns} data={regData} loading={loading} showHeader={false} />
                     </Box>
                 )}
             </Box>
@@ -314,7 +293,7 @@ export default function Region() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>
