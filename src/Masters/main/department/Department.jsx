@@ -16,12 +16,14 @@ import { useSnackbar } from 'notistack';
 import { useCallback } from 'react';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 
+const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
+
 const Department = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [tableData, settableData] = useState([])
     const [value, setValue] = React.useState('1');
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         departmentName: ""
@@ -247,7 +249,7 @@ const Department = () => {
         } catch (error) {
             console.error(error);
             settableData([]);
-        }finally{
+        } finally {
             setLoading(false)
         }
     }
@@ -291,13 +293,13 @@ const Department = () => {
     return (
         <Layout>
             <PageHeader title="Department" />
-            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                             <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                <Tab label="ADD NEW" value="1" />
-                                <Tab label="VIEW LIST" value="2" />
+                                <Tab sx={tabStyle} label="ADD NEW" value="1" />
+                                <Tab sx={tabStyle} label="VIEW LIST" value="2" />
                             </TabList>
                         </Box> :
                         <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Department</Typography>

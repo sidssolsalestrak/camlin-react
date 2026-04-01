@@ -17,6 +17,9 @@ import ProductSubCategory from './Masters/main/productSubCategory/ProductSubCate
 import Department from './Masters/main/department/Department';
 import Designation from './Masters/main/designation/Designation';
 import City from './Masters/main/city/City';
+import AddProduct from "./Masters/main/product/AddProduct";
+import ViewProduct from "./Masters/main/product/ViewProduct";
+import Stockist from "./Masters/main/stockist/Stockist";
 
 function App() {
   return (
@@ -38,6 +41,9 @@ function App() {
             <Route path='/masters/dept/:id?' element={<Department />} />
             <Route path='/masters/designation/:id?' element={<Designation />} />
             <Route path='/masters/city_mas/:id?' element={<City />} />
+            <Route path='/masters/prod_mas/:id?' element={<AddProduct />} />
+            <Route path='/masters/prodview' element={<ViewProduct />} />
+            <Route path='/masters/stockist' element={<Stockist />} />
 
             <Route
               path="/masters/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"

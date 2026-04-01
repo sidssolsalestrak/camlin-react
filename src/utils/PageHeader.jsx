@@ -9,7 +9,6 @@ const style = {
     fontWeight: 500
 }
 
-
 const PageHeader = ({ title }) => {
     return (
         <div>
