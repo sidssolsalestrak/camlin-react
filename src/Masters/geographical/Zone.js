@@ -247,7 +247,12 @@ export default function Zone() {
                         <Button
                             sx={{ ml: 1, width: '2rem' }}
                             variant="contained"
-                            onClick={() => { if (validateZone()) showSubmitConfirmation() }}
+                            onClick={() => { if (validateZone()){ 
+                                showSubmitConfirmation()}
+                                else{
+                                    enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+                                }
+                             }}
                         >
                             {editId ? "Update" : "Submit"}
                         </Button>

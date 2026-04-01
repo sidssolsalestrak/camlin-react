@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab,
-    IconButton, Select, InputLabel, MenuItem, FormControl
+    IconButton, Autocomplete
 } from "@mui/material";
 import api from "../../services/api";
 import { useSnackbar } from "notistack";
@@ -22,7 +22,7 @@ export default function Territory() {
     const navigate = useNavigate()
     const [userType, setUserType] = useState(null)
     const [tabValue, setTabValue] = useState(1)
-    const [selArea, setSelArea] = useState("0")
+    const [selArea, setSelArea] = useState(null)
     const [terName, setTerName] = useState("")
     const [hdnTerName, setHdnTerName] = useState("")
     const [allArea, setAllArea] = useState([])
@@ -63,7 +63,7 @@ export default function Territory() {
     }, [decodedEditTerritoryId])
 
     const resetFields = () => {
-        setSelArea("0")
+        setSelArea(null)
         setTerName("")
         setHdnTerName("")
         setAreaError(false)
@@ -96,7 +96,8 @@ export default function Territory() {
         try {
             let response = await api.post("/readTerritory", { ter_id: id, area_id: null })
             let data = response.data.data[0]
-            setSelArea(data.area_id)
+            const selectedArea = allArea.find(area => area.id === data.area_id)
+            setSelArea(selectedArea || null)
             setTerName(data.ter_name)
             setHdnTerName(data.ter_name)
             setAreaError(false)
@@ -112,8 +113,11 @@ export default function Territory() {
         setAreaError(false)
         setTerError(false)
 
-        if (selArea == 0) { setAreaError(true); isValid = false }
+        if (!selArea || Number(selArea.id)===0) { setAreaError(true); isValid = false }
         if (!terName || terName.trim() === "") { setTerError(true); isValid = false }
+        if(!isValid){
+            enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+        }
 
         return isValid
     }
@@ -126,7 +130,7 @@ export default function Territory() {
                 let response = await api.post("/terMasUpdate", {
                     id: decodedEditTerritoryId,
                     ter_name: terName,
-                    area_id: selArea,
+                    area_id: selArea?.id,
                     check: check
                 })
                 if (response.data.success) {
@@ -139,7 +143,7 @@ export default function Territory() {
             } else {
                 let response = await api.post("/terMasCreate", {
                     ter_name: terName,
-                    areaId: selArea
+                    areaId: selArea?.id
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
@@ -247,17 +251,25 @@ export default function Territory() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl>
-                            <InputLabel id="area">Area Name</InputLabel>
-                            <Select value={selArea} labelId="area" label="Area Name"
-                                onChange={(e) => setSelArea(e.target.value)} size="small" error={areaError}>
-                                <MenuItem value="0">Select Area</MenuItem>
-                                {allArea.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.area_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {areaError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>Area Name is required.</Typography>}
-                        </FormControl>
+                        <Autocomplete
+                            options={[{ id: "0", area_name: "Select Area" }, ...allArea]}
+                            getOptionLabel={(option) => option.area_name}
+                            value={selArea}
+                            onChange={(event, newValue) => {
+                                setSelArea(newValue)
+                                if (areaError) setAreaError(false)
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Area Name"
+                                    size="small"
+                                    error={areaError}
+                                    helperText={areaError ? "Area Name is required." : ""}
+                                />
+                            )}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        />
                         <TextField label="Territory Name" size="small" value={terName}
                             onChange={(e) => {
                                 setTerName(e.target.value)

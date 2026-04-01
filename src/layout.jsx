@@ -34,8 +34,7 @@ import api from "./services/api";
 import { useNavigate } from "react-router-dom";
 import { SiChatbot } from "react-icons/si";
 import { getUserFromToken } from "./utils/getUserFromToken";
-import 'font-awesome/css/font-awesome.min.css';
- 
+import "font-awesome/css/font-awesome.min.css";
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -76,7 +75,11 @@ const Layout = ({ children }) => {
       const res = await api.post("/getMenuDetails");
       const data = res.data;
       if (data.status === 200) {
-        setMenuHtml(data.data.menudata);
+        let html = data.data.menudata;
+
+        html = html.replace(/href="(?!\/|http)([^"]+)"/g, 'href="/$1"');
+
+        setMenuHtml(html);
         setMenuUrls(data.data.menuurl);
       }
     } catch (err) {
@@ -105,59 +108,73 @@ const Layout = ({ children }) => {
     return () => clearTimeout(timer);
   }, [menuHtml,drawerOpen,isMobile]);
 
-// Highlight active menu item based on current path
-useEffect(() => {
-  if (!menuHtml) return;
-  const timer = setTimeout(() => {
-    const allLinks = document.querySelectorAll(".php-menu a");
+  // Highlight active menu item based on current path
+  useEffect(() => {
+    if (!menuHtml) return;
+    const timer = setTimeout(() => {
+      const allLinks = document.querySelectorAll(".php-menu a");
 
-    // ✅ Step 1: Clean up ALL previous active classes at every level
-    allLinks.forEach((link) => {
-      link.classList.remove("menu-active");
+      // ✅ Step 1: Clean up ALL previous active classes at every level
+      allLinks.forEach((link) => {
+        link.classList.remove("menu-active");
 
-      // Walk up and remove both parent-active and parent-active-main from ALL ancestor treeviews
-      let currentEl = link.closest(".treeview");
-      while (currentEl) {
-        currentEl.querySelector(":scope > a")?.classList.remove("parent-active");
-        currentEl.querySelector(":scope > a")?.classList.remove("parent-active-main"); // ✅ new
-        currentEl = currentEl.closest(".treeview-menu")?.parentElement?.closest(".treeview");
-      }
-    });
-
-    // ✅ Step 2: Find the matching link and apply active classes
-    allLinks.forEach((link) => {
-      const onclick = link.getAttribute("onclick") || "";
-      const href = link.getAttribute("href") || "";
-
-      const urlMatch = onclick.match(/acc_stat_view\([^,]+,\s*[^,]+,\s*'([^']+)'\)/);
-      const url = urlMatch ? urlMatch[1] : href.replace(/^\//, "");
-
-      if (url && location.pathname === `/${url}`) {
-        // ✅ Highlight the active child link
-        link.classList.add("menu-active");
-
-        // ✅ Walk up ALL ancestor treeviews — open and mark each one
-        let currentEl = link.closest(".treeview-menu")?.parentElement;
-        while (currentEl && currentEl.classList.contains("treeview")) {
-          currentEl.classList.add("active");
-          currentEl.querySelector(":scope > .treeview-menu")?.classList.add("open");
-
-          // ✅ Top-level parent gets different class than sub-parents
-          const isTopLevel = !currentEl.closest(".treeview-menu");
-          if (isTopLevel) {
-            currentEl.querySelector(":scope > a")?.classList.add("parent-active-main");
-          } else {
-            currentEl.querySelector(":scope > a")?.classList.add("parent-active");
-          }
-
-          // Move up to next ancestor
-          currentEl = currentEl.closest(".treeview-menu")?.parentElement;
+        // Walk up and remove both parent-active and parent-active-main from ALL ancestor treeviews
+        let currentEl = link.closest(".treeview");
+        while (currentEl) {
+          currentEl
+            .querySelector(":scope > a")
+            ?.classList.remove("parent-active");
+          currentEl
+            .querySelector(":scope > a")
+            ?.classList.remove("parent-active-main"); // ✅ new
+          currentEl = currentEl
+            .closest(".treeview-menu")
+            ?.parentElement?.closest(".treeview");
         }
-      }
-    });
-  }, 150);
-  return () => clearTimeout(timer);
-}, [menuHtml, location.pathname,drawerOpen,isMobile]);
+      });
+
+      // ✅ Step 2: Find the matching link and apply active classes
+      allLinks.forEach((link) => {
+        const onclick = link.getAttribute("onclick") || "";
+        const href = link.getAttribute("href") || "";
+
+        const urlMatch = onclick.match(
+          /acc_stat_view\([^,]+,\s*[^,]+,\s*'([^']+)'\)/,
+        );
+        const url = urlMatch ? urlMatch[1] : href.replace(/^\//, "");
+
+        if (url && location.pathname === `/${url}`) {
+          // ✅ Highlight the active child link
+          link.classList.add("menu-active");
+
+          // ✅ Walk up ALL ancestor treeviews — open and mark each one
+          let currentEl = link.closest(".treeview-menu")?.parentElement;
+          while (currentEl && currentEl.classList.contains("treeview")) {
+            currentEl.classList.add("active");
+            currentEl
+              .querySelector(":scope > .treeview-menu")
+              ?.classList.add("open");
+
+            // ✅ Top-level parent gets different class than sub-parents
+            const isTopLevel = !currentEl.closest(".treeview-menu");
+            if (isTopLevel) {
+              currentEl
+                .querySelector(":scope > a")
+                ?.classList.add("parent-active-main");
+            } else {
+              currentEl
+                .querySelector(":scope > a")
+                ?.classList.add("parent-active");
+            }
+
+            // Move up to next ancestor
+            currentEl = currentEl.closest(".treeview-menu")?.parentElement;
+          }
+        }
+      });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [menuHtml, location.pathname,drawerOpen,isMobile]);
 
   // Global click handler used by menu items
   useEffect(() => {
@@ -274,18 +291,29 @@ useEffect(() => {
       "data-chatbot-url",
       "http://ec2-13-201-74-231.ap-south-1.compute.amazonaws.com/chatbot",
     );
-    script.setAttribute("data-user-id", user.user_id);
-    script.setAttribute("data-user-email", user.email || user.identity);
-    script.setAttribute("data-role", user.user_type || "region_admin");
-    script.setAttribute("data-dataset", user.dataset || "salestrak-camlin");
+    // script.setAttribute("data-user-id", user.user_id);
+    // script.setAttribute("data-user-email", user.email || user.identity);
+    // script.setAttribute("data-role", user.user_type || "region_admin");
+    // script.setAttribute("data-dataset", user.dataset || "salestrak-camlin");
+    // script.setAttribute(
+    //   "data-allowed-datasets",
+    //   JSON.stringify(["salestrak-camlin"]),
+    // );
+    // script.setAttribute(
+    //   "data-dataset-scope",
+    //   JSON.stringify({ reg_name: ["South"] }),
+    // );
+
+    script.setAttribute("data-user-id", "schueco_admin");
+    script.setAttribute("data-user-email", "admin@schueco.com");
+    script.setAttribute("data-company", "schueco");
+    script.setAttribute("data-role", "admin");
+    script.setAttribute("data-dataset", "schueco-so");
     script.setAttribute(
       "data-allowed-datasets",
-      JSON.stringify(["salestrak-camlin"]),
+      JSON.stringify(["schueco-so", "schueco-invoice"]),
     );
-    script.setAttribute(
-      "data-dataset-scope",
-      JSON.stringify({ reg_name: ["South"] }),
-    );
+    script.setAttribute("data-dataset-scope", JSON.stringify({}));
 
     // script.setAttribute("data-user-id", "login_admin_1");
     // script.setAttribute("data-user-email", "admin1@test.com");
@@ -316,7 +344,7 @@ useEffect(() => {
           "& .MuiDrawer-paper": {
             width: 190,
             boxSizing: "border-box",
-            backgroundColor: "#F5A623",
+            backgroundColor: "#588aae",
             height: "100vh",
             position: "relative",
             overflowY: "auto",
@@ -424,7 +452,7 @@ useEffect(() => {
                   src={SalesTrekimg}
                   alt=" Logo"
                   style={{
-                    width: isMobile ? "5rem" : "6rem",
+                    width: isMobile ? "6rem" : "8rem",
                     alignSelf: "center",
                   }}
                 />
@@ -438,7 +466,7 @@ useEffect(() => {
               <img
                 src={camlinLogo}
                 alt="camlin Logo"
-                style={{ width: isMobile ? "4rem" : "6.3rem" }}
+                style={{ width: isMobile ? "6rem" : "10rem" }}
               />
             </Box>
 

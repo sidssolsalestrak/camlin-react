@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, InputLabel, MenuItem, FormControl, Checkbox,
-    OutlinedInput, ListItemText, FormControlLabel
+    ListItemText, Autocomplete
 } from "@mui/material";
 import api from "../../services/api";
 import { useSnackbar } from "notistack";
@@ -28,7 +28,7 @@ export default function ReportingTabs() {
     const [reportData, setReportData] = useState([])
     const [allAccType, setAllAccType] = useState([])
     const [allUsermasType, setAllUsermasType] = useState([])
-    const [selUserMasType, setSelUserMasType] = useState("0")
+    const [selUserMasType, setSelUserMasType] = useState(null)       // ← null for Autocomplete
     const [allRepInputData, setAllRepInputData] = useState([])
     const [selAccType, setSelAccType] = useState("0")
     const [selRepInputData, setSelRepInputData] = useState([])
@@ -42,16 +42,13 @@ export default function ReportingTabs() {
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
-
     useEffect(() => {
         const token = localStorage.getItem("session-token");
         if (token) {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -74,7 +71,7 @@ export default function ReportingTabs() {
     const resetFields = () => {
         setSelAccType("0")
         setSelRepInputData([])
-        setSelUserMasType("0")
+        setSelUserMasType(null)        // ← reset to null
         setSelUserMasName("")
         setAccError(false)
         setUserMasError(false)
@@ -86,13 +83,10 @@ export default function ReportingTabs() {
         try {
             let response = await api.post("/getReportTabData")
             let reportData = Array.isArray(response.data.data) ? response.data.data : []
-            console.log(response)
             setReportData(reportData.map((item, index) => ({ ...item, si_no: index + 1 })))
-        }
-        catch (err) {
+        } catch (err) {
             console.log("Fetching reports Data Error", err)
-        }
-        finally {
+        } finally {
             setLoading(false)
         }
     }
@@ -106,8 +100,7 @@ export default function ReportingTabs() {
             setAllUsermasType(userResData)
             setAllAccType(cusResData)
             setAllRepInputData(repResInputData)
-        }
-        catch (err) {
+        } catch (err) {
             console.log("fetch Input Data Error", err)
         }
     }
@@ -118,49 +111,46 @@ export default function ReportingTabs() {
         setUserMasError(false)
         setRepInputError(false)
 
-        if (selUserMasType === "0") { setUserMasError(true); isValid = false }
+        if (!selUserMasType || Number(selUserMasType.id)===0) { setUserMasError(true); isValid = false }   // ← null check
         if (selAccType === "0") { setAccError(true); isValid = false }
+        if(!isValid){
+           enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+           return isValid
+        }
         let replength = selRepInputData.length
         if (replength === 0 || replength < 0) {
             enqueueSnackbar("Please Select atleast one Reporting Module !", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-            setRepInputError(true);
+            setRepInputError(true)
             isValid = false
         }
-
         return isValid
     }
 
     const handleSubmit = async () => {
         try {
             let repStr = selRepInputData.join(",")
-            console.log("repArr in submit", repStr)
             let addPayload = {
                 acc_type: selAccType,
-                user_type: selUserMasType,
+                user_type: selUserMasType?.id,    // ← extract id from object
                 rep_mode: repStr
             }
             let response = await api.post("/reportTabCreate", addPayload)
             if (response.data.success) {
                 enqueueSnackbar(decodedUserId ? "Reporting Tabs Updated successfully" : response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                if(decodedUserId){
+                if (decodedUserId) {
+                    fetchReportData()
                     navigate("/masters/repTabs")
-                }
-                else{
+                } else {
                     fetchReportData()
                     resetFields()
                     setTabValue(1)
                 }
-               
-                
-            }
-            else {
+            } else {
                 enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
             }
-        }
-        catch (err) {
+        } catch (err) {
             console.log(err)
-        }
-        finally {
+        } finally {
             closeConfirmationDialog()
         }
     }
@@ -171,22 +161,20 @@ export default function ReportingTabs() {
 
     const collectEditData = async (userId, cusId) => {
         try {
-            let payload = {
-                uid: userId,
-                cid: cusId
-            }
+            let payload = { uid: userId, cid: cusId }
             let response = await api.post("/getReportTabEditData", payload)
             let data = response.data.data
-            console.log("Edit Response Data", response)
-            setSelUserMasType(data[0].user_type || "0")
+
+            // ← find matching object for Autocomplete
+            const matchedUser = allUsermasType.find(u => u.id === data[0].user_type) || null
+            setSelUserMasType(matchedUser)
+
             setSelAccType(data[0].cus_type || "0")
             let repeditdata = data[0].rep_form_id.split(',')
             let repnumberdata = repeditdata.map((val) => Number(val))
-            console.log("repedit Data ", repnumberdata)
             setSelRepInputData(repnumberdata || [])
             setTabValue(0)
-        }
-        catch (err) {
+        } catch (err) {
             console.log(err)
         }
     }
@@ -209,7 +197,6 @@ export default function ReportingTabs() {
         })
     }
 
-    // ✅ Fixed - accepts userId and cusId
     const showDeleteConfirmation = (userId, cusId) => {
         showConfirmationDialog({
             title: "Confirmation",
@@ -221,18 +208,14 @@ export default function ReportingTabs() {
         })
     }
 
-    // ✅ Fixed - complete delete function with API call
     const handleDelete = async (userId, cusId) => {
         try {
             setConfirmationDialog(prev => ({ ...prev, loading: true }))
-            let payload = {
-                user_id: userId,
-                cus_type: cusId
-            }
+            let payload = { user_id: userId, cus_type: cusId }
             let response = await api.post("/deleteReportTabs", payload)
             if (response.data.success) {
                 enqueueSnackbar("Deleted Successfully", { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                fetchReportData()  // ✅ refresh table after delete
+                fetchReportData()
             } else {
                 enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
             }
@@ -257,7 +240,6 @@ export default function ReportingTabs() {
                         sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
-                    {/* ✅ Fixed - uncommented and passing correct params */}
                     <IconButton size="small"
                         onClick={() => showDeleteConfirmation(row.row.user_type, row.row.cus_type)}
                         sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
@@ -267,7 +249,6 @@ export default function ReportingTabs() {
             )
         }
     ]
-
 
     return (
         <Layout>
@@ -284,35 +265,61 @@ export default function ReportingTabs() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+
+                        {/* ✅ User Type — Autocomplete */}
+                        <Autocomplete
+                            options={[{ id: "0", client_alias: "Select User Type" }, ...allUsermasType]}
+                            getOptionLabel={(option) => option.client_alias || ""}
+                            value={selUserMasType}
+                            onChange={(e, newValue) => {
+                                setSelUserMasType(newValue)
+                                setSelUserMasName(newValue?.client_alias || "")
+                                setUserMasError(false)
+                            }}
+                            readOnly={!!decodedUserId}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="User Type"
+                                    size="small"
+                                    required
+                                    error={userMasError}
+                                    helperText={userMasError ? "User Type not Selected !" : ""}
+                                    sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : undefined }}
+                                />
+                            )}
+                        />
+
+                        {/* ✅ Account Type — Select unchanged, fixed height added */}
                         <FormControl>
-                            <InputLabel id="usertype_label">User Type</InputLabel>
-                            <Select labelId="usertype_label" label="User Type" size="small" error={userMasError}
-                                onChange={(e) => {
-                                    setSelUserMasType(e.target.value)
+                            <InputLabel id="cus_label">Account Type*</InputLabel>
+                            <Select
+                                labelId="cus_label"
+                                label="Account Type*"
+                                size="small"
+                                onChange={(e) => setSelAccType(e.target.value)}
+                                inputProps={{ readOnly: decodedUserId ? true : false }}
+                                sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : null }}
+                                value={selAccType}
+                                error={accError}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            maxHeight: '200px',   // ← fixes the dropdown popup height
+                                            overflowY: 'auto'
+                                        }
+                                    }
                                 }}
-                                inputProps={{ readOnly: decodedUserId ? true : false }}
-                                sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : null }}
-                                value={selUserMasType}>
-                                <MenuItem value="0">Select User Type</MenuItem>
-                                {allUsermasType.map((val) => (
-                                    <MenuItem onClick={() => setSelUserMasName(val.client_alias)} key={val.id} value={val.id}>{val.client_alias}</MenuItem>
-                                ))}
-                            </Select>
-                            {userMasError ? <Typography className="selError">User Type not Selected !</Typography> : null}
-                        </FormControl>
-                        <FormControl>
-                            <InputLabel id="cus_label">Account Type</InputLabel>
-                            <Select labelId="cus_label" label="Account Type" size="small" onChange={(e) => setSelAccType(e.target.value)}
-                                inputProps={{ readOnly: decodedUserId ? true : false }}
-                                sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : null }}
-                                value={selAccType} error={accError}>
+                            >
                                 <MenuItem value="0">Select Account Type</MenuItem>
                                 {allAccType.map((val) => (
-                                    <MenuItem value={val.id}>{val.cus_type_name}</MenuItem>
+                                    <MenuItem key={val.id} value={val.id}>{val.cus_type_name}</MenuItem>
                                 ))}
                             </Select>
                             {accError ? <Typography className="selError">Account Type not Selected !</Typography> : null}
                         </FormControl>
+
                         <FormControl size="small">
                             <Typography sx={{ mb: 1 }}>Reporting Module*</Typography>
                             {allRepInputData.map((val) => (
@@ -325,7 +332,7 @@ export default function ReportingTabs() {
                                             prev.includes(val.Id)
                                                 ? prev.filter((Id) => Id !== val.Id)
                                                 : [...prev, val.Id]
-                                        );
+                                        )
                                     }}
                                 >
                                     <Checkbox checked={selRepInputData.includes(val.Id)} />
@@ -333,21 +340,18 @@ export default function ReportingTabs() {
                                 </MenuItem>
                             ))}
                         </FormControl>
+
                         <Button onClick={() => {
-                            if (validateReportingFields()) {
-                                showSubmitConfirmation()
-                            }
-                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none' }} >{decodedUserId ? "Update" : "submit"}</Button>
+                            if (validateReportingFields()) showSubmitConfirmation()
+                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none' }}>
+                            {decodedUserId ? "Update" : "Submit"}
+                        </Button>
                     </Box>
                 )}
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable
-                            columns={columns}
-                            data={reportData}
-                            loading={loading}
-                        />
+                        <DataTable columns={columns} data={reportData} loading={loading} />
                     </Box>
                 )}
             </Box>
