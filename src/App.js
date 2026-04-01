@@ -47,8 +47,8 @@ function App() {
              <Route path="/masters/repTabs/:userId?/:cusId?"   element={<ReportingTabs />}    />
 
             <Route
-              path="/masters/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"
-              element={<AccountMas />}
+            path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+            element={<AccountMas />}
             />
             <Route path="/masters/menuMaster/:menuId?"  element={<MenuMaster />}   />
             <Route  path="/masters/dashboardmaster/:editwidgetId?"  element={<AppWidgetMaster />} />
