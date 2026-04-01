@@ -22,6 +22,9 @@ import MenuMaster from "./Masters/AdminPanel/MenuMaster";
 import AppWidgetMaster from "./Masters/AdminPanel/AppWidgetMaster";
 import AppVersion from "./Masters/AdminPanel/AppVersion";
 import WebMenuMaster from "./Masters/AdminPanel/WebMenuMaster";
+import AddProduct from "./Masters/main/product/AddProduct";
+import ViewProduct from "./Masters/main/product/ViewProduct";
+import Stockist from "./Masters/main/stockist/Stockist";
 
 function App() {
   return (
@@ -45,6 +48,9 @@ function App() {
             <Route path='/masters/city_mas/:id?' element={<City />} />
              {/* Admin Panel master routes */}
              <Route path="/masters/repTabs/:userId?/:cusId?"   element={<ReportingTabs />}    />
+            <Route path='/masters/prod_mas/:id?' element={<AddProduct />} />
+            <Route path='/masters/prodview' element={<ViewProduct />} />
+            <Route path='/masters/stockist' element={<Stockist />} />
 
             <Route
             path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
