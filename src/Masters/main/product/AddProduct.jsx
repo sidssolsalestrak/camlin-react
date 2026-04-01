@@ -20,6 +20,14 @@ const style = {
     fontWeight: 500
 }
 
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
+
 const formFields = {
     productType: "0",
     productName: "",
@@ -347,7 +355,7 @@ const AddProduct = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" >
                             <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                            <Select id='SubCategoryName' label="SubCategory Name" value={formData.subCatName}
+                            <Select id='SubCategoryName' label="SubCategory Name" value={formData.subCatName} MenuProps={menuStyle}
                                 onChange={(e) => handleChange("subCatName", e.target.value)} error={!!validation.subCatName}
                                 labelId="SubCategoryName" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>

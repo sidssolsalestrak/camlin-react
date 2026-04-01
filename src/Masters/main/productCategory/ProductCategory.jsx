@@ -16,6 +16,13 @@ import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
 
 const ProductCategory = () => {
     const { id } = useParams();
@@ -364,7 +371,7 @@ const ProductCategory = () => {
                             <FormControl fullWidth size="small" required>
                                 <InputLabel id="Brand">Brand</InputLabel>
                                 <Select id='Brand-select' label="Brand" labelId="Brand" variant="outlined"
-                                    value={formData.brand} error={!!validation.brand}
+                                    value={formData.brand} error={!!validation.brand} MenuProps={menuStyle}
                                     onChange={(e) => formDataChange("brand", e.target.value)}
                                 >
                                     <MenuItem style={{ fontSize: "11px" }} value="">Select Brand</MenuItem>

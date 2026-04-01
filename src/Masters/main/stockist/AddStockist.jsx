@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import axios from "../../../services/api";
-import { Box, Button } from '@mui/material';
+import { Box, Button, Grid } from '@mui/material';
 import StockDetails from './StockDetails';
 import SalestrakCredential from './SalestrakCredential';
 import OtherDetails from './OtherDetails';
@@ -84,43 +84,49 @@ const AddStockist = () => {
     }
 
     return (
-        <Box sx={{ display: 'flex', gap: 2 }}>
-            {/* left block */}
-            <Box sx={{ flex: 1 }}>
-                {/* Stockist Details */}
-                <Box sx={boxStyle}>
-                    <StockDetails
-                        formData={formData}
-                        handleChangeForm={handleChangeForm}
-                        errors={errors}
-                        setErrors={setErrors} />
-                </Box>
-                {/* Salestrak Login Credentials */}
-                <Box sx={boxStyle} mt={2}>
-                    <SalestrakCredential
-                        formData={formData}
-                        handleChangeForm={handleChangeForm}
-                        errors={errors}
-                        setErrors={setErrors} />
-                </Box>
-            </Box>
-            {/* right block */}
-            <Box sx={{ flex: 1 }}>
-                {/* other Details */}
-                <Box sx={boxStyle}>
-                    <OtherDetails
-                        formData={formData}
-                        handleChangeForm={handleChangeForm}
-                        errors={errors} />
-                </Box>
-                {/* submit */}
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-                    <Button startIcon={<ImDownload3 style={{ height: "15px" }} />}
-                        variant='contained' color="primary" onClick={handleFormSubmit}>
-                        Create
-                    </Button>
-                </Box>
-            </Box>
+        <Box>
+            <Grid container spacing={2}>
+                {/* left block */}
+                <Grid size={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+                    <Box sx={{ flex: 1 }}>
+                        {/* Stockist Details */}
+                        <Box sx={boxStyle}>
+                            <StockDetails
+                                formData={formData}
+                                handleChangeForm={handleChangeForm}
+                                errors={errors}
+                                setErrors={setErrors} />
+                        </Box>
+                        {/* Salestrak Login Credentials */}
+                        <Box sx={boxStyle} mt={2}>
+                            <SalestrakCredential
+                                formData={formData}
+                                handleChangeForm={handleChangeForm}
+                                errors={errors}
+                                setErrors={setErrors} />
+                        </Box>
+                    </Box>
+                </Grid>
+                {/* right block */}
+                <Grid size={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
+                    <Box sx={{ flex: 1 }}>
+                        {/* other Details */}
+                        <Box sx={boxStyle}>
+                            <OtherDetails
+                                formData={formData}
+                                handleChangeForm={handleChangeForm}
+                                errors={errors} />
+                        </Box>
+                        {/* submit */}
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+                            <Button startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                                variant='contained' color="primary" onClick={handleFormSubmit}>
+                                Create
+                            </Button>
+                        </Box>
+                    </Box>
+                </Grid>
+            </Grid>
         </Box>
     )
 }

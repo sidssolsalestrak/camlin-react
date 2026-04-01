@@ -16,6 +16,13 @@ import { useSnackbar } from 'notistack';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
 
 const ProductCategory = () => {
     const { id } = useParams();
@@ -348,7 +355,7 @@ const ProductCategory = () => {
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             <FormControl fullWidth size="small" required>
                                 <InputLabel id="Brand">State Name</InputLabel>
-                                <Select id='Brand-select' label="State Name" labelId="Brand" variant="outlined"
+                                <Select id='Brand-select' label="State Name" labelId="Brand" variant="outlined" MenuProps={menuStyle}
                                     value={formData.stateName} error={!!validation.stateName}
                                     onChange={(e) => formDataChange("stateName", e.target.value)}
                                 >

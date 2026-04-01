@@ -18,6 +18,14 @@ import { useCallback } from 'react';
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
+
 const ProductSubCategory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -367,7 +375,7 @@ const ProductSubCategory = () => {
                             <FormControl fullWidth size="small" required>
                                 <InputLabel id="Category">Category</InputLabel>
                                 <Select id='Category-select' label="Category" labelId="Category" variant="outlined"
-                                    value={formData.category} error={!!validation.category}
+                                    value={formData.category} error={!!validation.category} MenuProps={menuStyle}
                                     onChange={(e) => formDataChange("category", e.target.value)}
                                 >
                                     <MenuItem style={{ fontSize: "11px" }} value="">Select Category</MenuItem>

@@ -12,6 +12,14 @@ import ConfirmationDialog from "../../../utils/confirmDialog";
 import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
 
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
+
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
     m: 2, p: 2, borderRadius: '6px',
@@ -278,7 +286,7 @@ const ViewProduct = () => {
                         label="Product Name" placeholder='Enter Product Name' onChange={(e) => handleChange("productName", e.target.value)} />
                     <FormControl sx={{ width: "200px" }} size="small" >
                         <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name"
+                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name" MenuProps={menuStyle}
                             labelId="SubCategoryName" variant="outlined" onChange={(e) => handleChange("subCatName", e.target.value)}>
                             <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
                             {subCat?.map((item, index) => (
