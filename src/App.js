@@ -17,24 +17,24 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SnackbarProvider maxSnack={3}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/:token" element={<TokenHandler />} />
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
-            <Route path="/masters/region/:editRegionId?" element={<Region />} />
-            <Route path="/masters/ter_mas" element={<Territory />} />
-            <Route path="/masters/beat_mas" element={<Beat />} />
-            <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
+      {/* <SnackbarProvider maxSnack={3}> */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/:token" element={<TokenHandler />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
+          <Route path="/masters/region/:editRegionId?" element={<Region />} />
+          <Route path="/masters/ter_mas" element={<Territory />} />
+          <Route path="/masters/beat_mas" element={<Beat />} />
+          <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
 
-            <Route
-              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"
-              element={<AccountMas />}
-            />
-          </Routes>
-        </BrowserRouter>
-      </SnackbarProvider>
+          <Route
+            path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+            element={<AccountMas />}
+          />
+        </Routes>
+      </BrowserRouter>
+      {/* </SnackbarProvider> */}
     </ThemeProvider>
   );
 }
