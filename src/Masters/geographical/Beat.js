@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import Layout from "../layout";
+import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab,
-    IconButton, Select, InputLabel, MenuItem, FormControl
+    IconButton, Autocomplete
 } from "@mui/material";
-import api from "../services/api";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
-import PageHeader from "../utils/PageHeader";
+import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable from "../utils/dataTable";
+import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
-import ConfirmationDialog from "../utils/confirmDialog";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+
+const DEFAULT_AREA = { id: "0", area_name: "Select Area" }
+const DEFAULT_TERRITORY = { id: "0", ter_name: "Select Territory" }
 
 export default function Beat() {
 
@@ -23,23 +26,26 @@ export default function Beat() {
 
     const [tabValue, setTabValue] = useState(1)
     const [selTerritory, setSelTerritory] = useState("0")
+    const [selArea, setSelArea] = useState("0")
     const [beatName, setBeatName] = useState("")
     const [hdnBeatName, setHdnBeatName] = useState("")
     const [allTerritory, setAllTerritory] = useState([])
     const [allBeatData, setAllBeatData] = useState([])
+    const [allArea, setAllArea] = useState([])
+    const [regId, setRegId] = useState(null)
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
     const [beatError, setBeatError] = useState(false)
     const [userType, setUserType] = useState(null)
+    const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
     useEffect(() => {
         fetchAllBeat()
-        fetchAllTerritory()
     }, [])
 
     useEffect(() => {
@@ -48,13 +54,20 @@ export default function Beat() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
     }, [])
+
+    useEffect(() => {
+        fetchAllArea()
+    }, [regId])
+
+    useEffect(() => {
+        if (!isAreaChanged) return
+        fetchAllTerritory(Number(selArea) !== 0 ? selArea : null)
+    }, [selArea])
 
     useEffect(() => {
         if (!decodedEditBeatId) {
@@ -68,7 +81,11 @@ export default function Beat() {
     const resetFields = () => {
         setSelTerritory("0")
         setBeatName("")
+        setRegId(null)
+        setSelArea("0")
         setHdnBeatName("")
+        setAllTerritory([])
+        setIsAreaChanged(false)
         setTerritoryError(false)
         setBeatError(false)
     }
@@ -85,26 +102,51 @@ export default function Beat() {
         }
     }
 
-    const fetchAllTerritory = async () => {
+    const fetchAllTerritory = async (area_id) => {
         try {
-            let response = await api.post("/readTerritory", { ter_id: null, area_id: null })
+            let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllTerritory(data)
+            setSelTerritory(data.length > 0 ? data[0].id : "0")
         } catch (err) {
             console.log("fetchAllTerritory error", err)
         }
     }
 
+    const fetchAllArea = async () => {
+        try {
+            let response = await api.post("/getAreatb", { area_id: null, reg_id: regId })
+            let data = Array.isArray(response.data.data) ? response.data.data : []
+            setAllArea(data)
+        } catch (err) {
+            console.log("fetchAllArea error", err)
+        }
+    }
+
+    const fetchTerritoriesForEdit = async (area_id) => {
+        try {
+            let response = await api.post("/getTerriTb", { ter_id: null, area_id: area_id })
+            let data = Array.isArray(response.data.data) ? response.data.data : []
+            setAllTerritory(data)
+        } catch (err) {
+            console.log("fetchTerritoriesForEdit error", err)
+        }
+    }
+
     const collectEditData = async (id) => {
         try {
-            let response = await api.post("/readBeat", { beat_id: id, ter_id: null })
+            let response = await api.post("/readBeat", { beat_id: id })
             let data = response.data.data[0]
-            setSelTerritory(data.ter_id)
+            setRegId(data.reg_id)
+            setSelArea(data.area_id)
             setBeatName(data.beat_name)
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
             setBeatError(false)
             setTabValue(0)
+            await fetchTerritoriesForEdit(data.area_id)
+            setSelTerritory(data.ter_id)
+            setIsAreaChanged(false)
         } catch (err) {
             console.log("collectEditData error", err)
         }
@@ -114,10 +156,11 @@ export default function Beat() {
         let isValid = true
         setTerritoryError(false)
         setBeatError(false)
-
-        if (selTerritory == 0) { setTerritoryError(true); isValid = false }
+        if (Number(selTerritory)===0) { setTerritoryError(true); isValid = false }
         if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
-
+        if (!isValid) {
+            enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+        }
         return isValid
     }
 
@@ -125,11 +168,8 @@ export default function Beat() {
         try {
             setModifyLoading(true)
             if (decodedEditBeatId) {
-                let check = 1
-                if (hdnBeatName.toLowerCase() === beatName.toLowerCase()) {
-                    check = 0
-                }
-                let response = await api.post("/beatMasUpdate", {
+                let check = hdnBeatName.toLowerCase() === beatName.toLowerCase() ? 0 : 1
+                let response = await api.post("/beatUpdate", {
                     id: decodedEditBeatId,
                     beat_name: beatName,
                     ter_id: selTerritory,
@@ -143,7 +183,7 @@ export default function Beat() {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-                let response = await api.post("/beatMasCreate", {
+                let response = await api.post("/beatCreate", {
                     beat_name: beatName,
                     ter_id: selTerritory
                 })
@@ -170,15 +210,21 @@ export default function Beat() {
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteBeat", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchAllBeat()
         } catch (err) {
             console.log("deleteBeat error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
@@ -187,7 +233,7 @@ export default function Beat() {
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -196,7 +242,6 @@ export default function Beat() {
             message: `Are you sure you want to ${decodedEditBeatId ? "Edit" : "Add"} this Beat?`,
             confirmText: decodedEditBeatId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -212,6 +257,14 @@ export default function Beat() {
         })
     }
 
+    // Area options: prepend "Select Area" only when not in edit mode (same as original MenuItem logic)
+    const areaOptions = decodedEditBeatId
+        ? allArea
+        : [DEFAULT_AREA, ...allArea]
+
+    // Territory options: always prepend "Select Territory" (same as original)
+    const territoryOptions = [DEFAULT_TERRITORY, ...allTerritory]
+
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
         { field: "ter_name", headerName: "Territory Name", filterable: true, sortable: true },
@@ -220,11 +273,11 @@ export default function Beat() {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}
+                    <IconButton size="small" onClick={() => handleEdit(row.row.beatID)}
                         sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
                         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
+                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}
                         sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
                         <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
                     </IconButton>
@@ -235,7 +288,7 @@ export default function Beat() {
 
     return (
         <Layout>
-            <PageHeader title="Beat" />
+            <PageHeader title="Beat" url="/masters/beat_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditBeatId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -248,24 +301,43 @@ export default function Beat() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl>
-                            <InputLabel id="area_name">Area Name</InputLabel>
-                            <Select>
-                                <MenuItem>Select Area</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl>
-                            <InputLabel id="territory">Territory Name</InputLabel>
-                            <Select value={selTerritory} labelId="territory" label="Territory Name"
-                                onChange={(e) => setSelTerritory(e.target.value)} size="small" error={territoryError}>
-                                <MenuItem value="0">Select Territory</MenuItem>
-                                {allTerritory.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.ter_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {territoryError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>Territory Name is required.</Typography>}
-                        </FormControl>
-                        <TextField label="Beat Name" size="small" value={beatName}
+                        <Autocomplete
+                            options={areaOptions}
+                            getOptionLabel={(option) => option.area_name || ""}
+                            value={areaOptions.find((a) => a.id === selArea) || DEFAULT_AREA}
+                            onChange={(e, newVal) => {
+                                const id = newVal ? newVal.id : "0"
+                                setSelArea(id)
+                                setIsAreaChanged(true)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Area Name" size="small" />
+                            )}
+                        />
+                        <Autocomplete
+                            options={territoryOptions}
+                            getOptionLabel={(option) => option.ter_name || ""}
+                            value={territoryOptions.find((t) => t.id === selTerritory) || DEFAULT_TERRITORY}
+                            onChange={(e, newVal) => {
+                                setSelTerritory(newVal ? newVal.id : "0")
+                                if (territoryError) setTerritoryError(false)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Territory Name"
+                                    size="small"
+                                    error={territoryError}
+                                    helperText={territoryError ? "Territory Name is required." : ""}
+                                />
+                            )}
+                        />
+                        <TextField
+                            label="Beat Name"
+                            size="small"
+                            value={beatName}
                             onChange={(e) => {
                                 setBeatName(e.target.value)
                                 if (beatError) setBeatError(false)
@@ -273,15 +345,18 @@ export default function Beat() {
                             error={!!beatError}
                             helperText={beatError ? "Beat Name is required." : ""}
                         />
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                            onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}>
+                        <Button
+                            variant="contained"
+                            sx={{ width: '2rem', textTransform: 'none' }}
+                            onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
+                        >
                             {decodedEditBeatId ? "Update" : "Create"}
                         </Button>
                     </Box>
                 )}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allBeatData} loading={loading} showHeader={false} />
+                        <DataTable columns={columns} data={allBeatData} loading={loading} />
                     </Box>
                 )}
             </Box>
@@ -293,7 +368,7 @@ export default function Beat() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>
