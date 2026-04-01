@@ -139,7 +139,16 @@ export default function WebMenuMaster() {
                                             )
                                         }}>
                                     <CheckBox  checked={selMenuItems.includes(val.id)} />
-                                    <ListItemText primary={val.menu_alias} />
+                                    <ListItemText primary={val.menu_alias} /> 
+                                    <FormControl sx={{ml:5}}>
+                                    <Select size="small"  sx={{height:'2rem',width:'7.5rem'}}>
+                                       <MenuItem value="0">All</MenuItem>
+                                       <MenuItem value="1">Maker</MenuItem>
+                                       <MenuItem value="2">Checker</MenuItem>
+                                       <MenuItem value="3">View Only</MenuItem>
+
+                                    </Select>
+                                    </FormControl>
                                     </MenuItem>
                                 )
                             }
