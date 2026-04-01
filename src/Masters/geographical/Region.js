@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import Layout from "../layout";
+import Layout from "../../layout";
 import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, InputLabel, MenuItem, FormControl } from "@mui/material";
-import api from "../services/api";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
-import PageHeader from "../utils/PageHeader";
+import PageHeader from "../../utils/PageHeader";
 import { useParams, useNavigate } from "react-router-dom";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
-import DataTable from "../utils/dataTable";
-import ConfirmationDialog from "../utils/confirmDialog";
+import DataTable from "../../utils/dataTable";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Region() {
@@ -30,16 +30,13 @@ export default function Region() {
     const [regionError, setRegionError] = useState(false)
     const [regionErrMsg, setRegionErrMsg] = useState("")
     const [loading, setLoading] = useState(true)
-    const [modifyLoading, setmodifyLoading] = useState(false)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const [userType, setUserType] = useState(null)
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
-
-
-
 
     useEffect(() => {
         fetchZoneNames()
@@ -52,9 +49,7 @@ export default function Region() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -65,13 +60,13 @@ export default function Region() {
             setRegionName("")
             setSelectedZone("0")
             setHdnRegionName("")
+            setZoneError(false)
+            setRegionError(false)
             setTabValue(1)
             return
         }
         collectEditData(decodedEditRegionId)
     }, [decodedEditRegionId])
-
-
 
     const fetchZoneNames = async () => {
         try {
@@ -110,8 +105,6 @@ export default function Region() {
         }
     }
 
-
-
     const validateRegion = () => {
         let isValid = true
         setZoneError(false); setZoneErrMsg("")
@@ -127,33 +120,28 @@ export default function Region() {
             setRegionErrMsg(!regionName || regionName.trim() === ""
                 ? "Region Name is required"
                 : "Region Name must be at least 3 characters")
+            if (!isValid) {
+                enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             isValid = false
         }
         return isValid
     }
 
-
-
     const handleSubmit = async () => {
         try {
-            setmodifyLoading(true)
+            setModifyLoading(true)
             if (decodedEditRegionId) {
-                let check = 1
-                if (hdnRegionName.toLowerCase() === regionName.toLowerCase()) {
-                    check = 0
-                }
+                let check = hdnRegionName.toLowerCase() === regionName.toLowerCase() ? 0 : 1
                 let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check: check })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    fetchRegData()
                     navigate('/masters/region')
-                    setTabValue(1)
-                    setRegionName("")
-                    setSelectedZone("0")
                 } else {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-                // Create
                 let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName })
                 if (response.data.success) {
                     enqueueSnackbar("Region added successfully", { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
@@ -165,11 +153,10 @@ export default function Region() {
                     enqueueSnackbar(response.data.message || "Insert Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             }
-            fetchRegData()
         } catch (err) {
             enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
-            setmodifyLoading(false)
+            setModifyLoading(false)
             closeConfirmationDialog()
         }
     }
@@ -178,27 +165,30 @@ export default function Region() {
         navigate(`/masters/region/${btoa(regId)}`)
     }
 
-
-
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/regionDelete", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchRegData()
         } catch (err) {
             enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
-
 
     const showConfirmationDialog = (config) => {
         setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -207,7 +197,6 @@ export default function Region() {
             message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this Region?`,
             confirmText: decodedEditRegionId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -222,8 +211,6 @@ export default function Region() {
             onConfirm: () => handleDelete(id)
         })
     }
-
-
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
@@ -246,11 +233,9 @@ export default function Region() {
         }
     ]
 
-
-
     return (
         <Layout>
-            <PageHeader title="Region" />
+            <PageHeader title="Region" url="/masters/region" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditRegionId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -266,8 +251,21 @@ export default function Region() {
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                         <FormControl sx={{ width: '100%' }}>
                             <InputLabel id="zone_name">Zone Name</InputLabel>
-                            <Select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}
-                                labelId="zone_name" label="Zone Name" size="small" error={zoneError}>
+                            <Select
+                                value={selectedZone}
+                                onChange={(e) => setSelectedZone(e.target.value)}
+                                labelId="zone_name"
+                                label="Zone Name"
+                                size="small"
+                                error={zoneError}
+                                MenuProps={{
+                                    PaperProps: {
+                                        style: {
+                                            maxHeight: 200
+                                        }
+                                    }
+                                }}
+                            >
                                 <MenuItem value="0">Select Zone</MenuItem>
                                 {zoneName.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
@@ -298,10 +296,7 @@ export default function Region() {
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData}
-                            loading={loading}
-                            showHeader={false}
-                        />
+                        <DataTable columns={columns} data={regData} loading={loading} />
                     </Box>
                 )}
             </Box>
@@ -314,7 +309,7 @@ export default function Region() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>
