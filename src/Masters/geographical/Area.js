@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import Layout from "../layout";
-import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, InputLabel, MenuItem, FormControl } from "@mui/material";
-import api from "../services/api";
+import Layout from "../../layout";
+import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, FormControl, Autocomplete } from "@mui/material";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
-import PageHeader from "../utils/PageHeader";
+import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable from "../utils/dataTable";
+import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
-import ConfirmationDialog from "../utils/confirmDialog";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Area() {
@@ -19,8 +19,8 @@ export default function Area() {
     const navigate = useNavigate()
 
     const [tabValue, setTabValue] = useState(1)
-    const [selRegion, setSelRegion] = useState("0")
-    const [selState, setSelState] = useState("0")
+    const [selRegion, setSelRegion] = useState(null)        // ← null for Autocomplete
+    const [selState, setSelState] = useState(null)          // ← null for Autocomplete
     const [areaName, setAreaName] = useState("")
     const [hdnAreaName, setHdnAreaName] = useState("")
     const [allRegion, setAllRegion] = useState([])
@@ -49,9 +49,7 @@ export default function Area() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-                console.log(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -67,8 +65,8 @@ export default function Area() {
     }, [decodedAreaId])
 
     const resetFields = () => {
-        setSelRegion("0")
-        setSelState("0")
+        setSelRegion(null)          // ← null
+        setSelState(null)           // ← null
         setAreaName("")
         setHdnAreaName("")
         setRegionError(false)
@@ -110,9 +108,13 @@ export default function Area() {
         try {
             let response = await api.post("/read_area", { areaId: id })
             let data = response.data.data[0]
-            console.log(data, "collection Data")
-            setSelRegion(data.reg_id)
-            setSelState(data.state_id)
+
+            // ← find matching objects for Autocomplete
+            const matchedRegion = allRegion.find(r => r.id === data.reg_id) || null
+            const matchedState = allState.find(s => s.id === data.state_id) || null
+            setSelRegion(matchedRegion)
+            setSelState(matchedState)
+
             setAreaName(data.area_name)
             setHdnAreaName(data.area_name)
             setRegionError(false)
@@ -130,10 +132,13 @@ export default function Area() {
         setStateError(false)
         setAreaError(false)
 
-        if (selRegion == 0) { setRegionError(true); isValid = false }
-        if (selState == 0) { setStateError(true); isValid = false }
+        if (!selRegion || Number(selRegion.id)===0) { setRegionError(true); isValid = false }        // ← null check
+        if (!selState || Number(selState.id)===0) { setStateError(true); isValid = false }          // ← null check
         if (!areaName || areaName.trim() === "") { setAreaError(true); isValid = false }
 
+        if (!isValid) {
+            enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+        }
         return isValid
     }
 
@@ -142,13 +147,11 @@ export default function Area() {
             setModifyLoading(true)
             if (decodedAreaId) {
                 let check = 1
-                if (hdnAreaName.toLowerCase() === areaName.toLowerCase()) {
-                    check = 0
-                }
+                if (hdnAreaName.toLowerCase() === areaName.toLowerCase()) check = 0
                 let response = await api.post("/areaUpdate", {
                     updId: decodedAreaId,
-                    reg_name: selRegion,
-                    state_name: selState,
+                    reg_name: selRegion?.id,        // ← extract id
+                    state_name: selState?.id,       // ← extract id
                     area_name: areaName,
                     check: check
                 })
@@ -160,15 +163,14 @@ export default function Area() {
                     enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
                 }
             } else {
-
                 let response = await api.post("/areaCreate", {
-                    reg_name: selRegion,
-                    state_name: selState,
+                    reg_name: selRegion?.id,        // ← extract id
+                    state_name: selState?.id,       // ← extract id
                     area_name: areaName
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    resetFields()   // ← clear form after successful create
+                    resetFields()
                     fetchArea()
                     setTabValue(1)
                 } else {
@@ -189,15 +191,21 @@ export default function Area() {
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteArea", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchArea()
         } catch (err) {
             console.log("deleteArea error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
@@ -215,7 +223,6 @@ export default function Area() {
             message: `Are you sure you want to ${decodedAreaId ? "Edit" : "Add"} this Area?`,
             confirmText: decodedAreaId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -255,7 +262,7 @@ export default function Area() {
 
     return (
         <Layout>
-            <PageHeader title="Area" />
+            <PageHeader title="Area" url="/masters/area_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedAreaId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -268,28 +275,49 @@ export default function Area() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl>
-                            <InputLabel id="reg_name">Region Name</InputLabel>
-                            <Select value={selRegion} labelId="reg_name" label="Region Name"
-                                onChange={(e) => setSelRegion(e.target.value)} size="small" error={regionError}>
-                                <MenuItem value="0">Select Region</MenuItem>
-                                {allRegion.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {regionError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>Region Name is required.</Typography>}
-                        </FormControl>
-                        <FormControl>
-                            <InputLabel id="state_name">State Name</InputLabel>
-                            <Select value={selState} onChange={(e) => setSelState(e.target.value)}
-                                labelId="state_name" label="State Name" size="small" error={stateError}>
-                                <MenuItem value="0">Select State</MenuItem>
-                                {allState.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.state_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {stateError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>State Name is required.</Typography>}
-                        </FormControl>
+
+                        {/* ✅ Region — Autocomplete */}
+                        <Autocomplete
+                            options={[{ id: "0",reg_name: "Select Region" }, ...allRegion]}
+                            getOptionLabel={(option) => option.reg_name || ""}
+                            value={selRegion}
+                            onChange={(e, newValue) => {
+                                setSelRegion(newValue)
+                                if (regionError) setRegionError(false)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Region Name"
+                                    size="small"
+                                    error={regionError}
+                                    helperText={regionError ? "Region Name is required." : ""}
+                                />
+                            )}
+                        />
+
+                        {/* ✅ State — Autocomplete */}
+                        <Autocomplete
+                            options={[{ id: "0", state_name: "Select State" }, ...allState]}
+                            getOptionLabel={(option) => option.state_name || ""}
+                            value={selState}
+                            onChange={(e, newValue) => {
+                                setSelState(newValue)
+                                if (stateError) setStateError(false)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="State Name"
+                                    size="small"
+                                    error={stateError}
+                                    helperText={stateError ? "State Name is required." : ""}
+                                />
+                            )}
+                        />
+
                         <TextField label="Area Name" size="small" value={areaName}
                             onChange={(e) => {
                                 setAreaName(e.target.value)
@@ -306,7 +334,7 @@ export default function Area() {
                 )}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allArea} loading={loading} showHeader={false} />
+                        <DataTable columns={columns} data={allArea} loading={loading} />
                     </Box>
                 )}
             </Box>
@@ -318,7 +346,7 @@ export default function Area() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>

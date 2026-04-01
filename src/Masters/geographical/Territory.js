@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import Layout from "../layout";
+import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab,
-    IconButton, Select, InputLabel, MenuItem, FormControl
+    IconButton, Autocomplete
 } from "@mui/material";
-import api from "../services/api";
+import api from "../../services/api";
 import { useSnackbar } from "notistack";
-import PageHeader from "../utils/PageHeader";
+import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable from "../utils/dataTable";
+import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
-import ConfirmationDialog from "../utils/confirmDialog";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Territory() {
@@ -22,7 +22,7 @@ export default function Territory() {
     const navigate = useNavigate()
     const [userType, setUserType] = useState(null)
     const [tabValue, setTabValue] = useState(1)
-    const [selArea, setSelArea] = useState("0")
+    const [selArea, setSelArea] = useState(null)
     const [terName, setTerName] = useState("")
     const [hdnTerName, setHdnTerName] = useState("")
     const [allArea, setAllArea] = useState([])
@@ -33,7 +33,7 @@ export default function Territory() {
     const [terError, setTerError] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
-        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
     useEffect(() => {
@@ -47,8 +47,7 @@ export default function Territory() {
             try {
                 let decoded = jwtDecode(token)
                 setUserType(decoded.user_type)
-            }
-            catch (err) {
+            } catch (err) {
                 console.log(err)
             }
         }
@@ -64,7 +63,7 @@ export default function Territory() {
     }, [decodedEditTerritoryId])
 
     const resetFields = () => {
-        setSelArea("0")
+        setSelArea(null)
         setTerName("")
         setHdnTerName("")
         setAreaError(false)
@@ -97,7 +96,8 @@ export default function Territory() {
         try {
             let response = await api.post("/readTerritory", { ter_id: id, area_id: null })
             let data = response.data.data[0]
-            setSelArea(data.area_id)
+            const selectedArea = allArea.find(area => area.id === data.area_id)
+            setSelArea(selectedArea || null)
             setTerName(data.ter_name)
             setHdnTerName(data.ter_name)
             setAreaError(false)
@@ -113,8 +113,11 @@ export default function Territory() {
         setAreaError(false)
         setTerError(false)
 
-        if (selArea == 0) { setAreaError(true); isValid = false }
+        if (!selArea || Number(selArea.id)===0) { setAreaError(true); isValid = false }
         if (!terName || terName.trim() === "") { setTerError(true); isValid = false }
+        if(!isValid){
+            enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+        }
 
         return isValid
     }
@@ -123,14 +126,11 @@ export default function Territory() {
         try {
             setModifyLoading(true)
             if (decodedEditTerritoryId) {
-                let check = 1
-                if (hdnTerName.toLowerCase() === terName.toLowerCase()) {
-                    check = 0
-                }
+                let check = hdnTerName.toLowerCase() === terName.toLowerCase() ? 0 : 1
                 let response = await api.post("/terMasUpdate", {
                     id: decodedEditTerritoryId,
                     ter_name: terName,
-                    area_id: selArea,
+                    area_id: selArea?.id,
                     check: check
                 })
                 if (response.data.success) {
@@ -143,7 +143,7 @@ export default function Territory() {
             } else {
                 let response = await api.post("/terMasCreate", {
                     ter_name: terName,
-                    areaId: selArea
+                    areaId: selArea?.id
                 })
                 if (response.data.success) {
                     enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
@@ -168,15 +168,21 @@ export default function Territory() {
     }
 
     const handleDelete = async (id) => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/deleteTerritory", { id })
-            enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            if (response.data.code === 1) {
+                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            } else {
+                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             fetchAllTerritory()
         } catch (err) {
             console.log("deleteTerritory error", err)
             enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
         } finally {
             closeConfirmationDialog()
+            setModifyLoading(false)
         }
     }
 
@@ -185,7 +191,7 @@ export default function Territory() {
     }
 
     const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }))
+        setConfirmationDialog(prev => ({ ...prev, open: false }))
     }
 
     const showSubmitConfirmation = () => {
@@ -194,7 +200,6 @@ export default function Territory() {
             message: `Are you sure you want to ${decodedEditTerritoryId ? "Edit" : "Add"} this Territory?`,
             confirmText: decodedEditTerritoryId ? "Update" : "Add",
             confirmColor: "primary",
-            loading: modifyLoading,
             onConfirm: () => handleSubmit()
         })
     }
@@ -233,7 +238,7 @@ export default function Territory() {
 
     return (
         <Layout>
-            <PageHeader title="Territory" />
+            <PageHeader title="Territory" url="/masters/ter_mas" />
             <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditTerritoryId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
@@ -246,17 +251,25 @@ export default function Territory() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl>
-                            <InputLabel id="area">Area Name</InputLabel>
-                            <Select value={selArea} labelId="area" label="Area Name"
-                                onChange={(e) => setSelArea(e.target.value)} size="small" error={areaError}>
-                                <MenuItem value="0">Select Area</MenuItem>
-                                {allArea.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.area_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {areaError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>Area Name is required.</Typography>}
-                        </FormControl>
+                        <Autocomplete
+                            options={[{ id: "0", area_name: "Select Area" }, ...allArea]}
+                            getOptionLabel={(option) => option.area_name}
+                            value={selArea}
+                            onChange={(event, newValue) => {
+                                setSelArea(newValue)
+                                if (areaError) setAreaError(false)
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Area Name"
+                                    size="small"
+                                    error={areaError}
+                                    helperText={areaError ? "Area Name is required." : ""}
+                                />
+                            )}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        />
                         <TextField label="Territory Name" size="small" value={terName}
                             onChange={(e) => {
                                 setTerName(e.target.value)
@@ -285,7 +298,7 @@ export default function Territory() {
                 message={confirmationDialog.message}
                 confirmText={confirmationDialog.confirmText}
                 cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
+                loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
         </Layout>

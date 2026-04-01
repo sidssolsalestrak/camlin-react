@@ -106,7 +106,7 @@ const Layout = ({ children }) => {
       });
     }, 100);
     return () => clearTimeout(timer);
-  }, [menuHtml]);
+  }, [menuHtml,drawerOpen,isMobile]);
 
   // Highlight active menu item based on current path
   useEffect(() => {
@@ -174,7 +174,7 @@ const Layout = ({ children }) => {
       });
     }, 150);
     return () => clearTimeout(timer);
-  }, [menuHtml, location.pathname]);
+  }, [menuHtml, location.pathname,drawerOpen,isMobile]);
 
   // Global click handler used by menu items
   useEffect(() => {

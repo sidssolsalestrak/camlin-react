@@ -10,7 +10,7 @@ const style = {
 }
 
 
-const PageHeader = ({ title }) => {
+const PageHeader = ({ title,url }) => {
     return (
         <div>
             <Box sx={{mt:1.5,ml:3}}>
@@ -23,11 +23,12 @@ const PageHeader = ({ title }) => {
                     <Link
                         underline="hover"
                         color="inherit"
-                        href="#"
+                        href={url}
+                        sx={{cursor:'pointer'}}
                     >
                         Masters
                     </Link>
-                    <Typography sx={{ color: 'text.primary' }}>Add</Typography>
+                    <Typography sx={{ color: 'text.primary' }}>{title}</Typography>
                 </Breadcrumbs>
                 <Box sx={{mt:1}}>
                     <Typography sx={style}>{title}</Typography>
