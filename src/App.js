@@ -18,6 +18,10 @@ import Department from './Masters/main/department/Department';
 import Designation from './Masters/main/designation/Designation';
 import City from './Masters/main/city/City';
 import ReportingTabs from "./Masters/AdminPanel/ReportingTabs";
+import MenuMaster from "./Masters/AdminPanel/MenuMaster";
+import AppWidgetMaster from "./Masters/AdminPanel/AppWidgetMaster";
+import AppVersion from "./Masters/AdminPanel/AppVersion";
+import WebMenuMaster from "./Masters/AdminPanel/WebMenuMaster";
 
 function App() {
   return (
@@ -46,6 +50,10 @@ function App() {
               path="/masters/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?"
               element={<AccountMas />}
             />
+            <Route path="/masters/menuMaster/:menuId?"  element={<MenuMaster />}   />
+            <Route  path="/masters/dashboardmaster/:editwidgetId?"  element={<AppWidgetMaster />} />
+            <Route path="/masters/appversion/:editappvid?"  element={<AppVersion />}      />
+            <Route path="/masters/webMenuMaster/:editwebmenuId?" element={<WebMenuMaster />}      />
           </Routes>
         </BrowserRouter>
       </SnackbarProvider>

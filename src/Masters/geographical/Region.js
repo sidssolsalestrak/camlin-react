@@ -120,6 +120,9 @@ export default function Region() {
             setRegionErrMsg(!regionName || regionName.trim() === ""
                 ? "Region Name is required"
                 : "Region Name must be at least 3 characters")
+            if (!isValid) {
+                enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            }
             isValid = false
         }
         return isValid
@@ -248,8 +251,21 @@ export default function Region() {
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                         <FormControl sx={{ width: '100%' }}>
                             <InputLabel id="zone_name">Zone Name</InputLabel>
-                            <Select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}
-                                labelId="zone_name" label="Zone Name" size="small" error={zoneError}>
+                            <Select
+                                value={selectedZone}
+                                onChange={(e) => setSelectedZone(e.target.value)}
+                                labelId="zone_name"
+                                label="Zone Name"
+                                size="small"
+                                error={zoneError}
+                                MenuProps={{
+                                    PaperProps: {
+                                        style: {
+                                            maxHeight: 200
+                                        }
+                                    }
+                                }}
+                            >
                                 <MenuItem value="0">Select Zone</MenuItem>
                                 {zoneName.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
@@ -280,7 +296,7 @@ export default function Region() {
 
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData} loading={loading} showHeader={false} />
+                        <DataTable columns={columns} data={regData} loading={loading} />
                     </Box>
                 )}
             </Box>

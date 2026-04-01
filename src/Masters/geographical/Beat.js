@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import {
     TextField, Box, Typography, Button, Tabs, Tab,
-    IconButton, Select, InputLabel, MenuItem, FormControl
+    IconButton, Autocomplete
 } from "@mui/material";
 import api from "../../services/api";
 import { useSnackbar } from "notistack";
@@ -13,6 +13,9 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+
+const DEFAULT_AREA = { id: "0", area_name: "Select Area" }
+const DEFAULT_TERRITORY = { id: "0", ter_name: "Select Territory" }
 
 export default function Beat() {
 
@@ -153,8 +156,11 @@ export default function Beat() {
         let isValid = true
         setTerritoryError(false)
         setBeatError(false)
-        if (selTerritory == 0) { setTerritoryError(true); isValid = false }
+        if (Number(selTerritory)===0) { setTerritoryError(true); isValid = false }
         if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
+        if (!isValid) {
+            enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+        }
         return isValid
     }
 
@@ -251,6 +257,14 @@ export default function Beat() {
         })
     }
 
+    // Area options: prepend "Select Area" only when not in edit mode (same as original MenuItem logic)
+    const areaOptions = decodedEditBeatId
+        ? allArea
+        : [DEFAULT_AREA, ...allArea]
+
+    // Territory options: always prepend "Select Territory" (same as original)
+    const territoryOptions = [DEFAULT_TERRITORY, ...allTerritory]
+
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
         { field: "ter_name", headerName: "Territory Name", filterable: true, sortable: true },
@@ -287,47 +301,39 @@ export default function Beat() {
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl>
-                            <InputLabel id="area_name">Area Name</InputLabel>
-                            <Select
-                                value={selArea}
-                                labelId="area_name"
-                                label="Area Name"
-                                onChange={(e) => {
-                                    setSelArea(e.target.value)
-                                    setIsAreaChanged(true)
-                                }}
-                                size="small"
-                            >
-                                {!decodedEditBeatId && (
-                                    <MenuItem value="0">Select Area</MenuItem>
-                                )}
-                                {allArea.map((val) => (
-                                    <MenuItem value={val.id} key={val.id}>{val.area_name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        <FormControl>
-                            <InputLabel id="territory">Territory Name</InputLabel>
-                            <Select
-                                value={selTerritory}
-                                labelId="territory"
-                                label="Territory Name"
-                                onChange={(e) => setSelTerritory(e.target.value)}
-                                size="small"
-                                error={territoryError}
-                            >
-                                <MenuItem value="0">Select Territory</MenuItem>
-                                {allTerritory.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.ter_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {territoryError && (
-                                <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>
-                                    Territory Name is required.
-                                </Typography>
+                        <Autocomplete
+                            options={areaOptions}
+                            getOptionLabel={(option) => option.area_name || ""}
+                            value={areaOptions.find((a) => a.id === selArea) || DEFAULT_AREA}
+                            onChange={(e, newVal) => {
+                                const id = newVal ? newVal.id : "0"
+                                setSelArea(id)
+                                setIsAreaChanged(true)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Area Name" size="small" />
                             )}
-                        </FormControl>
+                        />
+                        <Autocomplete
+                            options={territoryOptions}
+                            getOptionLabel={(option) => option.ter_name || ""}
+                            value={territoryOptions.find((t) => t.id === selTerritory) || DEFAULT_TERRITORY}
+                            onChange={(e, newVal) => {
+                                setSelTerritory(newVal ? newVal.id : "0")
+                                if (territoryError) setTerritoryError(false)
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Territory Name"
+                                    size="small"
+                                    error={territoryError}
+                                    helperText={territoryError ? "Territory Name is required." : ""}
+                                />
+                            )}
+                        />
                         <TextField
                             label="Beat Name"
                             size="small"
