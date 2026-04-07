@@ -3,3 +3,19 @@
     color:red;
     margin-left: 4px !important;
 }
+.extra-field{
+    font-size: 14px;
+    color: #133DBE;
+}
+.extra-field:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}
+.eDetailDialogtitle{
+      color: #212121;
+      display: flex;
+      font-size: 13px;
+      flex-direction: row;
+      justify-content: space-between;
+}
+

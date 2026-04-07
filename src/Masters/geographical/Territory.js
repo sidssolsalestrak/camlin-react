@@ -5,7 +5,7 @@ import {
     IconButton, Autocomplete
 } from "@mui/material";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
@@ -18,7 +18,7 @@ export default function Territory() {
 
     const { editTeritoryId } = useParams()
     const decodedEditTerritoryId = editTeritoryId !== undefined && editTeritoryId !== null ? Number(atob(editTeritoryId)) : null
-    const { enqueueSnackbar } = useSnackbar()
+    const toast =useToast()
     const navigate = useNavigate()
     const [userType, setUserType] = useState(null)
     const [tabValue, setTabValue] = useState(1)
@@ -60,6 +60,7 @@ export default function Territory() {
             return
         }
         collectEditData(decodedEditTerritoryId)
+        // eslint-disable-next-line
     }, [decodedEditTerritoryId])
 
     const resetFields = () => {
@@ -116,7 +117,7 @@ export default function Territory() {
         if (!selArea || Number(selArea.id)===0) { setAreaError(true); isValid = false }
         if (!terName || terName.trim() === "") { setTerError(true); isValid = false }
         if(!isValid){
-            enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+            toast.error("Please fix all mandatory fields")
         }
 
         return isValid
@@ -134,11 +135,11 @@ export default function Territory() {
                     check: check
                 })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     fetchAllTerritory()
                     navigate('/masters/ter_mas')
                 } else {
-                    enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message || "Update Failed")
                 }
             } else {
                 let response = await api.post("/terMasCreate", {
@@ -146,17 +147,17 @@ export default function Territory() {
                     areaId: selArea?.id
                 })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     resetFields()
                     fetchAllTerritory()
                     setTabValue(1)
                 } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message)
                 }
             }
         } catch (err) {
             console.log(err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             setModifyLoading(false)
             closeConfirmationDialog()
@@ -172,14 +173,14 @@ export default function Territory() {
         try {
             let response = await api.post("/deleteTerritory", { id })
             if (response.data.code === 1) {
-                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(response.data.message)
             } else {
-                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
             fetchAllTerritory()
         } catch (err) {
             console.log("deleteTerritory error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             closeConfirmationDialog()
             setModifyLoading(false)
