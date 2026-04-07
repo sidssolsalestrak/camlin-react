@@ -3,7 +3,7 @@ import Layout from "../../layout";
 import { TextField, Box, Typography, Button, Tabs, Tab, IconButton } from "@mui/material";
 import DataTable from "../../utils/dataTable";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { useParams, useNavigate } from "react-router-dom";
@@ -24,7 +24,7 @@ export default function Zone() {
     const [tabValue, setTabValue] = useState(1)
     const { editZoneid } = useParams()
     const decodedEditZoneid = editZoneid !== undefined && editZoneid !== null ? Number(atob(editZoneid)) : null
-    const { enqueueSnackbar } = useSnackbar()
+    const toast =useToast()
     const navigate = useNavigate()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -103,27 +103,27 @@ export default function Zone() {
                 let check = hdnZoneName.toLowerCase() === zoneName.toLowerCase() ? 0 : 1
                 let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(), check: check })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     fetchZones()
                     navigate('/masters/zone_mas')
                 } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message)
                 }
                 setEditId(null)
             } else {
                 let response = await api.post("/addZone", { newZone: zoneName.trim() })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     setZoneName("")
                     fetchZones()
                     setTabValue(1)
                 } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message)
                 }
             }
         } catch (err) {
             console.log("addzone error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             setModifyLoading(false)
             closeConfirmationDialog()
@@ -182,16 +182,15 @@ export default function Zone() {
         try {
             let response = await api.post("/deleteZone", { id })
             if (response.data.code === 1) {
-                enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(response.data.message)
             }
             else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-
+                 toast.error(response.data.message)
             }
             fetchZones()
         } catch (err) {
             console.log("deleteZone error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             closeConfirmationDialog()
             setModifyLoading(false)
@@ -250,7 +249,7 @@ export default function Zone() {
                             onClick={() => { if (validateZone()){ 
                                 showSubmitConfirmation()}
                                 else{
-                                    enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+                                    toast.error("Please fix all mandatory fields")
                                 }
                              }}
                         >

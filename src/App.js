@@ -25,6 +25,9 @@ import WebMenuMaster from "./Masters/AdminPanel/WebMenuMaster";
 import AddProduct from "./Masters/main/product/AddProduct";
 import ViewProduct from "./Masters/main/product/ViewProduct";
 import Stockist from "./Masters/main/stockist/Stockist";
+import AwsLogs from "./Masters/AdminPanel/AwsLogs";
+import ApiProcessing from "./Masters/AdminPanel/ApiProcessing";
+import EDetailingMaster from "./Masters/AdminPanel/EDetailingMaster";
 
 function App() {
   return (
@@ -76,6 +79,10 @@ function App() {
             path="/masters/webMenuMaster/:editwebmenuId?"
             element={<WebMenuMaster />}
           />
+          <Route   path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"  
+          element={<AwsLogs />}  />
+          <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />}   />
+          <Route path="/masters/edetailing/:editEdetailing?"  element={<EDetailingMaster />}    />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

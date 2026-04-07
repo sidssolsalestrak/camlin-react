@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import Layout from "../../layout";
-import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, FormControl, Autocomplete } from "@mui/material";
+import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Autocomplete } from "@mui/material";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
@@ -15,7 +15,7 @@ export default function Area() {
 
     const { editAreaId } = useParams()
     const decodedAreaId = editAreaId !== undefined && editAreaId !== null ? Number(atob(editAreaId)) : null
-    const { enqueueSnackbar } = useSnackbar()
+    const toast=useToast()
     const navigate = useNavigate()
 
     const [tabValue, setTabValue] = useState(1)
@@ -62,6 +62,7 @@ export default function Area() {
             return
         }
         collectEditData(decodedAreaId)
+        // eslint-disable-next-line
     }, [decodedAreaId])
 
     const resetFields = () => {
@@ -137,7 +138,7 @@ export default function Area() {
         if (!areaName || areaName.trim() === "") { setAreaError(true); isValid = false }
 
         if (!isValid) {
-            enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Please fix all mandatory fields")
         }
         return isValid
     }
@@ -156,11 +157,11 @@ export default function Area() {
                     check: check
                 })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     fetchArea()
                     navigate('/masters/area_mas')
                 } else {
-                    enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message || "Update Failed")
                 }
             } else {
                 let response = await api.post("/areaCreate", {
@@ -169,17 +170,17 @@ export default function Area() {
                     area_name: areaName
                 })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     resetFields()
                     fetchArea()
                     setTabValue(1)
                 } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message)
                 }
             }
         } catch (err) {
             console.log(err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             setModifyLoading(false)
             closeConfirmationDialog()
@@ -195,14 +196,14 @@ export default function Area() {
         try {
             let response = await api.post("/deleteArea", { id })
             if (response.data.code === 1) {
-                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(response.data.message)
             } else {
-                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
             fetchArea()
         } catch (err) {
             console.log("deleteArea error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong Try again!!")
         } finally {
             closeConfirmationDialog()
             setModifyLoading(false)

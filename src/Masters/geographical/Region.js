@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, InputLabel, MenuItem, FormControl } from "@mui/material";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import { useParams, useNavigate } from "react-router-dom";
 import { LiaTrashAltSolid } from "react-icons/lia";
@@ -14,7 +14,7 @@ import { jwtDecode } from "jwt-decode";
 export default function Region() {
 
     const navigate = useNavigate()
-    const { enqueueSnackbar } = useSnackbar()
+    const toast =useToast()
     const { editRegionId } = useParams()
     const decodedEditRegionId = editRegionId !== undefined && editRegionId !== null ? Number(atob(editRegionId)) : null
 
@@ -110,7 +110,7 @@ export default function Region() {
         setZoneError(false); setZoneErrMsg("")
         setRegionError(false); setRegionErrMsg("")
 
-        if (selectedZone == 0) {
+        if (Number(selectedZone) === 0) {
             setZoneError(true)
             setZoneErrMsg("Zone name is required")
             isValid = false
@@ -121,7 +121,8 @@ export default function Region() {
                 ? "Region Name is required"
                 : "Region Name must be at least 3 characters")
             if (!isValid) {
-                enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error("Please fix all mandatory fields")
+                
             }
             isValid = false
         }
@@ -135,26 +136,26 @@ export default function Region() {
                 let check = hdnRegionName.toLowerCase() === regionName.toLowerCase() ? 0 : 1
                 let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check: check })
                 if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success(response.data.message)
                     fetchRegData()
                     navigate('/masters/region')
                 } else {
-                    enqueueSnackbar(response.data.message || "Update Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message || "Update Failed")
                 }
             } else {
                 let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName })
                 if (response.data.success) {
-                    enqueueSnackbar("Region added successfully", { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.success("Region added successfully")
                     setSelectedZone("0")
                     setRegionName("")
                     fetchRegData()
                     setTabValue(1)
                 } else {
-                    enqueueSnackbar(response.data.message || "Insert Failed", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                    toast.error(response.data.message || "Insert Failed")
                 }
             }
         } catch (err) {
-            enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong !!")
         } finally {
             setModifyLoading(false)
             closeConfirmationDialog()
@@ -170,13 +171,13 @@ export default function Region() {
         try {
             let response = await api.post("/regionDelete", { id })
             if (response.data.code === 1) {
-                enqueueSnackbar(response.data.message, { variant: "success", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(response.data.message)
             } else {
-                enqueueSnackbar(response.data.message, { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
             fetchRegData()
         } catch (err) {
-            enqueueSnackbar("Something went wrong", { variant: "error", anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong try again!!")
         } finally {
             closeConfirmationDialog()
             setModifyLoading(false)
