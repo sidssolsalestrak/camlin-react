@@ -34,6 +34,9 @@ import WebMenuMaster from "./Masters/AdminPanel/WebMenuMaster";
 import AddProduct from "./Masters/main/product/AddProduct";
 import ViewProduct from "./Masters/main/product/ViewProduct";
 import Stockist from "./Masters/main/stockist/Stockist";
+import AwsLogs from "./Masters/AdminPanel/AwsLogs";
+import ApiProcessing from "./Masters/AdminPanel/ApiProcessing";
+import EDetailingMaster from "./Masters/AdminPanel/EDetailingMaster";
 import AccountExtract from "./view/account/AccountExtract";
 import Login from "./view/Login";
 import ForgotPassword from "./view/ForgotPassword";
@@ -88,6 +91,27 @@ function App() {
             <Route path="/masters/prodview" element={<ViewProduct />} />
             <Route path="/masters/stockist" element={<Stockist />} />
 
+          <Route
+            path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+            element={<AccountMas />}
+          />
+          <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
+          <Route
+            path="/masters/dashboardmaster/:editwidgetId?"
+            element={<AppWidgetMaster />}
+          />
+          <Route
+            path="/masters/appversion/:editappvid?"
+            element={<AppVersion />}
+          />
+          <Route
+            path="/masters/webMenuMaster/:editwebmenuId?"
+            element={<WebMenuMaster />}
+          />
+          <Route   path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"  
+          element={<AwsLogs />}  />
+          <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />}   />
+          <Route path="/masters/edetailing/:editEdetailing?"  element={<EDetailingMaster />}    />
             <Route
               path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
               element={<AccountMas />}
