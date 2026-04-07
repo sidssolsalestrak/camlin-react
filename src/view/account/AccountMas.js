@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import Layout from "../../../layout";
+import Layout from "../../layout";
 import { useParams, useNavigate } from "react-router-dom";
-import { decode } from "../../../utils/common";
-import "../../../assets/css/accountMas.css";
+import { decode } from "../../utils/common";
+import "../../assets/css/accountMas.css";
 import {
   Box,
   Grid,
@@ -13,13 +13,13 @@ import {
   Autocomplete,
   TextField,
 } from "@mui/material";
-import api from "../../../services/api";
-import DataTable from "../../../../src/utils/dataTable";
+import api from "../../services/api";
+import DataTable from "../../../src/utils/dataTable";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import useToast from "../../../utils/useToast";
+import useToast from "../../utils/useToast";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
-import { getUserFromToken } from "../../../utils/getUserFromToken";
-import ConfirmationDialog from "../../../utils/confirmDialog";
+import { getUserFromToken } from "../../utils/getUserFromToken";
+import ConfirmationDialog from "../../utils/confirmDialog";
 import { Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LinearProgress } from "@mui/material";
 import dayjs from "dayjs";
@@ -29,7 +29,7 @@ function AccountMas() {
 
   const loggedInUserId = user?.user_id;
   const loggedInUserType = Number(user?.user_type);
-  console.log("Logged User:", user);
+  // console.log("Logged User:", user);
   const params = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -83,7 +83,6 @@ function AccountMas() {
   const [userData, setUserData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(0);
 
-  const req = decodedParams.reqType;
   const [cusReq, setCusReq] = useState(decodedParams.cusReq || 1);
   const [reqType, setReqType] = useState(0);
 
@@ -522,11 +521,6 @@ function AccountMas() {
       const cus_req = Number(decodedParams.cusReq);
       const req_type = Number(decodedParams.reqType) || 0;
 
-      console.log("country", country);
-      console.log("users", users);
-      console.log("userType", userType);
-      console.log("cus_req", cus_req);
-
       if (cus_req === 2) {
         if (!(country || req_type || users || userType)) return;
       }
@@ -539,11 +533,6 @@ function AccountMas() {
       }
 
       setLoadingTable(true);
-      console.log("country", country);
-      console.log("users", users);
-      console.log("userType", userType);
-      console.log("cus_req", cus_req);
-      console.log("req_type", req_type);
       const res = await api.post("/getDoctorsList", {
         country,
         users,
@@ -825,6 +814,7 @@ function AccountMas() {
                     // });
                   }}
                 >
+                  <MenuItem value={0}>All</MenuItem>
                   {regionData.map((item) => (
                     <MenuItem key={item.id} value={item.id}>
                       {item.reg_name}
@@ -850,6 +840,7 @@ function AccountMas() {
                     // });
                   }}
                 >
+                  <MenuItem value={0}>All</MenuItem>
                   {userType.map((item) => (
                     <MenuItem key={item.id} value={item.id}>
                       {item.client_alias}
