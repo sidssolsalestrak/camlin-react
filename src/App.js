@@ -1,6 +1,15 @@
 import "./App.css";
+import { useEffect } from "react";
+import { useLoader } from "./utils/LoaderContext";
+import { setLoader } from "./services/api";
 import Dashboard from "./dashboard/Dashboard";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import TokenHandler from "./services/TokenHandler";
 import { SnackbarProvider } from "notistack";
 import { CssBaseline } from "@mui/material";
@@ -11,7 +20,7 @@ import Territory from "./Masters/geographical/Territory";
 import Region from "./Masters/geographical/Region";
 import Beat from "./Masters/geographical/Beat";
 import Area from "./Masters/geographical/Area";
-import AccountMas from "./dashboard/view/account/AccountMas";
+import AccountMas from "./view/account/AccountMas";
 import ProductCategory from "./Masters/main/productCategory/ProductCategory";
 import ProductSubCategory from "./Masters/main/productSubCategory/ProductSubCategory";
 import Department from "./Masters/main/department/Department";
@@ -25,57 +34,95 @@ import WebMenuMaster from "./Masters/AdminPanel/WebMenuMaster";
 import AddProduct from "./Masters/main/product/AddProduct";
 import ViewProduct from "./Masters/main/product/ViewProduct";
 import Stockist from "./Masters/main/stockist/Stockist";
+import AccountExtract from "./view/account/AccountExtract";
+import Login from "./view/Login";
+import ForgotPassword from "./view/ForgotPassword";
 
 function App() {
+  const ProtectedRoute = () => {
+    const token = localStorage.getItem("session-token");
+    console.log("token", token);
+    return token ? <Outlet /> : <Navigate to="/login" replace />;
+  };
+
+  const PublicRoute = () => {
+    const token = localStorage.getItem("session-token");
+    console.log("public token", token);
+
+    return token ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {/* <SnackbarProvider maxSnack={3}> */}
       <BrowserRouter>
         <Routes>
-          <Route path="/:token" element={<TokenHandler />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
-          <Route path="/masters/region/:editRegionId?" element={<Region />} />
-          <Route
-            path="/masters/ter_mas/:editTeritoryId?"
-            element={<Territory />}
-          />
-          <Route path="/masters/beat_mas/:editBeatId?" element={<Beat />} />
-          <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
-          {/* main master routes */}
-          <Route path="/masters/cat/:id?" element={<ProductCategory />} />
-          <Route path="/masters/catSub/:id?" element={<ProductSubCategory />} />
-          <Route path="/masters/dept/:id?" element={<Department />} />
-          <Route path="/masters/designation/:id?" element={<Designation />} />
-          <Route path="/masters/city_mas/:id?" element={<City />} />
-          {/* Admin Panel master routes */}
-          <Route
-            path="/masters/repTabs/:userId?/:cusId?"
-            element={<ReportingTabs />}
-          />
-          <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
-          <Route path="/masters/prodview" element={<ViewProduct />} />
-          <Route path="/masters/stockist" element={<Stockist />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/:token" element={<TokenHandler />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
+            <Route path="/masters/region/:editRegionId?" element={<Region />} />
+            <Route
+              path="/masters/ter_mas/:editTeritoryId?"
+              element={<Territory />}
+            />
+            <Route path="/masters/beat_mas/:editBeatId?" element={<Beat />} />
+            <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
+            {/* main master routes */}
+            <Route path="/masters/cat/:id?" element={<ProductCategory />} />
+            <Route
+              path="/masters/catSub/:id?"
+              element={<ProductSubCategory />}
+            />
+            <Route path="/masters/dept/:id?" element={<Department />} />
+            <Route path="/masters/designation/:id?" element={<Designation />} />
+            <Route path="/masters/city_mas/:id?" element={<City />} />
+            {/* Admin Panel master routes */}
+            <Route
+              path="/masters/repTabs/:userId?/:cusId?"
+              element={<ReportingTabs />}
+            />
+            <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
+            <Route path="/masters/prodview" element={<ViewProduct />} />
+            <Route path="/masters/stockist" element={<Stockist />} />
 
-          <Route
-            path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
-            element={<AccountMas />}
-          />
-          <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
-          <Route
-            path="/masters/dashboardmaster/:editwidgetId?"
-            element={<AppWidgetMaster />}
-          />
-          <Route
-            path="/masters/appversion/:editappvid?"
-            element={<AppVersion />}
-          />
-          <Route
-            path="/masters/webMenuMaster/:editwebmenuId?"
-            element={<WebMenuMaster />}
-          />
+            <Route
+              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+              element={<AccountMas />}
+            />
+            <Route
+              path="/masters/menuMaster/:menuId?"
+              element={<MenuMaster />}
+            />
+            <Route
+              path="/masters/dashboardmaster/:editwidgetId?"
+              element={<AppWidgetMaster />}
+            />
+            <Route
+              path="/masters/appversion/:editappvid?"
+              element={<AppVersion />}
+            />
+            <Route
+              path="/masters/webMenuMaster/:editwebmenuId?"
+              element={<WebMenuMaster />}
+            />
+            <Route
+              path="/reports/extract/:country?/:accType?/:userType?/:user?"
+              element={<AccountExtract />}
+            />
+            <Route
+              path="/Auth/forgot_paswd/:userId?/:userEmail?"
+              element={<ForgotPassword />}
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+
+          {/* <Route path="/login" element={<Login />} /> */}
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+          </Route>
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

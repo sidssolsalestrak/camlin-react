@@ -6,6 +6,7 @@ import reportWebVitals from "./reportWebVitals";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./theme";
 import { SnackbarProvider } from "notistack";
+import { LoaderProvider } from "./utils/LoaderContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -16,7 +17,9 @@ root.render(
         autoHideDuration={3000}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <App />
+        <LoaderProvider>
+          <App />
+        </LoaderProvider>
       </SnackbarProvider>
     </ThemeProvider>
   </React.StrictMode>,

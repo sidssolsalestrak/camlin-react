@@ -7,6 +7,7 @@ export default function TokenHandler() {
 
   useEffect(() => {
     if (token) {
+      // console.log("gettign token", token);
       try {
         const decodedToken = atob(token);
         localStorage.setItem("session-token", decodedToken);
