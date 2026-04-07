@@ -5,7 +5,8 @@ import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import {
     Box, Typography, Button, Tabs, Tab, IconButton, FormControl, TextField, Select, MenuItem, InputLabel, Dialog, DialogTitle, DialogContent,
-    Divider
+    Divider,
+    Autocomplete
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
@@ -14,22 +15,34 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { IoClose } from "react-icons/io5";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
+import { CheckBox } from "@mui/icons-material";
 
 export default function EDetailingMaster() {
     const { editEdetailing } = useParams()
     const [tabValue, setTabValue] = useState(1)
     const [allEdetailData, setEdetailData] = useState([])
-    const [seldetData,setSelDetData]=useState(0)
+    const [seldetData, setSelDetData] = useState(0)
+    const [selBusinessunit, setSelBuisnessUnit] = useState(null)
+    const [selBrand, setSelBrand] = useState(0)
     const [allSubData, setAllSubData] = useState([])
-    const [allDetData,setAllDetData]=useState([])
-    const [allBuisnessunit,setAllBuisnessUnit]=useState([])
-    const [allBrand,setAllBrand]=useState([])
+    const [allDetData, setAllDetData] = useState([])
+    const [allBuisnessunit, setAllBuisnessUnit] = useState([])
+    const [allBrand, setAllBrand] = useState([])
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [edetailinputData,setEdetailInputData]=useState({
+        title:'',
+        desc:'',
+        fileName:'',
+        order:'',
+        medStat:false,
+        kamStat:false,
+        merStat:false
+    })
     const decodedEDetailId = editEdetailing !== undefined && editEdetailing !== null ? Number(atob(editEdetailing)) : null
 
     useEffect(() => {
         fetchEdetailerData()
-         fetchEdetailerInputData()
+        fetchEdetailerInputData()
     }, [])
 
     const fetchEdetailerData = async () => {
@@ -60,20 +73,20 @@ export default function EDetailingMaster() {
         }
     }
 
-    const fetchEdetailerInputData=async()=>{
-        try{
-            let response=await api.post("/getEdetailerInputData")
-            console.log("Input field Data",response)
-            let detailDataRes=Array.isArray(response.data.DetailData)?response.data.DetailData:[]
+    const fetchEdetailerInputData = async () => {
+        try {
+            let response = await api.post("/getEdetailerInputData")
+            console.log("Input field Data", response)
+            let detailDataRes = Array.isArray(response.data.DetailData) ? response.data.DetailData : []
             setAllDetData(detailDataRes)
-            let brandDataRes=Array.isArray(response.data.brandData)?response.data.brandData:[]
-            setAllBrand(brandDataRes)
-            let buisnessUnitres=Array.isArray(response.data.buisnessUnitData)?response.data.buisnessUnitData:[]
-            setAllBuisnessUnit(buisnessUnitres)
+            let brandDataRes = Array.isArray(response.data.brandData) ? response.data.brandData : []
+            setAllBrand([{ id: 0, sub_name: 'Select brand' }, ...brandDataRes])
+            let buisnessUnitres = Array.isArray(response.data.buisnessUnitData) ? response.data.buisnessUnitData : []
+            setAllBuisnessUnit([{ id: 0, bu_name: 'Select Unit' }, ...buisnessUnitres])
 
         }
-        catch(err){
-            console.log("fetch Input field Data Error",err)
+        catch (err) {
+            console.log("fetch Input field Data Error", err)
         }
     }
 
@@ -130,7 +143,7 @@ export default function EDetailingMaster() {
     ]
 
     const column1 = [
-        { field: "sno", headerName: "SL_NO", filterable: true, sortable: true },
+        { field: "sno", headerName: "SI", filterable: true, sortable: true },
         { field: "det_id", headerName: "Sub Name", filterable: true, sortable: true },
         { field: "sub_img", headerName: "Preview Image", filterable: true, sortable: true },
         { field: "sub_img", headerName: "Preview Image", filterable: true, sortable: true },
@@ -144,20 +157,24 @@ export default function EDetailingMaster() {
         },
         { field: "file_name", headerName: "File Name", filterable: true, sortable: true },
         { field: "ord_id", headerName: "Ordering", filterable: true, sortable: true },
-        { field: "edit", headerName: "Edit", filterable: true, sortable: true, renderCell:(params)=>(
-         <IconButton>
-         <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
-         </IconButton>   
-        ) },
-        { field: "delete", headerName: "Delete", filterable: true, sortable: true, renderCell:(params)=>(
-            <IconButton>
-            <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />   
-            </IconButton>
-        ) },
-        
-        
+        {
+            field: "edit", headerName: "Edit", filterable: true, sortable: true, renderCell: (params) => (
+                <IconButton>
+                    <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                </IconButton>
+            )
+        },
+        {
+            field: "delete", headerName: "Delete", filterable: true, sortable: true, renderCell: (params) => (
+                <IconButton>
+                    <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                </IconButton>
+            )
+        },
 
-        
+
+
+
 
 
 
@@ -180,16 +197,81 @@ export default function EDetailingMaster() {
                 ) : null
                 }
                 {tabValue === 0 && (
-                    <Box sx={{ml:5}}>
-                    <FormControl sx={{mt:4,width:'30%'}}>
-                    <InputLabel id='det_type'>Detailing Type</InputLabel>
-                    <Select size="small" labelId="det_type" label="Detailing Type" >
-                    <MenuItem value={0}>Select Type</MenuItem>
-                    {allDetData.map((val)=>(
-                        <MenuItem key={val.id}>{val.doc_name}</MenuItem>
-                    ))}
-                    </Select>
-                    </FormControl>
+                    <Box sx={{ ml: 5, display: 'flex', flexDirection: 'column', gap: 2, width: {lg:'40%',md:'60%',sm:'80%',xs:'85%'} }}>
+                        <FormControl fullWidth sx={{ mt: 4 }}>
+                            <InputLabel id='det_type'>Detailing Type</InputLabel>
+                            <Select size="small" labelId="det_type" label="Detailing Type" value={seldetData} >
+                                <MenuItem value={0}>Select Type</MenuItem>
+                                {allDetData.map((val) => (
+                                    <MenuItem key={val.id}>{val.doc_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl fullWidth>
+                            <Autocomplete
+                                options={allBuisnessunit}
+                                getOptionLabel={(option) => option.bu_name || ""}
+                                value={selBusinessunit}
+                                onChange={(e, newValue) => { setSelBuisnessUnit(newValue) }}
+
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Business Unit*"
+                                        size="small"
+
+                                    />
+                                )}
+                            />
+                        </FormControl>
+                        <FormControl fullWidth>
+                            <Autocomplete
+                                options={allBrand}
+                                getOptionLabel={(option) => option.sub_name || ""}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Brand"
+                                        size="small"
+
+                                    />
+                                )} />
+                        </FormControl>
+                        <TextField label="Title" size="small" onChange={(e)=>setEdetailInputData(val=>({...val,}))} />
+                        <TextField label="Description" size="small" />
+                        <Box sx={{ width: '100%' }}>
+                            <FormControl sx={{ width: '50%' }}>
+                                <InputLabel id='file_path'>File Path</InputLabel>
+                                <Select size="small" labelId="file_path" label="File Path">
+                                    <MenuItem value={1}>https://biov3.s3.ap-south-1.amazonaws.com/assets/download/Edetailers/</MenuItem>
+                                    <MenuItem value={2}>https://biov3.s3.ap-south-1.amazonaws.com/assets/download/Edetailers/</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl sx={{ width: '50%' }}>
+                                <TextField size="small" sx={{ ml: 1, }} />
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography sx={{ fontSize: '13px' }}>Detailings/</Typography>
+                            <TextField size="small" fullWidth />
+                        </Box>
+                        <TextField label="File Name" size="small" />
+                        <TextField label="Order" size="small" />
+                        <Box className="checkboxRow">
+                            <Box className="checkboxRow">
+                                <MenuItem>Med Stat</MenuItem>
+                                <CheckBox />
+                            </Box>
+                            <Box className="checkboxRow">
+                                <MenuItem>KAM Stat</MenuItem>
+                                <CheckBox />
+                            </Box>
+                            <Box className="checkboxRow">
+                                <MenuItem>MER Stat</MenuItem>
+                                <CheckBox />
+                            </Box>
+                        </Box>
+                        <Button variant="contained" sx={{textTransform:'none',width:'2rem',mb:2}}>Save</Button>
                     </Box>
                 )}
                 {tabValue === 1 && (
@@ -216,22 +298,22 @@ export default function EDetailingMaster() {
                 }}
             >
                 <DialogTitle className="eDetailDialogtitle">
-                  <Typography sx={{fontSize:'13px'}}>Preview Detailing</Typography>
-                  <IconButton onClick={()=>onClose()}> 
-                    <IoClose size={18}  />
-                  </IconButton>
-                
+                    <Typography sx={{ fontSize: '15px' }}>Preview Detailing</Typography>
+                    <IconButton onClick={() => onClose()}>
+                        <IoClose size={18} />
+                    </IconButton>
+
 
                 </DialogTitle>
-                <Divider sx={{ mt: 0.8, mb: 2 }} />
-                <Box>
+                <Divider sx={{ mb: 2, mt: -1 }} />
+                <Box sx={{ mx: 2 }}>
                     <DataTable
-                     columns={column1}
-                     data={allSubData}
-                     showHeader={false} pagination={false} />
+                        columns={column1}
+                        data={allSubData}
+                        showHeader={false} pagination={false} />
                 </Box>
-                <Box sx={{display:'flex',justifyContent:'end',mr:2}}>
-                <Button variant="contained" onClick={()=>onClose()} sx={{backgroundColor:'#F39C12',width:'2rem',mt:1,mb:2,textTransform:'none'}}>Close</Button>
+                <Box sx={{ display: 'flex', justifyContent: 'end', mr: 2 }}>
+                    <Button variant="contained" onClick={() => onClose()} sx={{ backgroundColor: '#F39C12', width: '2rem', mt: 1, mb: 2, textTransform: 'none' }}>Close</Button>
                 </Box>
             </Dialog>
 
