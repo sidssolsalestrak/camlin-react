@@ -75,43 +75,41 @@ function App() {
             <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
             {/* main master routes */}
             <Route path="/masters/cat/:id?" element={<ProductCategory />} />
-            <Route
-              path="/masters/catSub/:id?"
-              element={<ProductSubCategory />}
-            />
+            <Route path="/masters/catSub/:id?" element={<ProductSubCategory />} />
             <Route path="/masters/dept/:id?" element={<Department />} />
             <Route path="/masters/designation/:id?" element={<Designation />} />
             <Route path="/masters/city_mas/:id?" element={<City />} />
+            <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
+            <Route path="/masters/prodview" element={<ViewProduct />} />
+            <Route path="/masters/stockist" element={<Stockist />} />
+
             {/* Admin Panel master routes */}
             <Route
               path="/masters/repTabs/:userId?/:cusId?"
               element={<ReportingTabs />}
             />
-            <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
-            <Route path="/masters/prodview" element={<ViewProduct />} />
-            <Route path="/masters/stockist" element={<Stockist />} />
 
-          <Route
-            path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
-            element={<AccountMas />}
-          />
-          <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
-          <Route
-            path="/masters/dashboardmaster/:editwidgetId?"
-            element={<AppWidgetMaster />}
-          />
-          <Route
-            path="/masters/appversion/:editappvid?"
-            element={<AppVersion />}
-          />
-          <Route
-            path="/masters/webMenuMaster/:editwebmenuId?"
-            element={<WebMenuMaster />}
-          />
-          <Route   path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"  
-          element={<AwsLogs />}  />
-          <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />}   />
-          <Route path="/masters/edetailing/:editEdetailing?"  element={<EDetailingMaster />}    />
+            <Route
+              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+              element={<AccountMas />}
+            />
+            <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
+            <Route
+              path="/masters/dashboardmaster/:editwidgetId?"
+              element={<AppWidgetMaster />}
+            />
+            <Route
+              path="/masters/appversion/:editappvid?"
+              element={<AppVersion />}
+            />
+            <Route
+              path="/masters/webMenuMaster/:editwebmenuId?"
+              element={<WebMenuMaster />}
+            />
+            <Route path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"
+              element={<AwsLogs />} />
+            <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />} />
+            <Route path="/masters/edetailing/:editEdetailing?" element={<EDetailingMaster />} />
             <Route
               path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
               element={<AccountMas />}

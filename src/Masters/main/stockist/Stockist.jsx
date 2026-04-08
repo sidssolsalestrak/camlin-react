@@ -9,10 +9,11 @@ import { Box, Button, FormControl, IconButton, InputLabel, MenuItem, Select, Typ
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from "../../../services/api";
 import { useEffect } from 'react';
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddStockist from './AddStockist';
+import ConfirmationDialog from '../../../utils/confirmDialog';
 
 const style = {
     color: "#026CB6",
@@ -41,10 +42,59 @@ const Stockist = () => {
     const decodedId = id ? atob(id) : null;
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
+    const showAlert = useToast();
+    const [confirmationDialog, setConfirmationDialog] = useState({
+        open: false,
+        title: "",
+        message: "",
+        onConfirm: null,
+        loading: false,
+        confirmText: "Confirm",
+        cancelText: "Cancel",
+        confirmColor: "primary"
+    });
+
+    const showConfirmationDialog = (config) => {
+        setConfirmationDialog({
+            ...confirmationDialog,
+            ...config,
+            open: true,
+        });
     };
+
+    const closeConfirmationDialog = () => {
+        setConfirmationDialog({
+            ...confirmationDialog,
+            open: false,
+        });
+    };
+
+    const showDeleteConfirmation = (row) => {
+        showConfirmationDialog({
+            title: `Delete Stockist`,
+            message: `Are you sure you want to delete this Stockist Record?`,
+            confirmText: "Yes",
+            confirmColor: "primary",
+            onConfirm: () => deleteCat(row),
+        });
+    };
+
+    /*---------- delete cat ---------*/
+    const deleteCat = async (row) => {
+        let id = row?.row?.id
+        try {
+            const res = await axios.post(`/delete_stockist/${id}`);
+            if (res?.data?.success) {
+                showAlert.success("Successfully Deleted Stockist Record")
+                fetchTableData();
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert.error("failed to delete")
+        } finally {
+            closeConfirmationDialog();
+        }
+    }
 
     /*----------for tab change---------*/
     const handleChange = useCallback((event, newValue) => {
@@ -57,6 +107,11 @@ const Stockist = () => {
             ...prev,
             [name]: val
         }))
+    }
+    const editdata = (row) => {
+        let encodeId = row?.row?.id
+        setValue('1');
+        navigate(`/masters/stockist/${btoa(encodeId)}`)
     }
 
     /*----------table columns---------*/
@@ -82,10 +137,10 @@ const Stockist = () => {
             filterable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" >
+                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
                         <EditIcon fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" color="error" >
+                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
                         <DeleteIcon fontSize="small" />
                     </IconButton>
                 </>
@@ -125,7 +180,7 @@ const Stockist = () => {
     const fetchTableData = async () => {
         try {
             if (!formData.region || formData.region <= "0") {
-                showAlert("Please select Region!", "error");
+                showAlert.error("Please select Region!");
                 return;
             }
             setLoading(true);
@@ -164,7 +219,7 @@ const Stockist = () => {
 
     return (
         <Layout>
-            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '100%', xs: '100%' } }}>
+            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -217,6 +272,17 @@ const Stockist = () => {
                     </TabPanel>
                 </TabContext>
             </Box>
+            <ConfirmationDialog
+                open={confirmationDialog.open}
+                onClose={closeConfirmationDialog}
+                onConfirm={confirmationDialog.onConfirm}
+                title={confirmationDialog.title}
+                message={confirmationDialog.message}
+                confirmText={confirmationDialog.confirmText}
+                cancelText={confirmationDialog.cancelText}
+                loading={loading}
+                confirmColor={confirmationDialog.confirmColor}
+            />
         </Layout >
     )
 }

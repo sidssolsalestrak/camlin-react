@@ -9,7 +9,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import DataTable from '../../../utils/dataTable';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from "../../../services/api";
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../utils/confirmDialog";
@@ -50,10 +50,7 @@ const Designation = () => {
     }
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
@@ -131,10 +128,12 @@ const Designation = () => {
             const res = await axios.post("/addDesignation", payload)
             console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added Designation")
+                showAlert.success("Successfully Added Designation")
                 setFormData({ abbreviation: "", designation: "" });
                 fetchTableData();
                 resetValidations();
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -146,7 +145,7 @@ const Designation = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to Add Designation", "error")
+                showAlert.error("Failed to Add Designation")
             }
         } finally {
             closeConfirmationDialog();
@@ -166,10 +165,12 @@ const Designation = () => {
             const res = await axios.post("/UpdateDesignation", payload)
             console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated Designation")
+                showAlert.success("Successfully updated Designation")
                 setFormData({ abbreviation: "", designation: "" });
                 setValue('1')
                 navigate(`/masters/designation`)
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -181,7 +182,7 @@ const Designation = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to Update Designation", "error")
+                showAlert.error("Failed to Update Designation")
             }
         } finally {
             closeConfirmationDialog();
@@ -196,12 +197,12 @@ const Designation = () => {
             const res = await axios.post(`/deleteDesignation/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted Designation")
+                showAlert.success("Successfully Deleted Designation")
                 fetchTableData();
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }
@@ -290,7 +291,7 @@ const Designation = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 

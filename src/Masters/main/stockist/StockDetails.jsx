@@ -52,7 +52,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.stk_type_name}</MenuItem>
                     ))}
                 </Select>
-                {errors?.type && <span style={{color:"#d32f2f",fontSize:"9px",paddingLeft:"10px"}}>{errors.type}</span>}
+                {errors?.type && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.type}</span>}
             </FormControl>
             <TextField value={formData.code}
                 onChange={(e) => handleChangeForm("code", e.target.value)}
@@ -123,7 +123,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                     }
                 }}
             />
-            <TextField type='number' value={formData.pin}
+            <TextField value={formData.pin}
                 onChange={(e) => handleChangeForm("pin", e.target.value)}
                 size='small' placeholder='Enter Pin'
                 variant='outlined' label="Pin" fullWidth
@@ -148,17 +148,31 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 required size='small' placeholder='Enter Email'
                 variant='outlined' label="Email" fullWidth
             />
-            <TextField value={formData.phone}
+            <TextField value={formData.phone} 
                 onChange={(e) => handleChangeForm("phone", e.target.value)}
                 size='small' placeholder='Enter Phone'
                 variant='outlined' label="Phone" fullWidth
             />
-            <TextField value={formData.mobile} type='number'
+            <TextField value={formData.mobile} 
                 onChange={(e) => handleChangeForm("mobile", e.target.value)}
                 required size='small' placeholder='Enter Mobile No'
                 variant='outlined' label="Mobile" fullWidth
                 error={!!errors.mobile}
                 helperText={errors.mobile}
+                onBlur={(e) => {
+                    let val = e.target.value;
+                    if (val.length !== 10) {
+                        setErrors((prev) => ({
+                            ...prev,
+                            mobile: "Enter a valid 10-digit mobile number"
+                        }));
+                    } else {
+                        setErrors((prev) => ({
+                            ...prev,
+                            mobile: ""
+                        }));
+                    }
+                }}
             />
         </Box>
     )

@@ -91,12 +91,35 @@ const Layout = ({ children }) => {
   useEffect(() => {
     if (!menuHtml) return;
     const timer = setTimeout(() => {
+      // Wrap bare text nodes so CSS can hide/show them
+      const links = document.querySelectorAll(".php-menu a");
+      links.forEach((link) => {
+        link.childNodes.forEach((node) => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+            const span = document.createElement("span");
+            span.className = "menu-label";
+            span.textContent = node.textContent;
+            node.replaceWith(span);
+          }
+        });
+        // Add tooltip so user knows what icon is on hover
+        const label = link.querySelector(".menu-label");
+        if (label && !link.title) {
+          link.title = label.textContent.trim();
+        }
+      });
       const toggles = document.querySelectorAll(".treeview > a");
       toggles.forEach((el) => {
         el.onclick = function (e) {
           e.preventDefault();
           e.stopPropagation();
           const parent = this.parentElement;
+          const isCollapsed = document.querySelector(".php-menu.collapsed");
+
+          // If collapsed, CSS hover handles flyout — skip JS
+          if (isCollapsed) return;
+
+          // Expanded mode — normal click toggle
           parent.classList.toggle("active");
           const submenu = parent.querySelector(":scope > .treeview-menu");
           if (submenu) {
@@ -104,9 +127,32 @@ const Layout = ({ children }) => {
           }
         };
       });
+      const treeviewItems = document.querySelectorAll(".php-menu .treeview");
+      treeviewItems.forEach((item) => {
+        item.addEventListener("mouseenter", function () {
+          const isCollapsed = document.querySelector(".php-menu.collapsed");
+          if (!isCollapsed) return;
+          const submenu = this.querySelector(":scope > .treeview-menu");
+          if (submenu) {
+            const rect = this.getBoundingClientRect();
+            submenu.style.top = rect.top + "px";
+
+            const nestedItems = submenu.querySelectorAll(".treeview");
+            nestedItems.forEach((nested) => {
+              nested.addEventListener("mouseenter", function () {
+                const nestedMenu = this.querySelector(":scope > .treeview-menu");
+                if (nestedMenu) {
+                  const nestedRect = this.getBoundingClientRect();
+                  nestedMenu.style.top = nestedRect.top + "px";
+                }
+              });
+            });
+          }
+        });
+      });
     }, 100);
     return () => clearTimeout(timer);
-  }, [menuHtml,drawerOpen,isMobile]);
+  }, [menuHtml, drawerOpen, isMobile]);
 
   // Highlight active menu item based on current path
   useEffect(() => {
@@ -174,7 +220,7 @@ const Layout = ({ children }) => {
       });
     }, 150);
     return () => clearTimeout(timer);
-  }, [menuHtml, location.pathname,drawerOpen,isMobile]);
+  }, [menuHtml, location.pathname, drawerOpen, isMobile]);
 
   // Global click handler used by menu items
   useEffect(() => {
@@ -335,19 +381,20 @@ const Layout = ({ children }) => {
       {/* ── SIDEBAR DRAWER ── */}
       <Drawer
         variant={isMobile ? "temporary" : "persistent"}
-        open={drawerOpen}
+        open={isMobile ? drawerOpen : true}
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }}
         sx={{
-          width: drawerOpen ? 190 : 0,
+          width: drawerOpen ? 190 : 50,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: 190,
+            width: drawerOpen ? 190 : 50,
             boxSizing: "border-box",
             backgroundColor: "#588aae",
             height: "100vh",
             position: "relative",
             overflowY: "auto",
+            transition: "width 0.3s ease !important",
             "&::-webkit-scrollbar": {
               width: "8px",
               background: "transparent",
@@ -382,7 +429,7 @@ const Layout = ({ children }) => {
         {/* Dynamic menu rendered from API HTML */}
         <Box sx={{ paddingTop: "2.8rem" }}>
           <div
-            className="php-menu"
+            className={`php-menu ${!drawerOpen ? "collapsed" : ""}`}
             dangerouslySetInnerHTML={{ __html: menuHtml }}
           />
         </Box>
