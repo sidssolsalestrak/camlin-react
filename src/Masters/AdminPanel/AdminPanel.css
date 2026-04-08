@@ -3,3 +3,26 @@
     color:red;
     margin-left: 4px !important;
 }
+.extra-field{
+    font-size: 14px;
+    color: #133DBE;
+}
+.extra-field:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}
+.eDetailDialogtitle{
+      color: #212121;
+      display: flex;
+      font-size: 16px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+}
+.checkboxRow{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2;
+}
+

@@ -1,18 +1,15 @@
 import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import {
-    Box, Typography, Button, Tabs, Tab, IconButton, FormControl,
-    ListItemText, FormControlLabel, TextField, Select, MenuItem, InputLabel
+    Box, Typography, Button, Tabs, Tab, IconButton, FormControl,TextField, Select, MenuItem, InputLabel
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
-import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import './AdminPanel.css'
 
 export default function AppVersion() {
@@ -27,8 +24,8 @@ export default function AppVersion() {
     const [apptypeErr,setAppTypeErr]=useState(false)
     const [buildTypeErr,setBuildTypeErr]=useState(false)
     const [versionTypeErr,setVersionTypeErr]=useState(false)
-    const {enqueueSnackbar} =useSnackbar()
     const navigate=useNavigate()
+    const toast=useToast()
 
     useEffect(() => {
         fetchAppversionData()
@@ -120,7 +117,7 @@ export default function AppVersion() {
                 console.log("App version submit",Payload)
                 let response=await api.post("/appVersionCreate",Payload)
                 if(response.data.success){
-                    enqueueSnackbar(response.data.message,{variant:'success',anchorOrigin:{vertical:'top',horizontal:'center'}})
+                    toast.success(response.data.message)
                     if(decodedAppEditId){
                         fetchAppversionData() 
                         navigate('/masters/appversion')
@@ -132,8 +129,7 @@ export default function AppVersion() {
                     }
                 }
                 else{
-                    enqueueSnackbar(response.data.message,{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
-
+                    toast.error(response.data.message)
                 }
 
 
@@ -240,9 +236,9 @@ export default function AppVersion() {
                                 showSubmitConfirmation()
                             }
                             else{
-                               enqueueSnackbar("Please Fix all mandotory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}}) 
+                               toast.error("Please Fix all mandotory fields")
                             }
-                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none' }}>{decodedAppEditId ? "Update" : "Create"}</Button>
+                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none',mb:3 }}>{decodedAppEditId ? "Update" : "Create"}</Button>
                     </Box>
                 )}
                 {tabValue === 1 && (

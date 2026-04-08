@@ -5,7 +5,6 @@ import {
     ListItemText, Autocomplete
 } from "@mui/material";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
 import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
@@ -13,6 +12,7 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+import useToast from "../../utils/useToast";
 import './AdminPanel.css'
 
 export default function ReportingTabs() {
@@ -20,7 +20,7 @@ export default function ReportingTabs() {
     const { userId, cusId } = useParams()
     const decodedUserId = userId !== undefined && userId !== null ? Number(atob(userId)) : null
     const decodedCusId = cusId !== undefined && cusId !== null ? Number(atob(cusId)) : null
-    const { enqueueSnackbar } = useSnackbar()
+    const toast=useToast()
     const navigate = useNavigate()
     const [tabValue, setTabValue] = useState(1)
     const [userType, setUserType] = useState(null)
@@ -35,6 +35,7 @@ export default function ReportingTabs() {
     const [selUserMasName, setSelUserMasName] = useState("")
     const [userMasError, setUserMasError] = useState(false)
     const [accError, setAccError] = useState(false)
+    // eslint-disable-next-line
     const [repInputError, setRepInputError] = useState(false)
 
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -66,6 +67,7 @@ export default function ReportingTabs() {
             return
         }
         collectEditData(decodedUserId, decodedCusId)
+    // eslint-disable-next-line
     }, [decodedUserId, decodedCusId])
 
     const resetFields = () => {
@@ -114,12 +116,12 @@ export default function ReportingTabs() {
         if (!selUserMasType || Number(selUserMasType.id)===0) { setUserMasError(true); isValid = false }   // ← null check
         if (selAccType === "0") { setAccError(true); isValid = false }
         if(!isValid){
-           enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+           toast.error("Please fix all mandatory fields")
            return isValid
         }
         let replength = selRepInputData.length
         if (replength === 0 || replength < 0) {
-            enqueueSnackbar("Please Select atleast one Reporting Module !", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.success("Please Select atleast one Reporting Module !")
             setRepInputError(true)
             isValid = false
         }
@@ -136,7 +138,7 @@ export default function ReportingTabs() {
             }
             let response = await api.post("/reportTabCreate", addPayload)
             if (response.data.success) {
-                enqueueSnackbar(decodedUserId ? "Reporting Tabs Updated successfully" : response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(decodedUserId ?"Reporting Tabs Updated successfully" : response.data.message)
                 if (decodedUserId) {
                     fetchReportData()
                     navigate("/masters/repTabs")
@@ -146,7 +148,7 @@ export default function ReportingTabs() {
                     setTabValue(1)
                 }
             } else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
         } catch (err) {
             console.log(err)
@@ -214,14 +216,14 @@ export default function ReportingTabs() {
             let payload = { user_id: userId, cus_type: cusId }
             let response = await api.post("/deleteReportTabs", payload)
             if (response.data.success) {
-                enqueueSnackbar("Deleted Successfully", { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success("Deleted Successfully")
                 fetchReportData()
             } else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
         } catch (err) {
             console.log("Delete Error", err)
-            enqueueSnackbar("Something went wrong!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Something went wrong!")
         } finally {
             closeConfirmationDialog()
         }
@@ -343,7 +345,7 @@ export default function ReportingTabs() {
 
                         <Button onClick={() => {
                             if (validateReportingFields()) showSubmitConfirmation()
-                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none' }}>
+                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none',mb:3 }}>
                             {decodedUserId ? "Update" : "Submit"}
                         </Button>
                     </Box>

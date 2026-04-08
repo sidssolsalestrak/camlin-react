@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import {
     Box, Typography, Button, Tabs, Tab, IconButton, Checkbox,
-    ListItemText, FormControlLabel, TextField, Autocomplete,MenuItem
+    ListItemText, TextField, Autocomplete,MenuItem
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import './AdminPanel.css'
 
 export default function AppWidgetMaster() {
@@ -29,8 +28,9 @@ export default function AppWidgetMaster() {
     const [selWidgetMenu, setSelWidgetMenu] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
     const [userTypeErr, setUserTypeErr] = useState(false)
+    // eslint-disable-next-line
     const [menuCheckErr, setMenuCheckErr] = useState(false)
-    const { enqueueSnackbar } = useSnackbar()
+    const toast=useToast()
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -47,6 +47,7 @@ export default function AppWidgetMaster() {
         if (allUserInputData.length > 0) {
             collectEditData(decodedWidgetId)
         }
+    // eslint-disable-next-line
     }, [decodedWidgetId, allUserInputData])
 
 
@@ -84,11 +85,11 @@ export default function AppWidgetMaster() {
             isValid = false
         }
         if(!isValid){
-           enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+           toast.error("Please fix all mandatory fields")
            return isValid
         }
         if (selWidgetMenu.length === 0) {
-            enqueueSnackbar("Please Select atleast one Menu option !", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Please Select atleast one Menu option !")
             setMenuCheckErr(true)
             isValid = false
         }
@@ -105,7 +106,7 @@ export default function AppWidgetMaster() {
             }
             let response = await api.post("/appWidgetCreate", addPayload)
             if (response.data.success) {
-                enqueueSnackbar(decodedWidgetId ? "App Widget Menu Updated successfully" : response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(decodedWidgetId ? "App Widget Menu Updated successfully" : response.data.message)
                 if (decodedWidgetId) {
                     fetchAppWidgetData()
                     navigate("/masters/dashboardmaster")
@@ -116,7 +117,7 @@ export default function AppWidgetMaster() {
                 }
             }
             else{
-                enqueueSnackbar(response.data.message,{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+                toast.error(response.data.message)
             }
         } catch (err) {
             console.log(err)
@@ -214,10 +215,10 @@ export default function AppWidgetMaster() {
         try {
             let response = await api.post("/deleteWidgetmenu", { uid: userId })
             if (response.data.success) {
-                enqueueSnackbar("Deleted Successfully", { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success("Deleted Successfully")
                 fetchAppWidgetData()
             } else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
         } catch (err) {
             console.log("Delete menu Error")
@@ -285,7 +286,7 @@ export default function AppWidgetMaster() {
                             ))}
                         </Box>
 
-                        <Button variant="contained" sx={{ width: '2rem' }} onClick={() => {
+                        <Button variant="contained" sx={{ width: '2rem',mb:3 }} onClick={() => {
                             if (validateFields()) showSubmitConfirmation()
                         }}>
                             {decodedWidgetId ? "Update" : "Submit"}
