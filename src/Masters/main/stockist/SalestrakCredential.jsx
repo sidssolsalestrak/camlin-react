@@ -8,14 +8,14 @@ const style = {
     fontWeight: 500,
 }
 
-const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors }) => {
+const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, original }) => {
     const validateUser = (value) => {
         const regex = /^[a-zA-Z0-9_]*$/;
         return regex.test(value);
     };
 
     const validatePassword = (value) => {
-        const regex = /^[a-zA-Z0-9_]{8,}$/;
+        const regex = /^[^\s]{8,}$/;
         return regex.test(value);
     };
 
@@ -42,27 +42,29 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors }) 
                     }
                 }}
             />
-            <TextField value={formData.password}
+            <TextField value={formData.password} type='password' required
                 onChange={(e) => handleChangeForm("password", e.target.value)}
                 size='small' placeholder='Enter Password'
                 variant='outlined' label="Password" fullWidth
                 error={!!errors.password}
                 helperText={errors.password}
                 onBlur={(e) => {
-                    if (!validatePassword(e.target.value)) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            password: "Should be Min 8 Characters"
-                        }));
-                    } else {
-                        setErrors((prev) => ({
-                            ...prev,
-                            password: ""
-                        }));
+                    if (original.password !== e.target.value) {
+                        if (!validatePassword(e.target.value)) {
+                            setErrors((prev) => ({
+                                ...prev,
+                                password: "Should be Min 8 Characters"
+                            }));
+                        } else {
+                            setErrors((prev) => ({
+                                ...prev,
+                                password: ""
+                            }));
+                        }
                     }
                 }}
             />
-            <TextField value={formData.confirmPassword}
+            <TextField value={formData.confirmPassword} type='password' required
                 onChange={(e) => handleChangeForm("confirmPassword", e.target.value)}
                 size='small' placeholder='Confirm Password'
                 variant='outlined' label="Confirm Password" fullWidth

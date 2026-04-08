@@ -50,14 +50,14 @@ function App() {
           <Route path="/masters/dept/:id?" element={<Department />} />
           <Route path="/masters/designation/:id?" element={<Designation />} />
           <Route path="/masters/city_mas/:id?" element={<City />} />
+          <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
+          <Route path="/masters/prodview" element={<ViewProduct />} />
+          <Route path="/masters/stockist/:id?" element={<Stockist />} />
           {/* Admin Panel master routes */}
           <Route
             path="/masters/repTabs/:userId?/:cusId?"
             element={<ReportingTabs />}
           />
-          <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
-          <Route path="/masters/prodview" element={<ViewProduct />} />
-          <Route path="/masters/stockist" element={<Stockist />} />
 
           <Route
             path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"

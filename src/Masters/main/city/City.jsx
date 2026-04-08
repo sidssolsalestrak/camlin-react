@@ -12,7 +12,7 @@ import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
@@ -59,10 +59,7 @@ const ProductCategory = () => {
     const decodedId = id ? atob(id) : null;
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: "",
@@ -139,10 +136,12 @@ const ProductCategory = () => {
             const res = await axios.post("/addCity", payload)
             console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added City")
+                showAlert.success("Successfully Added City")
                 setFormData({ stateName: "", cityName: "" });
                 fetchTableData();
                 resetValidations();
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -154,7 +153,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to ADD City", "error")
+                showAlert.error("Failed to ADD City")
             }
         } finally {
             closeConfirmationDialog();
@@ -173,10 +172,12 @@ const ProductCategory = () => {
             const res = await axios.post("/updateCity", payload)
             console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated City")
+                showAlert.success("Successfully updated City")
                 setFormData({ stateName: "", cityName: "" });
                 setValue('1')
                 navigate(`/masters/city_mas`)
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -188,7 +189,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to Update City", "error")
+                showAlert.error("Failed to Update City")
             }
         } finally {
             closeConfirmationDialog();
@@ -203,12 +204,12 @@ const ProductCategory = () => {
             const res = await axios.post(`/deleteCity/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted City")
+                showAlert.success("Successfully Deleted City")
                 fetchTableData();
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }
@@ -314,7 +315,7 @@ const ProductCategory = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 

@@ -10,7 +10,7 @@ import DataTable from '../../../utils/dataTable';
 import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import { useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
@@ -52,10 +52,7 @@ const ProductCategory = () => {
     const decodedId = id ? atob(id) : null;
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
 
     /*---------- reset validations ---------*/
     const resetValidations = () => {
@@ -147,10 +144,12 @@ const ProductCategory = () => {
             const res = await axios.post("/addCat", payload)
             console.log("adding category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added Product Category")
+                showAlert.success("Successfully Added Product Category")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -162,7 +161,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to ADD Product Category", "error")
+                showAlert.error("Failed to ADD Product Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -183,10 +182,12 @@ const ProductCategory = () => {
             const res = await axios.post("/editCat", payload)
             console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated Product Category")
+                showAlert.success("Successfully updated Product Category")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/cat`)
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -198,7 +199,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to Update Product Category", "error")
+                showAlert.error("Failed to Update Product Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -243,7 +244,7 @@ const ProductCategory = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 
@@ -254,12 +255,12 @@ const ProductCategory = () => {
             const res = await axios.post(`/deleteCat/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }

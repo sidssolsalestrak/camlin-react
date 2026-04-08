@@ -5,13 +5,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ImDownload3 } from "react-icons/im";
 import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
 
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
     m: 2, p: 2, borderRadius: '6px',
-    minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '100%', xs: '100%' }
+    minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' }
 }
 
 const style = {
@@ -74,10 +74,7 @@ const AddProduct = () => {
     const [validation, setValidations] = useState(validationFields)
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: "",
@@ -192,7 +189,7 @@ const AddProduct = () => {
     /*---------- payload from submit or edit ---------*/
     let payload = {
         prod_type: formData.productType,
-        prod_name: formData.productName,
+        prod_name: formData.productName.trim(),
         subcat_id: formData.subCatName,
         prod_code: formData.shortName,
         code: formData.code,
@@ -213,8 +210,10 @@ const AddProduct = () => {
             const res = await axios.post("/prodmas_create", payload)
             console.log("adding product:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added Product")
+                showAlert.success("Successfully Added Product")
                 resetForm();
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -222,7 +221,7 @@ const AddProduct = () => {
                 setError("productName", val?.message || "")
             } else {
                 console.error(error);
-                showAlert("Failed to ADD Product", "error")
+                showAlert.error("Failed to ADD Product")
             }
         } finally {
             closeConfirmationDialog();
@@ -258,7 +257,7 @@ const AddProduct = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 
@@ -267,14 +266,16 @@ const AddProduct = () => {
         try {
             if (decodedId) {
                 payload.id = decodedId
-                payload.prodNameNew = original.prod_name
+                payload.prodNameNew = original.prod_name.trim()
             }
             const res = await axios.post("/prodmas_update", payload)
             console.log("updating product:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated Product")
+                showAlert.success("Successfully updated Product")
                 resetForm();
                 navigate(`/masters/prodview`)
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -282,7 +283,7 @@ const AddProduct = () => {
                 setError("productName", val?.message || "")
             } else {
                 console.error(error);
-                showAlert("Failed to Update Product", "error")
+                showAlert.error("Failed to Update Product")
             }
         } finally {
             closeConfirmationDialog();
@@ -401,7 +402,7 @@ const AddProduct = () => {
                             onChange={(e) => handleChange("unitConvertion", e.target.value)} label="Unit Convertion" placeholder='Enter Unit' />
                     </Grid>
                 </Grid>
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" } }}>
                     <Button onClick={() => showSubmitConfirmation()} startIcon={<ImDownload3 style={{ height: "15px" }} />} variant='contained' color="primary">{decodedId ? "Update" : "Create"}</Button>
                 </Box>
             </Box>

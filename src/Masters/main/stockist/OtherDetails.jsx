@@ -1,4 +1,4 @@
-import { Box, FormControl, FormControlLabel, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Typography } from '@mui/material'
+import { Autocomplete, Box, FormControl, FormControlLabel, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Typography } from '@mui/material'
 import React, { useEffect } from 'react'
 import { useState } from 'react'
 import axios from "../../../services/api";
@@ -17,11 +17,19 @@ const menuStyle = {
     }
 }
 
-const OtherDetails = ({ formData, handleChangeForm, errors }) => {
+const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => {
     const [zoneData, setzoneData] = useState([]);
     const [regionData, setregionData] = useState([]);
     const [area, setarea] = useState([])
     const [teritory, setteritory] = useState([])
+    const [user, setUser] = useState([])
+    const [supplied_type, setsupplied_type] = useState([])
+    const [supplied_by, setsupplied_by] = useState([])
+    const [state, setstate] = useState([])
+    const [city, setcity] = useState([])
+    const [stockCat, setstockCat] = useState([])
+    const [matGroup, setmatGroup] = useState([])
+
     /*------------ get zone data ---------- */
     const fetchZone = async () => {
         try {
@@ -30,6 +38,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
             setzoneData(data);
         } catch (error) {
             console.error(error);
+            setzoneData([])
         }
     }
 
@@ -40,6 +49,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
             setregionData(Array.isArray(response.data.data) ? response.data.data : [])
         } catch (err) {
             console.log("fetchRegion error", err)
+            setregionData([])
         }
     }
 
@@ -55,10 +65,11 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
             setarea(data);
         } catch (error) {
             console.error(error);
+            setarea([]);
         }
     }
 
-    /*----------fetch teritory---------*/
+    /*---------- fetch teritory---------*/
     const fetchTeritoy = async () => {
         try {
             const res = await axios.post("/getTerriTb", { area_id: formData.area });
@@ -66,26 +77,146 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
             setteritory(data);
         } catch (error) {
             console.error(error);
+            setteritory([]);
+        }
+    }
+
+    /*---------- fetch Supplied By---------*/
+    const fetchSuppliedType = async () => {
+        try {
+            const res = await axios.post("/suplied_type");
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setsupplied_type(data);
+        } catch (error) {
+            console.error(error);
+            setsupplied_type([]);
+        }
+    }
+
+    /*---------- fetch Supplied to---------*/
+    const fetchSuppliedTo = async () => {
+        try {
+            const res = await axios.post("/suplied_by", { suplier: formData.supplied_Type });
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setsupplied_by(data);
+        } catch (error) {
+            console.error(error);
+            setsupplied_by([]);
+        }
+    }
+
+    /*---------- fetch state ---------*/
+    const fetchState = async () => {
+        try {
+            const res = await axios.post("/get_state_list", { zonedrp: formData.zone });
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setstate(data);
+        } catch (error) {
+            console.error(error);
+            setstate([]);
+        }
+    }
+
+    /*---------- fetch city ---------*/
+    const fetchCity = async () => {
+        try {
+            const res = await axios.post("/get_city_list", { stateid: formData.state });
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setcity(data);
+        } catch (error) {
+            console.error(error);
+            setcity([]);
+        }
+    }
+
+    /*---------- fetch stock cat ---------*/
+    const fetchStockCat = async () => {
+        try {
+            const res = await axios.post("/stk_cat");
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setstockCat(data);
+        } catch (error) {
+            console.error(error);
+            setstockCat([]);
+        }
+    }
+
+    /*---------- fetch mat group ---------*/
+    const fetchMatGroup = async () => {
+        try {
+            const res = await axios.post("/matrix_grp");
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setmatGroup(data);
+        } catch (error) {
+            console.error(error);
+            setmatGroup([]);
+        }
+    }
+
+    /*---------- fetch user list ---------*/
+    const fetchUser = async () => {
+        try {
+            const res = await axios.post("/get_user_list", { zone_id: formData.zone });
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setUser(data);
+
+            // ✅ if editing, auto-select matched users
+            if (defaultUserId && defaultUserId.length > 0) {
+                const matched = data.filter(u => defaultUserId.includes(u.id));
+                if (matched.length > 0) {
+                    handleChangeForm("user", matched);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setUser([]);
         }
     }
 
     //initial render
     useEffect(() => {
         fetchZone();
+        fetchSuppliedType();
+        fetchStockCat();
+        fetchMatGroup();
     }, [])
 
-    //render based on dependency
+    // Zone changes
     useEffect(() => {
         if (formData?.zone > 0) {
             fetchRegion();
+            fetchState();
+            fetchUser();
         }
-        if (formData?.region > 0) {
+    }, [formData?.zone]);
+
+    // Region changes
+    useEffect(() => {
+        if (formData?.region > 0 && formData?.zone > 0) {
             fetchArea();
         }
+    }, [formData?.region]);
+
+    // Area changes
+    useEffect(() => {
         if (formData?.area > 0) {
             fetchTeritoy();
         }
-    }, [formData])
+    }, [formData?.area]);
+
+    // Supplied Type changes
+    useEffect(() => {
+        if (formData?.supplied_Type > 0) {
+            fetchSuppliedTo();
+        }
+    }, [formData?.supplied_Type]);
+
+    // State changes
+    useEffect(() => {
+        if (formData?.state > 0) {
+            fetchCity();
+        }
+    }, [formData?.state]);
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
@@ -138,13 +269,24 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 {errors?.teritory && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.teritory}</span>}
             </FormControl>
 
-            <FormControl fullWidth size="small" required>
-                <InputLabel id="User">User</InputLabel>
-                <Select value={formData.user} id='Area' label="User" error={!!errors.user} MenuProps={menuStyle}
-                    labelId="User" variant="outlined" onChange={(e) => handleChangeForm("user", e.target.value)}>
-                    <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
-                </Select>
-                {errors?.user && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.user}</span>}
+            <FormControl fullWidth >
+                <Autocomplete
+                    multiple
+                    options={user}
+                    getOptionLabel={(option) => option.name || ""}
+                    getOptionKey={(option) => option.id}
+                    value={formData.user || []}
+                    onChange={(event, value) => handleChangeForm("user", value)}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="User *"
+                            size="small"
+                            error={!!errors.user}
+                            helperText={errors?.user}
+                        />
+                    )}
+                />
             </FormControl>
 
             <FormControl fullWidth size="small" required>
@@ -152,6 +294,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.supplied_Type} id='SuppliedType' label="Supplied Type" error={!!errors.supplied_Type} MenuProps={menuStyle}
                     labelId="SuppliedType" variant="outlined" onChange={(e) => handleChangeForm("supplied_Type", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {supplied_type?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.stk_type_name}</MenuItem>
+                    ))}
                 </Select>
                 {errors?.supplied_Type && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.supplied_Type}</span>}
             </FormControl>
@@ -161,6 +306,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.supplied_By} id='SuppliedBy' label="Supplied By" error={!!errors.supplied_By} MenuProps={menuStyle}
                     labelId="SuppliedBy" variant="outlined" onChange={(e) => handleChangeForm("supplied_By", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {supplied_by?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.stk_code} - {val?.stk_name}</MenuItem>
+                    ))}
                 </Select>
                 {errors?.supplied_By && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.supplied_By}</span>}
             </FormControl>
@@ -170,6 +318,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.state} id='State' label="State" error={!!errors.state} MenuProps={menuStyle}
                     labelId="State" variant="outlined" onChange={(e) => handleChangeForm("state", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {state?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.state_name}</MenuItem>
+                    ))}
                 </Select>
                 {errors?.state && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.state}</span>}
             </FormControl>
@@ -179,6 +330,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.city} id='City' label="City" error={!!errors.city} MenuProps={menuStyle}
                     labelId="City" variant="outlined" onChange={(e) => handleChangeForm("city", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {city?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.city_name}</MenuItem>
+                    ))}
                 </Select>
                 {errors?.city && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.city}</span>}
             </FormControl>
@@ -188,6 +342,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.category} id='category' label="Stockist Category" MenuProps={menuStyle}
                     labelId="category" variant="outlined" onChange={(e) => handleChangeForm("category", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {stockCat?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.cat_type}</MenuItem>
+                    ))}
                 </Select>
             </FormControl>
 
@@ -196,8 +353,12 @@ const OtherDetails = ({ formData, handleChangeForm, errors }) => {
                 <Select value={formData.matrixGroup} id='matrixGroup' label="Stockist Matrix Group" MenuProps={menuStyle}
                     labelId="matrixGroup" variant="outlined" onChange={(e) => handleChangeForm("matrixGroup", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
+                    {matGroup?.map((val) => (
+                        <MenuItem key={val.id} value={val.id}>{val?.matrix_grp}</MenuItem>
+                    ))}
                 </Select>
             </FormControl>
+
         </Box>
     )
 }

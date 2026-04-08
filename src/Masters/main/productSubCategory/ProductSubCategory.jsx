@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import { useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
@@ -55,10 +55,7 @@ const ProductSubCategory = () => {
     const decodedId = id ? atob(id) : null;
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
 
     /*----------reset validations ---------*/
     const resetValidations = () => {
@@ -168,10 +165,12 @@ const ProductSubCategory = () => {
             const res = await axios.post("/addCatSub", payload)
             console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added Sub Product Category")
+                showAlert.success("Successfully Added Sub Product Category")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
+            } else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -183,7 +182,7 @@ const ProductSubCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to ADD Sub Product Category", "error")
+                showAlert.error("Failed to ADD Sub Product Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -204,10 +203,12 @@ const ProductSubCategory = () => {
             const res = await axios.post("/subCatEdit", payload)
             console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated Sub Product Category")
+                showAlert.success("Successfully updated Sub Product Category")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/catSub`)
+            } else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -219,7 +220,7 @@ const ProductSubCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert("Failed to Update Sub Product Category", "error")
+                showAlert.error("Failed to Update Sub Product Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -245,7 +246,7 @@ const ProductSubCategory = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 
@@ -256,12 +257,12 @@ const ProductSubCategory = () => {
             const res = await axios.post(`/deleteCatSub/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }
