@@ -28,8 +28,6 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import dayjs from "dayjs";
 
-
-
 const DataTable = ({
   data = [],
   columns = [],
@@ -60,11 +58,13 @@ const DataTable = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ field: null, direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    field: null,
+    direction: "asc",
+  });
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  
   const flatColumns = useMemo(() => {
     const result = [];
     columns.forEach((col) => {
@@ -79,7 +79,7 @@ const DataTable = ({
 
   const hasSubColumns = useMemo(
     () => columns.some((col) => col.subColumns?.length > 0),
-    [columns]
+    [columns],
   );
 
   // Track header height for sticky sub-row positioning
@@ -94,18 +94,20 @@ const DataTable = ({
     setPage(0);
   }, [data]);
 
-  
   const handleSort = (field) => {
     if (!field) return;
     setSortConfig((prev) =>
       prev.field === field
         ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field, direction: "asc" }
+        : { field, direction: "asc" },
     );
   };
 
-  
-  const getStickyStyles = (index, colList, { isHeader = false, isFooter = false } = {}) => {
+  const getStickyStyles = (
+    index,
+    colList,
+    { isHeader = false, isFooter = false } = {},
+  ) => {
     if (!stickyLastColumn || stickyColumnsCount <= 0) return {};
     const startIdx = colList.length - stickyColumnsCount;
     if (index < startIdx) return {};
@@ -125,7 +127,6 @@ const DataTable = ({
     };
   };
 
-  
   const formatCellValue = (value, column) => {
     if (value === null || value === undefined || value === "") return " ";
 
@@ -133,11 +134,16 @@ const DataTable = ({
 
     switch (column.type) {
       case "date":
-        return dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : value;
+        return dayjs(value).isValid()
+          ? dayjs(value).format("DD-MM-YYYY")
+          : value;
       case "number":
       case "currency":
         return typeof value === "number"
-          ? value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          ? value.toLocaleString("en-IN", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
           : value;
       case "boolean":
         return value ? "Yes" : "No";
@@ -165,7 +171,7 @@ const DataTable = ({
           style={{ backgroundColor: highlightColor, borderRadius: 2 }}
         >
           {str.slice(idx, idx + termLower.length)}
-        </span>
+        </span>,
       );
       last = idx + termLower.length;
       idx = lower.indexOf(termLower, last);
@@ -174,8 +180,8 @@ const DataTable = ({
     return parts;
   };
 
-  
-  const isReactElement = (v) => typeof v === "object" && v !== null && v.$$typeof;
+  const isReactElement = (v) =>
+    typeof v === "object" && v !== null && v.$$typeof;
 
   const renderCellContent = (content, isStatus, term) => {
     if (isReactElement(content)) return content;
@@ -204,11 +210,12 @@ const DataTable = ({
     return displayed;
   };
 
-  
   const getStatusStyle = (value, field) =>
-    statusColors[field]?.[value] ?? { color: "#6b7280", backgroundColor: "#f9fafb" };
+    statusColors[field]?.[value] ?? {
+      color: "#6b7280",
+      backgroundColor: "#f9fafb",
+    };
 
- 
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return data;
     const term = searchTerm.toLowerCase().trim();
@@ -221,7 +228,6 @@ const DataTable = ({
         const val = row[col.field];
         if (val === null || val === undefined) return false;
 
-       
         if (col.type === "date" && dayjs(val).isValid()) {
           return (
             String(val).toLowerCase().includes(term) ||
@@ -256,19 +262,27 @@ const DataTable = ({
     return sortedData.slice(start, start + rowsPerPage);
   }, [sortedData, page, rowsPerPage]);
 
-
   const calcTotal = (field) =>
     data.reduce((sum, row) => sum + (Number(row[field]) || 0), 0);
 
   const formatTotal = (total) =>
-    total.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    total.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   if (loading) {
     return (
-      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2, ...sx }}>
+      <Paper
+        elevation={0}
+        sx={{ border: "1px solid #e5e7eb", borderRadius: 2, ...sx }}
+      >
         <Box display="flex" flexDirection="column" alignItems="center" py={4}>
           <CircularProgress size={32} sx={{ color: "primary.main" }} />
-          <Typography variant="body2" sx={{ mt: 1.5, color: "#6b7280", fontSize: "0.875rem" }}>
+          <Typography
+            variant="body2"
+            sx={{ mt: 1.5, color: "#6b7280", fontSize: "0.875rem" }}
+          >
             Loading...
           </Typography>
         </Box>
@@ -276,13 +290,10 @@ const DataTable = ({
     );
   }
 
-  
   return (
     <Paper
       elevation={0}
       sx={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 2,
         overflow: "hidden",
         padding: "1.5% 2%",
         ...sx,
@@ -290,7 +301,13 @@ const DataTable = ({
     >
       {/* ── Header Controls ── */}
       {showHeader && (
-        <Box sx={{ backgroundColor: "#ffffff", borderBottom: "1px solid #e5e7eb", pb: 1 }}>
+        <Box
+          sx={{
+            backgroundColor: "#ffffff",
+            borderBottom: "1px solid #e5e7eb",
+            pb: 1,
+          }}
+        >
           <Box
             display="flex"
             flexDirection={{ xs: "column", md: "row" }}
@@ -303,17 +320,26 @@ const DataTable = ({
               <FormControl size="small" sx={{ minWidth: 50 }}>
                 <Select
                   value={rowsPerPage}
-                  onChange={(e) => { setRowsPerPage(+e.target.value); setPage(0); }}
+                  onChange={(e) => {
+                    setRowsPerPage(+e.target.value);
+                    setPage(0);
+                  }}
                   IconComponent={KeyboardArrowDown}
                   sx={{
                     fontSize: "0.875rem",
                     height: 32,
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "primary.main" },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#d1d5db",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "primary.main",
+                    },
                   }}
                 >
                   {pageSizeOptions.map((s) => (
-                    <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>{s}</MenuItem>
+                    <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>
+                      {s}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -328,15 +354,26 @@ const DataTable = ({
                     sx={{
                       fontSize: "0.875rem",
                       height: 32,
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "primary.main" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d1d5db",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "primary.main",
+                      },
                     }}
                   >
-                    <MenuItem value="" sx={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                    <MenuItem
+                      value=""
+                      sx={{ fontSize: "0.875rem", color: "#9ca3af" }}
+                    >
                       {filter.placeholder || `All ${filter.label}`}
                     </MenuItem>
                     {filter.options.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: "0.875rem" }}>
+                      <MenuItem
+                        key={opt.value}
+                        value={opt.value}
+                        sx={{ fontSize: "0.875rem" }}
+                      >
                         {opt.label}
                       </MenuItem>
                     ))}
@@ -359,7 +396,7 @@ const DataTable = ({
                 {filteredData.length > 0
                   ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
                       (page + 1) * rowsPerPage,
-                      filteredData.length
+                      filteredData.length,
                     )} of ${filteredData.length.toLocaleString()} entries`
                   : "Showing 0 to 0 of 0 entries"}
               </Typography>
@@ -373,7 +410,10 @@ const DataTable = ({
                   size="small"
                   placeholder={searchPlaceholder}
                   value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(0);
+                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -383,8 +423,15 @@ const DataTable = ({
                     endAdornment: searchTerm && (
                       <InputAdornment position="end">
                         <Clear
-                          sx={{ color: "#9ca3af", fontSize: 16, cursor: "pointer" }}
-                          onClick={() => { setSearchTerm(""); setPage(0); }}
+                          sx={{
+                            color: "#9ca3af",
+                            fontSize: 16,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            setSearchTerm("");
+                            setPage(0);
+                          }}
                         />
                       </InputAdornment>
                     ),
@@ -414,8 +461,14 @@ const DataTable = ({
           scrollbarWidth: "thin",
           scrollbarColor: "#c1c1c1 #f1f1f1",
           "&::-webkit-scrollbar": { width: 6, height: 6 },
-          "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1", borderRadius: 8 },
-          "&::-webkit-scrollbar-thumb": { backgroundColor: "#c1c1c1", borderRadius: 8 },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: 8,
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#c1c1c1",
+            borderRadius: 8,
+          },
           "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
         }}
       >
@@ -427,16 +480,27 @@ const DataTable = ({
                 <TableCell
                   key={i}
                   colSpan={col.subColumns?.length || 1}
-                  align={col.subColumns ? "center" : col.type === "number" || col.type === "currency" ? "right" : "left"}
+                  align={
+                    col.subColumns
+                      ? "center"
+                      : col.type === "number" || col.type === "currency"
+                        ? "right"
+                        : "left"
+                  }
                   sx={{
                     minWidth: col.type === "date" ? 80 : col.width,
                     width: col.width,
-                    borderRight: i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                    p: 1,
+                    borderRight:
+                      i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
+                    p: 0.5,
                     borderBottom: "1px solid #e5e7eb",
                     backgroundColor: "#EEFAE7",
                     verticalAlign: "top",
-                    ...(stickyHeader && { position: "sticky", top: 0, zIndex: 4 }),
+                    ...(stickyHeader && {
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 4,
+                    }),
                     ...getStickyStyles(i, columns, { isHeader: true }),
                   }}
                 >
@@ -447,19 +511,35 @@ const DataTable = ({
                       sx={{
                         display: "flex",
                         flexDirection: "column",
-                        cursor: col.sortable && !col.subColumns ? "pointer" : "default",
+                        cursor:
+                          col.sortable && !col.subColumns
+                            ? "pointer"
+                            : "default",
                         userSelect: "none",
                       }}
-                      onClick={() => col.sortable && !col.subColumns && handleSort(col.field)}
+                      onClick={() =>
+                        col.sortable && !col.subColumns && handleSort(col.field)
+                      }
                     >
-                      <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11px" }}>
+                      <Typography
+                        sx={{
+                          fontFamily: '"Open Sans", sans-serif',
+                          fontSize: "11px",
+                        }}
+                      >
                         {col.headerName}
                       </Typography>
-                      {!col.subColumns && sortConfig.field === col.field && (
-                        sortConfig.direction === "asc"
-                          ? <ArrowDropUpIcon sx={{ color: "#1976d2", fontSize: 18 }} />
-                          : <ArrowDropDownIcon sx={{ color: "#1976d2", fontSize: 18 }} />
-                      )}
+                      {!col.subColumns &&
+                        sortConfig.field === col.field &&
+                        (sortConfig.direction === "asc" ? (
+                          <ArrowDropUpIcon
+                            sx={{ color: "#1976d2", fontSize: 18 }}
+                          />
+                        ) : (
+                          <ArrowDropDownIcon
+                            sx={{ color: "#1976d2", fontSize: 18 }}
+                          />
+                        ))}
                     </Box>
                   )}
                 </TableCell>
@@ -479,9 +559,13 @@ const DataTable = ({
                           minWidth: sub.width,
                           width: sub.width,
                           borderRight: "1px solid #e5e7eb",
-                          p: 1,
+                          p: 0.5,
                           borderBottom: "1px solid #e5e7eb",
-                          ...(stickyHeader && { position: "sticky", top: headerHeight, zIndex: 4 }),
+                          ...(stickyHeader && {
+                            position: "sticky",
+                            top: headerHeight,
+                            zIndex: 4,
+                          }),
                         }}
                       >
                         <Box
@@ -493,14 +577,24 @@ const DataTable = ({
                           }}
                           onClick={() => sub.sortable && handleSort(sub.field)}
                         >
-                          <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11px" }}>
+                          <Typography
+                            sx={{
+                              fontFamily: '"Open Sans", sans-serif',
+                              fontSize: "11px",
+                            }}
+                          >
                             {sub.headerName}
                           </Typography>
-                          {sortConfig.field === sub.field && (
-                            sortConfig.direction === "asc"
-                              ? <ArrowDropUpIcon sx={{ color: "#1976d2", fontSize: 16 }} />
-                              : <ArrowDropDownIcon sx={{ color: "#1976d2", fontSize: 16 }} />
-                          )}
+                          {sortConfig.field === sub.field &&
+                            (sortConfig.direction === "asc" ? (
+                              <ArrowDropUpIcon
+                                sx={{ color: "#1976d2", fontSize: 16 }}
+                              />
+                            ) : (
+                              <ArrowDropDownIcon
+                                sx={{ color: "#1976d2", fontSize: 16 }}
+                              />
+                            ))}
                         </Box>
                       </TableCell>
                     ))
@@ -508,13 +602,20 @@ const DataTable = ({
                     <TableCell
                       key={pi}
                       sx={{
-                        borderRight: pi !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                        p: 1,
+                        borderRight:
+                          pi !== columns.length - 1
+                            ? "1px solid #e5e7eb"
+                            : "none",
+                        p: 0.5,
                         borderBottom: "1px solid #e5e7eb",
-                        ...(stickyHeader && { position: "sticky", top: headerHeight, zIndex: 4 }),
+                        ...(stickyHeader && {
+                          position: "sticky",
+                          top: headerHeight,
+                          zIndex: 4,
+                        }),
                       }}
                     />
-                  )
+                  ),
                 )}
               </TableRow>
             )}
@@ -531,8 +632,12 @@ const DataTable = ({
                 }}
               >
                 {flatColumns.map((col, i) => {
-                  const firstIdx = flatColumns.findIndex((c) => c.showHeaderTotal);
-                  const total = col.showHeaderTotal ? calcTotal(col.field) : null;
+                  const firstIdx = flatColumns.findIndex(
+                    (c) => c.showHeaderTotal,
+                  );
+                  const total = col.showHeaderTotal
+                    ? calcTotal(col.field)
+                    : null;
                   return (
                     <TableCell
                       key={col.field}
@@ -541,15 +646,18 @@ const DataTable = ({
                         backgroundColor: "#eef2ff",
                         fontSize: "12px",
                         padding: "2px 8px",
-                        borderRight: i !== flatColumns.length - 1 ? "1px solid #c7d2fe" : "none",
+                        borderRight:
+                          i !== flatColumns.length - 1
+                            ? "1px solid #c7d2fe"
+                            : "none",
                         ...getStickyStyles(i, flatColumns),
                       }}
                     >
                       {col.showHeaderTotal
                         ? formatTotal(total)
                         : i === firstIdx - 1
-                        ? "Total"
-                        : ""}
+                          ? "Total"
+                          : ""}
                     </TableCell>
                   );
                 })}
@@ -560,7 +668,11 @@ const DataTable = ({
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={flatColumns.length} align="center" sx={{ py: 4 }}>
+                <TableCell
+                  colSpan={flatColumns.length}
+                  align="center"
+                  sx={{ py: 4 }}
+                >
                   <Typography variant="body1" sx={{ color: "#4a4e55" }}>
                     {searchTerm ? noResultsMessage : noDataMessage}
                   </Typography>
@@ -584,21 +696,28 @@ const DataTable = ({
                       ? col.renderCell({ value: row[col.field], row })
                       : formatCellValue(row[col.field], col);
                     const isStatus = statusFields.includes(col.field);
-                    const statusStyle = isStatus ? getStatusStyle(rawContent, col.field) : {};
+                    const statusStyle = isStatus
+                      ? getStatusStyle(rawContent, col.field)
+                      : {};
 
                     return (
                       <TableCell
                         key={col.field ?? `col-${ci}`}
                         align={
-                          col.type === "number" || col.type === "currency" || col.type === "date"
+                          col.type === "number" ||
+                          col.type === "currency" ||
+                          col.type === "date"
                             ? "right"
                             : "left"
                         }
                         sx={{
                           fontSize: "12px",
                           fontFamily: '"Open Sans", sans-serif',
-                          borderRight: ci !== flatColumns.length - 1 ? "1px solid #e5e7eb" : "none",
-                          p: 1,
+                          borderRight:
+                            ci !== flatColumns.length - 1
+                              ? "1px solid #e5e7eb"
+                              : "none",
+                          p: 0.5,
                           color: "#343A40",
                           fontWeight: 400,
                           borderBottom: "1px solid #f3f4f6",
@@ -644,14 +763,18 @@ const DataTable = ({
                 {flatColumns.map((col, i) => {
                   const firstIdx = flatColumns.findIndex((c) => c.showTotal);
                   const total = col.showTotal ? calcTotal(col.field) : null;
-                  const isNumeric = col.type === "number" || col.type === "currency";
+                  const isNumeric =
+                    col.type === "number" || col.type === "currency";
                   return (
                     <TableCell
                       key={col.field}
                       align="right"
                       sx={{
                         fontSize: "12px",
-                        borderRight: i !== flatColumns.length - 1 ? "1px solid #e5e7eb" : "none",
+                        borderRight:
+                          i !== flatColumns.length - 1
+                            ? "1px solid #e5e7eb"
+                            : "none",
                         py: 1.5,
                         px: 1.5,
                         ...getStickyStyles(i, flatColumns, { isFooter: true }),
@@ -660,8 +783,8 @@ const DataTable = ({
                       {col.showTotal
                         ? formatTotal(total)
                         : i === firstIdx - 1
-                        ? "Total"
-                        : ""}
+                          ? "Total"
+                          : ""}
                     </TableCell>
                   );
                 })}
@@ -673,8 +796,19 @@ const DataTable = ({
 
       {/* ── Footer: pagination + optional footerActions ── */}
       {pagination && (
-        <Box sx={{ borderTop: "1px solid #e5e7eb", backgroundColor: "#fafbfc", padding: 1}}>
-          <Stack spacing={2} direction="row" alignItems="center" justifyContent="space-between">
+        <Box
+          sx={{
+            borderTop: "1px solid #e5e7eb",
+            backgroundColor: "#fafbfc",
+            padding: 1,
+          }}
+        >
+          <Stack
+            spacing={2}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
             <Pagination
               variant="text"
               count={Math.ceil(filteredData.length / rowsPerPage)}
@@ -684,7 +818,7 @@ const DataTable = ({
                 <PaginationItem
                   slots={{ previous: ChevronLeftIcon, next: NavigateNextIcon }}
                   {...item}
-                  sx={{color:'#343A40'}}
+                  sx={{ color: "#343A40" }}
                 />
               )}
             />

@@ -1,6 +1,6 @@
 .php-menu ul {
   list-style: none;
-  padding-left: 10px;
+  padding-left: 0;
   margin: 0;
 }
 
@@ -8,22 +8,24 @@
   color: white;
 }
 
-
-
 .php-menu a {
   display: block;
-  padding: 4px 6px;
-  color: white;
+  padding: 8px 10px;
+  /* color: white; */
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   font-size: 13px;
+  position: relative; /* REQUIRED */
 }
 
 .php-menu a:hover {
-  background-color: rgba(21, 13, 48, 0.79);
+  /* background-color: rgba(21, 13, 48, 0.79); */
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffffcc;
 }
 
 .treeview-menu {
-  display: none;
+  padding-left: 0; /* FIX */
 }
 
 .treeview.active > .treeview-menu {
@@ -33,7 +35,9 @@
 .treeview > a {
   cursor: pointer;
 }
-
+.treeview-menu a {
+  /* padding-left: 25px; */
+}
 .treeview-menu {
   display: none;
   list-style: none;
@@ -44,24 +48,59 @@
   display: block;
 }
 
-.treeview > a {
-  cursor: pointer;
-}
-
 .treeview > a.parent-active {
   margin-top: 0.5px;
-  background-color: rgba(21, 13, 48, 0.63);
+  /* background-color: rgba(21, 13, 48, 0.63); */
+  background: #e85d2f2e;
+  border-radius: 6px;
 }
 
-
 .php-menu a.menu-active {
-  background-color: #FFFFFF33;
-  border-radius: 4px;
+  background: #e85d2f1f;
+  border-radius: 6px;
+}
+
+.php-menu a.menu-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 18px;
+  background: #e85d2f;
+  border-radius: 0 2px 2px 0;
 }
 
 .php-menu li a i.fa-circle-o {
   font-size: 10px;
 }
 
+.treeview.dropdownWidth.active
+  > .treeview-menu.open
+  > .treeview.active
+  > .treeview-menu.open
+  > li
+  > a {
+  padding-left: 15%;
+}
 
+.menu-active {
+  color: #fff !important;
+}
 
+.parent-active {
+  color: #fff !important;
+}
+
+.treeview.dropdownWidth.active > ul {
+  padding-left: 5%;
+}
+
+.treeview > a.parent-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 18px;
+  background: #e85d2f;
+  border-radius: 0 2px 2px 0;
+}

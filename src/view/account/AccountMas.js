@@ -794,7 +794,7 @@ function AccountMas() {
         gap={2}
       >
         <Box>
-          <h2 className="mainTitle">{title}</h2>
+          <h1 className="mainTitle">{title}</h1>
         </Box>
         <Box>
           <Grid container spacing={2}>

@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import Layout from "../../layout";
-import { TextField, Box, Typography, Button, Tabs, Tab, IconButton } from "@mui/material";
+import {
+  TextField,
+  Box,
+  Typography,
+  Button,
+  Tabs,
+  Tab,
+  IconButton,
+} from "@mui/material";
 import DataTable from "../../utils/dataTable";
 import api from "../../services/api";
 import { useSnackbar } from "notistack";
@@ -12,271 +20,344 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 
 export default function Zone() {
-    const [zoneName, setZoneName] = useState("")
-    const [hdnZoneName, setHdnZoneName] = useState("")
-    const [zoneError, setZoneError] = useState(false)
-    const [userType, setUserType] = useState(null)
-    const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required")
-    const [zoneList, setZoneList] = useState([])
-    const [editId, setEditId] = useState(null)
-    const [loading, setLoading] = useState(true)
-    const [modifyLoading, setModifyLoading] = useState(false)
-    const [tabValue, setTabValue] = useState(1)
-    const { editZoneid } = useParams()
-    const decodedEditZoneid = editZoneid !== undefined && editZoneid !== null ? Number(atob(editZoneid)) : null
-    const { enqueueSnackbar } = useSnackbar()
-    const navigate = useNavigate()
+  const [zoneName, setZoneName] = useState("");
+  const [hdnZoneName, setHdnZoneName] = useState("");
+  const [zoneError, setZoneError] = useState(false);
+  const [userType, setUserType] = useState(null);
+  const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required");
+  const [zoneList, setZoneList] = useState([]);
+  const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modifyLoading, setModifyLoading] = useState(false);
+  const [tabValue, setTabValue] = useState(1);
+  const { editZoneid } = useParams();
+  const decodedEditZoneid =
+    editZoneid !== undefined && editZoneid !== null
+      ? Number(atob(editZoneid))
+      : null;
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
-    const [confirmationDialog, setConfirmationDialog] = useState({
-        open: false, title: "", message: "", onConfirm: null,
-        confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
-    })
+  const [confirmationDialog, setConfirmationDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+  });
 
-    useEffect(() => {
-        fetchZones()
-    }, [])
+  useEffect(() => {
+    fetchZones();
+  }, []);
 
-    useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setUserType(decoded.user_type)
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    }, [])
-
-    useEffect(() => {
-        if (!decodedEditZoneid) {
-            setZoneName("")
-            setHdnZoneName("")
-            setZoneError(false)
-            setTabValue(1)
-            return
-        }
-        collectEditData(decodedEditZoneid)
-    }, [decodedEditZoneid])
-
-    const fetchZones = async () => {
-        try {
-            let response = await api.post("/read_zone", { zone_id: null })
-            const dataWithSiNo = response.data.data.map((item, index) => ({
-                ...item,
-                si_no: index + 1
-            }))
-            setZoneList(dataWithSiNo)
-        } catch (err) {
-            console.log("fetchZones error", err)
-        } finally {
-            setLoading(false)
-        }
+  useEffect(() => {
+    const token = localStorage.getItem("session-token");
+    if (token) {
+      try {
+        let decoded = jwtDecode(token);
+        setUserType(decoded.user_type);
+      } catch (err) {
+        console.log(err);
+      }
     }
+  }, []);
 
-    const validateZone = () => {
-        if (!zoneName || zoneName.trim() === "") {
-            setZoneError(true)
-            setZoneErrorMsg("Zone Name is Required")
-            return false
+  useEffect(() => {
+    if (!decodedEditZoneid) {
+      setZoneName("");
+      setHdnZoneName("");
+      setZoneError(false);
+      setTabValue(1);
+      return;
+    }
+    collectEditData(decodedEditZoneid);
+  }, [decodedEditZoneid]);
+
+  const fetchZones = async () => {
+    try {
+      let response = await api.post("/read_zone", { zone_id: null });
+      const dataWithSiNo = response.data.data.map((item, index) => ({
+        ...item,
+        si_no: index + 1,
+      }));
+      setZoneList(dataWithSiNo);
+    } catch (err) {
+      console.log("fetchZones error", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateZone = () => {
+    if (!zoneName || zoneName.trim() === "") {
+      setZoneError(true);
+      setZoneErrorMsg("Zone Name is Required");
+      return false;
+    }
+    if (zoneName.trim().length < 3) {
+      setZoneError(true);
+      setZoneErrorMsg("Zone Name must be at least 3 characters");
+      return false;
+    }
+    const specialChar = /[^a-zA-Z0-9 ]/;
+    if (specialChar.test(zoneName)) {
+      setZoneError(true);
+      setZoneErrorMsg("Special Characters Not Allowed");
+      return false;
+    }
+    return true;
+  };
+
+  const handleAddZone = async () => {
+    try {
+      setModifyLoading(true);
+      setZoneError(false);
+
+      if (decodedEditZoneid) {
+        let check =
+          hdnZoneName.toLowerCase() === zoneName.toLowerCase() ? 0 : 1;
+        let response = await api.post("/updateZone", {
+          id: editId,
+          newZone: zoneName.trim(),
+          check: check,
+        });
+        if (response.data.success) {
+          enqueueSnackbar(response.data.message, {
+            variant: "success",
+            anchorOrigin: { vertical: "top", horizontal: "center" },
+          });
+          fetchZones();
+          navigate("/masters/zone_mas");
+        } else {
+          enqueueSnackbar(response.data.message, {
+            variant: "error",
+            anchorOrigin: { vertical: "top", horizontal: "center" },
+          });
         }
-        if (zoneName.trim().length < 3) {
-            setZoneError(true)
-            setZoneErrorMsg("Zone Name must be at least 3 characters")
-            return false
+        setEditId(null);
+      } else {
+        let response = await api.post("/addZone", { newZone: zoneName.trim() });
+        if (response.data.success) {
+          enqueueSnackbar(response.data.message, {
+            variant: "success",
+            anchorOrigin: { vertical: "top", horizontal: "center" },
+          });
+          setZoneName("");
+          fetchZones();
+          setTabValue(1);
+        } else {
+          enqueueSnackbar(response.data.message, {
+            variant: "error",
+            anchorOrigin: { vertical: "top", horizontal: "center" },
+          });
         }
-        const specialChar = /[^a-zA-Z0-9 ]/
-        if (specialChar.test(zoneName)) {
-            setZoneError(true)
-            setZoneErrorMsg("Special Characters Not Allowed")
-            return false
-        }
-        return true
+      }
+    } catch (err) {
+      console.log("addzone error", err);
+      enqueueSnackbar("Something went wrong Try again!!", {
+        variant: "error",
+        anchorOrigin: { vertical: "top", horizontal: "center" },
+      });
+    } finally {
+      setModifyLoading(false);
+      closeConfirmationDialog();
     }
+  };
 
-    const handleAddZone = async () => {
-        try {
-            setModifyLoading(true)
-            setZoneError(false)
-
-            if (decodedEditZoneid) {
-                let check = hdnZoneName.toLowerCase() === zoneName.toLowerCase() ? 0 : 1
-                let response = await api.post("/updateZone", { id: editId, newZone: zoneName.trim(), check: check })
-                if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    fetchZones()
-                    navigate('/masters/zone_mas')
-                } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                }
-                setEditId(null)
-            } else {
-                let response = await api.post("/addZone", { newZone: zoneName.trim() })
-                if (response.data.success) {
-                    enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                    setZoneName("")
-                    fetchZones()
-                    setTabValue(1)
-                } else {
-                    enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-                }
-            }
-        } catch (err) {
-            console.log("addzone error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-        } finally {
-            setModifyLoading(false)
-            closeConfirmationDialog()
-        }
+  const collectEditData = async (zoneid) => {
+    try {
+      let response = await api.post("/read_zone", { zone_id: zoneid });
+      let data = response.data.data[0];
+      setEditId(zoneid);
+      setZoneName(data.zone_name);
+      setHdnZoneName(data.zone_name);
+      setZoneError(false);
+      setTabValue(0);
+    } catch (err) {
+      console.log(err);
     }
+  };
 
-    const collectEditData = async (zoneid) => {
-        try {
-            let response = await api.post("/read_zone", { zone_id: zoneid })
-            let data = response.data.data[0]
-            setEditId(zoneid)
-            setZoneName(data.zone_name)
-            setHdnZoneName(data.zone_name)
-            setZoneError(false)
-            setTabValue(0)
-        } catch (err) {
-            console.log(err)
-        }
+  const handleEdit = (zoneId) => {
+    navigate(`/masters/zone_mas/${btoa(zoneId)}`);
+  };
+
+  const showConfirmationDialog = (config) => {
+    setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+  };
+
+  const closeConfirmationDialog = () => {
+    setConfirmationDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  const showSubmitConfirmation = () => {
+    showConfirmationDialog({
+      title: `${decodedEditZoneid ? "Edit" : "Add"} Zone`,
+      message: `Are you sure you want to ${decodedEditZoneid ? "Edit" : "Add"} this Zone?`,
+      confirmText: decodedEditZoneid ? "Update" : "Add",
+      confirmColor: "primary",
+      onConfirm: () => handleAddZone(),
+    });
+  };
+
+  const showDeleteConfirmation = (id) => {
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: "Are you sure you want to delete this record?",
+      confirmText: "OK",
+      cancelText: "Close",
+      confirmColor: "primary",
+      onConfirm: () => handleDelete(id),
+    });
+  };
+
+  const handleDelete = async (id) => {
+    setModifyLoading(true);
+    try {
+      let response = await api.post("/deleteZone", { id });
+      if (response.data.code === 1) {
+        enqueueSnackbar(response.data.message, {
+          variant: "success",
+          anchorOrigin: { vertical: "top", horizontal: "center" },
+        });
+      } else {
+        enqueueSnackbar(response.data.message, {
+          variant: "error",
+          anchorOrigin: { vertical: "top", horizontal: "center" },
+        });
+      }
+      fetchZones();
+    } catch (err) {
+      console.log("deleteZone error", err);
+      enqueueSnackbar("Something went wrong Try again!!", {
+        variant: "error",
+        anchorOrigin: { vertical: "top", horizontal: "center" },
+      });
+    } finally {
+      closeConfirmationDialog();
+      setModifyLoading(false);
     }
+  };
 
-    const handleEdit = (zoneId) => {
-        navigate(`/masters/zone_mas/${btoa(zoneId)}`)
-    }
+  const columns = [
+    { field: "si_no", headerName: "#", filterable: true, sortable: true },
+    {
+      field: "zone_name",
+      headerName: "Zone Name",
+      filterable: true,
+      sortable: true,
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      filterable: false,
+      renderCell: (row) => (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 1,
+          }}
+        >
+          <IconButton size="small" onClick={() => handleEdit(row.row.id)}>
+            <FaPencilAlt style={{ color: "green", fontSize: "14.5px" }} />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => showDeleteConfirmation(row.row.id)}
+          >
+            <LiaTrashAltSolid style={{ color: "red", fontSize: "17.5px" }} />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
 
-    const showConfirmationDialog = (config) => {
-        setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
-    }
+  return (
+    <Layout>
+      <PageHeader title="Zone" url="/masters/zone_mas" />
+      <Box
+        sx={{
+          backgroundColor: "white",
+          mt: 2,
+          ml: 2,
+          borderRadius: "6px",
+          minHeight: "30vh",
+          width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" },
+        }}
+      >
+        {!decodedEditZoneid ? (
+          <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, mt: 1 }}>
+            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+              <Tab
+                sx={{ fontWeight: 600, fontSize: "1.1rem" }}
+                label="ADD NEW"
+              />
+              <Tab
+                sx={{ fontWeight: 600, fontSize: "1.1rem" }}
+                label="VIEW LIST"
+              />
+            </Tabs>
+          </Box>
+        ) : (
+          <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
+            Edit Zone Details
+          </Typography>
+        )}
 
-    const closeConfirmationDialog = () => {
-        setConfirmationDialog(prev => ({ ...prev, open: false }))
-    }
-
-    const showSubmitConfirmation = () => {
-        showConfirmationDialog({
-            title: `${decodedEditZoneid ? "Edit" : "Add"} Zone`,
-            message: `Are you sure you want to ${decodedEditZoneid ? "Edit" : "Add"} this Zone?`,
-            confirmText: decodedEditZoneid ? "Update" : "Add",
-            confirmColor: "primary",
-            onConfirm: () => handleAddZone()
-        })
-    }
-
-    const showDeleteConfirmation = (id) => {
-        showConfirmationDialog({
-            title: "Confirmation",
-            message: "Are you sure you want to delete this record?",
-            confirmText: "OK",
-            cancelText: "Close",
-            confirmColor: "primary",
-            onConfirm: () => handleDelete(id)
-        })
-    }
-
-    const handleDelete = async (id) => {
-        setModifyLoading(true)
-        try {
-            let response = await api.post("/deleteZone", { id })
-            if (response.data.code === 1) {
-                enqueueSnackbar(response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-            }
-            else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-
-            }
-            fetchZones()
-        } catch (err) {
-            console.log("deleteZone error", err)
-            enqueueSnackbar("Something went wrong Try again!!", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-        } finally {
-            closeConfirmationDialog()
-            setModifyLoading(false)
-        }
-    }
-
-    const columns = [
-        { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "zone_name", headerName: "Zone Name", filterable: true, sortable: true },
-        {
-            field: "action", headerName: "Action", filterable: false,
-            renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}>
-                        <FaPencilAlt style={{ color: 'green', fontSize: '14.5px' }} />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
-                        <LiaTrashAltSolid style={{ color: 'red', fontSize: '17.5px' }} />
-                    </IconButton>
-                </Box>
-            )
-        }
-    ]
-
-    return (
-        <Layout>
-            <PageHeader title="Zone" url="/masters/zone_mas" />
-            <Box sx={{ backgroundColor: 'white', mt: 2, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedEditZoneid ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Zone Details</Typography>
-                }
-
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <TextField
-                            label="Zone Name"
-                            value={zoneName}
-                            required
-                            onChange={(e) => {
-                                setZoneName(e.target.value)
-                                if (zoneError) setZoneError(false)
-                            }}
-                            size="small"
-                            error={!!zoneError}
-                            helperText={zoneError ? zoneErrorMsg : ""}
-                        />
-                        <Button
-                            sx={{ ml: 1, width: '2rem' }}
-                            variant="contained"
-                            onClick={() => { if (validateZone()){ 
-                                showSubmitConfirmation()}
-                                else{
-                                    enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
-                                }
-                             }}
-                        >
-                            {editId ? "Update" : "Submit"}
-                        </Button>
-                    </Box>
-                )}
-
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={zoneList} loading={loading} />
-                    </Box>
-                )}
-            </Box>
-
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
+        {tabValue === 0 && (
+          <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              label="Zone Name"
+              value={zoneName}
+              required
+              onChange={(e) => {
+                setZoneName(e.target.value);
+                if (zoneError) setZoneError(false);
+              }}
+              size="small"
+              error={!!zoneError}
+              helperText={zoneError ? zoneErrorMsg : ""}
             />
-        </Layout>
-    )
+            <Button
+              sx={{ ml: 1, width: "2rem" }}
+              variant="contained"
+              onClick={() => {
+                if (validateZone()) {
+                  showSubmitConfirmation();
+                } else {
+                  enqueueSnackbar("Please fix all mandatory fields", {
+                    variant: "error",
+                    anchorOrigin: { vertical: "top", horizontal: "center" },
+                  });
+                }
+              }}
+            >
+              {editId ? "Update" : "Submit"}
+            </Button>
+          </Box>
+        )}
+
+        {tabValue === 1 && (
+          <Box>
+            <DataTable columns={columns} data={zoneList} loading={loading} />
+          </Box>
+        )}
+      </Box>
+
+      <ConfirmationDialog
+        open={confirmationDialog.open}
+        onClose={closeConfirmationDialog}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        message={confirmationDialog.message}
+        confirmText={confirmationDialog.confirmText}
+        cancelText={confirmationDialog.cancelText}
+        loading={modifyLoading}
+        confirmColor={confirmationDialog.confirmColor}
+      />
+    </Layout>
+  );
 }

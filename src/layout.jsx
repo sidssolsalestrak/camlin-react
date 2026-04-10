@@ -49,7 +49,7 @@ const HtmlTooltip = styled(({ className, ...props }) => (
   },
 }));
 
-const Layout = ({ children }) => {
+const Layout = ({ children, breadcrumb = [] }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(!isMobile);
@@ -63,6 +63,7 @@ const Layout = ({ children }) => {
   // Dynamic menu state (from 2nd file)
   const [menuHtml, setMenuHtml] = useState("");
   const [menuUrls, setMenuUrls] = useState([]);
+  const [userData, setUserData] = useState(null);
 
   // Fetch menu on mount
   useEffect(() => {
@@ -75,11 +76,17 @@ const Layout = ({ children }) => {
       const res = await api.post("/getMenuDetails");
       const data = res.data;
       if (data.status === 200) {
-        let html = data.data.menudata;
+        // let html = data.data.menudata;
+        // html = html.replace(/href="(?!\/|http)([^"]+)"/g, 'href="/$1"');
+        // setMenuHtml(html);
 
+        let html = data.data.menudata;
         html = html.replace(/href="(?!\/|http)([^"]+)"/g, 'href="/$1"');
+        html = html.replace(/glyphicon glyphicon-book/g, "fa fa-book");
+        html = html.replace(/glyphicon glyphicon-file/g, "fa fa-file");
 
         setMenuHtml(html);
+
         setMenuUrls(data.data.menuurl);
       }
     } catch (err) {
@@ -106,7 +113,7 @@ const Layout = ({ children }) => {
       });
     }, 100);
     return () => clearTimeout(timer);
-  }, [menuHtml,drawerOpen,isMobile]);
+  }, [menuHtml, drawerOpen, isMobile]);
 
   // Highlight active menu item based on current path
   useEffect(() => {
@@ -143,7 +150,7 @@ const Layout = ({ children }) => {
         );
         const url = urlMatch ? urlMatch[1] : href.replace(/^\//, "");
 
-        if (url && location.pathname === `/${url}`) {
+        if (url && location.pathname.startsWith(`/${url}`)) {
           // ✅ Highlight the active child link
           link.classList.add("menu-active");
 
@@ -174,7 +181,7 @@ const Layout = ({ children }) => {
       });
     }, 150);
     return () => clearTimeout(timer);
-  }, [menuHtml, location.pathname,drawerOpen,isMobile]);
+  }, [menuHtml, location.pathname, drawerOpen, isMobile]);
 
   // Global click handler used by menu items
   useEffect(() => {
@@ -264,6 +271,15 @@ const Layout = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    const user = getUserFromToken();
+    if (user) {
+      setUserData(user);
+    }
+  }, []);
+
+  console.log("userData", userData);
+
   const loadChatbot = () => {
     const user = getUserFromToken();
 
@@ -271,6 +287,7 @@ const Layout = ({ children }) => {
       console.log("User not found");
       return;
     }
+
     if (document.getElementById("chatbot-script")) {
       return;
     }
@@ -344,7 +361,7 @@ const Layout = ({ children }) => {
           "& .MuiDrawer-paper": {
             width: 190,
             boxSizing: "border-box",
-            backgroundColor: "#588aae",
+            backgroundColor: "#1a1917",
             height: "100vh",
             position: "relative",
             overflowY: "auto",
@@ -371,16 +388,26 @@ const Layout = ({ children }) => {
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "12px",
+            justifyContent: "space-around",
+            my: 0.7,
+            padding: "3px 0px 3px 0px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
           }}
         >
-          {/* <img src={SalesTrekimg} alt="SCHÜCO Logo" style={{ height: "29px", marginTop: "0.5rem" }} /> */}
+          <Box>
+            <img
+              src={SalesTrekimg}
+              alt="Logo"
+              style={{
+                width: isMobile ? "6rem" : "8rem",
+                alignSelf: "center",
+              }}
+            />
+          </Box>
         </Box>
 
         {/* Dynamic menu rendered from API HTML */}
-        <Box sx={{ paddingTop: "2.8rem" }}>
+        <Box sx={{ paddingTop: "1rem" }}>
           <div
             className="php-menu"
             dangerouslySetInnerHTML={{ __html: menuHtml }}
@@ -436,179 +463,209 @@ const Layout = ({ children }) => {
               <MenuIcon sx={{ color: "white", fontSize: "18px" }} />
             </IconButton>
 
-            {/* SalesTrak logo */}
+            {/* <Box sx={{ flexGrow: 1 }} /> */}
+
             <Box
               sx={{
                 display: "flex",
-                visibility: isMobile
-                  ? { xs: "hidden", sm: "visible" }
-                  : "visible",
-                width: isMobile ? { xs: "15%" } : null,
-                ml: 1,
+                alignItems: "center",
+                gap: 0.5,
+                flexGrow: 1,
+                overflow: "hidden",
               }}
             >
-              <Box>
+              {breadcrumb.map((item, index) => {
+                const isLast = index === breadcrumb.length - 1;
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{ display: "flex", alignItems: "center" }}
+                  >
+                    <Typography
+                      onClick={() => {
+                        if (!isLast && item.path) {
+                          navigate(item.path);
+                        }
+                      }}
+                      sx={{
+                        fontSize: "13px",
+                        color: isLast ? "#1A1917" : "#706E69",
+                        fontWeight: isLast ? 500 : "",
+                        cursor: !isLast && item.path ? "pointer" : "default",
+                        whiteSpace: "nowrap",
+                        "&:hover":
+                          !isLast && item.path
+                            ? { textDecoration: "underline" }
+                            : {},
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+
+                    {!isLast && (
+                      <Typography sx={{ ml: "6px", mr: "6px", color: "#999" }}>
+                        /
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                backgroundColor: "#f1f3f4",
+                padding: "6px 10px",
+                borderRadius: "12px",
+              }}
+            >
+              {/* Camlin logo */}
+              <Box sx={{ display: { xs: "block", sm: "block" } }}>
                 <img
-                  src={SalesTrekimg}
-                  alt=" Logo"
-                  style={{
-                    width: isMobile ? "6rem" : "8rem",
-                    alignSelf: "center",
-                  }}
+                  src={camlinLogo}
+                  alt="camlin Logo"
+                  style={{ width: isMobile ? "8rem" : "10rem" }}
                 />
               </Box>
-            </Box>
 
-            <Box sx={{ flexGrow: 1 }} />
-
-            {/* Camlin logo */}
-            <Box sx={{ display: { xs: "none", sm: "block" } }}>
-              <img
-                src={camlinLogo}
-                alt="camlin Logo"
-                style={{ width: isMobile ? "6rem" : "10rem" }}
-              />
-            </Box>
-
-            {/* Notifications bell */}
-            <IconButton
-              color="inherit"
-              sx={{
-                color: "#5f6368",
-                mr: 1,
-                alignItems: "center",
-                "&:hover": {
-                  backgroundColor: "rgba(0,0,0,0.04)",
-                },
-              }}
-              id="basic-button"
-              aria-controls={open ? "basic-menu" : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? "true" : undefined}
-              onClick={handleClick}
-            >
-              <Badge
-                color="error"
+              {/* Notifications bell */}
+              <IconButton
+                onClick={handleClick}
                 sx={{
-                  "& .MuiBadge-badge": {
-                    backgroundColor: "#f44336",
-                    color: "white",
+                  backgroundColor: "#fff",
+                  borderRadius: "10px",
+                  padding: "6px",
+                  border: "1px solid #e0e0e0",
+                  "&:hover": {
+                    backgroundColor: "#f5f5f5",
                   },
                 }}
               >
-                <NotificationsIcon sx={{ fontSize: "20px" }} />
-              </Badge>
-            </IconButton>
+                <Badge
+                  variant="dot"
+                  overlap="circular"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      backgroundColor: "#f44336",
+                    },
+                  }}
+                >
+                  <NotificationsIcon sx={{ color: "#5f6368", fontSize: 20 }} />
+                </Badge>
+              </IconButton>
 
-            {/* Notifications dropdown */}
-            <Menu
-              id="basic-menu"
-              anchorEl={anchorEl1}
-              open={open}
-              onClose={handleClose}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              transformOrigin={{ vertical: "top", horizontal: "center" }}
-              PaperProps={{
-                sx: {
-                  width: "300px",
-                  height: "400px",
-                  padding: "0px",
-                  fontSize: "1rem",
-                  color: "#212529",
-                  backgroundColor: "#fff",
-                  border: "1px solid rgba(0, 0, 0, 0.15)",
-                  boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.175)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                },
-              }}
-            >
-              {/* Notification items go here */}
-            </Menu>
-
-            {/* Admin icon */}
-            <Box sx={{ mr: { md: 10, sm: "8%", xs: "8%" } }}>
-              <img src={adminImage} alt="admin_icon_image" height="22px" />
-            </Box>
-
-            {/* Welcome + Avatar + user menu */}
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "end",
+              {/* Notifications dropdown */}
+              <Menu
+                id="basic-menu"
+                anchorEl={anchorEl1}
+                open={open}
+                onClose={handleClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "center" }}
+                PaperProps={{
+                  sx: {
+                    width: "300px",
+                    height: "400px",
+                    padding: "0px",
+                    fontSize: "1rem",
+                    color: "#212529",
+                    backgroundColor: "#fff",
+                    border: "1px solid rgba(0, 0, 0, 0.15)",
+                    boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.175)",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                  },
                 }}
               >
-                <Typography
-                  sx={{
-                    color: "#888888",
-                    fontSize: { xs: "0.8rem", sm: "1rem" },
-                    marginRight: {
-                      sm: "1rem",
-                      lg: "1rem",
-                      md: "1rem",
-                      xs: "0rem",
-                    },
-                    alignSelf: "center",
-                  }}
-                >
-                  Welcome
-                </Typography>
-                <IconButton edge="end" onClick={handleMenuClick} sx={{ p: 0 }}>
-                  <Avatar
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      bgcolor: "Black",
-                      color: "white",
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {/* {userData?.name?.split(' ').map(n => n[0]).join('') || 'SA'} */}
-                  </Avatar>
-                </IconButton>
+                {/* Notification items go here */}
+              </Menu>
 
-                {/* User dropdown menu */}
-                <Menu
-                  id="menu-appbar"
-                  anchorEl={anchorEl}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                  transformOrigin={{ vertical: "top", horizontal: "right" }}
-                  open={Boolean(anchorEl)}
-                  onClose={handleMenuClose}
-                  PaperProps={{
-                    elevation: 3,
-                    sx: {
-                      minWidth: "200px",
-                      borderRadius: "8px",
-                      marginTop: "8px",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                      border: "1px solid #e0e0e0",
-                    },
+              {/* Admin icon */}
+              {/* <Box sx={{ mr: { md: 10, sm: "8%", xs: "8%" } }}>
+              <img src={adminImage} alt="admin_icon_image" height="22px" />
+            </Box> */}
+
+              {/* Welcome + Avatar + user menu */}
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "end",
                   }}
                 >
-                  <MenuItem disabled sx={{ opacity: 1 }}>
-                    <Typography variant="body2">User Name</Typography>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={async () => {
-                      handleMenuClose();
-                      showLogoutConfirmation();
+                  <IconButton
+                    edge="end"
+                    onClick={handleMenuClick}
+                    sx={{ p: 0 }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 33,
+                        height: 33,
+                        bgcolor: "#1c1c1c",
+                        color: "#fff",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        borderRadius: "10px",
+                      }}
+                    >
+                      {userData?.first_name
+                        ? userData.first_name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                        : "AD"}
+                    </Avatar>
+                  </IconButton>
+
+                  {/* User dropdown menu */}
+                  <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                    PaperProps={{
+                      elevation: 3,
+                      sx: {
+                        minWidth: "200px",
+                        borderRadius: "8px",
+                        marginTop: "8px",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                        border: "1px solid #e0e0e0",
+                      },
                     }}
                   >
-                    <ListItemIcon>
-                      <ExitToAppIcon
-                        sx={{ color: "#5f6368", fontSize: "1rem" }}
-                      />
-                    </ListItemIcon>
-                    <Typography variant="body2">Logout</Typography>
-                  </MenuItem>
-                </Menu>
-              </Typography>
+                    <MenuItem disabled sx={{ opacity: 1 }}>
+                      <Typography variant="body2">
+                        {userData?.first_name ? userData.first_name : ""}
+                      </Typography>
+                    </MenuItem>
+                    <MenuItem
+                      onClick={async () => {
+                        handleMenuClose();
+                        showLogoutConfirmation();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <ExitToAppIcon
+                          sx={{ color: "#5f6368", fontSize: "1rem" }}
+                        />
+                      </ListItemIcon>
+                      <Typography variant="body2">Logout</Typography>
+                    </MenuItem>
+                  </Menu>
+                </Typography>
+              </Box>
             </Box>
           </Toolbar>
         </AppBar>
@@ -619,32 +676,11 @@ const Layout = ({ children }) => {
           sx={{
             flexGrow: 1,
             overflow: "auto",
-            backgroundColor: "#f8f9fa",
+            backgroundColor: "#F6F5F2",
           }}
         >
           {children}
         </Box>
-
-        {/* ── FOOTER (only on /dashboard routes) ── */}
-        {location.pathname.startsWith("/dashboard") && (
-          <div className="footer">
-            <div className="float-right"></div>
-            <div style={{ padding: 8 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <Typography sx={{ fontSize: "11.2px" }}>
-                  Powered by Sidssol
-                </Typography>
-              </div>
-            </div>
-          </div>
-        )}
       </Box>
 
       {/* ── CONFIRMATION DIALOG ── */}

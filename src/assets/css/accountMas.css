@@ -1,9 +1,11 @@
 .mainTitle {
-  font-size: 1.3em;
-  line-height: 29px;
+  font-size: 1.8em;
+  /* line-height: 29px; */
   margin: 0;
   padding: 0;
   float: left !important;
-  color: #026cb6;
-  font-weight: 500;
+  /* color: #026cb6; */
+  color: #1a1917;
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
