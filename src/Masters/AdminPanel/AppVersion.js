@@ -6,7 +6,7 @@ import PageHeader from "../../utils/PageHeader";
 import {
     Box, Typography, Button, Tabs, Tab, IconButton, FormControl,TextField, Select, MenuItem, InputLabel
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams,useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
@@ -26,6 +26,7 @@ export default function AppVersion() {
     const [versionTypeErr,setVersionTypeErr]=useState(false)
     const navigate=useNavigate()
     const toast=useToast()
+    const location=useLocation()
 
     useEffect(() => {
         fetchAppversionData()
@@ -143,6 +144,9 @@ export default function AppVersion() {
     }
 
     const handleEdit=(id)=>{
+        setAppTypeErr(false)
+        setBuildTypeErr(false)
+        setVersionTypeErr(false)
         navigate(`/masters/appversion/${btoa(id)}`)
     }
 
@@ -193,9 +197,27 @@ export default function AppVersion() {
     console.log("App version",appVersion)
 
     return (
-        <Layout>
-            <PageHeader title="App Version" url="/masters/appversion" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+        <Layout
+           breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
+                { label: "App Version", path: location.pathname },
+               
+            ]}
+        >
+              <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">App Version</h1>
+                </Box>
+
+            <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedAppEditId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -258,6 +280,7 @@ export default function AppVersion() {
                             // loading={modifyLoading}
                             confirmColor={confirmationDialog.confirmColor}
              />
+             </Box>
         </Layout>
     )
 }

@@ -4,9 +4,9 @@ import api from "../../services/api";
 import PageHeader from "../../utils/PageHeader";
 import {
     TextField, Box, Typography, Button, Tabs, Tab, IconButton, FormControl, Checkbox,
-    ListItemText,  Autocomplete,MenuItem
+    ListItemText, Autocomplete, MenuItem
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import useToast from "../../utils/useToast";
@@ -31,7 +31,8 @@ export default function MenuMaster() {
     // eslint-disable-next-line
     const [menuCheckErr, setMenuCheckErr] = useState(false)
     const [modifyLoading, setModifyLoading] = useState(false)
-    const toast=useToast()
+    const toast = useToast()
+    const location = useLocation()
 
     useEffect(() => {
         fetchMenuData()
@@ -44,9 +45,10 @@ export default function MenuMaster() {
             setTabValue(1)
             return
         }
+        if(allUserInputData.length===0) return
         collectEditData(decodedmenuId)
-    // eslint-disable-next-line
-    }, [decodedmenuId])
+        // eslint-disable-next-line
+    }, [decodedmenuId, allUserInputData])
 
 
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -94,13 +96,13 @@ export default function MenuMaster() {
         let isValid = true
         setMenuCheckErr(false)
         setUserTypeErr(false)
-        if (!selUserInputData || Number(selUserInputData.id)===0) {       // ← check null/falsy
+        if (!selUserInputData || Number(selUserInputData.id) === 0) {       // ← check null/falsy
             setUserTypeErr(true)
             isValid = false
         }
-        if(!isValid){
-           toast.error("Please fix all mandatory fields")
-           return isValid
+        if (!isValid) {
+            toast.error("Please fix all mandatory fields")
+            return isValid
         }
         if (selRepData.length === 0) {
             toast.error("Please Select atleast one Menu option !")
@@ -158,6 +160,8 @@ export default function MenuMaster() {
     ]
 
     const handleEdit = (userId) => {
+        setUserTypeErr(false)
+        setMenuCheckErr(false)
         navigate(`/masters/menuMaster/${btoa(userId)}`)
     }
 
@@ -228,88 +232,107 @@ export default function MenuMaster() {
     }
 
     return (
-        <Layout>
-            <PageHeader title="Menu Master" url="/masters/menuMaster" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedmenuId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Menu Master</Typography>
-                }
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+        <Layout  
+         breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
+                { label: "Menu Master", path: location.pathname },
+            ]}
+        
+        >
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Menu Master</h1>
+                </Box>
 
-                        {/* ✅ Autocomplete replacing Select */}
-                        <Autocomplete
-                            options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
-                            getOptionLabel={(option) => option.client_alias || ""}
-                            value={selUserInputData}
-                            onChange={(e, newValue) => {
-                                setSelUserInputData(newValue)
-                                setSelUserMasName(newValue?.client_alias || "")
-                                setUserTypeErr(false)
-                            }}
-                            readOnly={!!decodedmenuId}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="User Type"
-                                    size="small"
-                                    error={userTypeErr}
-                                    required
-                                    helperText={userTypeErr ? "User Type not Selected !" : ""}
-                                    sx={{ backgroundColor: decodedmenuId ? '#EEEEEE' : undefined }}
-                                />
-                            )}
-                        />
+                <Box sx={{ backgroundColor: 'white',  borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedmenuId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Menu Master</Typography>
+                    }
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
-                        <FormControl size="small">
-                            <Typography sx={{ mb: 1 }}>Menu's*</Typography>
-                            {repData.map((val) => (
-                                <MenuItem key={val.id} value={val.id}
-                                    sx={{ p: 0, mt: '-0.8rem' }}
-                                    onClick={() => {
-                                        setSelRepData((prev) =>
-                                            prev.includes(val.id)
-                                                ? prev.filter((id) => id !== val.id)
-                                                : [...prev, val.id]
-                                        )
-                                    }}
-                                >
-                                    <Checkbox checked={selRepData.includes(val.id)} />
-                                    <ListItemText primary={val.title} />
-                                </MenuItem>
-                            ))}
-                        </FormControl>
+                            {/* ✅ Autocomplete replacing Select */}
+                            <Autocomplete
+                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
+                                getOptionLabel={(option) => option.client_alias || ""}
+                                value={selUserInputData}
+                                onChange={(e, newValue) => {
+                                    setSelUserInputData(newValue)
+                                    setSelUserMasName(newValue?.client_alias || "")
+                                    setUserTypeErr(false)
+                                }}
+                                readOnly={!!decodedmenuId}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="User Type"
+                                        size="small"
+                                        error={userTypeErr}
+                                        required
+                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        sx={{ backgroundColor: decodedmenuId ? '#EEEEEE' : undefined }}
+                                    />
+                                )}
+                            />
 
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none',mb:3 }}
-                            onClick={() => { if (validateFields()) showSubmitConfirmation() }}>
-                            {decodedmenuId ? "Update" : "Submit"}
-                        </Button>
-                    </Box>
-                )}
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allMenuData} loading={loading} />
-                    </Box>
-                )}
+                            <FormControl size="small">
+                                <Typography sx={{ mb: 1 }}>Menu's*</Typography>
+                                {repData.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}
+                                        sx={{ p: 0, mt: '-0.8rem' }}
+                                        onClick={() => {
+                                            setSelRepData((prev) =>
+                                                prev.includes(val.id)
+                                                    ? prev.filter((id) => id !== val.id)
+                                                    : [...prev, val.id]
+                                            )
+                                        }}
+                                    >
+                                        <Checkbox checked={selRepData.includes(val.id)} />
+                                        <ListItemText primary={val.title} />
+                                    </MenuItem>
+                                ))}
+                            </FormControl>
+
+                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}
+                                onClick={() => { if (validateFields()) showSubmitConfirmation() }}>
+                                {decodedmenuId ? "Update" : "Submit"}
+                            </Button>
+                        </Box>
+                    )}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 3 }}>
+                            <DataTable columns={columns} data={allMenuData} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
         </Layout>
     )
 }

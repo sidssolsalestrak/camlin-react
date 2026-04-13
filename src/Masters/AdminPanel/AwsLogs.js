@@ -11,7 +11,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { IoClose } from "react-icons/io5";
 import { FaCheck } from "react-icons/fa";
@@ -33,6 +33,7 @@ export default function AwsLogs() {
     const [loading,setLoading]=useState(true)
     const navigate = useNavigate()
     const toast = useToast()
+    const location=useLocation()
 
     useEffect(() => {
         fetchAllUsers()
@@ -211,9 +212,9 @@ export default function AwsLogs() {
         <Layout>
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
-                    <Typography sx={{ fontWeight: 500, color: '#026cb6', fontSize: '1.5rem' }} >Process List</Typography>
+                    <h1 className="mainTitle" >Process List</h1>
                 </Box>
-                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, width: '90%' }} >
+                <Box sx={{ pt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, width: '90%' }} >
                     <FormControl >
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
