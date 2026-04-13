@@ -257,6 +257,7 @@ export default function Zone() {
     <Layout  breadcrumb={[
         { label: "Home", path: "/" },
         { label: "Master", path: "/masters/zone_mas" },
+        { label: " Geographical", path: "/masters/zone_mas" },
         { label: "Zone", path: location.pathname },
       ]}>
       <Box 

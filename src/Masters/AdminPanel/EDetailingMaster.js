@@ -552,6 +552,7 @@ export default function EDetailingMaster() {
           breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
                 { label: "E Detailing Master", path: location.pathname },
             ]}
         >

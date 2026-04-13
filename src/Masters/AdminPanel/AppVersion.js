@@ -201,6 +201,7 @@ export default function AppVersion() {
            breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
                 { label: "App Version", path: location.pathname },
                
             ]}

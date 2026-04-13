@@ -244,6 +244,7 @@ export default function Territory() {
           breadcrumb={[
         { label: "Home", path: "/" },
         { label: "Master", path: "/masters/ter_mas" },
+        { label: " Geographical", path: "/masters/ter_mas" },
         { label: "Territory", path: location.pathname },
         ]}
         >

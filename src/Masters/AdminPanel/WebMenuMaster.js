@@ -521,6 +521,7 @@ export default function WebMenuMaster() {
             breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
                 { label: "Web Menu Master", path: location.pathname }
             ]}
         >

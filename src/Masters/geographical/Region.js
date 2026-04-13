@@ -240,6 +240,7 @@ export default function Region() {
             breadcrumb={[
         { label: "Home", path: "/" },
         { label: "Master", path: "/masters/region" },
+        { label: " Geographical", path: "/masters/region" },
         { label: "Region", path: location.pathname },
       ]}
         >
