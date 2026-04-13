@@ -7,14 +7,13 @@ import {
     Box, Typography, Button, Tabs, Tab, IconButton, FormControl,
     TextField, Select, MenuItem, Autocomplete, Checkbox, CircularProgress
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROLES = [
     { value: "0", label: "All" },
@@ -190,9 +189,11 @@ export default function WebMenuMaster() {
     // Menu tree state
     const [checked, setChecked] = useState({})
     const [roles, setRoles] = useState({})
+    const [tableDataLoading,setTableDataLoading]=useState(false)
 
     const toast = useToast()
     const navigate = useNavigate()
+    const location=useLocation()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -242,10 +243,11 @@ export default function WebMenuMaster() {
             return
         }
         else {
+            if(userInputData.length===0) return
             collectEditData(decodedWebMenuId)
         }
      // eslint-disable-next-line
-    }, [decodedWebMenuId])
+    }, [decodedWebMenuId,userInputData])
 
     const resetFields = () => {
         setSelUserInput(null)
@@ -254,12 +256,16 @@ export default function WebMenuMaster() {
     }
 
     const fetchWebmenuData = async () => {
+        setTableDataLoading(true)
         try {
             let response = await api.post("/readWebMenuData")
             let webmenuresData = Array.isArray(response.data.data) ? response.data.data : []
             setAllWebMenuData(webmenuresData.map((item, index) => ({ ...item, si_no: index + 1 })))
         } catch (err) {
             console.log("web menu data error", err)
+        }
+        finally{
+            setTableDataLoading(false)
         }
     }
 
@@ -394,6 +400,7 @@ export default function WebMenuMaster() {
     }, [])
 
     const handleEdit = (id) => {
+        setUserTypeErr(false)
         navigate(`/masters/webMenuMaster/${btoa(id)}`)
     }
 
@@ -510,10 +517,26 @@ export default function WebMenuMaster() {
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <Layout>
-            <PageHeader title="Web Menu Master" url="/masters/webMenuMaster" />
+        <Layout
+            breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: location.pathname },
+                { label: "Web Menu Master", path: location.pathname }
+            ]}
+        >
+             <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Web Menu Master</h1>
+                </Box>
+
             <Box sx={{
-                backgroundColor: "white", mt: 3, ml: 2, borderRadius: "6px",
+                backgroundColor: "white", borderRadius: "6px",
                 minHeight: "30vh",
                 width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" }
             }}>
@@ -624,7 +647,7 @@ export default function WebMenuMaster() {
                 {/* ── VIEW LIST TAB ─────────────────────────────────────────── */}
                 {tabValue === 1 && (
                     <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allWebMenuData} />
+                        <DataTable columns={columns} data={allWebMenuData} loading={tableDataLoading} />
                     </Box>
                 )}
 
@@ -640,6 +663,7 @@ export default function WebMenuMaster() {
                 loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
+            </Box>
         </Layout>
     )
 }

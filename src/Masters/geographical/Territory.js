@@ -7,7 +7,7 @@ import {
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
@@ -35,6 +35,7 @@ export default function Territory() {
         open: false, title: "", message: "", onConfirm: null,
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
+    const location=useLocation()
 
     useEffect(() => {
         fetchAllTerritory()
@@ -54,14 +55,15 @@ export default function Territory() {
     }, [])
 
     useEffect(() => {
-        if (!decodedEditTerritoryId) {
+        if (!decodedEditTerritoryId || allArea.length===0) {
             resetFields()
             setTabValue(1)
             return
         }
+        if(allArea.length===0) return
         collectEditData(decodedEditTerritoryId)
         // eslint-disable-next-line
-    }, [decodedEditTerritoryId])
+    }, [decodedEditTerritoryId,allArea])
 
     const resetFields = () => {
         setSelArea(null)
@@ -238,9 +240,24 @@ export default function Territory() {
     ]
 
     return (
-        <Layout>
-            <PageHeader title="Territory" url="/masters/ter_mas" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+        <Layout
+          breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Master", path: "/masters/ter_mas" },
+        { label: "Territory", path: location.pathname },
+        ]}
+        >
+               <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Territory</h1>
+                </Box>
+            <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditTerritoryId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -302,6 +319,7 @@ export default function Territory() {
                 loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
+        </Box>
         </Layout>
     )
 }

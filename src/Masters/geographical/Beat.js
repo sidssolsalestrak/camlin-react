@@ -7,7 +7,7 @@ import {
 import api from "../../services/api";
 import { useSnackbar } from "notistack";
 import PageHeader from "../../utils/PageHeader";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
@@ -43,6 +43,7 @@ export default function Beat() {
         open: false, title: "", message: "", onConfirm: null,
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
+    const location = useLocation()
 
     useEffect(() => {
         fetchAllBeat()
@@ -77,9 +78,10 @@ export default function Beat() {
             setTabValue(1)
             return
         }
+        if(allArea.length===0) return
         collectEditData(decodedEditBeatId)
         // eslint-disable-next-line
-    }, [decodedEditBeatId])
+    }, [decodedEditBeatId,allArea])
 
     const resetFields = () => {
         setSelTerritory("0")
@@ -159,11 +161,11 @@ export default function Beat() {
         let isValid = true
         setTerritoryError(false)
         setBeatError(false)
-        if (Number(selTerritory)===0) { setTerritoryError(true); isValid = false }
+        if (Number(selTerritory) === 0) { setTerritoryError(true); isValid = false }
         if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
         if (!isValid) {
             enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-        
+
         }
         return isValid
     }
@@ -291,91 +293,107 @@ export default function Beat() {
     ]
 
     return (
-        <Layout>
-            <PageHeader title="Beat" url="/masters/beat_mas" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedEditBeatId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Beat Details</Typography>
-                }
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <Autocomplete
-                            options={areaOptions}
-                            getOptionLabel={(option) => option.area_name || ""}
-                            value={areaOptions.find((a) => a.id === selArea) }
-                            onChange={(e, newVal) => {
-                                const id = newVal ? newVal.id : ""
-                                setSelArea(id)
-                                setIsAreaChanged(true)
-                            }}
-                            disableClearable={!!decodedEditBeatId} 
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Area Name" size="small" />
-                            )}
-                        />
-                        <Autocomplete
-                            options={territoryOptions}
-                            getOptionLabel={(option) => option.ter_name || ""}
-                            value={territoryOptions.find((t) => t.id === selTerritory)}
-                            onChange={(e, newVal) => {
-                                setSelTerritory(newVal ? newVal.id : "")
-                                if (territoryError) setTerritoryError(false)
-                            }}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Territory Name"
-                                    size="small"
-                                    error={territoryError}
-                                    helperText={territoryError ? "Territory Name is required." : ""}
-                                />
-                            )}
-                        />
-                        <TextField
-                            label="Beat Name"
-                            size="small"
-                            value={beatName}
-                            onChange={(e) => {
-                                setBeatName(e.target.value)
-                                if (beatError) setBeatError(false)
-                            }}
-                            error={!!beatError}
-                            helperText={beatError ? "Beat Name is required." : ""}
-                        />
-                        <Button
-                            variant="contained"
-                            sx={{ width: '2rem', textTransform: 'none' }}
-                            onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
-                        >
-                            {decodedEditBeatId ? "Update" : "Create"}
-                        </Button>
-                    </Box>
-                )}
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allBeatData} loading={loading} />
-                    </Box>
-                )}
+        <Layout
+            breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path:"/masters/beat_mas" },
+                { label: "Beat", path: location.pathname },
+            ]}>
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Beat</h1>
+                </Box>
+
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedEditBeatId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Beat Details</Typography>
+                    }
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+                            <Autocomplete
+                                options={areaOptions}
+                                getOptionLabel={(option) => option.area_name || ""}
+                                value={areaOptions.find((a) => a.id === selArea)}
+                                onChange={(e, newVal) => {
+                                    const id = newVal ? newVal.id : ""
+                                    setSelArea(id)
+                                    setIsAreaChanged(true)
+                                }}
+                                disableClearable={!!decodedEditBeatId}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Area Name" size="small" />
+                                )}
+                            />
+                            <Autocomplete
+                                options={territoryOptions}
+                                getOptionLabel={(option) => option.ter_name || ""}
+                                value={territoryOptions.find((t) => t.id === selTerritory)}
+                                onChange={(e, newVal) => {
+                                    setSelTerritory(newVal ? newVal.id : "")
+                                    if (territoryError) setTerritoryError(false)
+                                }}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Territory Name"
+                                        size="small"
+                                        error={territoryError}
+                                        helperText={territoryError ? "Territory Name is required." : ""}
+                                    />
+                                )}
+                            />
+                            <TextField
+                                label="Beat Name"
+                                size="small"
+                                value={beatName}
+                                onChange={(e) => {
+                                    setBeatName(e.target.value)
+                                    if (beatError) setBeatError(false)
+                                }}
+                                error={!!beatError}
+                                helperText={beatError ? "Beat Name is required." : ""}
+                            />
+                            <Button
+                                variant="contained"
+                                sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
+                            >
+                                {decodedEditBeatId ? "Update" : "Create"}
+                            </Button>
+                        </Box>
+                    )}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 3 }}>
+                            <DataTable columns={columns} data={allBeatData} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
         </Layout>
     )
 }
