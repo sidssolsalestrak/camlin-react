@@ -236,6 +236,7 @@ export default function AppWidgetMaster() {
          breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
                 { label: "App Widget Master", path: location.pathname },
                
             ]}

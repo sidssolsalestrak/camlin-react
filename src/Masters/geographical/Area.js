@@ -268,6 +268,7 @@ export default function Area() {
           breadcrumb={[
         { label: "Home", path: "/" },
         { label: "Master", path: "/masters/area_mas/" },
+        { label: " Geographical", path: "/masters/area_mas/" },
         { label: "Area", path: location.pathname },
         ]}
         >

@@ -297,6 +297,7 @@ export default function Beat() {
             breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path:"/masters/beat_mas" },
+                { label: " Geographical", path: "/masters/beat_mas" },
                 { label: "Beat", path: location.pathname },
             ]}>
             <Box

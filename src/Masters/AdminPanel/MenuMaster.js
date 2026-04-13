@@ -236,6 +236,7 @@ export default function MenuMaster() {
          breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
+                { label: "Admin Panel", path:location.pathname },
                 { label: "Menu Master", path: location.pathname },
             ]}
         
