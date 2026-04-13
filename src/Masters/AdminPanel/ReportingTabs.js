@@ -6,7 +6,7 @@ import {
 } from "@mui/material";
 import api from "../../services/api";
 import PageHeader from "../../utils/PageHeader";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
@@ -20,7 +20,7 @@ export default function ReportingTabs() {
     const { userId, cusId } = useParams()
     const decodedUserId = userId !== undefined && userId !== null ? Number(atob(userId)) : null
     const decodedCusId = cusId !== undefined && cusId !== null ? Number(atob(cusId)) : null
-    const toast=useToast()
+    const toast = useToast()
     const navigate = useNavigate()
     const [tabValue, setTabValue] = useState(1)
     const [userType, setUserType] = useState(null)
@@ -37,6 +37,7 @@ export default function ReportingTabs() {
     const [accError, setAccError] = useState(false)
     // eslint-disable-next-line
     const [repInputError, setRepInputError] = useState(false)
+    const location = useLocation()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -66,11 +67,12 @@ export default function ReportingTabs() {
             setTabValue(1)
             return
         }
+        if(allUsermasType.length===0) return
         collectEditData(decodedUserId, decodedCusId)
-    // eslint-disable-next-line
-    }, [decodedUserId, decodedCusId,allUsermasType])
+        // eslint-disable-next-line
+    }, [decodedUserId, decodedCusId, allUsermasType])
 
-   
+
 
     const resetFields = () => {
         setSelAccType("0")
@@ -115,11 +117,11 @@ export default function ReportingTabs() {
         setUserMasError(false)
         setRepInputError(false)
 
-        if (!selUserMasType || Number(selUserMasType.id)===0) { setUserMasError(true); isValid = false }   // ← null check
+        if (!selUserMasType || Number(selUserMasType.id) === 0) { setUserMasError(true); isValid = false }   // ← null check
         if (selAccType === "0") { setAccError(true); isValid = false }
-        if(!isValid){
-           toast.error("Please fix all mandatory fields")
-           return isValid
+        if (!isValid) {
+            toast.error("Please fix all mandatory fields")
+            return isValid
         }
         let replength = selRepInputData.length
         if (replength === 0 || replength < 0) {
@@ -140,7 +142,7 @@ export default function ReportingTabs() {
             }
             let response = await api.post("/reportTabCreate", addPayload)
             if (response.data.success) {
-                toast.success(decodedUserId ?"Reporting Tabs Updated successfully" : response.data.message)
+                toast.success(decodedUserId ? "Reporting Tabs Updated successfully" : response.data.message)
                 if (decodedUserId) {
                     fetchReportData()
                     navigate("/masters/repTabs")
@@ -257,121 +259,137 @@ export default function ReportingTabs() {
     ]
 
     return (
-        <Layout>
-            <PageHeader title="Reporting Tabs" url="/masters/repTabs" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedUserId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Reporting Tab</Typography>
-                }
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+        <Layout
+            breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: location.pathname },
+                { label: "Reporting Tabs", path: location.pathname },
+            ]}
+        >
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Reporting Tabs</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedUserId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Reporting Tab</Typography>
+                    }
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
-                        {/* ✅ User Type — Autocomplete */}
-                        <Autocomplete
-                            options={[{ id: "0", client_alias: "Select User Type" }, ...allUsermasType]}
-                            getOptionLabel={(option) => option.client_alias || ""}
-                            value={selUserMasType}
-                            onChange={(e, newValue) => {
-                                setSelUserMasType(newValue)
-                                setSelUserMasName(newValue?.client_alias || "")
-                                setUserMasError(false)
-                            }}
-                            readOnly={!!decodedUserId}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="User Type"
-                                    size="small"
-                                    required
-                                    error={userMasError}
-                                    helperText={userMasError ? "User Type not Selected !" : ""}
-                                    sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : undefined }}
-                                />
-                            )}
-                        />
-
-                        {/* ✅ Account Type — Select unchanged, fixed height added */}
-                        <FormControl>
-                            <InputLabel id="cus_label">Account Type*</InputLabel>
-                            <Select
-                                labelId="cus_label"
-                                label="Account Type*"
-                                size="small"
-                                onChange={(e) => setSelAccType(e.target.value)}
-                                inputProps={{ readOnly: decodedUserId ? true : false }}
-                                sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : null }}
-                                value={selAccType}
-                                error={accError}
-                                MenuProps={{
-                                    PaperProps: {
-                                        sx: {
-                                            maxHeight: '200px',   // ← fixes the dropdown popup height
-                                            overflowY: 'auto'
-                                        }
-                                    }
+                            {/* ✅ User Type — Autocomplete */}
+                            <Autocomplete
+                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUsermasType]}
+                                getOptionLabel={(option) => option.client_alias || ""}
+                                value={selUserMasType}
+                                onChange={(e, newValue) => {
+                                    setSelUserMasType(newValue)
+                                    setSelUserMasName(newValue?.client_alias || "")
+                                    setUserMasError(false)
                                 }}
-                            >
-                                <MenuItem value="0">Select Account Type</MenuItem>
-                                {allAccType.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.cus_type_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {accError ? <Typography className="selError">Account Type not Selected !</Typography> : null}
-                        </FormControl>
+                                readOnly={!!decodedUserId}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="User Type"
+                                        size="small"
+                                        required
+                                        error={userMasError}
+                                        helperText={userMasError ? "User Type not Selected !" : ""}
+                                        sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : undefined }}
+                                    />
+                                )}
+                            />
 
-                        <FormControl size="small">
-                            <Typography sx={{ mb: 1 }}>Reporting Module*</Typography>
-                            {allRepInputData.map((val) => (
-                                <MenuItem
-                                    key={val.id}
-                                    value={val.id}
-                                    sx={{ p: 0, mt: '-0.8rem' }}
-                                    onClick={() => {
-                                        setSelRepInputData((prev) =>
-                                            prev.includes(val.Id)
-                                                ? prev.filter((Id) => Id !== val.Id)
-                                                : [...prev, val.Id]
-                                        )
+                            {/* ✅ Account Type — Select unchanged, fixed height added */}
+                            <FormControl>
+                                <InputLabel id="cus_label">Account Type*</InputLabel>
+                                <Select
+                                    labelId="cus_label"
+                                    label="Account Type*"
+                                    size="small"
+                                    onChange={(e) => setSelAccType(e.target.value)}
+                                    inputProps={{ readOnly: decodedUserId ? true : false }}
+                                    sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : null }}
+                                    value={selAccType}
+                                    error={accError}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                maxHeight: '200px',   // ← fixes the dropdown popup height
+                                                overflowY: 'auto'
+                                            }
+                                        }
                                     }}
                                 >
-                                    <Checkbox checked={selRepInputData.includes(val.Id)} />
-                                    <ListItemText primary={val.d_name} />
-                                </MenuItem>
-                            ))}
-                        </FormControl>
+                                    <MenuItem value="0">Select Account Type</MenuItem>
+                                    {allAccType.map((val) => (
+                                        <MenuItem key={val.id} value={val.id}>{val.cus_type_name}</MenuItem>
+                                    ))}
+                                </Select>
+                                {accError ? <Typography className="selError">Account Type not Selected !</Typography> : null}
+                            </FormControl>
 
-                        <Button onClick={() => {
-                            if (validateReportingFields()) showSubmitConfirmation()
-                        }} variant="contained" sx={{ width: '2rem', textTransform: 'none',mb:3 }}>
-                            {decodedUserId ? "Update" : "Submit"}
-                        </Button>
-                    </Box>
-                )}
+                            <FormControl size="small">
+                                <Typography sx={{ mb: 1 }}>Reporting Module*</Typography>
+                                {allRepInputData.map((val) => (
+                                    <MenuItem
+                                        key={val.id}
+                                        value={val.id}
+                                        sx={{ p: 0, mt: '-0.8rem' }}
+                                        onClick={() => {
+                                            setSelRepInputData((prev) =>
+                                                prev.includes(val.Id)
+                                                    ? prev.filter((Id) => Id !== val.Id)
+                                                    : [...prev, val.Id]
+                                            )
+                                        }}
+                                    >
+                                        <Checkbox checked={selRepInputData.includes(val.Id)} />
+                                        <ListItemText primary={val.d_name} />
+                                    </MenuItem>
+                                ))}
+                            </FormControl>
 
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={reportData} loading={loading} />
-                    </Box>
-                )}
+                            <Button onClick={() => {
+                                if (validateReportingFields()) showSubmitConfirmation()
+                            }} variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}>
+                                {decodedUserId ? "Update" : "Submit"}
+                            </Button>
+                        </Box>
+                    )}
+
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 3 }}>
+                            <DataTable columns={columns} data={reportData} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={confirmationDialog.loading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={confirmationDialog.loading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
         </Layout>
     )
 }

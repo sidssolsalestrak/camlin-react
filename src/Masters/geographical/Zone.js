@@ -18,7 +18,7 @@ import { useParams, useNavigate,useLocation } from "react-router-dom";
 import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
-import { useSnackbar } from "notistack";
+
 
 export default function Zone() {
   const [zoneName, setZoneName] = useState("");
@@ -36,7 +36,7 @@ export default function Zone() {
     editZoneid !== undefined && editZoneid !== null
       ? Number(atob(editZoneid))
       : null;
-  const { enqueueSnackbar } = useSnackbar();
+  const toast=useToast()
   const navigate = useNavigate();
   const location=useLocation()
 
@@ -126,42 +126,27 @@ export default function Zone() {
           check: check,
         });
         if (response.data.success) {
-          enqueueSnackbar(response.data.message, {
-            variant: "success",
-            anchorOrigin: { vertical: "top", horizontal: "center" },
-          });
+          toast.success(response.data.message)
           fetchZones();
           navigate("/masters/zone_mas");
         } else {
-          enqueueSnackbar(response.data.message, {
-            variant: "error",
-            anchorOrigin: { vertical: "top", horizontal: "center" },
-          });
+            toast.error(response.data.message)
         }
         setEditId(null);
       } else {
         let response = await api.post("/addZone", { newZone: zoneName.trim() });
         if (response.data.success) {
-          enqueueSnackbar(response.data.message, {
-            variant: "success",
-            anchorOrigin: { vertical: "top", horizontal: "center" },
-          });
+          toast.success(response.data.message)
           setZoneName("");
           fetchZones();
           setTabValue(1);
         } else {
-          enqueueSnackbar(response.data.message, {
-            variant: "error",
-            anchorOrigin: { vertical: "top", horizontal: "center" },
-          });
+            toast.error(response.data.message)
         }
       }
     } catch (err) {
       console.log("addzone error", err);
-      enqueueSnackbar("Something went wrong Try again!!", {
-        variant: "error",
-        anchorOrigin: { vertical: "top", horizontal: "center" },
-      });
+      toast.error("Something went wrong Try again!!")
     } finally {
       setModifyLoading(false);
       closeConfirmationDialog();
@@ -220,23 +205,14 @@ export default function Zone() {
     try {
       let response = await api.post("/deleteZone", { id });
       if (response.data.code === 1) {
-        enqueueSnackbar(response.data.message, {
-          variant: "success",
-          anchorOrigin: { vertical: "top", horizontal: "center" },
-        });
+           toast.success(response.data.message)
       } else {
-        enqueueSnackbar(response.data.message, {
-          variant: "error",
-          anchorOrigin: { vertical: "top", horizontal: "center" },
-        });
+            toast.error(response.data.message)
       }
       fetchZones();
     } catch (err) {
       console.log("deleteZone error", err);
-      enqueueSnackbar("Something went wrong Try again!!", {
-        variant: "error",
-        anchorOrigin: { vertical: "top", horizontal: "center" },
-      });
+      toast.error("Something went wrong Try again!!")
     } finally {
       closeConfirmationDialog();
       setModifyLoading(false);
@@ -280,9 +256,8 @@ export default function Zone() {
   return (
     <Layout  breadcrumb={[
         { label: "Home", path: "/" },
-        { label: "Master", path: location.pathname },
+        { label: "Master", path: "/masters/zone_mas" },
         { label: "Zone", path: location.pathname },
-        { label: "Zone List" },
       ]}>
       <Box 
         p={2}
@@ -342,10 +317,7 @@ export default function Zone() {
                 if (validateZone()) {
                   showSubmitConfirmation();
                 } else {
-                  enqueueSnackbar("Please fix all mandatory fields", {
-                    variant: "error",
-                    anchorOrigin: { vertical: "top", horizontal: "center" },
-                  });
+                   toast.error("Please fix all mandatory fields")
                 }
               }}
             >

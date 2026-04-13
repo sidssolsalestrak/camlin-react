@@ -8,7 +8,7 @@ import {
     Divider, Checkbox,
     Autocomplete, Grid
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams,useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
@@ -35,6 +35,8 @@ export default function EDetailingMaster() {
     const [selPageId, setSelPageId] = useState([])
     const [subId, setSubId] = useState(null)
     const [editId,setEditId]=useState(null)
+    const [loading,setLoading]=useState(false)
+    const location=useLocation()
 
     // NEW: separate state for dialog edit row
     const [editSubRow, setEditSubRow] = useState(null)
@@ -168,6 +170,7 @@ export default function EDetailingMaster() {
     }, [decodedEDetailId, allBuisnessunit, allBrand, allPrdData])
 
     const fetchEdetailerData = async () => {
+        setLoading(true)
         try {
             let response = await api.post("/getEdetailData")
             let eDetailData = Array.isArray(response.data.data) ? response.data.data : []
@@ -175,6 +178,9 @@ export default function EDetailingMaster() {
         }
         catch (err) {
             console.log("fetch initial Data error", err)
+        }
+        finally{
+            setLoading(false)
         }
     }
 
@@ -542,9 +548,25 @@ export default function EDetailingMaster() {
     console.log("sub id ",subId)
 
     return (
-        <Layout>
-            <PageHeader title="E Detailing Master" url="/masters/edetailing" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' } }}>
+        <Layout
+          breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: location.pathname },
+                { label: "E Detailing Master", path: location.pathname },
+            ]}
+        >
+              <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">E Detailing Master</h1>
+                </Box>
+
+            <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' } }}>
                 {!decodedEDetailId ? (
                     <Box sx={{ backgroundColor: 'white', borderBottom: 1, borderColor: 'divider', px: 3, mt: 1, minWidth: '90%', mr: 3 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -794,7 +816,7 @@ export default function EDetailingMaster() {
 
                 {tabValue === 1 && (
                     <Box>
-                        <DataTable columns={columns} data={allEdetailData} />
+                        <DataTable columns={columns} data={allEdetailData} loading={loading} />
                     </Box>
                 )}
             </Box>
@@ -1047,6 +1069,7 @@ export default function EDetailingMaster() {
                 cancelText={confirmationDialog.cancelText}
                 confirmColor={confirmationDialog.confirmColor}
             />
+            </Box>
         </Layout>
     )
 }

@@ -88,7 +88,7 @@
 }
 
 .php-menu.collapsed ul {
-  padding-left: 5;
+  padding-left: 8px;
 }
 
 /* Flyout submenu when collapsed */
@@ -96,7 +96,7 @@
   display: none;
   position: fixed;
   left: 50px;
-  background-color: #588aae;
+  background-color: #1a1917;
   min-width: 170px;
   z-index: 9999;
   border-radius: 0 4px 4px 0;
@@ -153,7 +153,7 @@
   display: block;
   position: fixed;
   left: 220px;
-  background-color: #588aae;
+  background-color: #1a1917;
   min-width: 170px;
   z-index: 99999;
   border-radius: 0 4px 4px 0;
@@ -190,7 +190,7 @@
 }
 
 .treeview.dropdownWidth.active > ul {
-  padding-left: 5%;
+  padding-left: 1%;
 }
 
 .treeview > a.parent-active::before {

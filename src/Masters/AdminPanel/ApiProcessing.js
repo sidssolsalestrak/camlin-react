@@ -15,6 +15,8 @@ export default function ApiProcessing() {
     const [ReportprocessData, setProcessData] = useState([])
     const [primaryOrderData, setprimaryOrderData] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
+    const [loading,setLoading]=useState(false)
+    const [orderDataLoading,setOrderDataLoading]=useState(false)
     const toast = useToast()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -35,6 +37,7 @@ export default function ApiProcessing() {
     }, [])
 
     const fetchReportUnprocessData = async () => {
+        setLoading(true)
         try {
             let response = await api.post("/getApiProcessingData")
             let unprocessResData = Array.isArray(response.data.data) ? response.data.data : []
@@ -42,15 +45,22 @@ export default function ApiProcessing() {
         } catch (err) {
             console.log(err)
         }
+        finally{
+            setLoading(false)
+        }
     }
 
     const fetchPrimaryOrderData = async () => {
+        setOrderDataLoading(true)
         try {
             let response = await api.post("/getPrimaryOrderData")
             let primaryResData = Array.isArray(response.data.data) ? response.data.data : []
             setprimaryOrderData(primaryResData.map((item, index) => ({ ...item, si_no: index + 1 })))
         } catch (err) {
             console.log(err)
+        }
+        finally{
+            setOrderDataLoading(false) 
         }
     }
 
@@ -233,7 +243,7 @@ export default function ApiProcessing() {
         <Layout>
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
-                    <Typography sx={{ fontWeight: 500, color: '#026cb6', fontSize: '1.4rem' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#000000', fontSize: '1.5rem' }}>
                         {`Api Processing (Unprocessed Data)`}
                     </Typography>
                 </Box>
@@ -248,7 +258,7 @@ export default function ApiProcessing() {
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Typography sx={{ fontWeight: 500, color: '#026cb6', fontSize: '1.3rem' }}>
+                            <Typography sx={{ fontWeight: 600, color: '#000000', fontSize: '1.3rem' }}>
                                 Report Unprocessed
                             </Typography>
                             {/* ✅ Now calls confirmation */}
@@ -257,7 +267,7 @@ export default function ApiProcessing() {
                             </Button>
                         </Box>
                         <Box>
-                            <DataTable columns={column1} data={ReportprocessData} />
+                            <DataTable columns={column1} data={ReportprocessData} loading={loading} />
                         </Box>
                     </Box>
                 )}
@@ -265,7 +275,7 @@ export default function ApiProcessing() {
                 {tabValue === 1 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Typography sx={{ fontWeight: 500, color: '#026cb6', fontSize: '1.3rem' }}>
+                            <Typography sx={{ fontWeight: 600, color: '#000000', fontSize: '1.3rem' }}>
                                 Primary Order Unprocessed
                             </Typography>
                             {/* ✅ Now calls confirmation */}
@@ -274,7 +284,7 @@ export default function ApiProcessing() {
                             </Button>
                         </Box>
                         <Box>
-                            <DataTable columns={column2} data={primaryOrderData} />
+                            <DataTable columns={column2} data={primaryOrderData} loading={orderDataLoading} />
                         </Box>
                     </Box>
                 )}

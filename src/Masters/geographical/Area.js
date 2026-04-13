@@ -4,7 +4,7 @@ import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Autocomplete
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
@@ -15,7 +15,7 @@ export default function Area() {
 
     const { editAreaId } = useParams()
     const decodedAreaId = editAreaId !== undefined && editAreaId !== null ? Number(atob(editAreaId)) : null
-    const toast=useToast()
+    const toast = useToast()
     const navigate = useNavigate()
 
     const [tabValue, setTabValue] = useState(1)
@@ -36,6 +36,7 @@ export default function Area() {
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
+    const location = useLocation()
 
     useEffect(() => {
         fetchArea()
@@ -56,14 +57,15 @@ export default function Area() {
     }, [])
 
     useEffect(() => {
-        if (!decodedAreaId ) {
+        if (!decodedAreaId) {
             resetFields()
             setTabValue(1)
             return
         }
+        if (allRegion.length === 0 || allState.length === 0) return
         collectEditData(decodedAreaId)
         // eslint-disable-next-line
-    }, [decodedAreaId,allRegion,allState])
+    }, [decodedAreaId, allRegion, allState])
 
     const resetFields = () => {
         setSelRegion(null)          // ← null
@@ -133,8 +135,8 @@ export default function Area() {
         setStateError(false)
         setAreaError(false)
 
-        if (!selRegion || Number(selRegion.id)===0) { setRegionError(true); isValid = false }        // ← null check
-        if (!selState || Number(selState.id)===0) { setStateError(true); isValid = false }          // ← null check
+        if (!selRegion || Number(selRegion.id) === 0) { setRegionError(true); isValid = false }        // ← null check
+        if (!selState || Number(selState.id) === 0) { setStateError(true); isValid = false }          // ← null check
         if (!areaName || areaName.trim() === "") { setAreaError(true); isValid = false }
 
         if (!isValid) {
@@ -262,103 +264,109 @@ export default function Area() {
     ]
 
     return (
-        <Layout>
-              <Box 
-                                p={2}
-                                sx={{ borderRadius: 1 }}
-                                display="flex"
-                                flexDirection="column"
-                                gap={2}  
-                              >
-                              <Box>
-                                        <h1 className="mainTitle">Region</h1>
-                              </Box>
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedAreaId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Area Details</Typography>
-                }
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+        <Layout
+          breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Master", path: "/masters/area_mas/" },
+        { label: "Area", path: location.pathname },
+        ]}
+        >
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Area</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedAreaId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Area Details</Typography>
+                    }
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
-                        {/* ✅ Region — Autocomplete */}
-                        <Autocomplete
-                            options={[{ id: "0",reg_name: "Select Region" }, ...allRegion]}
-                            getOptionLabel={(option) => option.reg_name || ""}
-                            value={selRegion}
-                            onChange={(e, newValue) => {
-                                setSelRegion(newValue)
-                                if (regionError) setRegionError(false)
-                            }}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Region Name"
-                                    size="small"
-                                    error={regionError}
-                                    helperText={regionError ? "Region Name is required." : ""}
-                                />
-                            )}
-                        />
+                            {/* ✅ Region — Autocomplete */}
+                            <Autocomplete
+                                options={[{ id: "0", reg_name: "Select Region" }, ...allRegion]}
+                                getOptionLabel={(option) => option.reg_name || ""}
+                                value={selRegion}
+                                onChange={(e, newValue) => {
+                                    setSelRegion(newValue)
+                                    if (regionError) setRegionError(false)
+                                }}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Region Name"
+                                        size="small"
+                                        error={regionError}
+                                        helperText={regionError ? "Region Name is required." : ""}
+                                    />
+                                )}
+                            />
 
-                        {/* ✅ State — Autocomplete */}
-                        <Autocomplete
-                            options={[{ id: "0", state_name: "Select State" }, ...allState]}
-                            getOptionLabel={(option) => option.state_name || ""}
-                            value={selState}
-                            onChange={(e, newValue) => {
-                                setSelState(newValue)
-                                if (stateError) setStateError(false)
-                            }}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="State Name"
-                                    size="small"
-                                    error={stateError}
-                                    helperText={stateError ? "State Name is required." : ""}
-                                />
-                            )}
-                        />
+                            {/* ✅ State — Autocomplete */}
+                            <Autocomplete
+                                options={[{ id: "0", state_name: "Select State" }, ...allState]}
+                                getOptionLabel={(option) => option.state_name || ""}
+                                value={selState}
+                                onChange={(e, newValue) => {
+                                    setSelState(newValue)
+                                    if (stateError) setStateError(false)
+                                }}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="State Name"
+                                        size="small"
+                                        error={stateError}
+                                        helperText={stateError ? "State Name is required." : ""}
+                                    />
+                                )}
+                            />
 
-                        <TextField label="Area Name" size="small" value={areaName}
-                            onChange={(e) => {
-                                setAreaName(e.target.value)
-                                if (areaError) setAreaError(false)
-                            }}
-                            error={!!areaError}
-                            helperText={areaError ? "Area Name is required." : ""}
-                        />
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                            onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
-                            {decodedAreaId ? "Update" : "Create"}
-                        </Button>
-                    </Box>
-                )}
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allArea} loading={loading} />
-                    </Box>
-                )}
-            </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
+                            <TextField label="Area Name" size="small" value={areaName}
+                                onChange={(e) => {
+                                    setAreaName(e.target.value)
+                                    if (areaError) setAreaError(false)
+                                }}
+                                error={!!areaError}
+                                helperText={areaError ? "Area Name is required." : ""}
+                            />
+                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
+                                {decodedAreaId ? "Update" : "Create"}
+                            </Button>
+                        </Box>
+                    )}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 3 }}>
+                            <DataTable columns={columns} data={allArea} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
         </Layout>
     )

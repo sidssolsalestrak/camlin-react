@@ -239,9 +239,8 @@ export default function Region() {
         <Layout  
             breadcrumb={[
         { label: "Home", path: "/" },
-        { label: "Master", path: location.pathname },
+        { label: "Master", path: "/masters/region" },
         { label: "Region", path: location.pathname },
-        { label: "Region List" },
       ]}
         >
               <Box 
