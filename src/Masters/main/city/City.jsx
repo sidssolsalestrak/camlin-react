@@ -134,7 +134,7 @@ const ProductCategory = () => {
                 city_name: formData.cityName,
             }
             const res = await axios.post("/addCity", payload)
-            console.log("adding sub category:", res);
+           // console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added City")
                 setFormData({ stateName: "", cityName: "" });
@@ -170,7 +170,7 @@ const ProductCategory = () => {
                 city_new: original.cityName,
             }
             const res = await axios.post("/updateCity", payload)
-            console.log("updating category:", res);
+           // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated City")
                 setFormData({ stateName: "", cityName: "" });
@@ -202,7 +202,7 @@ const ProductCategory = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteCity/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted City")
                 fetchTableData();

@@ -143,7 +143,7 @@ const ProductCategory = () => {
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/addCat", payload)
-            console.log("adding category:", res);
+            //console.log("adding category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product Category")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
@@ -181,7 +181,7 @@ const ProductCategory = () => {
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/editCat", payload)
-            console.log("updating category:", res);
+            //console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Product Category")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
@@ -254,7 +254,7 @@ const ProductCategory = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteCat/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();

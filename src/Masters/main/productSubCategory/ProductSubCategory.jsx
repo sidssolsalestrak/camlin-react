@@ -164,7 +164,7 @@ const ProductSubCategory = () => {
                 sub_name: formData.categoryName
             }
             const res = await axios.post("/addCatSub", payload)
-            console.log("adding sub category:", res);
+            //console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Sub Product Category")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
@@ -202,7 +202,7 @@ const ProductSubCategory = () => {
                 sub_name: formData.categoryName
             }
             const res = await axios.post("/subCatEdit", payload)
-            console.log("updating category:", res);
+            //console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Sub Product Category")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
@@ -256,7 +256,7 @@ const ProductSubCategory = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteCatSub/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();
@@ -312,7 +312,7 @@ const ProductSubCategory = () => {
         try {
             const res = await axios.post("/getCategory");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
-            console.log("cat data", data);
+           // console.log("cat data", data);
             setCatData(data);
         } catch (error) {
             console.error(error);
@@ -329,7 +329,7 @@ const ProductSubCategory = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            console.log("table data", data);
+           // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);

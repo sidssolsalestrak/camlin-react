@@ -117,7 +117,7 @@ const Department = () => {
                 dept_name: formData.departmentName
             }
             const res = await axios.post("/addDept", payload)
-            console.log("adding sub category:", res);
+           // console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Department")
                 setFormData({ departmentName: "" });
@@ -148,7 +148,7 @@ const Department = () => {
                 hdndeptName: original.deptName,
             }
             const res = await axios.post("/updateDept", payload)
-            console.log("updating category:", res);
+           // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Department")
                 setFormData({ departmentName: "" });
@@ -176,7 +176,7 @@ const Department = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDept/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();
@@ -246,7 +246,7 @@ const Department = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            console.log("table data", data);
+           // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);

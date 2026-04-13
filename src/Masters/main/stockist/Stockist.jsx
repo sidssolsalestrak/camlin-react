@@ -191,7 +191,7 @@ const Stockist = () => {
                 area_id: formData.area
             }
             const res = await axios.post("/getStockistList", payload);
-            console.log("table res:", res?.data?.data);
+            //console.log("table res:", res?.data?.data);
             const data = Array.isArray(res?.data?.data) ? res?.data?.data.map((row, index) => ({
                 ...row,
                 index: index + 1
