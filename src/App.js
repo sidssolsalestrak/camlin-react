@@ -41,11 +41,12 @@ import AccountExtract from "./view/account/AccountExtract";
 import Login from "./view/Login";
 import ForgotPassword from "./view/ForgotPassword";
 import AccountTransfer from "./view/account/AccountTransfer";
+import UserList from "./view/UserList";
+import AddUser from "./view/AddUser";
 
 function App() {
   const ProtectedRoute = () => {
     const token = localStorage.getItem("session-token");
-    console.log("token", token);
     return token ? <Outlet /> : <Navigate to="/login" replace />;
   };
 
@@ -140,6 +141,16 @@ function App() {
               element={<ForgotPassword />}
             />
             <Route path="/customers/account_transfer/"  element={<AccountTransfer />}       />
+            <Route
+              path="/Users/users_list/:userType?/:dept?/:zone?/:reg?/:area?/:ter?/:channel?"
+              element={<UserList />}
+            />
+
+            <Route
+              path="/users/adminUserNew/:userMainId?"
+              element={<AddUser />}
+            />
+
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

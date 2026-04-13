@@ -209,7 +209,7 @@ function AccountExtract() {
     <Layout>
       <Box
         p={2}
-        sx={{ backgroundColor: "#fff", borderRadius: 1 }}
+        sx={{ borderRadius: 1 }}
         display="flex"
         flexDirection="column"
         gap={2}
@@ -218,7 +218,7 @@ function AccountExtract() {
           <h2 className="mainTitle">Account Master Extract</h2>
         </Box>
 
-        <Box>
+        <Box sx={{ backgroundColor: "#fff" }} p={1.5}>
           <Grid container spacing={2}>
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
@@ -313,7 +313,7 @@ function AccountExtract() {
         </Box>
 
         {/* ---------------- TABLE ---------------- */}
-        <Box mt={3}>
+        <Box>
           <DataTable
             data={tableData}
             columns={columns}
