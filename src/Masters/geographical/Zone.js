@@ -14,10 +14,11 @@ import api from "../../services/api";
 import useToast from "../../utils/useToast";
 import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate,useLocation } from "react-router-dom";
 import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+import { useSnackbar } from "notistack";
 
 export default function Zone() {
   const [zoneName, setZoneName] = useState("");
@@ -37,6 +38,7 @@ export default function Zone() {
       : null;
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const location=useLocation()
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
@@ -276,13 +278,25 @@ export default function Zone() {
   ];
 
   return (
-    <Layout>
-      <PageHeader title="Zone" url="/masters/zone_mas" />
+    <Layout  breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Master", path: location.pathname },
+        { label: "Zone", path: location.pathname },
+        { label: "Zone List" },
+      ]}>
+      <Box 
+        p={2}
+        sx={{ borderRadius: 1 }}
+        display="flex"
+        flexDirection="column"
+        gap={2}  
+      >
+      <Box>
+                <h1 className="mainTitle">Zone</h1>
+      </Box>
       <Box
         sx={{
           backgroundColor: "white",
-          mt: 2,
-          ml: 2,
           borderRadius: "6px",
           minHeight: "30vh",
           width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" },
@@ -358,6 +372,7 @@ export default function Zone() {
         loading={modifyLoading}
         confirmColor={confirmationDialog.confirmColor}
       />
+      </Box>
     </Layout>
   );
 }

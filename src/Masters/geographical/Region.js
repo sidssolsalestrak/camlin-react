@@ -4,7 +4,7 @@ import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, Inpu
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate,useLocation } from "react-router-dom";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import DataTable from "../../utils/dataTable";
@@ -32,6 +32,7 @@ export default function Region() {
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [userType, setUserType] = useState(null)
+    const location=useLocation()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -235,9 +236,26 @@ export default function Region() {
     ]
 
     return (
-        <Layout>
-            <PageHeader title="Region" url="/masters/region" />
-            <Box sx={{ backgroundColor: 'white', mt: 3, ml: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+        <Layout  
+            breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Master", path: location.pathname },
+        { label: "Region", path: location.pathname },
+        { label: "Region List" },
+      ]}
+        >
+              <Box 
+                    p={2}
+                    sx={{ borderRadius: 1 }}
+                    display="flex"
+                    flexDirection="column"
+                    gap={2}  
+                  >
+                  <Box>
+                            <h1 className="mainTitle">Region</h1>
+                  </Box>
+           
+            <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                 {!decodedEditRegionId ?
                     <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                         <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -313,6 +331,7 @@ export default function Region() {
                 loading={modifyLoading}
                 confirmColor={confirmationDialog.confirmColor}
             />
+            </Box>
         </Layout>
     )
 }
