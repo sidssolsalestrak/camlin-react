@@ -5,7 +5,7 @@ import { useState } from 'react'
 import axios from "../../../services/api";
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
 }
