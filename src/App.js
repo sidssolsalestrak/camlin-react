@@ -82,7 +82,7 @@ function App() {
             <Route path="/masters/city_mas/:id?" element={<City />} />
             <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
             <Route path="/masters/prodview" element={<ViewProduct />} />
-            <Route path="/masters/stockist" element={<Stockist />} />
+            <Route path="/masters/stockist/:id?" element={<Stockist />} />
 
             {/* Admin Panel master routes */}
             <Route

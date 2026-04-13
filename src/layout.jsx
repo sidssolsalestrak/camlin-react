@@ -441,16 +441,18 @@ const Layout = ({ children, breadcrumb = [] }) => {
             borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
           }}
         >
-          <Box>
-            <img
-              src={SalesTrekimg}
-              alt="Logo"
-              style={{
-                width: isMobile ? "6rem" : "8rem",
-                alignSelf: "center",
-              }}
-            />
-          </Box>
+          {drawerOpen && (
+            <Box>
+              <img
+                src={SalesTrekimg}
+                alt="Logo"
+                style={{
+                  width: isMobile ? "6rem" : "8rem",
+                  alignSelf: "center",
+                }}
+              />
+            </Box>
+          )}
         </Box>
 
         {/* Dynamic menu rendered from API HTML */}
@@ -665,10 +667,10 @@ const Layout = ({ children, breadcrumb = [] }) => {
                     >
                       {userData?.first_name
                         ? userData.first_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
                         : "AD"}
                     </Avatar>
                   </IconButton>
