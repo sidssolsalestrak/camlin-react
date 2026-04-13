@@ -3,7 +3,7 @@ import React from 'react'
 import { useState } from 'react'
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
 }

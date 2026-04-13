@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import useToast from "../../../utils/useToast";
 import { useCallback } from 'react';
 import ConfirmationDialog from "../../../utils/confirmDialog";
@@ -21,6 +21,7 @@ const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const Department = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([])
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(false)
@@ -122,7 +123,7 @@ const Department = () => {
                 setFormData({ departmentName: "" });
                 fetchTableData();
                 resetValidations();
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
@@ -153,7 +154,7 @@ const Department = () => {
                 setFormData({ departmentName: "" });
                 setValue('1')
                 navigate(`/masters/dept`)
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
@@ -292,39 +293,54 @@ const Department = () => {
     }, [decodedId]);
 
     return (
-        <Layout>
-            <PageHeader title="Department" />
-            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                <TabContext value={value}>
-                    {!decodedId ?
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                <Tab sx={tabStyle} label="ADD NEW" value="1" />
-                                <Tab sx={tabStyle} label="VIEW LIST" value="2" />
-                            </TabList>
-                        </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Department</Typography>
-                    }
-                    {/*---------------- Add section--------------- */}
-                    <TabPanel value="1">
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <TextField value={formData.departmentName}
-                                onChange={(e) => formDataChange("departmentName", e.target.value)}
-                                required size='small'
-                                variant='outlined' label="Department Name" error={!!validation.departmentName}
-                                helperText={validation.departmentName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.departmentName}</span>} />
-                        </Box>
-                        <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
-                    </TabPanel>
-                    {/*---------------- View section--------------- */}
-                    <TabPanel value="2">
-                        <DataTable
-                            columns={columns}
-                            data={tableData}
-                            loading={loading}
-                        />
-                    </TabPanel>
-                </TabContext>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: "Department" },
+        ]}>
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Department</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    <TabContext value={value}>
+                        {!decodedId ?
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    <Tab sx={tabStyle} label="ADD NEW" value="1" />
+                                    <Tab sx={tabStyle} label="VIEW LIST" value="2" />
+                                </TabList>
+                            </Box> :
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Department</Typography>
+                        }
+                        {/*---------------- Add section--------------- */}
+                        <TabPanel value="1">
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <TextField value={formData.departmentName}
+                                    onChange={(e) => formDataChange("departmentName", e.target.value)}
+                                    required size='small'
+                                    variant='outlined' label="Department Name" error={!!validation.departmentName}
+                                    helperText={validation.departmentName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.departmentName}</span>} />
+                            </Box>
+                            <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
+                        </TabPanel>
+                        {/*---------------- View section--------------- */}
+                        <TabPanel value="2">
+                            <DataTable
+                                columns={columns}
+                                data={tableData}
+                                loading={loading}
+                            />
+                        </TabPanel>
+                    </TabContext>
+                </Box>
             </Box>
             <ConfirmationDialog
                 open={confirmationDialog.open}

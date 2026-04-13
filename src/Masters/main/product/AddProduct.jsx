@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../../../layout'
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ImDownload3 } from "react-icons/im";
 import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
@@ -61,6 +61,7 @@ const validationFields = {
 const AddProduct = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [subCat, setSubCat] = useState([]);
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
@@ -212,7 +213,7 @@ const AddProduct = () => {
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product")
                 resetForm();
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
@@ -274,7 +275,7 @@ const AddProduct = () => {
                 showAlert.success("Successfully updated Product")
                 resetForm();
                 navigate(`/masters/prodview`)
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
@@ -310,10 +311,18 @@ const AddProduct = () => {
     }, [decodedId]);
 
     return (
-        <Layout>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: "Add Product" },
+        ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Typography sx={style}>Product Details</Typography>
+                    {/* <Typography sx={style}>Product Details</Typography> */}
+                    <Box>
+                        <h1 className="mainTitle">Product Details</h1>
+                    </Box>
                     <Button onClick={viewClick} sx={{ height: "30px" }} variant="contained" color="primary">View Product</Button>
                 </Box>
                 <Grid container spacing={2}>

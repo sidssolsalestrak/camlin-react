@@ -6,7 +6,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { Box, Button, FormControl, IconButton, InputLabel, MenuItem, Select, Typography } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from "../../../services/api";
 import { useEffect } from 'react';
 import useToast from "../../../utils/useToast";
@@ -16,7 +16,7 @@ import AddStockist from './AddStockist';
 import ConfirmationDialog from '../../../utils/confirmDialog';
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
     mb: 1
@@ -27,6 +27,7 @@ const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const Stockist = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([])
     const [showTable, setshowTable] = useState(false)
     const [region, setregion] = useState([]);
@@ -218,7 +219,12 @@ const Stockist = () => {
     }, [formData.region])
 
     return (
-        <Layout>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: "Stockist" },
+        ]}>
             <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
                     {!decodedId ?

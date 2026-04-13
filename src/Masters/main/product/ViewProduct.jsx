@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../../../layout'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, Button, Typography, TextField, FormControl, InputLabel, MenuItem, Select, IconButton } from '@mui/material'
 import DataTable from '../../../utils/dataTable';
 import useToast from "../../../utils/useToast";
@@ -45,6 +45,7 @@ const safeAtob = (str) => {
 const ViewProduct = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([]);
     const [subCat, setSubCat] = useState([]);
     const [loading, setloading] = useState(false);
@@ -272,10 +273,18 @@ const ViewProduct = () => {
     }
 
     return (
-        <Layout>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: "Product View" },
+        ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Typography sx={style}>Product View</Typography>
+                    {/* <Typography sx={style}>Product View</Typography> */}
+                    <Box>
+                        <h1 className="mainTitle">Product View</h1>
+                    </Box>
                     <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add Product</Button>
                 </Box>
                 <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap" }}>

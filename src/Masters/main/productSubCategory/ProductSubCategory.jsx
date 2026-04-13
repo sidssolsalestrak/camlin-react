@@ -12,7 +12,7 @@ import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import useToast from "../../../utils/useToast";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
 
@@ -29,6 +29,7 @@ const menuStyle = {
 const ProductSubCategory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([])
     const [catData, setCatData] = useState([])
     const [value, setValue] = React.useState('1');
@@ -357,62 +358,77 @@ const ProductSubCategory = () => {
     }, [decodedId]);
 
     return (
-        <Layout>
-            <PageHeader title="Product Sub Category" />
-            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                <TabContext value={value}>
-                    {!decodedId ?
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                <Tab sx={tabStyle} label="ADD NEW" value="1" />
-                                <Tab sx={tabStyle} label="VIEW LIST" value="2" />
-                            </TabList>
-                        </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Product Sub Category</Typography>
-                    }
-                    {/*---------------- Add section--------------- */}
-                    <TabPanel value="1">
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <FormControl fullWidth size="small" required>
-                                <InputLabel id="Category">Category</InputLabel>
-                                <Select id='Category-select' label="Category" labelId="Category" variant="outlined"
-                                    value={formData.category} error={!!validation.category} MenuProps={menuStyle}
-                                    onChange={(e) => formDataChange("category", e.target.value)}
-                                >
-                                    <MenuItem style={{ fontSize: "11px" }} value="">Select Category</MenuItem>
-                                    {catData?.map((item, index) => (
-                                        <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
-                                            {item?.cat_name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                {validation.category && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.category}</span>}
-                            </FormControl>
-                            <TextField value={formData.categoryCode}
-                                onChange={(e) => formDataChange("categoryCode", e.target.value)}
-                                required size='small'
-                                variant='outlined' label="Product Sub Category Code"
-                                error={!!validation.categoryCode}
-                                helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryCode}</span>} />
-                            <TextField
-                                value={formData.categoryName}
-                                onChange={(e) => formDataChange("categoryName", e.target.value)}
-                                required size='small'
-                                variant='outlined' label="Product Sub Category Name"
-                                error={!!validation.categoryName}
-                                helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryName}</span>} />
-                        </Box>
-                        <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
-                    </TabPanel>
-                    {/*---------------- View section--------------- */}
-                    <TabPanel value="2">
-                        <DataTable
-                            columns={columns}
-                            data={tableData}
-                            loading={loading}
-                        />
-                    </TabPanel>
-                </TabContext>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: "Product Sub Category" },
+        ]}>
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Product Sub Category</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    <TabContext value={value}>
+                        {!decodedId ?
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    <Tab sx={tabStyle} label="ADD NEW" value="1" />
+                                    <Tab sx={tabStyle} label="VIEW LIST" value="2" />
+                                </TabList>
+                            </Box> :
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Product Sub Category</Typography>
+                        }
+                        {/*---------------- Add section--------------- */}
+                        <TabPanel value="1">
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <FormControl fullWidth size="small" required>
+                                    <InputLabel id="Category">Category</InputLabel>
+                                    <Select id='Category-select' label="Category" labelId="Category" variant="outlined"
+                                        value={formData.category} error={!!validation.category} MenuProps={menuStyle}
+                                        onChange={(e) => formDataChange("category", e.target.value)}
+                                    >
+                                        <MenuItem style={{ fontSize: "11px" }} value="">Select Category</MenuItem>
+                                        {catData?.map((item, index) => (
+                                            <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
+                                                {item?.cat_name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {validation.category && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.category}</span>}
+                                </FormControl>
+                                <TextField value={formData.categoryCode}
+                                    onChange={(e) => formDataChange("categoryCode", e.target.value)}
+                                    required size='small'
+                                    variant='outlined' label="Product Sub Category Code"
+                                    error={!!validation.categoryCode}
+                                    helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryCode}</span>} />
+                                <TextField
+                                    value={formData.categoryName}
+                                    onChange={(e) => formDataChange("categoryName", e.target.value)}
+                                    required size='small'
+                                    variant='outlined' label="Product Sub Category Name"
+                                    error={!!validation.categoryName}
+                                    helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryName}</span>} />
+                            </Box>
+                            <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
+                        </TabPanel>
+                        {/*---------------- View section--------------- */}
+                        <TabPanel value="2">
+                            <DataTable
+                                columns={columns}
+                                data={tableData}
+                                loading={loading}
+                            />
+                        </TabPanel>
+                    </TabContext>
+                </Box>
             </Box>
             <ConfirmationDialog
                 open={confirmationDialog.open}
