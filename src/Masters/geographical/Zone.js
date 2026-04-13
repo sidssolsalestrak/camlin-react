@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import DataTable from "../../utils/dataTable";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
+import useToast from "../../utils/useToast";
 import { FaPencilAlt } from "react-icons/fa";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { useParams, useNavigate } from "react-router-dom";

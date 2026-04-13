@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import Layout from "../../layout";
 import api from "../../services/api";
-import { useSnackbar } from "notistack";
 import PageHeader from "../../utils/PageHeader";
 import {
     TextField, Box, Typography, Button, Tabs, Tab, IconButton, FormControl, Checkbox,
-    ListItemText, FormControlLabel, Autocomplete,MenuItem
+    ListItemText,  Autocomplete,MenuItem
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
+import useToast from "../../utils/useToast";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
@@ -18,7 +18,6 @@ export default function MenuMaster() {
 
     const { menuId } = useParams()
     const decodedmenuId = menuId !== undefined && menuId !== null ? Number(atob(menuId)) : null
-    const { enqueueSnackbar } = useSnackbar()
     const navigate = useNavigate()
     const [tabValue, setTabValue] = useState(1)
     const [loading, setLoading] = useState(true)
@@ -29,8 +28,10 @@ export default function MenuMaster() {
     const [selRepData, setSelRepData] = useState([])
     const [selUserMasName, setSelUserMasName] = useState("")
     const [userTypeErr, setUserTypeErr] = useState(false)
+    // eslint-disable-next-line
     const [menuCheckErr, setMenuCheckErr] = useState(false)
     const [modifyLoading, setModifyLoading] = useState(false)
+    const toast=useToast()
 
     useEffect(() => {
         fetchMenuData()
@@ -44,6 +45,7 @@ export default function MenuMaster() {
             return
         }
         collectEditData(decodedmenuId)
+    // eslint-disable-next-line
     }, [decodedmenuId])
 
 
@@ -97,11 +99,11 @@ export default function MenuMaster() {
             isValid = false
         }
         if(!isValid){
-           enqueueSnackbar("Please fix all mandatory fields",{variant:'error',anchorOrigin:{vertical:'top',horizontal:'center'}})
+           toast.error("Please fix all mandatory fields")
            return isValid
         }
         if (selRepData.length === 0) {
-            enqueueSnackbar("Please Select atleast one Menu option !", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+            toast.error("Please Select atleast one Menu option !")
             setMenuCheckErr(true)
             isValid = false
         }
@@ -169,7 +171,7 @@ export default function MenuMaster() {
             }
             let response = await api.post("/menuMasterCreate", addPayLoad)
             if (response.data.success) {
-                enqueueSnackbar(decodedmenuId ? "Menu Updated successfully" : response.data.message, { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(decodedmenuId ? "Menu Updated successfully" : response.data.message)
                 if (decodedmenuId) {
                     fetchMenuData()
                     navigate("/masters/menuMaster")
@@ -179,7 +181,7 @@ export default function MenuMaster() {
                     setTabValue(1)
                 }
             } else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success(response.data.message)
             }
         } catch (err) {
             console.log(err)
@@ -212,10 +214,10 @@ export default function MenuMaster() {
         try {
             let response = await api.post("/deleteMenu", { uid: userId })
             if (response.data.success) {
-                enqueueSnackbar("Deleted Successfully", { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.success("Deleted Successfully")
                 fetchMenuData()
             } else {
-                enqueueSnackbar(response.data.message, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+                toast.error(response.data.message)
             }
         } catch (err) {
             console.log("Delete menu Error")
@@ -285,7 +287,7 @@ export default function MenuMaster() {
                             ))}
                         </FormControl>
 
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none',mb:3 }}
                             onClick={() => { if (validateFields()) showSubmitConfirmation() }}>
                             {decodedmenuId ? "Update" : "Submit"}
                         </Button>

@@ -12,7 +12,7 @@ import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import { useCallback } from 'react';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 
@@ -41,10 +41,7 @@ const Department = () => {
     const decodedId = id ? atob(id) : null;
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: "",
@@ -121,10 +118,12 @@ const Department = () => {
             const res = await axios.post("/addDept", payload)
             console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Added Department")
+                showAlert.success("Successfully Added Department")
                 setFormData({ departmentName: "" });
                 fetchTableData();
                 resetValidations();
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -132,7 +131,7 @@ const Department = () => {
                 setValidations({ departmentName: val?.message || "" });
             } else {
                 console.error(error);
-                showAlert("Failed to ADD Department", "error")
+                showAlert.error("Failed to ADD Department")
             }
         } finally {
             closeConfirmationDialog();
@@ -150,10 +149,12 @@ const Department = () => {
             const res = await axios.post("/updateDept", payload)
             console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert("Successfully updated Department")
+                showAlert.success("Successfully updated Department")
                 setFormData({ departmentName: "" });
                 setValue('1')
                 navigate(`/masters/dept`)
+            }else {
+                showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
@@ -161,7 +162,7 @@ const Department = () => {
                 setValidations({ departmentName: val?.message || "" });
             } else {
                 console.error(error);
-                showAlert("Failed to Update Department", "error")
+                showAlert.error("Failed to Update Department")
             }
         } finally {
             closeConfirmationDialog();
@@ -176,12 +177,12 @@ const Department = () => {
             const res = await axios.post(`/deleteDept/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Product Category")
                 fetchTableData();
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }
@@ -269,7 +270,7 @@ const Department = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to edit", "error")
+            showAlert.error("failed to edit")
         }
     }
 

@@ -74,6 +74,104 @@
   font-size: 10px;
 }
 
+/* Collapsed - hide text, show only icons */
+.php-menu.collapsed a {
+  font-size: 0 !important;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.php-menu.collapsed a i {
+  font-size: 16px !important;
+  min-width: 20px;
+  text-align: center;
+}
+
+.php-menu.collapsed ul {
+  padding-left: 5;
+}
+
+/* Flyout submenu when collapsed */
+.php-menu.collapsed .treeview-menu {
+  display: none;
+  position: fixed;
+  left: 50px;
+  background-color: #588aae;
+  min-width: 170px;
+  z-index: 9999;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 4px 2px 10px rgba(0, 0, 0, 0.4);
+  padding: 4px 0;
+}
+
+.php-menu.collapsed li.treeview {
+  position: relative;
+}
+
+.php-menu.collapsed li.treeview:hover > .treeview-menu {
+  display: block;
+}
+
+.php-menu.collapsed .treeview-menu:hover {
+  display: block;
+}
+
+.php-menu.collapsed .treeview-menu a {
+  font-size: 13px !important;
+  padding: 4px 12px !important;
+  justify-content: flex-start;
+}
+
+.php-menu.collapsed .treeview-menu a i {
+  font-size: 10px !important;
+  margin-right: 6px;
+}
+
+.php-menu.collapsed a[title]:hover::after {
+  content: attr(title);
+  position: fixed;
+  left: 54px;
+  background: #333;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px !important;
+  white-space: nowrap;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.php-menu.collapsed .pull-right-container {
+  display: none;
+}
+
+.php-menu.collapsed .treeview-menu .treeview {
+  position: relative;
+}
+
+.php-menu.collapsed .treeview-menu .treeview:hover > .treeview-menu {
+  display: block;
+  position: fixed;
+  left: 220px;
+  background-color: #588aae;
+  min-width: 170px;
+  z-index: 99999;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 4px 2px 10px rgba(0, 0, 0, 0.4);
+  padding: 4px 0;
+  top: auto;
+}
+
+.php-menu.collapsed .treeview-menu .treeview-menu:hover {
+  display: block;
+}
+
+.php-menu.collapsed .treeview-menu .treeview > a::after {
+  content: "›";
+  float: right;
+  margin-right: 8px;
+  font-size: 14px !important;
+}
 .treeview.dropdownWidth.active
   > .treeview-menu.open
   > .treeview.active

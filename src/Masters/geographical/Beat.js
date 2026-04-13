@@ -62,11 +62,13 @@ export default function Beat() {
 
     useEffect(() => {
         fetchAllArea()
+        // eslint-disable-next-line
     }, [regId])
 
     useEffect(() => {
         if (!isAreaChanged) return
         fetchAllTerritory(Number(selArea) !== 0 ? selArea : null)
+        // eslint-disable-next-line
     }, [selArea])
 
     useEffect(() => {
@@ -76,6 +78,7 @@ export default function Beat() {
             return
         }
         collectEditData(decodedEditBeatId)
+        // eslint-disable-next-line
     }, [decodedEditBeatId])
 
     const resetFields = () => {
@@ -160,6 +163,7 @@ export default function Beat() {
         if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
         if (!isValid) {
             enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
+        
         }
         return isValid
     }
@@ -304,12 +308,13 @@ export default function Beat() {
                         <Autocomplete
                             options={areaOptions}
                             getOptionLabel={(option) => option.area_name || ""}
-                            value={areaOptions.find((a) => a.id === selArea) || DEFAULT_AREA}
+                            value={areaOptions.find((a) => a.id === selArea) }
                             onChange={(e, newVal) => {
-                                const id = newVal ? newVal.id : "0"
+                                const id = newVal ? newVal.id : ""
                                 setSelArea(id)
                                 setIsAreaChanged(true)
                             }}
+                            disableClearable={!!decodedEditBeatId} 
                             isOptionEqualToValue={(option, value) => option.id === value?.id}
                             renderInput={(params) => (
                                 <TextField {...params} label="Area Name" size="small" />
@@ -318,9 +323,9 @@ export default function Beat() {
                         <Autocomplete
                             options={territoryOptions}
                             getOptionLabel={(option) => option.ter_name || ""}
-                            value={territoryOptions.find((t) => t.id === selTerritory) || DEFAULT_TERRITORY}
+                            value={territoryOptions.find((t) => t.id === selTerritory)}
                             onChange={(e, newVal) => {
-                                setSelTerritory(newVal ? newVal.id : "0")
+                                setSelTerritory(newVal ? newVal.id : "")
                                 if (territoryError) setTerritoryError(false)
                             }}
                             isOptionEqualToValue={(option, value) => option.id === value?.id}

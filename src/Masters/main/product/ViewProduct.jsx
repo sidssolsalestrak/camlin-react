@@ -3,7 +3,7 @@ import Layout from '../../../layout'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, Button, Typography, TextField, FormControl, InputLabel, MenuItem, Select, IconButton } from '@mui/material'
 import DataTable from '../../../utils/dataTable';
-import { useSnackbar } from 'notistack';
+import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -12,10 +12,18 @@ import ConfirmationDialog from "../../../utils/confirmDialog";
 import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
 
+const menuStyle = {
+    PaperProps: {
+        style: {
+            maxHeight: 200
+        }
+    }
+}
+
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
     m: 2, p: 2, borderRadius: '6px',
-    minHeight: '20vh', width: { lg: '97%', md: '97%', sm: '100%', xs: '100%' }
+    minHeight: '20vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' }
 }
 
 const style = {
@@ -58,10 +66,7 @@ const ViewProduct = () => {
     }
 
     /*---------- re usable toast ---------*/
-    const { enqueueSnackbar } = useSnackbar();
-    const showAlert = (message, variant = "success") => {
-        enqueueSnackbar(message, { variant, anchorOrigin: { vertical: "top", horizontal: "center" }, });
-    };
+    const showAlert = useToast();
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
@@ -201,7 +206,7 @@ const ViewProduct = () => {
                 settableData(data)
             } catch (error) {
                 if (error?.response?.status === 400) {
-                    showAlert("No Records Found For Given Parameters", "error")
+                    showAlert.error("No Records Found For Given Parameters")
                     settableData([])
                 }
                 console.error("table data fetch error", error);
@@ -209,7 +214,7 @@ const ViewProduct = () => {
             }
         } catch (error) {
             console.error(error);
-            showAlert(error, "error")
+            showAlert.error(error)
         } finally {
             setloading(false)
         }
@@ -243,12 +248,12 @@ const ViewProduct = () => {
             const res = await axios.post(`/prod_delete/${id}`);
             console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert("Successfully Deleted Product")
+                showAlert.success("Successfully Deleted Product")
                 fetchData({ name: decodedProductName, cat: decodedSubCategory });
             }
         } catch (error) {
             console.error(error);
-            showAlert("failed to delete", "error")
+            showAlert.error("failed to delete")
         } finally {
             closeConfirmationDialog();
         }
@@ -261,7 +266,7 @@ const ViewProduct = () => {
             columns,
             "ProductMaster",
             setProgress,
-            enqueueSnackbar,
+            showAlert,
             "ProductMaster"
         )
     }
@@ -278,7 +283,7 @@ const ViewProduct = () => {
                         label="Product Name" placeholder='Enter Product Name' onChange={(e) => handleChange("productName", e.target.value)} />
                     <FormControl sx={{ width: "200px" }} size="small" >
                         <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name"
+                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name" MenuProps={menuStyle}
                             labelId="SubCategoryName" variant="outlined" onChange={(e) => handleChange("subCatName", e.target.value)}>
                             <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
                             {subCat?.map((item, index) => (
