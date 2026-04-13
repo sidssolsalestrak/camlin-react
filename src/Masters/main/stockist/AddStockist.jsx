@@ -252,7 +252,7 @@ const AddStockist = () => {
             setloading(true);
             payload.original_user = "";
             const res = await axios.post("/create_stockist", payload)
-            console.log("insert res", res);
+            //console.log("insert res", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Created Stockist")
                 setFormData(INITIAL_FORM_STATE)
@@ -282,7 +282,7 @@ const AddStockist = () => {
                 payload.original_password = original.password;
             }
             const res = await axios.post("/update_stockist", payload)
-            console.log("insert res", res);
+            //console.log("insert res", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Updated Stockist")
                 navigate(`/masters/stockist`)

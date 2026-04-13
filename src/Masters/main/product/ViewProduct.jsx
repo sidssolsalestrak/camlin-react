@@ -247,7 +247,7 @@ const ViewProduct = () => {
         let id = row?.row?.prodid
         try {
             const res = await axios.post(`/prod_delete/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Product")
                 fetchData({ name: decodedProductName, cat: decodedSubCategory });

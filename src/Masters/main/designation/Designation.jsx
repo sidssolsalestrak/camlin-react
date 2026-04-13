@@ -127,7 +127,7 @@ const Designation = () => {
                 desig_abbr_name: formData.abbreviation
             }
             const res = await axios.post("/addDesignation", payload)
-            console.log("adding sub category:", res);
+            //console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Designation")
                 setFormData({ abbreviation: "", designation: "" });
@@ -164,7 +164,7 @@ const Designation = () => {
                 hdndesignationabb: original.abbreviation
             }
             const res = await axios.post("/UpdateDesignation", payload)
-            console.log("updating category:", res);
+           // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Designation")
                 setFormData({ abbreviation: "", designation: "" });
@@ -196,7 +196,7 @@ const Designation = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDesignation/${id}`);
-            console.log("delete res:", res);
+           // console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Designation")
                 fetchTableData();
@@ -265,7 +265,7 @@ const Designation = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            console.log("table data", data);
+           // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);
