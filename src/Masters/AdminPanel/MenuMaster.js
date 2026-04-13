@@ -46,7 +46,7 @@ export default function MenuMaster() {
         }
         collectEditData(decodedmenuId)
     // eslint-disable-next-line
-    }, [decodedmenuId])
+    }, [decodedmenuId,allUserInputData])
 
 
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -158,6 +158,8 @@ export default function MenuMaster() {
     ]
 
     const handleEdit = (userId) => {
+        setUserTypeErr(false)
+        setMenuCheckErr(false)
         navigate(`/masters/menuMaster/${btoa(userId)}`)
     }
 

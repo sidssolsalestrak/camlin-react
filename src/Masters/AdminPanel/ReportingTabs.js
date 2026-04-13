@@ -68,7 +68,9 @@ export default function ReportingTabs() {
         }
         collectEditData(decodedUserId, decodedCusId)
     // eslint-disable-next-line
-    }, [decodedUserId, decodedCusId])
+    }, [decodedUserId, decodedCusId,allUsermasType])
+
+   
 
     const resetFields = () => {
         setSelAccType("0")
@@ -158,6 +160,8 @@ export default function ReportingTabs() {
     }
 
     const handleEdit = (userId, cusId) => {
+        setAccError(false)
+        setUserMasError(false)
         navigate(`/masters/repTabs/${btoa(userId)}/${btoa(cusId)}`)
     }
 

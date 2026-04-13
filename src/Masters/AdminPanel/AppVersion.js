@@ -143,6 +143,9 @@ export default function AppVersion() {
     }
 
     const handleEdit=(id)=>{
+        setAppTypeErr(false)
+        setBuildTypeErr(false)
+        setVersionTypeErr(false)
         navigate(`/masters/appversion/${btoa(id)}`)
     }
 

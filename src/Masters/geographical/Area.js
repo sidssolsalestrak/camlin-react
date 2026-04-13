@@ -56,14 +56,14 @@ export default function Area() {
     }, [])
 
     useEffect(() => {
-        if (!decodedAreaId) {
+        if (!decodedAreaId ) {
             resetFields()
             setTabValue(1)
             return
         }
         collectEditData(decodedAreaId)
         // eslint-disable-next-line
-    }, [decodedAreaId])
+    }, [decodedAreaId,allRegion,allState])
 
     const resetFields = () => {
         setSelRegion(null)          // ← null

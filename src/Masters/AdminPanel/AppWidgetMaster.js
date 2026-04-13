@@ -128,6 +128,8 @@ export default function AppWidgetMaster() {
     }
 
     const handleEdit = (userId) => {
+        setUserTypeErr(false)
+        setMenuCheckErr(false)
         navigate(`/masters/dashboardmaster/${btoa(userId)}`)
     }
 

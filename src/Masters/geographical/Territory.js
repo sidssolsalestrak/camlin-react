@@ -54,14 +54,14 @@ export default function Territory() {
     }, [])
 
     useEffect(() => {
-        if (!decodedEditTerritoryId) {
+        if (!decodedEditTerritoryId || allArea.length===0) {
             resetFields()
             setTabValue(1)
             return
         }
         collectEditData(decodedEditTerritoryId)
         // eslint-disable-next-line
-    }, [decodedEditTerritoryId])
+    }, [decodedEditTerritoryId,allArea])
 
     const resetFields = () => {
         setSelArea(null)

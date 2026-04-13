@@ -14,7 +14,6 @@ import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROLES = [
     { value: "0", label: "All" },
@@ -245,7 +244,7 @@ export default function WebMenuMaster() {
             collectEditData(decodedWebMenuId)
         }
      // eslint-disable-next-line
-    }, [decodedWebMenuId])
+    }, [decodedWebMenuId,userInputData])
 
     const resetFields = () => {
         setSelUserInput(null)
@@ -394,6 +393,7 @@ export default function WebMenuMaster() {
     }, [])
 
     const handleEdit = (id) => {
+        setUserTypeErr(false)
         navigate(`/masters/webMenuMaster/${btoa(id)}`)
     }
 

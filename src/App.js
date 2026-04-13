@@ -40,6 +40,7 @@ import EDetailingMaster from "./Masters/AdminPanel/EDetailingMaster";
 import AccountExtract from "./view/account/AccountExtract";
 import Login from "./view/Login";
 import ForgotPassword from "./view/ForgotPassword";
+import AccountTransfer from "./view/account/AccountTransfer";
 
 function App() {
   const ProtectedRoute = () => {
@@ -138,6 +139,7 @@ function App() {
               path="/Auth/forgot_paswd/:userId?/:userEmail?"
               element={<ForgotPassword />}
             />
+            <Route path="/customers/account_transfer/"  element={<AccountTransfer />}       />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
