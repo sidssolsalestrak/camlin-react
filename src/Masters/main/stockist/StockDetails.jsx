@@ -10,6 +10,25 @@ const style = {
     fontWeight: 500,
 }
 
+const tooltipSx = {
+    tooltip: {
+        sx: {
+            backgroundColor: "#1e293b",
+            color: "#ffffff",
+            fontSize: "12px",
+            fontWeight: 500,
+            padding: "8px 12px",
+            maxWidth: 320,
+            lineHeight: 1.5,
+        },
+    },
+    arrow: {
+        sx: {
+            color: "#1e293b",
+        },
+    },
+};
+
 const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     const [type, setType] = useState([]);
     //tooltip
@@ -70,11 +89,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                         disableHoverListener
                         disableTouchListener
                         title="Special Characters Not Allowed"
-                        slotProps={{
-                            popper: {
-                                disablePortal: true,
-                            },
-                        }}
+                        slotProps={tooltipSx}
                     >
                         <TextField value={formData.name} onClick={handleTooltipOpen}
                             onChange={(e) => handleChangeForm("name", e.target.value)}
@@ -148,12 +163,12 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 required size='small' placeholder='Enter Email'
                 variant='outlined' label="Email" fullWidth
             />
-            <TextField value={formData.phone} 
+            <TextField value={formData.phone}
                 onChange={(e) => handleChangeForm("phone", e.target.value)}
                 size='small' placeholder='Enter Phone'
                 variant='outlined' label="Phone" fullWidth
             />
-            <TextField value={formData.mobile} 
+            <TextField value={formData.mobile}
                 onChange={(e) => handleChangeForm("mobile", e.target.value)}
                 required size='small' placeholder='Enter Mobile No'
                 variant='outlined' label="Mobile" fullWidth
