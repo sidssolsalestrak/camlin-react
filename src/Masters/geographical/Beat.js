@@ -13,6 +13,8 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 
 const DEFAULT_AREA = { id: "0", area_name: "Select Area" }
 const DEFAULT_TERRITORY = { id: "0", ter_name: "Select Territory" }
@@ -78,10 +80,10 @@ export default function Beat() {
             setTabValue(1)
             return
         }
-        if(allArea.length===0) return
+        if (allArea.length === 0) return
         collectEditData(decodedEditBeatId)
         // eslint-disable-next-line
-    }, [decodedEditBeatId,allArea])
+    }, [decodedEditBeatId, allArea])
 
     const resetFields = () => {
         setSelTerritory("0")
@@ -278,16 +280,14 @@ export default function Beat() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.beatID)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.beatID)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
@@ -296,7 +296,7 @@ export default function Beat() {
         <Layout
             breadcrumb={[
                 { label: "Home", path: "/" },
-                { label: "Master", path:"/masters/beat_mas" },
+                { label: "Master", path: "/masters/beat_mas" },
                 { label: " Geographical", path: "/masters/beat_mas" },
                 { label: "Beat", path: location.pathname },
             ]}>
@@ -378,7 +378,7 @@ export default function Beat() {
                         </Box>
                     )}
                     {tabValue === 1 && (
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: 0 }}>
                             <DataTable columns={columns} data={allBeatData} loading={loading} />
                         </Box>
                     )}

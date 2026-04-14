@@ -10,6 +10,8 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 
 export default function Area() {
 
@@ -249,28 +251,26 @@ export default function Area() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
 
     return (
         <Layout
-          breadcrumb={[
-        { label: "Home", path: "/" },
-        { label: "Master", path: "/masters/area_mas/" },
-        { label: " Geographical", path: "/masters/area_mas/" },
-        { label: "Area", path: location.pathname },
-        ]}
+            breadcrumb={[
+                { label: "Home", path: "/" },
+                { label: "Master", path: "/masters/area_mas/" },
+                { label: " Geographical", path: "/masters/area_mas/" },
+                { label: "Area", path: location.pathname },
+            ]}
         >
             <Box
                 p={2}
@@ -352,7 +352,7 @@ export default function Area() {
                         </Box>
                     )}
                     {tabValue === 1 && (
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: 0 }}>
                             <DataTable columns={columns} data={allArea} loading={loading} />
                         </Box>
                     )}
