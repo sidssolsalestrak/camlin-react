@@ -5,7 +5,7 @@ import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
 import {
     Box, Typography, Button, Tabs, Tab, IconButton, Checkbox,
-    ListItemText, TextField, Autocomplete,MenuItem
+    ListItemText, TextField, Autocomplete, MenuItem
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
@@ -13,6 +13,8 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 
 export default function AppWidgetMaster() {
 
@@ -30,9 +32,9 @@ export default function AppWidgetMaster() {
     const [userTypeErr, setUserTypeErr] = useState(false)
     // eslint-disable-next-line
     const [menuCheckErr, setMenuCheckErr] = useState(false)
-    const toast=useToast()
+    const toast = useToast()
     const navigate = useNavigate()
-    const location=useLocation()
+    const location = useLocation()
 
     useEffect(() => {
         fetchAppWidgetData()
@@ -48,7 +50,7 @@ export default function AppWidgetMaster() {
         if (allUserInputData.length > 0) {
             collectEditData(decodedWidgetId)
         }
-    // eslint-disable-next-line
+        // eslint-disable-next-line
     }, [decodedWidgetId, allUserInputData])
 
 
@@ -81,13 +83,13 @@ export default function AppWidgetMaster() {
         let isValid = true
         setMenuCheckErr(false)
         setUserTypeErr(false)
-        if (!selUserInput || Number(selUserInput)===0) {                                         // ← check null
+        if (!selUserInput || Number(selUserInput) === 0) {                                         // ← check null
             setUserTypeErr(true)
             isValid = false
         }
-        if(!isValid){
-           toast.error("Please fix all mandatory fields")
-           return isValid
+        if (!isValid) {
+            toast.error("Please fix all mandatory fields")
+            return isValid
         }
         if (selWidgetMenu.length === 0) {
             toast.error("Please Select atleast one Menu option !")
@@ -117,7 +119,7 @@ export default function AppWidgetMaster() {
                     setTabValue(1)
                 }
             }
-            else{
+            else {
                 toast.error(response.data.message)
             }
         } catch (err) {
@@ -140,18 +142,14 @@ export default function AppWidgetMaster() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small"
-                        onClick={() => handleEdit(row.row.user_type)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.user_type)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small"
-                        onClick={() => showDeleteConfirmation(row.row.user_type)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.user_type)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
@@ -233,105 +231,105 @@ export default function AppWidgetMaster() {
 
     return (
         <Layout
-         breadcrumb={[
+            breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
-                { label: "Admin Panel", path:location.pathname },
+                { label: "Admin Panel", path: location.pathname },
                 { label: "App Widget Master", path: location.pathname },
-               
+
             ]}
-        
+
         >
-              <Box
-                            p={2}
-                            sx={{ borderRadius: 1 }}
-                            display="flex"
-                            flexDirection="column"
-                            gap={2}
-                        >
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">App Widget Master</h1>
+                </Box>
+
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedWidgetId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit App Widget</Typography>
+                    }
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+
+                            {/* ✅ Autocomplete replaces Select */}
+                            <Autocomplete
+                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
+                                getOptionLabel={(option) => option.client_alias || ""}
+                                value={selUserInput}
+                                readOnly={!!decodedWidgetId}
+                                onChange={(e, newValue) => {
+                                    setSelUserInput(newValue)
+                                    setSelUserMasName(newValue?.client_alias || "")
+                                    setUserTypeErr(false)
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="User Type*"
+                                        size="small"
+                                        error={userTypeErr}
+                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        sx={{ backgroundColor: decodedWidgetId ? '#EEEEEE' : undefined }}
+                                    />
+                                )}
+                            />
+
                             <Box>
-                                <h1 className="mainTitle">App Widget Master</h1>
+                                <Typography sx={{ mb: 1 }}>Menu's*</Typography>
+                                {allWidgetMenu.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}
+                                        sx={{ p: 0, mt: '-0.9rem' }}
+                                        onClick={() => {
+                                            setSelWidgetMenu((prev) =>
+                                                prev.includes(val.id)
+                                                    ? prev.filter((id) => id !== val.id)
+                                                    : [...prev, val.id]
+                                            )
+                                        }}
+                                    >
+                                        <Checkbox checked={selWidgetMenu.includes(val.id)} />
+                                        <ListItemText primary={val.dash_name} />
+                                    </MenuItem>
+                                ))}
                             </Box>
-            
-            <Box sx={{ backgroundColor: 'white',  borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedWidgetId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit App Widget</Typography>
-                }
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
-                        {/* ✅ Autocomplete replaces Select */}
-                        <Autocomplete
-                            options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
-                            getOptionLabel={(option) => option.client_alias || ""}
-                            value={selUserInput}
-                            readOnly={!!decodedWidgetId}
-                            onChange={(e, newValue) => {
-                                setSelUserInput(newValue)
-                                setSelUserMasName(newValue?.client_alias || "")
-                                setUserTypeErr(false)
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="User Type*"
-                                    size="small"
-                                    error={userTypeErr}
-                                    helperText={userTypeErr ? "User Type not Selected !" : ""}
-                                    sx={{ backgroundColor: decodedWidgetId ? '#EEEEEE' : undefined }}
-                                />
-                            )}
-                        />
-
-                        <Box>
-                            <Typography sx={{ mb: 1 }}>Menu's*</Typography>
-                            {allWidgetMenu.map((val) => (
-                                <MenuItem key={val.id} value={val.id}
-                                    sx={{ p: 0, mt: '-0.9rem' }}
-                                    onClick={() => {
-                                        setSelWidgetMenu((prev) =>
-                                            prev.includes(val.id)
-                                                ? prev.filter((id) => id !== val.id)
-                                                : [...prev, val.id]
-                                        )
-                                    }}
-                                >
-                                    <Checkbox checked={selWidgetMenu.includes(val.id)} />
-                                    <ListItemText primary={val.dash_name} />
-                                </MenuItem>
-                            ))}
+                            <Button variant="contained" sx={{ width: '2rem', mb: 3 }} onClick={() => {
+                                if (validateFields()) showSubmitConfirmation()
+                            }}>
+                                {decodedWidgetId ? "Update" : "Submit"}
+                            </Button>
                         </Box>
-
-                        <Button variant="contained" sx={{ width: '2rem',mb:3 }} onClick={() => {
-                            if (validateFields()) showSubmitConfirmation()
-                        }}>
-                            {decodedWidgetId ? "Update" : "Submit"}
-                        </Button>
-                    </Box>
-                )}
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allWidgetData} loading={loading} />
-                    </Box>
-                )}
-            </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
+                    )}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 0 }}>
+                            <DataTable columns={columns} data={allWidgetData} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
         </Layout>
     )

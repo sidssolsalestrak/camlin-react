@@ -12,3 +12,17 @@ code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+/* action button styles */
+.updateBtn {
+  background-color: #efefff !important;
+  color: #3939ff !important;
+  border-radius: 5px !important;
+}
+
+.deleteBtn {
+  background-color: #ffecec !important;
+  color: #ff0000 !important;
+  border-radius: 5px !important;
+  margin-left: 10px !important;
+}

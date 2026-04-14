@@ -8,11 +8,11 @@ import TabPanel from '@mui/lab/TabPanel';
 import DataTable from '../../../utils/dataTable';
 import { useEffect } from 'react';
 import axios from "../../../services/api";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
+import { MdOutlineEdit } from "react-icons/md";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const menuStyle = {
@@ -134,7 +134,7 @@ const ProductCategory = () => {
                 city_name: formData.cityName,
             }
             const res = await axios.post("/addCity", payload)
-           // console.log("adding sub category:", res);
+            // console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added City")
                 setFormData({ stateName: "", cityName: "" });
@@ -170,7 +170,7 @@ const ProductCategory = () => {
                 city_new: original.cityName,
             }
             const res = await axios.post("/updateCity", payload)
-           // console.log("updating category:", res);
+            // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated City")
                 setFormData({ stateName: "", cityName: "" });
@@ -251,11 +251,11 @@ const ProductCategory = () => {
             filterable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
+                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                        <MdOutlineEdit size={15}/>
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
                 </>
             )
@@ -390,7 +390,7 @@ const ProductCategory = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2">
+                        <TabPanel value="2" sx={{padding:0}}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

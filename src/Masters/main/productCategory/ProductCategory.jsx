@@ -8,7 +8,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import DataTable from '../../../utils/dataTable';
 import axios from "../../../services/api";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import useToast from "../../../utils/useToast";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -293,12 +293,12 @@ const ProductCategory = () => {
             headerName: "Action",
             filterable: true,
             renderCell: (row) => (
-                <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
+                 <>
+                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
                 </>
             )
@@ -414,7 +414,7 @@ const ProductCategory = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2">
+                        <TabPanel value="2" sx={{padding:0}}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

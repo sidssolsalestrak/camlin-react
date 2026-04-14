@@ -14,12 +14,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddStockist from './AddStockist';
 import ConfirmationDialog from '../../../utils/confirmDialog';
+import { MdOutlineEdit } from 'react-icons/md';
 
 const style = {
     color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
-    mb: 1
+    mb: 1.5
 }
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
@@ -138,11 +139,11 @@ const Stockist = () => {
             filterable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
+                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
                 </>
             )
@@ -243,7 +244,7 @@ const Stockist = () => {
                         </Box>
                     </TabPanel>
                     {/*---------------- View section--------------- */}
-                    <TabPanel value="2">
+                    <TabPanel value="2" sx={{padding:"10px 20px"}}>
                         <Typography sx={style}>Stockist Records</Typography>
                         <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
                             <FormControl sx={{ width: "200px" }} size="small" >

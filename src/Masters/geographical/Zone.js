@@ -12,9 +12,9 @@ import {
 import DataTable from "../../utils/dataTable";
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
-import { FaPencilAlt } from "react-icons/fa";
-import { LiaTrashAltSolid } from "react-icons/lia";
-import { useParams, useNavigate,useLocation } from "react-router-dom";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
@@ -36,9 +36,9 @@ export default function Zone() {
     editZoneid !== undefined && editZoneid !== null
       ? Number(atob(editZoneid))
       : null;
-  const toast=useToast()
+  const toast = useToast()
   const navigate = useNavigate();
-  const location=useLocation()
+  const location = useLocation()
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
@@ -130,7 +130,7 @@ export default function Zone() {
           fetchZones();
           navigate("/masters/zone_mas");
         } else {
-            toast.error(response.data.message)
+          toast.error(response.data.message)
         }
         setEditId(null);
       } else {
@@ -141,7 +141,7 @@ export default function Zone() {
           fetchZones();
           setTabValue(1);
         } else {
-            toast.error(response.data.message)
+          toast.error(response.data.message)
         }
       }
     } catch (err) {
@@ -205,9 +205,9 @@ export default function Zone() {
     try {
       let response = await api.post("/deleteZone", { id });
       if (response.data.code === 1) {
-           toast.success(response.data.message)
+        toast.success(response.data.message)
       } else {
-            toast.error(response.data.message)
+        toast.error(response.data.message)
       }
       fetchZones();
     } catch (err) {
@@ -232,119 +232,110 @@ export default function Zone() {
       headerName: "Action",
       filterable: false,
       renderCell: (row) => (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 1,
-          }}
-        >
-          <IconButton size="small" onClick={() => handleEdit(row.row.id)}>
-            <FaPencilAlt style={{ color: "green", fontSize: "14.5px" }} />
+        <>
+          <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
+            <MdOutlineEdit size={15} />
           </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => showDeleteConfirmation(row.row.id)}
-          >
-            <LiaTrashAltSolid style={{ color: "red", fontSize: "17.5px" }} />
+          <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+            <DeleteIcon size={15} />
           </IconButton>
-        </Box>
+        </>
       ),
     },
   ];
 
   return (
-    <Layout  breadcrumb={[
-        { label: "Home", path: "/" },
-        { label: "Master", path: "/masters/zone_mas" },
-        { label: " Geographical", path: "/masters/zone_mas" },
-        { label: "Zone", path: location.pathname },
-      ]}>
-      <Box 
+    <Layout breadcrumb={[
+      { label: "Home", path: "/" },
+      { label: "Master", path: "/masters/zone_mas" },
+      { label: " Geographical", path: "/masters/zone_mas" },
+      { label: "Zone", path: location.pathname },
+    ]}>
+      <Box
         p={2}
         sx={{ borderRadius: 1 }}
         display="flex"
         flexDirection="column"
-        gap={2}  
+        gap={2}
       >
-      <Box>
-                <h1 className="mainTitle">Zone</h1>
-      </Box>
-      <Box
-        sx={{
-          backgroundColor: "white",
-          borderRadius: "6px",
-          minHeight: "30vh",
-          width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" },
-        }}
-      >
-        {!decodedEditZoneid ? (
-          <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, mt: 1 }}>
-            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-              <Tab
-                sx={{ fontWeight: 600, fontSize: "1.1rem" }}
-                label="ADD NEW"
+        <Box>
+          <h1 className="mainTitle">Zone</h1>
+        </Box>
+        <Box
+          sx={{
+            backgroundColor: "white",
+            borderRadius: "6px",
+            minHeight: "30vh",
+            width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" },
+          }}
+        >
+          {!decodedEditZoneid ? (
+            <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, mt: 1 }}>
+              <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                <Tab
+                  sx={{ fontWeight: 600, fontSize: "1.1rem" }}
+                  label="ADD NEW"
+                />
+                <Tab
+                  sx={{ fontWeight: 600, fontSize: "1.1rem" }}
+                  label="VIEW LIST"
+                />
+              </Tabs>
+            </Box>
+          ) : (
+            <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
+              Edit Zone Details
+            </Typography>
+          )}
+
+          {tabValue === 0 && (
+            <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+              <TextField
+                label="Zone Name"
+                value={zoneName}
+                required
+                onChange={(e) => {
+                  setZoneName(e.target.value);
+                  if (zoneError) setZoneError(false);
+                }}
+                size="small"
+                error={!!zoneError}
+                helperText={zoneError ? zoneErrorMsg : ""}
               />
-              <Tab
-                sx={{ fontWeight: 600, fontSize: "1.1rem" }}
-                label="VIEW LIST"
-              />
-            </Tabs>
-          </Box>
-        ) : (
-          <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
-            Edit Zone Details
-          </Typography>
-        )}
+              <Button
+                sx={{ ml: 1, width: "2rem" }}
+                variant="contained"
+                onClick={() => {
+                  if (validateZone()) {
+                    showSubmitConfirmation();
+                  } else {
+                    toast.error("Please fix all mandatory fields")
+                  }
+                }}
+              >
+                {editId ? "Update" : "Submit"}
+              </Button>
+            </Box>
+          )}
 
-        {tabValue === 0 && (
-          <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-            <TextField
-              label="Zone Name"
-              value={zoneName}
-              required
-              onChange={(e) => {
-                setZoneName(e.target.value);
-                if (zoneError) setZoneError(false);
-              }}
-              size="small"
-              error={!!zoneError}
-              helperText={zoneError ? zoneErrorMsg : ""}
-            />
-            <Button
-              sx={{ ml: 1, width: "2rem" }}
-              variant="contained"
-              onClick={() => {
-                if (validateZone()) {
-                  showSubmitConfirmation();
-                } else {
-                   toast.error("Please fix all mandatory fields")
-                }
-              }}
-            >
-              {editId ? "Update" : "Submit"}
-            </Button>
-          </Box>
-        )}
+          {tabValue === 1 && (
+            <Box>
+              <DataTable columns={columns} data={zoneList} loading={loading} />
+            </Box>
+          )}
+        </Box>
 
-        {tabValue === 1 && (
-          <Box>
-            <DataTable columns={columns} data={zoneList} loading={loading} />
-          </Box>
-        )}
-      </Box>
-
-      <ConfirmationDialog
-        open={confirmationDialog.open}
-        onClose={closeConfirmationDialog}
-        onConfirm={confirmationDialog.onConfirm}
-        title={confirmationDialog.title}
-        message={confirmationDialog.message}
-        confirmText={confirmationDialog.confirmText}
-        cancelText={confirmationDialog.cancelText}
-        loading={modifyLoading}
-        confirmColor={confirmationDialog.confirmColor}
-      />
+        <ConfirmationDialog
+          open={confirmationDialog.open}
+          onClose={closeConfirmationDialog}
+          onConfirm={confirmationDialog.onConfirm}
+          title={confirmationDialog.title}
+          message={confirmationDialog.message}
+          confirmText={confirmationDialog.confirmText}
+          cancelText={confirmationDialog.cancelText}
+          loading={modifyLoading}
+          confirmColor={confirmationDialog.confirmColor}
+        />
       </Box>
     </Layout>
   );
