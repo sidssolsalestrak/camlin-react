@@ -9,3 +9,28 @@
   font-weight: 600;
   letter-spacing: -0.03em;
 }
+
+.sl-cell {
+  color: #a09d97;
+  font-family: "DM Mono", monospace;
+}
+
+.status-chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* Active */
+.status-chip.active {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+/* Inactive */
+.status-chip.inactive {
+  background: #fdecea;
+  color: #d32f2f;
+}

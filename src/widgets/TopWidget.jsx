@@ -10,7 +10,7 @@ import { styled } from "@mui/material/styles";
 
 const StatTitle = styled(Typography)({
   fontSize: "14px",
-  fontFamily: '"Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif',
+  // fontFamily: '"Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif',
   fontWeight: 600,
   marginTop: "5px",
   color: "#343A40",
@@ -33,7 +33,7 @@ export default function TopWidget({
         borderRadius: "12px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         width: "97%",
-        height: "140px"
+        height: "140px",
       }}
     >
       <CardContent>

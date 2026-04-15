@@ -490,11 +490,12 @@ const DataTable = ({
                   sx={{
                     minWidth: col.type === "date" ? 80 : col.width,
                     width: col.width,
-                    borderRight:
-                      i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                    p: 0.5,
-                    borderBottom: "1px solid #e5e7eb",
-                    backgroundColor: "#EEFAE7",
+                    // borderRight:
+                    //   i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
+                    padding: "11px 18px",
+                    color: "#A09D97",
+                    borderBottom: "1px solid rgba(0,0,0,0.08)",
+                    backgroundColor: "#F6F5F2",
                     verticalAlign: "top",
                     ...(stickyHeader && {
                       position: "sticky",
@@ -510,6 +511,7 @@ const DataTable = ({
                     <Box
                       sx={{
                         display: "flex",
+                        whiteSpace: "nowrap",
                         flexDirection: "column",
                         cursor:
                           col.sortable && !col.subColumns
@@ -523,8 +525,10 @@ const DataTable = ({
                     >
                       <Typography
                         sx={{
-                          fontFamily: '"Open Sans", sans-serif',
+                          // fontFamily: '"Open Sans", sans-serif',
                           fontSize: "11px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
                         }}
                       >
                         {col.headerName}
@@ -558,9 +562,12 @@ const DataTable = ({
                         sx={{
                           minWidth: sub.width,
                           width: sub.width,
-                          borderRight: "1px solid #e5e7eb",
+                          // borderRight: "1px solid #e5e7eb",
                           p: 0.5,
-                          borderBottom: "1px solid #e5e7eb",
+                          // borderBottom: "1px solid #e5e7eb",
+                          // borderBottom: "1px solid rgba(0,0,0,0.08)",
+                          // transition: "background 0.1s",
+                          // animation: "rowIn 0.3s ease both",
                           ...(stickyHeader && {
                             position: "sticky",
                             top: headerHeight,
@@ -579,7 +586,7 @@ const DataTable = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"Open Sans", sans-serif',
+                              // fontFamily: '"Open Sans", sans-serif',
                               fontSize: "11px",
                             }}
                           >
@@ -602,10 +609,10 @@ const DataTable = ({
                     <TableCell
                       key={pi}
                       sx={{
-                        borderRight:
-                          pi !== columns.length - 1
-                            ? "1px solid #e5e7eb"
-                            : "none",
+                        // borderRight:
+                        //   pi !== columns.length - 1
+                        //     ? "1px solid #e5e7eb"
+                        //     : "none",
                         p: 0.5,
                         borderBottom: "1px solid #e5e7eb",
                         ...(stickyHeader && {
@@ -687,8 +694,10 @@ const DataTable = ({
                     ...(rowStyle ? rowStyle(row) : {}),
                     cursor: onRowClick ? "pointer" : "default",
                     "& td": { backgroundColor: "#ffffff" },
-                    "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
-                    "&:hover td": { backgroundColor: "#e1f3ff" },
+                    // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
+                    // "&:hover td": { backgroundColor: "#e1f3ff" },
+                    "&:hover td": { backgroundColor: "#FAFAF8" },
+                    "& td": { color: "#706E69" },
                   }}
                 >
                   {flatColumns.map((col, ci) => {
@@ -712,15 +721,19 @@ const DataTable = ({
                         }
                         sx={{
                           fontSize: "12px",
-                          fontFamily: '"Open Sans", sans-serif',
-                          borderRight:
-                            ci !== flatColumns.length - 1
-                              ? "1px solid #e5e7eb"
-                              : "none",
-                          p: 0.5,
+                          // fontFamily: '"Open Sans", sans-serif',
+                          // borderRight:
+                          //   ci !== flatColumns.length - 1
+                          //     ? "1px solid #e5e7eb"
+                          //     : "none",
+                          // p: 0.5,
+                          padding: "4px 6px",
                           color: "#343A40",
                           fontWeight: 400,
-                          borderBottom: "1px solid #f3f4f6",
+                          // borderBottom: "1px solid #f3f4f6",
+                          borderBottom: "1px solid rgba(0,0,0,0.08)",
+                          transition: "background 0.1s",
+                          animation: "rowIn 0.3s ease both",
                           ...getStickyStyles(ci, flatColumns),
                         }}
                       >
@@ -735,6 +748,52 @@ const DataTable = ({
                               ...statusStyle,
                             }}
                           />
+                        ) : col.headerName === "Customer Name" ||
+                          col.headerName === "Territory Details" ||
+                          col.headerName === "Invoice Remark" ||
+                          col.headerName === "Reporting To" ? (
+                          (() => {
+                            const showTooltip =
+                              typeof rawContent === "string" &&
+                              rawContent.length > 20;
+
+                            const contentSpan = (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  maxWidth: "200px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  verticalAlign: "middle",
+                                  cursor: showTooltip ? "pointer" : "default",
+                                }}
+                              >
+                                {rawContent}
+                              </span>
+                            );
+
+                            return showTooltip ? (
+                              <Tooltip
+                                arrow
+                                placement="top-start"
+                                title={
+                                  <span
+                                    style={{
+                                      fontSize: "10px",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {rawContent}
+                                  </span>
+                                }
+                              >
+                                {contentSpan}
+                              </Tooltip>
+                            ) : (
+                              contentSpan
+                            );
+                          })()
                         ) : (
                           renderCellContent(rawContent, false, searchTerm)
                         )}
