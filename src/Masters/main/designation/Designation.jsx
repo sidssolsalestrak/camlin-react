@@ -10,7 +10,7 @@ import DataTable from '../../../utils/dataTable';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from "../../../services/api";
 import useToast from "../../../utils/useToast";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 
@@ -127,7 +127,7 @@ const Designation = () => {
                 desig_abbr_name: formData.abbreviation
             }
             const res = await axios.post("/addDesignation", payload)
-            console.log("adding sub category:", res);
+            //console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Designation")
                 setFormData({ abbreviation: "", designation: "" });
@@ -164,7 +164,7 @@ const Designation = () => {
                 hdndesignationabb: original.abbreviation
             }
             const res = await axios.post("/UpdateDesignation", payload)
-            console.log("updating category:", res);
+           // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Designation")
                 setFormData({ abbreviation: "", designation: "" });
@@ -196,7 +196,7 @@ const Designation = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDesignation/${id}`);
-            console.log("delete res:", res);
+           // console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Designation")
                 fetchTableData();
@@ -245,11 +245,11 @@ const Designation = () => {
             filterable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
+                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
                 </>
             )
@@ -265,7 +265,7 @@ const Designation = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            console.log("table data", data);
+           // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);
@@ -365,7 +365,7 @@ const Designation = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2">
+                        <TabPanel value="2" sx={{padding:0}}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

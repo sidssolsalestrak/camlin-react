@@ -4,17 +4,19 @@ import { TextField, Box, Typography, Button, Tabs, Tab, IconButton, Select, Inpu
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
 import PageHeader from "../../utils/PageHeader";
-import { useParams, useNavigate,useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import DataTable from "../../utils/dataTable";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 
 export default function Region() {
 
     const navigate = useNavigate()
-    const toast =useToast()
+    const toast = useToast()
     const { editRegionId } = useParams()
     const decodedEditRegionId = editRegionId !== undefined && editRegionId !== null ? Number(atob(editRegionId)) : null
 
@@ -32,7 +34,7 @@ export default function Region() {
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [userType, setUserType] = useState(null)
-    const location=useLocation()
+    const location = useLocation()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -124,7 +126,7 @@ export default function Region() {
                 : "Region Name must be at least 3 characters")
             if (!isValid) {
                 toast.error("Please fix all mandatory fields")
-                
+
             }
             isValid = false
         }
@@ -222,116 +224,114 @@ export default function Region() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small" onClick={() => handleEdit(row.row.id)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" onClick={() => showDeleteConfirmation(row.row.id)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '14px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
 
     return (
-        <Layout  
+        <Layout
             breadcrumb={[
-        { label: "Home", path: "/" },
-        { label: "Master", path: "/masters/region" },
-        { label: " Geographical", path: "/masters/region" },
-        { label: "Region", path: location.pathname },
-      ]}
+                { label: "Home", path: "/" },
+                { label: "Master", path: "/masters/region" },
+                { label: " Geographical", path: "/masters/region" },
+                { label: "Region", path: location.pathname },
+            ]}
         >
-              <Box 
-                    p={2}
-                    sx={{ borderRadius: 1 }}
-                    display="flex"
-                    flexDirection="column"
-                    gap={2}  
-                  >
-                  <Box>
-                            <h1 className="mainTitle">Region</h1>
-                  </Box>
-           
-            <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                {!decodedEditRegionId ?
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Region Details</Typography>
-                }
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">Region</h1>
+                </Box>
 
-                {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
-                        <FormControl sx={{ width: '100%' }}>
-                            <InputLabel id="zone_name">Zone Name</InputLabel>
-                            <Select
-                                value={selectedZone}
-                                onChange={(e) => setSelectedZone(e.target.value)}
-                                labelId="zone_name"
-                                label="Zone Name"
-                                size="small"
-                                error={zoneError}
-                                MenuProps={{
-                                    PaperProps: {
-                                        style: {
-                                            maxHeight: 200
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    {!decodedEditRegionId ?
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box> :
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Region Details</Typography>
+                    }
+
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
+                            <FormControl sx={{ width: '100%' }}>
+                                <InputLabel id="zone_name">Zone Name</InputLabel>
+                                <Select
+                                    value={selectedZone}
+                                    onChange={(e) => setSelectedZone(e.target.value)}
+                                    labelId="zone_name"
+                                    label="Zone Name"
+                                    size="small"
+                                    error={zoneError}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            style: {
+                                                maxHeight: 200
+                                            }
                                         }
-                                    }
+                                    }}
+                                >
+                                    <MenuItem value="0">Select Zone</MenuItem>
+                                    {zoneName.map((val) => (
+                                        <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
+                                    ))}
+                                </Select>
+                                {zoneError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>{zoneErrMsg}</Typography>}
+                            </FormControl>
+
+                            <TextField
+                                label="Region Name"
+                                placeholder="Enter Region Name"
+                                size="small"
+                                value={regionName}
+                                error={!!regionError}
+                                helperText={regionErrMsg || ""}
+                                onChange={(e) => {
+                                    setRegionName(e.target.value)
+                                    if (regionError) setRegionError(false)
                                 }}
-                            >
-                                <MenuItem value="0">Select Zone</MenuItem>
-                                {zoneName.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
-                                ))}
-                            </Select>
-                            {zoneError && <Typography sx={{ fontSize: '9px', color: '#D32F2F', ml: 1.7 }}>{zoneErrMsg}</Typography>}
-                        </FormControl>
+                            />
 
-                        <TextField
-                            label="Region Name"
-                            placeholder="Enter Region Name"
-                            size="small"
-                            value={regionName}
-                            error={!!regionError}
-                            helperText={regionErrMsg || ""}
-                            onChange={(e) => {
-                                setRegionName(e.target.value)
-                                if (regionError) setRegionError(false)
-                            }}
-                        />
+                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
+                                {decodedEditRegionId ? "Update" : "Create"}
+                            </Button>
+                        </Box>
+                    )}
 
-                        <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                            onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
-                            {decodedEditRegionId ? "Update" : "Create"}
-                        </Button>
-                    </Box>
-                )}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 0 }}>
+                            <DataTable columns={columns} data={regData} loading={loading} />
+                        </Box>
+                    )}
+                </Box>
 
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={regData} loading={loading} />
-                    </Box>
-                )}
-            </Box>
-
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
         </Layout>
     )

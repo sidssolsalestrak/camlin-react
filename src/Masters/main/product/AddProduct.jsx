@@ -209,7 +209,7 @@ const AddProduct = () => {
     const onSubmit = async () => {
         try {
             const res = await axios.post("/prodmas_create", payload)
-            console.log("adding product:", res);
+           // console.log("adding product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product")
                 resetForm();
@@ -270,7 +270,7 @@ const AddProduct = () => {
                 payload.prodNameNew = original.prod_name.trim()
             }
             const res = await axios.post("/prodmas_update", payload)
-            console.log("updating product:", res);
+           // console.log("updating product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Product")
                 resetForm();

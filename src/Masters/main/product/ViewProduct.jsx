@@ -5,7 +5,7 @@ import { Box, Button, Typography, TextField, FormControl, InputLabel, MenuItem, 
 import DataTable from '../../../utils/dataTable';
 import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
@@ -172,13 +172,14 @@ const ViewProduct = () => {
             field: "",
             headerName: "Action",
             filterable: true,
+            width:100,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)} >
-                        <EditIcon fontSize="small" />
+                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
                 </>
             )
@@ -247,7 +248,7 @@ const ViewProduct = () => {
         let id = row?.row?.prodid
         try {
             const res = await axios.post(`/prod_delete/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Product")
                 fetchData({ name: decodedProductName, cat: decodedSubCategory });

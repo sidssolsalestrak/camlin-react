@@ -12,6 +12,8 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import useToast from "../../utils/useToast";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 import './AdminPanel.css'
 
 export default function MenuMaster() {
@@ -45,7 +47,7 @@ export default function MenuMaster() {
             setTabValue(1)
             return
         }
-        if(allUserInputData.length===0) return
+        if (allUserInputData.length === 0) return
         collectEditData(decodedmenuId)
         // eslint-disable-next-line
     }, [decodedmenuId, allUserInputData])
@@ -143,18 +145,14 @@ export default function MenuMaster() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small"
-                        onClick={() => handleEdit(row.row.user_type)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.user_type)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small"
-                        onClick={() => showDeleteConfirmation(row.row.user_type)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.user_type)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
@@ -232,14 +230,14 @@ export default function MenuMaster() {
     }
 
     return (
-        <Layout  
-         breadcrumb={[
+        <Layout
+            breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
-                { label: "Admin Panel", path:location.pathname },
+                { label: "Admin Panel", path: location.pathname },
                 { label: "Menu Master", path: location.pathname },
             ]}
-        
+
         >
             <Box
                 p={2}
@@ -252,7 +250,7 @@ export default function MenuMaster() {
                     <h1 className="mainTitle">Menu Master</h1>
                 </Box>
 
-                <Box sx={{ backgroundColor: 'white',  borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     {!decodedmenuId ?
                         <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, mt: 1 }}>
                             <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
@@ -316,7 +314,7 @@ export default function MenuMaster() {
                         </Box>
                     )}
                     {tabValue === 1 && (
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: 0 }}>
                             <DataTable columns={columns} data={allMenuData} loading={loading} />
                         </Box>
                     )}

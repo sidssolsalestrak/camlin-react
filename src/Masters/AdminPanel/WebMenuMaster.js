@@ -9,8 +9,8 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
-import { LiaTrashAltSolid } from "react-icons/lia";
-import { FaPencilAlt } from "react-icons/fa";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 
@@ -30,7 +30,7 @@ const ROW_STYLES = {
     },
     level2: {
         display: "flex", alignItems: "center", gap: 1,
-        pl:1, pr: 1, py: 0.2,ml:3
+        pl: 1, pr: 1, py: 0.2, ml: 3
     },
     level3: {
         display: "flex", alignItems: "center", gap: 1,
@@ -86,7 +86,7 @@ const Level2Row = memo(({ item, level3Items, isChecked, roleValue, onCheck, onRo
     const isDisabled = item.menu_url === "#"
     return (
         <Box>
-            <Box sx={ROW_STYLES.level2} backgroundColor={level3Items.length>0  ? "#eaf4fb" : null}>
+            <Box sx={ROW_STYLES.level2} backgroundColor={level3Items.length > 0 ? "#eaf4fb" : null}>
                 <Checkbox
                     size="small"
                     checked={!!isChecked}
@@ -142,7 +142,7 @@ const Level1Row = memo(({ item, level2Items, subMenuMap, isChecked, roleValue, o
                     onChange={onRoleChange}
                 />
             </Box>
-            
+
             {level2Items.map((l2) => {
                 const level3Items = subMenuMap[l2.id] || []
                 return (
@@ -184,16 +184,16 @@ export default function WebMenuMaster() {
     const [userTypeErr, setUserTypeErr] = useState(false)
     const [loading, setLoading] = useState(false)
     const [treeLoading, setTreeLoading] = useState(false)
-    const [modifyLoading,setModifyLoading]=useState(false)
-  
+    const [modifyLoading, setModifyLoading] = useState(false)
+
     // Menu tree state
     const [checked, setChecked] = useState({})
     const [roles, setRoles] = useState({})
-    const [tableDataLoading,setTableDataLoading]=useState(false)
+    const [tableDataLoading, setTableDataLoading] = useState(false)
 
     const toast = useToast()
     const navigate = useNavigate()
-    const location=useLocation()
+    const location = useLocation()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -243,16 +243,16 @@ export default function WebMenuMaster() {
             return
         }
         else {
-            if(userInputData.length===0) return
+            if (userInputData.length === 0) return
             collectEditData(decodedWebMenuId)
         }
-     // eslint-disable-next-line
-    }, [decodedWebMenuId,userInputData])
+        // eslint-disable-next-line
+    }, [decodedWebMenuId, userInputData])
 
     const resetFields = () => {
         setSelUserInput(null)
         setChecked({})
-        
+
     }
 
     const fetchWebmenuData = async () => {
@@ -264,7 +264,7 @@ export default function WebMenuMaster() {
         } catch (err) {
             console.log("web menu data error", err)
         }
-        finally{
+        finally {
             setTableDataLoading(false)
         }
     }
@@ -277,7 +277,7 @@ export default function WebMenuMaster() {
             let menuDatares = Array.isArray(response.data.repData) ? response.data.repData : []
             setUserInputData(userInputRes)
 
-          
+
             const l1Items = menuDatares.filter(
                 (m) => Number(m.mas_id) === 0
             )
@@ -333,15 +333,15 @@ export default function WebMenuMaster() {
                                 newHasChildMap[l2.id] = hasChild
                                 const l3Items = await fetchSubMenu(l2.id)
                                 newSubMenuMap[l2.id] = l3Items
-                              
+
                             })
                         )
-                        
-                       
+
+
                     }
                 })
             )
-            
+
 
             setSubMenuMap(newSubMenuMap)
             setHasChildMap(newHasChildMap)
@@ -404,28 +404,28 @@ export default function WebMenuMaster() {
         navigate(`/masters/webMenuMaster/${btoa(id)}`)
     }
 
-    const validateFields=()=>{
-          let isValid = true
-          setUserTypeErr(false)
+    const validateFields = () => {
+        let isValid = true
+        setUserTypeErr(false)
 
-          if (!seluserInput || seluserInput.id === "0") {
+        if (!seluserInput || seluserInput.id === "0") {
             setUserTypeErr(true)
-            isValid=false
+            isValid = false
         }
-        if(!isValid){
+        if (!isValid) {
             toast.error("Please fix all mandatory fields")
             return
         }
         const checkedIds = Object.keys(checked).filter((k) => checked[k])
         if (checkedIds.length === 0) {
             toast.error("Please select at least one menu!")
-            isValid=false;
+            isValid = false;
         }
         return isValid
     }
 
     const handleSubmit = async () => {
-       
+
         try {
             setModifyLoading(true)
             let checkedIds = Object.keys(checked).filter((k) => checked[k])
@@ -436,13 +436,13 @@ export default function WebMenuMaster() {
             }
             await api.post("/webMenuMasterCreate", addPayload)
             toast.success("Saved successfully!")
-            if(decodedWebMenuId){
+            if (decodedWebMenuId) {
                 fetchWebmenuData()
                 navigate('/masters/webMenuMaster/')
             }
-            else{
-            setTabValue(1)
-            fetchWebmenuData()
+            else {
+                setTabValue(1)
+                fetchWebmenuData()
             }
         } catch (err) {
             console.log("submit error", err)
@@ -453,23 +453,23 @@ export default function WebMenuMaster() {
         }
     }
 
-      const handleDelete = async (userId) => {
-            setModifyLoading(true)
-            try {
-                let response = await api.post("/deleteWebMenuMas", { user_type: userId })
-                if (response.data.success) {
-                    toast.success("Deleted Successfully")
-                    fetchWebmenuData()
-                } else {
-                    toast.error(response.data.message)
-                }
-            } catch (err) {
-                console.log("Delete menu Error")
-            } finally {
-                closeConfirmationDialog()
-                setModifyLoading(false)
+    const handleDelete = async (userId) => {
+        setModifyLoading(true)
+        try {
+            let response = await api.post("/deleteWebMenuMas", { user_type: userId })
+            if (response.data.success) {
+                toast.success("Deleted Successfully")
+                fetchWebmenuData()
+            } else {
+                toast.error(response.data.message)
             }
+        } catch (err) {
+            console.log("Delete menu Error")
+        } finally {
+            closeConfirmationDialog()
+            setModifyLoading(false)
         }
+    }
 
     const collectEditData = async (id) => {
         try {
@@ -498,18 +498,14 @@ export default function WebMenuMaster() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
-                    <IconButton size="small"
-                        onClick={() => handleEdit(row.row.user_type)}
-                        sx={{ backgroundColor: "#3c8dbc", borderRadius: "4px", padding: "6px", marginRight: "6px", "&:hover": { backgroundColor: "#2a6f99" } }}>
-                        <FaPencilAlt style={{ color: "white", fontSize: "13px" }} />
+                <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.user_type)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small"
-                        onClick={() => showDeleteConfirmation(row.row.user_type)}
-                        sx={{ backgroundColor: "#dd4b39", borderRadius: "4px", padding: "6px", marginRight: "6px", "&:hover": { backgroundColor: "#c0392b" } }}>
-                        <LiaTrashAltSolid style={{ color: "white", fontSize: "13px" }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.user_type)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
@@ -521,11 +517,11 @@ export default function WebMenuMaster() {
             breadcrumb={[
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
-                { label: "Admin Panel", path:location.pathname },
+                { label: "Admin Panel", path: location.pathname },
                 { label: "Web Menu Master", path: location.pathname }
             ]}
         >
-             <Box
+            <Box
                 p={2}
                 sx={{ borderRadius: 1 }}
                 display="flex"
@@ -536,134 +532,134 @@ export default function WebMenuMaster() {
                     <h1 className="mainTitle">Web Menu Master</h1>
                 </Box>
 
-            <Box sx={{
-                backgroundColor: "white", borderRadius: "6px",
-                minHeight: "30vh",
-                width: { lg: "60%", md: "80%", sm: "90%", xs: "98%" }
-            }}>
+                <Box sx={{
+                    backgroundColor: "white", borderRadius: "6px",
+                    minHeight: "30vh",
+                    width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" }
+                }}>
 
-                {!decodedWebMenuId  ? (
-                    <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, mt: 1 }}>
-                        <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
-                            <Tab sx={{ fontWeight: 600, fontSize: "1.1rem" }} label="ADD NEW" />
-                            <Tab sx={{ fontWeight: 600, fontSize: "1.1rem" }} label="VIEW LIST" />
-                        </Tabs>
-                    </Box>
-                ) : (
-                    <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
-                        Edit Menu Master
-                    </Typography>
-                )}
+                    {!decodedWebMenuId ? (
+                        <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, mt: 1 }}>
+                            <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                                <Tab sx={{ fontWeight: 600, fontSize: "1.1rem" }} label="ADD NEW" />
+                                <Tab sx={{ fontWeight: 600, fontSize: "1.1rem" }} label="VIEW LIST" />
+                            </Tabs>
+                        </Box>
+                    ) : (
+                        <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
+                            Edit Menu Master
+                        </Typography>
+                    )}
 
-                {tabValue === 0 && (
-                    <Box sx={{ p: {md:3,xs:1}, display: "flex", flexDirection: "column", gap: 3, width: {md:"90%",xs:"99%"} }}>
+                    {tabValue === 0 && (
+                        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3, width: "90%" }}>
 
-                        {/* User Type */}
-                        <Autocomplete
-                            options={[{ id: "0", client_alias: "Select User Type" }, ...userInputData]}
-                            getOptionLabel={(option) => option.client_alias || ""}
-                            value={seluserInput}
-                            readOnly={!!decodedWebMenuId}
-                            onChange={(e, newValue) => {
-                                setSelUserInput(newValue)
-                                setSelUserName(newValue?.client_alias || "")
-                                setUserTypeErr(false)
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="User Type*"
-                                    size="small"
-                                    error={userTypeErr}
-                                    helperText={userTypeErr ? "User Type not Selected !" : ""}
-                                    sx={{ backgroundColor: decodedWebMenuId ? "#EEEEEE" : undefined }}
-                                />
-                            )}
-                        />
-
-                        {/* Menu Tree */}
-                        <Box>
-                            <Typography sx={{ mb: 1, fontWeight: 500 }}>Menu's*</Typography>
-
-                            <Box sx={{ borderRadius: 1, overflow: "hidden", fontSize: "13px" }}>
-
-                                {/* Tree loading state */}
-                                {treeLoading ? (
-                                    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4, gap: 1 }}>
-                                        <CircularProgress size={22} />
-                                        <Typography sx={{ fontSize: "13px", color: "#555" }}>Loading menus...</Typography>
-                                    </Box>
-                                ) : (
-                                    /* Level 1 — mirrors PHP: foreach($repData as $key) */
-                                    level1Menus.map((l1) => {
-                                        const level2Items = subMenuMap[l1.id] || []
-                                        return (
-                                            <Level1Row
-                                                key={l1.id}
-                                                item={l1}
-                                                level2Items={level2Items}
-                                                subMenuMap={subMenuMap}
-                                                isChecked={checked[l1.id]}
-                                                roleValue={roles[l1.id]}
-                                                onCheck={handleCheck}
-                                                onRoleChange={handleRoleChange}
-                                                checkedMap={checked}
-                                                rolesMap={roles}
-                                            />
-                                        )
-                                    })
+                            {/* User Type */}
+                            <Autocomplete
+                                options={[{ id: "0", client_alias: "Select User Type" }, ...userInputData]}
+                                getOptionLabel={(option) => option.client_alias || ""}
+                                value={seluserInput}
+                                readOnly={!!decodedWebMenuId}
+                                onChange={(e, newValue) => {
+                                    setSelUserInput(newValue)
+                                    setSelUserName(newValue?.client_alias || "")
+                                    setUserTypeErr(false)
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="User Type*"
+                                        size="small"
+                                        error={userTypeErr}
+                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        sx={{ backgroundColor: decodedWebMenuId ? "#EEEEEE" : undefined }}
+                                    />
                                 )}
+                            />
 
+                            {/* Menu Tree */}
+                            <Box>
+                                <Typography sx={{ mb: 1, fontWeight: 500 }}>Menu's*</Typography>
+
+                                <Box sx={{ borderRadius: 1, overflow: "hidden", fontSize: "13px" }}>
+
+                                    {/* Tree loading state */}
+                                    {treeLoading ? (
+                                        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4, gap: 1 }}>
+                                            <CircularProgress size={22} />
+                                            <Typography sx={{ fontSize: "13px", color: "#555" }}>Loading menus...</Typography>
+                                        </Box>
+                                    ) : (
+                                        /* Level 1 — mirrors PHP: foreach($repData as $key) */
+                                        level1Menus.map((l1) => {
+                                            const level2Items = subMenuMap[l1.id] || []
+                                            return (
+                                                <Level1Row
+                                                    key={l1.id}
+                                                    item={l1}
+                                                    level2Items={level2Items}
+                                                    subMenuMap={subMenuMap}
+                                                    isChecked={checked[l1.id]}
+                                                    roleValue={roles[l1.id]}
+                                                    onCheck={handleCheck}
+                                                    onRoleChange={handleRoleChange}
+                                                    checkedMap={checked}
+                                                    rolesMap={roles}
+                                                />
+                                            )
+                                        })
+                                    )}
+
+                                </Box>
                             </Box>
-                        </Box>
 
-                        {/* Submit */}
-                        <Box sx={{ display: "flex",ml:2}}>
-                            <Button
-                                variant="contained"
-                                onClick={()=>{
-                                    if(validateFields()){
-                                        showSubmitConfirmation()
+                            {/* Submit */}
+                            <Box sx={{ display: "flex", ml: 2 }}>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        if (validateFields()) {
+                                            showSubmitConfirmation()
+                                        }
+                                    }}
+                                    disabled={loading || treeLoading}
+                                    sx={{
+                                        backgroundColor: "#1565c0",
+                                        mb: 3,
+                                        "&:hover": { backgroundColor: "#0d47a1" },
+                                        textTransform: "none",
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    {loading
+                                        ? <CircularProgress size={18} sx={{ color: "white" }} />
+                                        : decodedWebMenuId ? "Update" : "Save"
                                     }
-                                }}
-                                disabled={loading || treeLoading}
-                                sx={{
-                                    backgroundColor: "#1565c0",
-                                    mb:3,
-                                    "&:hover": { backgroundColor: "#0d47a1" },
-                                    textTransform: "none",
-                                    fontWeight: 600
-                                }}
-                            >
-                                {loading
-                                    ? <CircularProgress size={18} sx={{ color: "white" }} />
-                                    : decodedWebMenuId ? "Update" : "Save"
-                                }
-                            </Button>
+                                </Button>
+                            </Box>
+
                         </Box>
+                    )}
 
-                    </Box>
-                )}
+                    {/* ── VIEW LIST TAB ─────────────────────────────────────────── */}
+                    {tabValue === 1 && (
+                        <Box sx={{ p: 0 }}>
+                            <DataTable columns={columns} data={allWebMenuData} loading={tableDataLoading} />
+                        </Box>
+                    )}
 
-                {/* ── VIEW LIST TAB ─────────────────────────────────────────── */}
-                {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
-                        <DataTable columns={columns} data={allWebMenuData} loading={tableDataLoading} />
-                    </Box>
-                )}
-
-            </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                cancelText={confirmationDialog.cancelText}
-                loading={modifyLoading}
-                confirmColor={confirmationDialog.confirmColor}
-            />
+                </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    cancelText={confirmationDialog.cancelText}
+                    loading={modifyLoading}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
         </Layout>
     )

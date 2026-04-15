@@ -8,8 +8,8 @@ import api from "../../services/api";
 import PageHeader from "../../utils/PageHeader";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import DataTable from "../../utils/dataTable";
-import { LiaTrashAltSolid } from "react-icons/lia";
-import { FaPencilAlt } from "react-icons/fa";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { MdOutlineEdit } from "react-icons/md";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
@@ -242,18 +242,14 @@ export default function ReportingTabs() {
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small"
-                        onClick={() => handleEdit(row.row.user_type, row.row.cus_type)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                 <>
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.user_type, row.row.cus_type)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton size="small"
-                        onClick={() => showDeleteConfirmation(row.row.user_type, row.row.cus_type)}
-                        sx={{ backgroundColor: '#dd4b39', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#c0392b' } }}>
-                        <LiaTrashAltSolid style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.user_type, row.row.cus_type)}>
+                        <DeleteIcon size={15} />
                     </IconButton>
-                </Box>
+                </>
             )
         }
     ]
@@ -374,7 +370,7 @@ export default function ReportingTabs() {
                     )}
 
                     {tabValue === 1 && (
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: 0 }}>
                             <DataTable columns={columns} data={reportData} loading={loading} />
                         </Box>
                     )}

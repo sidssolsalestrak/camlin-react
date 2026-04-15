@@ -11,6 +11,7 @@ import DataTable from "../../utils/dataTable";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
+import { MdOutlineEdit } from "react-icons/md";
 
 export default function AppVersion() {
     const { editappvid } = useParams()
@@ -181,17 +182,12 @@ export default function AppVersion() {
             field: "ACTION", headerName: "ACTION", filterable: false,
             renderCell: (row) => (
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                    <IconButton size="small"
-                        onClick={() => handleEdit(row.row.id)}
-                        sx={{ backgroundColor: '#3c8dbc', borderRadius: '4px', padding: '6px', marginRight: '6px', '&:hover': { backgroundColor: '#2a6f99' } }}>
-                        <FaPencilAlt style={{ color: 'white', fontSize: '13px' }} />
+                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
                 </Box>
             )
         }
-
-
-
 
     ]
     console.log("App version",appVersion)
@@ -264,7 +260,7 @@ export default function AppVersion() {
                     </Box>
                 )}
                 {tabValue === 1 && (
-                    <Box sx={{ p: 3 }}>
+                    <Box sx={{ p: 0 }}>
                         <DataTable columns={columns} data={allAppData} loading={loading} />
                     </Box>
                 )}
