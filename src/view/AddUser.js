@@ -138,6 +138,7 @@ function AddUser() {
   const [weeklyOff, setWeeklyOff] = useState([]);
   const [weekDays, setWeekDays] = useState([]);
   const [flag, setFlag] = useState(0)
+  const [oldProfileImage,setOldProfileImage]=useState("")
 
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
@@ -291,7 +292,8 @@ function AddUser() {
         // setAppAccess(String(d.app_acc_stat));
 
         if (d.image_upl) {
-          setPreviewImage(`${process.env.REACT_APP_IMAGE_URL}/${d.image_upl}`);
+          setPreviewImage(`${process.env.REACT_APP_PROFILE_URL}/${d.image_upl}`);
+          setOldProfileImage(d.image_upl)
         }
 
         // if (d.rep_to_type) {
@@ -430,9 +432,9 @@ function AddUser() {
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
     if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
-    if(String(mobileNum).trim()!=="" && String(mobileNum).trim().length<10)  temp.mobileNum = "Please Enter Valid 10 digit mobile number"
+    if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number"
     if (!email.trim()) temp.email = "Email is required";
-    if (email.trim()!=="" && !emailRegex.test(email.trim())) temp.email="Please Enter a valid Email"
+    if (email.trim() !== "" && !emailRegex.test(email.trim())) temp.email = "Please Enter a valid Email"
     if (!address.trim()) temp.address = "Address is required";
     if (!hq.trim()) temp.hq = "Please Enter HQ";
     if (
@@ -658,10 +660,13 @@ function AddUser() {
     formData.append("deactRemarks", deactivateRemarks);
     formData.append("flag", flag);
     formData.append("rep_type", reportType)
-    formData.append("desig_name",getNames([selectedDesig], designations, "id", "desig_name"))
+    formData.append("desig_name", getNames([selectedDesig], designations, "id", "desig_name"))
 
     if (selectedFile) {
       formData.append("profileImg_file", selectedFile);
+    }
+    else{
+      formData.append("hdprofileImg",oldProfileImage)
     }
 
     /* ===== DEBUG (remove later) ===== */
@@ -747,6 +752,59 @@ function AddUser() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // 1. File size check (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setToast({
+        open: true,
+        message: "File size must be under 2MB",
+        severity: "error",
+      });
+      e.target.value = '';
+      return;
+    }
+
+    // 2. Extension check
+    const allowed = /jpeg|jpg|gif|jpe|png/;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!allowed.test(ext)) {
+       setToast({
+        open: true,
+        message: "Only jpg, jpeg, png, gif files are allowed",
+        severity: "error",
+      });
+      e.target.value = '';
+      return;
+    }
+
+    // 3. MIME type check
+    if (!allowed.test(file.type)) {
+      setToast({
+        open: true,
+        message: "Only jpg, jpeg, png, gif file types are allowed",
+        severity: "error",
+      });
+      e.target.value = '';
+      return;
+    }
+
+    // 4. Safe filename check (no double extensions like file.php.jpg)
+    const nameParts = file.name.split('.');
+    const allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'jpe'];
+    const middleParts = nameParts.slice(1, -1); 
+    const hasDangerousExt = middleParts.some(
+      (part) => !allowedTypes.includes(part.toLowerCase())
+    );
+    if (hasDangerousExt) {
+        setToast({
+        open: true,
+        message: "Invalid filename",
+        severity: "error",
+      });
+      e.target.value = '';
+      return;
+    }
+
     setSelectedFile(file);
     setFileName(file.name);
     const reader = new FileReader();
@@ -912,8 +970,6 @@ function AddUser() {
     return dayjs(val).format("DD-MMM-YYYY HH:mm:ss");
   };
 
-  console.log("report type", selectedReportType)
-  console.log("selected business unit", selectedBU)
 
   return (
     <Layout>
@@ -1050,14 +1106,14 @@ function AddUser() {
                     label="Mobile"
                     value={mobileNum}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ''); 
+                      const value = e.target.value.replace(/\D/g, '');
                       setMobileNum(value);
                       if (useMobile) setUserId(value);
                     }}
                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
                     fullWidth
                     error={Boolean(errors.mobileNum)}
-                    helperText={errors. mobileNum}
+                    helperText={errors.mobileNum}
                   />
                 </Box>
               </Grid>
