@@ -539,7 +539,7 @@ export default function WebMenuMaster() {
             <Box sx={{
                 backgroundColor: "white", borderRadius: "6px",
                 minHeight: "30vh",
-                width: { lg: "60%", md: "80%", sm: "90%", xs: "90%" }
+                width: { lg: "60%", md: "80%", sm: "90%", xs: "98%" }
             }}>
 
                 {!decodedWebMenuId  ? (
@@ -556,7 +556,7 @@ export default function WebMenuMaster() {
                 )}
 
                 {tabValue === 0 && (
-                    <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3, width: "90%" }}>
+                    <Box sx={{ p: {md:3,xs:1}, display: "flex", flexDirection: "column", gap: 3, width: {md:"90%",xs:"99%"} }}>
 
                         {/* User Type */}
                         <Autocomplete

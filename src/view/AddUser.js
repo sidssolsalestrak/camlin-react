@@ -137,6 +137,7 @@ function AddUser() {
 
   const [weeklyOff, setWeeklyOff] = useState([]);
   const [weekDays, setWeekDays] = useState([]);
+  const [flag, setFlag] = useState(0)
 
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
@@ -147,6 +148,7 @@ function AddUser() {
     message: "",
     severity: "success",
   });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const [errors, setErrors] = useState({});
 
@@ -240,7 +242,8 @@ function AddUser() {
         setEmail(d.email_id || "");
         setAddress(d.user_addr || "");
 
-        setDateOfBirth(d.dob || "");
+        setDateOfBirth(d.emp_dob || "");
+        setOtherRef(d.user_ref || "")
         setDateOfJoin(
           d.emp_doj && d.emp_doj !== "1900-01-01T00:00:00.000Z"
             ? d.emp_doj.split("T")[0]
@@ -308,7 +311,8 @@ function AddUser() {
         setAccStatus(d.acc_stat || 0);
         setRelievingDate(d.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "");
         setDeactivateType(String(d.deact_type || "0"));
-        setDeactivateRemarks(d.remarks || "");
+        setDeactivateRemarks(d.deact_rem || "");
+        setFlag(d.id > 0 ? 1 : 0)
 
         if (d.zone_id) {
           const zones = d.zone_id.split(",");
@@ -425,8 +429,10 @@ function AddUser() {
     if (!selectedTitle) temp.selectedTitle = "Please select title";
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
-    if (!mobileNum.trim()) temp.mobileNum = "Mobile number is required";
+    if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
+    if(String(mobileNum).trim()!=="" && String(mobileNum).trim().length<10)  temp.mobileNum = "Please Enter Valid 10 digit mobile number"
     if (!email.trim()) temp.email = "Email is required";
+    if (email.trim()!=="" && !emailRegex.test(email.trim())) temp.email="Please Enter a valid Email"
     if (!address.trim()) temp.address = "Address is required";
     if (!hq.trim()) temp.hq = "Please Enter HQ";
     if (
@@ -509,6 +515,7 @@ function AddUser() {
         }
       }
     }
+    console.log("validation failures", temp)
     setErrors(temp);
     return Object.keys(temp).length === 0;
   };
@@ -521,6 +528,18 @@ function AddUser() {
     if (!validate()) return;
 
     const formData = new FormData();
+
+    // Helper to get name by id from an options array
+    const getNames = (selectedIds, options, valueKey, labelKey) => {
+      if (!selectedIds || selectedIds.length === 0) return "";
+      return selectedIds
+        .map((id) => {
+          const found = options.find((o) => String(o[valueKey]) === String(id));
+          return found ? found[labelKey] : "";
+        })
+        .join(",");
+    };
+
     formData.append("user_id", id || 0);
     formData.append("user_type", selectedType);
     formData.append("dept_id", selectedDept);
@@ -539,82 +558,107 @@ function AddUser() {
     formData.append("emp_stat", employeeStatus);
     formData.append("gross_salary", grossSalary);
     formData.append("other_ref", otherRef);
-
-    // formData.append("zone_id", selectedZones.join(","));
-    // formData.append("reg_id", selectedRegions.join(","));
-    // formData.append("area_id", selectedAreas.join(","));
-    // formData.append("ter_id", selectedTerritories.join(","));
-    // formData.append("beat_id", selectedBeats.join(","));
-
     formData.append("hq", hq);
-    // formData.append(
-    //   "zone_id",
-    //   selectedRegions.length ? selectedRegions.join(",") : "",
-    // );
+
+    // Business Unit IDs + Names
+    formData.append("buUnit", selectedBU.join(","));
+    formData.append("buUnitName", getNames(selectedBU, businessUnits, "id", "brand_name"));
+
     if (Number(selectedType) > 4) {
       if (mngType === 1) {
         formData.append("zone_id", selectedZones.join(","));
+        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
         formData.append("reg_id", 0);
+        formData.append("reg_Name", "");
         formData.append("area_id", 0);
+        formData.append("area_name", "");
         formData.append("ter_id", 0);
+        formData.append("ter_name", "");
         formData.append("beat_id", 0);
+        formData.append("beat_name", "");
       } else if (mngType === 2) {
         formData.append("zone_id", selectedZones.join(","));
+        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
         formData.append("reg_id", selectedRegions.join(","));
+        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
         formData.append("area_id", 0);
+        formData.append("area_name", "");
         formData.append("ter_id", 0);
+        formData.append("ter_name", "");
         formData.append("beat_id", 0);
+        formData.append("beat_name", "");
       } else if (mngType === 3) {
         formData.append("zone_id", selectedZones.join(","));
+        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
         formData.append("reg_id", selectedRegions.join(","));
+        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
         formData.append("area_id", selectedAreas.join(","));
+        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
         formData.append("ter_id", 0);
+        formData.append("ter_name", "");
         formData.append("beat_id", 0);
+        formData.append("beat_name", "");
       } else if (mngType === 4) {
         formData.append("zone_id", selectedZones.join(","));
+        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
         formData.append("reg_id", selectedRegions.join(","));
+        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
         formData.append("area_id", selectedAreas.join(","));
+        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
         formData.append("ter_id", selectedTerritories.join(","));
+        formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
         formData.append("beat_id", 0);
+        formData.append("beat_name", "");
       } else if (mngType === 0) {
         formData.append("zone_id", selectedZones.join(","));
+        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
         formData.append("reg_id", selectedRegions.join(","));
+        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
         formData.append("area_id", selectedAreas.join(","));
+        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
         formData.append("ter_id", selectedTerritories.join(","));
+        formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
         formData.append("beat_id", selectedBeats.join(","));
+        formData.append("beat_name", getNames(selectedBeats, beats, "id", "beat_name"));
       }
     } else {
       formData.append("zone_id", 0);
+      formData.append("zone_name", "");
       formData.append("reg_id", 0);
+      formData.append("reg_Name", "");
       formData.append("area_id", 0);
+      formData.append("area_name", "");
       formData.append("ter_id", 0);
+      formData.append("ter_name", "");
       formData.append("beat_id", 0);
+      formData.append("beat_name", "");
     }
+
     formData.append("report_type", selectedReportType);
     formData.append("report_user_id", selectedReportTo);
-
     formData.append("user_name", userId);
     formData.append("password", password);
     formData.append("conf_password", confirmPassword);
-
     formData.append("web_access", webAccess === "yes" ? 0 : 1);
     formData.append("app_access", appAccess === "yes" ? 0 : 1);
-
     formData.append("plan_sub_cutoff", planSubCutoff);
     formData.append("ps_day", psDay);
     formData.append("plan_approval", planApproval);
-
     formData.append("rep_sub_cutoff", repSubCutoff);
     formData.append("weekend", weekend);
     formData.append("rs_day", rsDay);
-
-    formData.append("report_type", reportType);
     formData.append("data_mode", dataMode);
     formData.append("location_tracking", locationTracking);
     formData.append("selfie", selfie);
     formData.append("attendance", attendance);
 
     formData.append("weekly_off", weeklyOff.join(","));
+    formData.append("dor", relievingDate);
+    formData.append("deact_type", deactivateType);
+    formData.append("deactRemarks", deactivateRemarks);
+    formData.append("flag", flag);
+    formData.append("rep_type", reportType)
+    formData.append("desig_name",getNames([selectedDesig], designations, "id", "desig_name"))
 
     if (selectedFile) {
       formData.append("profileImg_file", selectedFile);
@@ -627,7 +671,7 @@ function AddUser() {
     // return;
 
     try {
-      const res = await axios.post("/createNewUser", formData, {
+      const res = await axios.post("/AddNewUser", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (res.data.status === 200) {
@@ -868,6 +912,9 @@ function AddUser() {
     return dayjs(val).format("DD-MMM-YYYY HH:mm:ss");
   };
 
+  console.log("report type", selectedReportType)
+  console.log("selected business unit", selectedBU)
+
   return (
     <Layout>
       <Grid container spacing={2} sx={{ padding: "8px" }}>
@@ -901,7 +948,7 @@ function AddUser() {
                   error={Boolean(errors.selectedType)}
                 />
                 {errors.selectedType && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.selectedType}
                   </Typography>
                 )}
@@ -918,7 +965,7 @@ function AddUser() {
                   error={Boolean(errors.selectedDept)}
                 />
                 {errors.selectedDept && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.selectedDept}
                   </Typography>
                 )}
@@ -935,7 +982,7 @@ function AddUser() {
                   error={Boolean(errors.selectedDesig)}
                 />
                 {errors.selectedDesig && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.selectedDesig}
                   </Typography>
                 )}
@@ -952,7 +999,7 @@ function AddUser() {
                   error={Boolean(errors.selectedTitle)}
                 />
                 {errors.selectedTitle && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.selectedTitle}
                   </Typography>
                 )}
@@ -1003,10 +1050,14 @@ function AddUser() {
                     label="Mobile"
                     value={mobileNum}
                     onChange={(e) => {
-                      setMobileNum(e.target.value);
-                      if (useMobile) setUserId(e.target.value);
+                      const value = e.target.value.replace(/\D/g, ''); 
+                      setMobileNum(value);
+                      if (useMobile) setUserId(value);
                     }}
+                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
                     fullWidth
+                    error={Boolean(errors.mobileNum)}
+                    helperText={errors. mobileNum}
                   />
                 </Box>
               </Grid>
@@ -1023,6 +1074,8 @@ function AddUser() {
                       if (useEmail) setUserId(e.target.value);
                     }}
                     fullWidth
+                    error={Boolean(errors.email)}
+                    helperText={errors.email}
                   />
                 </Box>
               </Grid>
@@ -1164,7 +1217,13 @@ function AddUser() {
                     multiple
                     valueKey="id"
                     labelKey="zone_name"
+                    error={Boolean(errors.zone)}
                   />
+                  {errors.zone && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.zone}
+                    </Typography>
+                  )}
                 </Grid>
               )}
 
@@ -1181,7 +1240,7 @@ function AddUser() {
                     error={Boolean(errors.region)}
                   />
                   {errors.region && (
-                    <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                       {errors.region}
                     </Typography>
                   )}
@@ -1198,7 +1257,13 @@ function AddUser() {
                     options={areas}
                     valueKey="id"
                     labelKey="area_name"
+                    error={Boolean(errors.area)}
                   />
+                  {errors.area && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.area}
+                    </Typography>
+                  )}
                 </Grid>
               )}
 
@@ -1212,7 +1277,13 @@ function AddUser() {
                     options={territories}
                     valueKey="id"
                     labelKey="ter_name"
+                    error={Boolean(errors.territory)}
                   />
+                  {errors.territory && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.territory}
+                    </Typography>
+                  )}
                 </Grid>
               )}
               {showBeat && (
@@ -1225,7 +1296,13 @@ function AddUser() {
                     options={beats}
                     valueKey="id"
                     labelKey="beat_name"
+                    error={Boolean(errors.beat)}
                   />
+                  {errors.beat && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.beat}
+                    </Typography>
+                  )}
                 </Grid>
               )}
 
@@ -1240,7 +1317,7 @@ function AddUser() {
                   error={Boolean(errors.reportType)}
                 />
                 {errors.reportType && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.reportType}
                   </Typography>
                 )}
@@ -1257,7 +1334,7 @@ function AddUser() {
                   disabled={!selectedReportType}
                 />
                 {errors.reportTo && (
-                  <Typography sx={{ color: "red", fontSize: "12px", ml: 1 }}>
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
                     {errors.reportTo}
                   </Typography>
                 )}
@@ -1269,7 +1346,14 @@ function AddUser() {
               size="small"
               sx={{ mt: 2 }}
               onClick={() => {
-                if (!validate()) return;
+                if (!validate()) {
+                  setToast({
+                    open: true,
+                    message: "Please fix all mandotory fields",
+                    severity: "error",
+                  });
+                  return
+                };
                 setOpenSaveDialog(true);
               }}
             >

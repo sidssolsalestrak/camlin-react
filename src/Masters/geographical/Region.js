@@ -100,6 +100,7 @@ export default function Region() {
             setHdnRegionName(data.reg_name)
             setZoneError(false)
             setRegionError(false)
+            setRegionErrMsg("")
             setTabValue(0)
         } catch (err) {
             console.log("collectEditData error", err)
