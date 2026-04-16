@@ -234,7 +234,7 @@ function AddUser() {
         });
         setSelectedDept(d.dep_id || "");
         setSelectedDesig(d.desig_id || "");
-        setSelectedTitle(d.title_id || "");
+        setSelectedTitle(d.user_sal || "");
 
         setEmployeeCode(d.emp_code || "");
         setFullName(d.first_name || "");
@@ -528,7 +528,7 @@ function AddUser() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
+    try {
     const formData = new FormData();
 
     // Helper to get name by id from an options array
@@ -661,6 +661,7 @@ function AddUser() {
     formData.append("flag", flag);
     formData.append("rep_type", reportType)
     formData.append("desig_name", getNames([selectedDesig], designations, "id", "desig_name"))
+    formData.append("oldStat",accStatus)
 
     if (selectedFile) {
       formData.append("profileImg_file", selectedFile);
@@ -675,7 +676,7 @@ function AddUser() {
     }
     // return;
 
-    try {
+   
       const res = await axios.post("/AddNewUser", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -1198,7 +1199,13 @@ function AddUser() {
                   options={empTypes}
                   valueKey="id"
                   labelKey="type"
+                  error={Boolean(errors.employeeType)}
                 />
+                {errors.employeeType && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.employeeType }
+                    </Typography>
+                  )}
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -1209,7 +1216,13 @@ function AddUser() {
                   options={empStatusList}
                   valueKey="id"
                   labelKey="emp_stat"
+                  error={Boolean(errors.employeeStatus)}
                 />
+                {errors.employeeStatus && (
+                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                      {errors.employeeStatus }
+                    </Typography>
+                  )}
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
