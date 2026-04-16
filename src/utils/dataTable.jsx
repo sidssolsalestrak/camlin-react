@@ -492,7 +492,7 @@ const DataTable = ({
                     width: col.width,
                     // borderRight:
                     //   i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                    padding: "11px 18px",
+                    padding: "11px 6px",
                     color: "#A09D97",
                     borderBottom: "1px solid rgba(0,0,0,0.08)",
                     backgroundColor: "#F6F5F2",

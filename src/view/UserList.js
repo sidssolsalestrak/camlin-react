@@ -301,15 +301,19 @@ function UserList() {
       width: 50,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", gap: 12 }}>
-          <FaEdit
-            style={{ cursor: "pointer" }}
-            onClick={() => handleEdit(row)}
-          />
+          <div className="editBtn actionBtn">
+            <FaEdit
+              style={{ cursor: "pointer" }}
+              onClick={() => handleEdit(row)}
+            />
+          </div>
 
-          <FaTrash
-            style={{ cursor: "pointer", color: "red" }}
-            onClick={() => handleDelete(row)}
-          />
+          <div className="dltBtn actionBtn">
+            <FaTrash
+              style={{ cursor: "pointer", color: "red" }}
+              onClick={() => handleDelete(row)}
+            />
+          </div>
         </div>
       ),
     },
@@ -496,12 +500,13 @@ function UserList() {
             </Button>
           </Grid>
 
-          {/* <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid>
-          <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid>
-          <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid> */}
-
           <Grid size={{ xs: 12, md: 1, lg: 1 }}>
-            <Button fullWidth variant="contained" onClick={handleAddNew}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleAddNew}
+              sx={{ whiteSpace: "nowrap" }}
+            >
               Add New
             </Button>
           </Grid>
