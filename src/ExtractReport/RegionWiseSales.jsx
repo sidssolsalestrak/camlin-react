@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import Layout from '../../layout'
-import { useLocation } from 'react-router-dom'
+import Layout from '../layout'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, Button, IconButton } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-import CircularProgress from '../../utils/CircularProgressLoading';
+import CircularProgress from '../utils/CircularProgressLoading';
 import { AiOutlineFileExcel } from "react-icons/ai";
 import dayjs from 'dayjs'
-import DataTable from '../../utils/dataTable'
-import axios from "../../services/api";
+import DataTable from '../utils/dataTable'
+import axios from "../services/api";
 
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
@@ -17,8 +17,31 @@ const headContainer = {
     minHeight: '20vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' }
 }
 
+// URL-safe encode - replaces + / = with cleaner characters
+const encode = (val) => btoa(String(val || ""))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");   // ← removes = entirely, no more %3D
+
+// URL-safe decode - restore before atob
+const decode = (str) => {
+    if (!str) return "";
+    const restored = str
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+    const padded = restored + "==".slice((restored.length % 4) || 4);
+    try { return atob(padded); } catch { return ""; }
+};
+
 const RegionWiseSales = () => {
+    let [searchParams] = useSearchParams();
     const location = useLocation();
+    const navigate = useNavigate();
+    /*----------------- decode frm and to dt --------*/
+    let decodeFromDate = decode(searchParams.get('frmDt'));
+    let decodeToDate = decode(searchParams.get('toDt'));
+
+    /*----------------- states --------*/
     const [tableData, settableData] = useState([]);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
@@ -47,6 +70,26 @@ const RegionWiseSales = () => {
     useEffect(() => {
         fetchTableData()
     }, [])
+
+    //handle load
+    const handleLoad = () => {
+        let params = new URLSearchParams();
+        if (fromDate) params.append('frmDt', encode(fromDate));
+        if (toDate) params.append('toDt', encode(toDate));
+        navigate(`/reports/reg_sec_sales?${params.toString()}`)
+    }
+
+    //initialize state values
+    useEffect(() => {
+        if (decodeFromDate && decodeToDate) {
+            setFromDate(dayjs(decodeFromDate))
+            settoDate(dayjs(decodeToDate))
+        } else {
+            setFromDate(dayjs().startOf("month"))
+            settoDate(dayjs().endOf("month"))
+        }
+        fetchTableData()
+    }, [decodeFromDate, decodeToDate])
 
     /*----------------- table columns --------*/
     const columns = [
@@ -150,7 +193,7 @@ const RegionWiseSales = () => {
                             minDate={fromDate ? fromDate : null}
                         />
                     </LocalizationProvider>
-                    <Button variant='contained' color="primary">Load</Button>
+                    <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
                     {progress ? <CircularProgress progress={progress} /> :
                         <span>
                             <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />

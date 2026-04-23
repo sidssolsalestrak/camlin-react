@@ -201,7 +201,12 @@ function UserList() {
   };
 
   const columns = [
-    { field: "sl", headerName: "#", width: 10 },
+    {
+      field: "sl",
+      headerName: "#",
+      width: 10,
+      renderCell: ({ value }) => <span className="sl-cell">{value}</span>,
+    },
     {
       field: "name",
       headerName: "Name",
@@ -217,7 +222,7 @@ function UserList() {
               <span
                 style={{
                   cursor: "pointer",
-                  color: "#1976d2",
+                  color: "#1A1917",
                   fontWeight: 500,
                 }}
                 onClick={() => handleUserClick(row)}
@@ -226,7 +231,7 @@ function UserList() {
               </span>
             </div>
 
-            <span style={{ fontSize: 12, color: "#9b9090", fontWeight: 600 }}>
+            <span style={{ fontSize: 12, marginLeft: "10%" }}>
               {row.user_desig}
             </span>
           </div>
@@ -242,23 +247,10 @@ function UserList() {
     {
       field: "ter_name",
       headerName: "Territory Details",
-      width: 350,
-      renderCell: ({ row }) => (
-        <div
-          style={{
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            lineHeight: "1.2",
-          }}
-        >
-          {row.ter_name || "-"}
-        </div>
-      ),
     },
     {
       field: "reporting",
       headerName: "Reporting To",
-      width: 100,
       renderCell: ({ row }) =>
         `${row.repto_fname || ""} ${row.repto_lname || ""}`,
     },
@@ -292,7 +284,15 @@ function UserList() {
       field: "status",
       headerName: "Status",
       width: 100,
-      renderCell: ({ row }) => (row.acc_stat === 1 ? "Inactive" : "Active"),
+      renderCell: ({ row }) => {
+        const isInactive = row.acc_stat === 1;
+
+        return (
+          <span className={`status-chip ${isInactive ? "inactive" : "active"}`}>
+            {isInactive ? "Inactive" : "Active"}
+          </span>
+        );
+      },
     },
 
     {
@@ -301,15 +301,19 @@ function UserList() {
       width: 50,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", gap: 12 }}>
-          <FaEdit
-            style={{ cursor: "pointer" }}
-            onClick={() => handleEdit(row)}
-          />
+          <div className="editBtn actionBtn">
+            <FaEdit
+              style={{ cursor: "pointer" }}
+              onClick={() => handleEdit(row)}
+            />
+          </div>
 
-          <FaTrash
-            style={{ cursor: "pointer", color: "red" }}
-            onClick={() => handleDelete(row)}
-          />
+          <div className="dltBtn actionBtn">
+            <FaTrash
+              style={{ cursor: "pointer", color: "red" }}
+              onClick={() => handleDelete(row)}
+            />
+          </div>
         </div>
       ),
     },
@@ -330,7 +334,7 @@ function UserList() {
   };
 
   const handleAddNew = () => {
-    navigate("/users/adminUserNew"); // same as PHP
+    navigate("/users/adminUserNew");
   };
 
   const handleExcel = () => {
@@ -364,7 +368,17 @@ function UserList() {
         <Box>
           <h1 className="mainTitle">User List</h1>
         </Box>
-        <Grid container spacing={2} sx={{ background: "#fff" }} p={2}>
+        <Grid
+          container
+          spacing={2}
+          sx={{
+            background: "#fff",
+            borderRadius: "10px",
+            boxShadow:
+              "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+            padding: "16px 18px",
+          }}
+        >
           {/* USER TYPE */}
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
             <FormControl fullWidth size="small">
@@ -486,12 +500,13 @@ function UserList() {
             </Button>
           </Grid>
 
-          {/* <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid>
-          <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid>
-          <Grid size={{ xs: 12, md: 2, lg: 2 }}></Grid> */}
-
           <Grid size={{ xs: 12, md: 1, lg: 1 }}>
-            <Button fullWidth variant="contained" onClick={handleAddNew}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleAddNew}
+              sx={{ whiteSpace: "nowrap" }}
+            >
               Add New
             </Button>
           </Grid>
@@ -509,8 +524,18 @@ function UserList() {
         </Grid>
 
         {/* TABLE */}
-        <Box mt={3}>
-          <DataTable data={tableData} columns={columns} title="Users List" />
+        <Box>
+          <DataTable
+            sx={{
+              background: "#fff",
+              borderRadius: "10px",
+              boxShadow:
+                "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+            }}
+            data={tableData}
+            columns={columns}
+            title="Users List"
+          />
         </Box>
       </Box>
     </Layout>

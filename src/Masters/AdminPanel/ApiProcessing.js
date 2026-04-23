@@ -207,7 +207,7 @@ export default function ApiProcessing() {
         {
             field: "", headerName: "ACTION", renderCell: (row) => (
                 // ✅ Now calls confirmation instead of directly processing
-                <Button variant="contained" onClick={() => showReportSingleConfirmation(row.row.process_id)} sx={{ width: '1rem', textTransform: 'none', px: 0 }}>
+                <Button variant="contained" onClick={() => showReportSingleConfirmation(row.row.process_id)} sx={{ width: '1rem', textTransform: 'none', px: 0,height:'2.2rem' }}>
                     Process
                 </Button>
             )
@@ -232,7 +232,7 @@ export default function ApiProcessing() {
         {
             field: "", headerName: "ACTION", renderCell: (row) => (
                 // ✅ Now calls confirmation instead of directly processing
-                <Button variant="contained" onClick={() => showOrderSingleConfirmation(row.row.process_id)} sx={{ width: '1rem', textTransform: 'none', px: 0 }}>
+                <Button variant="contained" onClick={() => showOrderSingleConfirmation(row.row.process_id)} sx={{ width: '1rem', textTransform: 'none', px: 0, height:'2.2rem' }}>
                     Process
                 </Button>
             )

@@ -388,7 +388,7 @@ function AccountTransfer() {
                     <h2 className="mainTitle">Account Transfer</h2>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
-                    <FormControl sx={{ width: 200 }}>
+                    <FormControl sx={{ width: {md:200,xs:250} }}>
                         <Autocomplete
                             options={allRegion}
                             getOptionLabel={(option) => option.reg_name || ""}
@@ -406,7 +406,7 @@ function AccountTransfer() {
                         />
                     </FormControl>
 
-                    <FormControl sx={{ width: 200 }}>
+                    <FormControl sx={{ width: {md:200,xs:250} }}>
                         <Autocomplete
                             options={allFromTransferList}
                             getOptionLabel={(option) => option.user_name || ""}
@@ -453,7 +453,7 @@ function AccountTransfer() {
                         ))}
                     </FormControl>
 
-                    <FormControl sx={{ width: 200 }}>
+                    <FormControl sx={{ width: {md:200,xs:250} }}>
                         <Autocomplete
                             options={allToTransferList}
                             getOptionLabel={(option) => option.user_name || ""}

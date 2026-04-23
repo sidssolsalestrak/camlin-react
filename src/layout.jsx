@@ -147,7 +147,9 @@ const Layout = ({ children, breadcrumb = [] }) => {
             const nestedItems = submenu.querySelectorAll(".treeview");
             nestedItems.forEach((nested) => {
               nested.addEventListener("mouseenter", function () {
-                const nestedMenu = this.querySelector(":scope > .treeview-menu");
+                const nestedMenu = this.querySelector(
+                  ":scope > .treeview-menu",
+                );
                 if (nestedMenu) {
                   const nestedRect = this.getBoundingClientRect();
                   nestedMenu.style.top = nestedRect.top + "px";
@@ -441,8 +443,8 @@ const Layout = ({ children, breadcrumb = [] }) => {
             borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
           }}
         >
-          {drawerOpen && (
-            <Box>
+          <Box>
+            {drawerOpen ? (
               <img
                 src={SalesTrekimg}
                 alt="Logo"
@@ -451,8 +453,25 @@ const Layout = ({ children, breadcrumb = [] }) => {
                   alignSelf: "center",
                 }}
               />
-            </Box>
-          )}
+            ) : (
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: "#ff6b2c",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "24px",
+                }}
+              >
+                ST
+              </Box>
+            )}
+          </Box>
         </Box>
 
         {/* Dynamic menu rendered from API HTML */}
@@ -667,10 +686,10 @@ const Layout = ({ children, breadcrumb = [] }) => {
                     >
                       {userData?.first_name
                         ? userData.first_name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
                         : "AD"}
                     </Avatar>
                   </IconButton>

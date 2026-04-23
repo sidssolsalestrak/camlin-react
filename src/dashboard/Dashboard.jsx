@@ -36,7 +36,7 @@ import { CircularProgress } from "@mui/material";
 
 const StatTitle = styled(Typography)({
   fontSize: "14px",
-  fontFamily: '"Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif',
+  // fontFamily: '"Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif',
   fontWeight: 600,
   marginTop: "5px",
   color: "#343A40",
@@ -201,7 +201,7 @@ export default function Dashboard() {
     dots: false,
     infinite: false,
     speed: 400,
-    slidesToShow: getSlidesToShow(containerWidth),  // ← driven by container width
+    slidesToShow: getSlidesToShow(containerWidth), // ← driven by container width
     slidesToScroll: 1,
     draggable: false,
     swipe: false,
@@ -235,22 +235,22 @@ export default function Dashboard() {
   };
 
   const fetchPrimarySales = async () => {
-          setPrimarySales((prev) => ({ ...prev, loading: true }));
-          try {
-            const res = await api.post("/primary_sales");
-            const data = res.data?.tbldta || [];
-            if (data.length > 0) {
-              setPrimarySales({
-                mtd: data[0].mtd_val,
-                ytd: data[0].ytd_val,
-                loading: false,
-              });
-            }
-          } catch (err) {
-            console.error(err);
-            setPrimarySales((prev) => ({ ...prev, loading: false }));
-          }
-        };
+    setPrimarySales((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await api.post("/primary_sales");
+      const data = res.data?.tbldta || [];
+      if (data.length > 0) {
+        setPrimarySales({
+          mtd: data[0].mtd_val,
+          ytd: data[0].ytd_val,
+          loading: false,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setPrimarySales((prev) => ({ ...prev, loading: false }));
+    }
+  };
 
   useEffect(() => {
     fetchSalesOrderBooking(isFlipped ? 1 : 0, bookingYear);
@@ -259,10 +259,9 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Box sx={{ padding: "20px"}}>
-
+      <Box sx={{ padding: "20px" }}>
         {/* ↓ Attach ref here so ResizeObserver watches this container */}
-        <Box ref={sliderContainerRef} >
+        <Box ref={sliderContainerRef}>
           <Slider {...settings}>
             <div style={{ padding: "10px" }}>
               <Card
@@ -270,7 +269,7 @@ export default function Dashboard() {
                   width: "97%",
                   borderRadius: "12px",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  height: "140px"
+                  height: "140px",
                 }}
               >
                 <CardContent>
@@ -301,15 +300,25 @@ export default function Dashboard() {
                   {!soBooking.loading ? (
                     <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                       <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">MTD (INR Lacs.)</Typography>
-                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                        <Typography variant="caption">
+                          MTD (INR Lacs.)
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{ color: "rgb(0, 86, 171)" }}
+                        >
                           {soBooking.mtd}
                         </Typography>
                       </Box>
                       <Divider orientation="vertical" flexItem />
                       <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">YTD (INR Lacs.)</Typography>
-                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                        <Typography variant="caption">
+                          YTD (INR Lacs.)
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{ color: "rgb(0, 86, 171)" }}
+                        >
                           {soBooking.ytd}
                         </Typography>
                       </Box>
@@ -327,7 +336,7 @@ export default function Dashboard() {
                   width: "97%",
                   borderRadius: "12px",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  height: "140px"
+                  height: "140px",
                 }}
               >
                 <CardContent>
@@ -336,15 +345,25 @@ export default function Dashboard() {
                   {!primarySales.loading ? (
                     <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                       <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">MTD (INR Lacs.)</Typography>
-                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                        <Typography variant="caption">
+                          MTD (INR Lacs.)
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{ color: "rgb(0, 86, 171)" }}
+                        >
                           {primarySales.mtd}
                         </Typography>
                       </Box>
                       <Divider orientation="vertical" flexItem />
                       <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">YTD (INR Lacs.)</Typography>
-                        <Typography variant="h5" sx={{ color: "rgb(0, 86, 171)" }}>
+                        <Typography variant="caption">
+                          YTD (INR Lacs.)
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{ color: "rgb(0, 86, 171)" }}
+                        >
                           {primarySales.ytd}
                         </Typography>
                       </Box>

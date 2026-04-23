@@ -43,7 +43,8 @@ import ForgotPassword from "./view/ForgotPassword";
 import AccountTransfer from "./view/account/AccountTransfer";
 import UserList from "./view/UserList";
 import AddUser from "./view/AddUser";
-import RegionWiseSales from "./view/extract/RegionWiseSales";
+import RegionWiseSales from "./ExtractReport/RegionWiseSales";
+import SalesHierachy from "./ExtractReport/salesHierachy";
 
 function App() {
   const ProtectedRoute = () => {
@@ -151,6 +152,8 @@ function App() {
               path="/users/adminUserNew/:userMainId?"
               element={<AddUser />}
             />
+
+            <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
