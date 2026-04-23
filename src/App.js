@@ -43,6 +43,7 @@ import ForgotPassword from "./view/ForgotPassword";
 import AccountTransfer from "./view/account/AccountTransfer";
 import UserList from "./view/UserList";
 import AddUser from "./view/AddUser";
+import RegionWiseSales from "./ExtractReport/RegionWiseSales";
 import SalesHierachy from "./ExtractReport/salesHierachy";
 import DailyActivityReport from "./ExtractReport/DailyActivityReport";
 
@@ -142,7 +143,7 @@ function App() {
               path="/Auth/forgot_paswd/:userId?/:userEmail?"
               element={<ForgotPassword />}
             />
-            <Route path="/customers/account_transfer/"  element={<AccountTransfer />}       />
+            <Route path="/customers/account_transfer/" element={<AccountTransfer />} />
             <Route
               path="/Users/users_list/:userType?/:dept?/:zone?/:reg?/:area?/:ter?/:channel?"
               element={<UserList />}
@@ -165,6 +166,9 @@ function App() {
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
           </Route>
+
+          {/* extract */}
+          <Route path="/reports/reg_sec_sales" element={<RegionWiseSales />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

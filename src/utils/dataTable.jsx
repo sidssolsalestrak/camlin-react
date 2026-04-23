@@ -141,9 +141,9 @@ const DataTable = ({
       case "currency":
         return typeof value === "number"
           ? value.toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
           : value;
       case "boolean":
         return value ? "Yes" : "No";
@@ -395,9 +395,9 @@ const DataTable = ({
               >
                 {filteredData.length > 0
                   ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
-                      (page + 1) * rowsPerPage,
-                      filteredData.length,
-                    )} of ${filteredData.length.toLocaleString()} entries`
+                    (page + 1) * rowsPerPage,
+                    filteredData.length,
+                  )} of ${filteredData.length.toLocaleString()} entries`
                   : "Showing 0 to 0 of 0 entries"}
               </Typography>
             </Box>
@@ -712,12 +712,8 @@ const DataTable = ({
                     return (
                       <TableCell
                         key={col.field ?? `col-${ci}`}
-                        align={
-                          col.type === "number" ||
-                          col.type === "currency" ||
-                          col.type === "date"
-                            ? "right"
-                            : "left"
+                        align={["number", "currency", "date"].includes(col.type) ? "right"
+                          : col.type === "alignCenter" ? "center" : "left"
                         }
                         sx={{
                           fontSize: "12px",
