@@ -44,6 +44,7 @@ import AccountTransfer from "./view/account/AccountTransfer";
 import UserList from "./view/UserList";
 import AddUser from "./view/AddUser";
 import SalesHierachy from "./ExtractReport/salesHierachy";
+import DailyActivityReport from "./ExtractReport/DailyActivityReport";
 
 function App() {
   const ProtectedRoute = () => {
@@ -153,6 +154,9 @@ function App() {
             />
 
             <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
+            <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
+            <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
+            <Route path="/reports/getfieldActivity"  element={<DailyActivityReport />}     />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

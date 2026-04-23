@@ -1767,7 +1767,6 @@ function AddUser() {
                     value={weekend}
                     onChange={(e) => setWeekend(e.target.value)}
                     options={weekDays} // from API
-                    multiple
                     valueKey="id"
                     labelKey="visit_day"
                   />
