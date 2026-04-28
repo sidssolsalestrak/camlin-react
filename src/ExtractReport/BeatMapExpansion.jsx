@@ -3,7 +3,7 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-map
 import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mui/material";
 
 const LIBRARIES = ["geometry", "visualization"];
-const API_KEY = "AIzaSyCxJsRBr0sRePNfSGtUjJWBAfukwBhJEf8";
+
 
 const MAP_STYLES = [
   {
@@ -48,7 +48,7 @@ export function BeatMapExpansion({ row }) {
   const [markerIcon, setMarkerIcon] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: API_KEY,
+    googleMapsApiKey: process.env.API_KEY,
     libraries: LIBRARIES,
   });
 
@@ -138,7 +138,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
   const markersRef = useRef([]);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: API_KEY,
+    googleMapsApiKey: process.env.API_KEY,
     libraries: LIBRARIES,
   });
 
