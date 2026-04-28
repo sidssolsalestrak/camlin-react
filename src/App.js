@@ -46,6 +46,9 @@ import AddUser from "./view/AddUser";
 import RegionWiseSales from "./ExtractReport/RegionWiseSales";
 import SalesHierachy from "./ExtractReport/salesHierachy";
 import DailyActivityReport from "./ExtractReport/DailyActivityReport";
+import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
+import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary"
+import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
 
 function App() {
   const ProtectedRoute = () => {
@@ -154,10 +157,10 @@ function App() {
               element={<AddUser />}
             />
 
-            <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
-            <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
-            <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
-            <Route path="/reports/getfieldActivity"  element={<DailyActivityReport />}     />
+            <Route path="/reports/active_sales_new" element={<SalesHierachy />} />
+            <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />} />
+            <Route path="/reports/getfieldActivity_new" element={<DailyActivityReport />} />
+            <Route path="/reports/getfieldActivity" element={<DailyActivityReport />} />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
@@ -167,8 +170,13 @@ function App() {
             <Route path="/login" element={<Login />} />
           </Route>
 
-          {/* extract */}
+          {/* extract and report */}
           <Route path="/reports/reg_sec_sales" element={<RegionWiseSales />} />
+          <Route path="/reports/stk_sales_details" element={<StockAndSalesDetails />} />
+          <Route path="/reports/stk_sales_summary" element={<StockAndSalesSummary />} />
+          <Route path="/reports/primary_order" element={<PrimaryOrder />} />
+          <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
+
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

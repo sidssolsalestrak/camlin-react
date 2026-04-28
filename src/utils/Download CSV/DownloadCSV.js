@@ -6,16 +6,17 @@ export const DownloadCSV = async (
   filename,
   setProgress,
   enqueueSnackbar,
-  meta = {} // e.g. { fromDate: "01 Apr 2026", toDate: "16 Apr 2026", type: "Approved" }
+  meta = {}, // e.g. { fromDate: "01 Apr 2026", toDate: "16 Apr 2026", type: "Approved" },
+  grandTotal = false,
 ) => {
-  if (!Array.isArray(data) || data.length === 0) {
-    enqueueSnackbar("No Data Available for Export", {
-      variant: "error",
-      anchorOrigin: { vertical: "top", horizontal: "center" },
-    });
-    setProgress(null);
-    return;
-  }
+  // if (!Array.isArray(data) || data.length === 0) {
+  //   enqueueSnackbar("No Data Available for Export", {
+  //     variant: "error",
+  //     anchorOrigin: { vertical: "top", horizontal: "center" },
+  //   });
+  //   setProgress(null);
+  //   return;
+  // }
   setProgress("0%");
   await new Promise((r) => setTimeout(r, 200));
   setProgress("25%");
@@ -24,11 +25,12 @@ export const DownloadCSV = async (
   const safeColumns = cleanColumns(columns);
 
   const worker = new Worker(new URL("./CSVworksheet.js", import.meta.url));
-  worker.postMessage({
-    data,
+  worker.postMessage({    
+    data: Array.isArray(data) ? data : [],
     columns: safeColumns,
     filename: filename || "export",
     meta, // pass meta to worker
+    grandTotal,
   });
 
   worker.onmessage = async (e) => {
