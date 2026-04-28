@@ -20,6 +20,7 @@ import {
   Pagination,
   PaginationItem,
   Tooltip,
+  Collapse,
 } from "@mui/material";
 import { Search, KeyboardArrowDown, Clear } from "@mui/icons-material";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
@@ -27,6 +28,41 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import dayjs from "dayjs";
+
+// ── ExpandedContent: handles both sync JSX and async functions ───────────────
+function ExpandedContent({ row, expandableRow, cacheKey }) {
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setContent(null);
+    setLoading(true);
+    const run = async () => {
+      try {
+        const result = expandableRow(row);
+        const resolved = result instanceof Promise ? await result : result;
+        if (!cancelled) {
+          setContent(resolved);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("ExpandedContent error:", e);
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [cacheKey]);
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" p={2}>
+      <CircularProgress size={20} />
+    </Box>
+  );
+
+  return content;
+}
 
 const DataTable = ({
   data = [],
@@ -54,6 +90,8 @@ const DataTable = ({
   stickyColumnsCount = 0,
   headerActions = null,
   footerActions = null,
+  expandableRow = null,
+  expandableRowBeat = null,
   grandTotal = false,
 }) => {
   const [page, setPage] = useState(0);
@@ -63,6 +101,10 @@ const DataTable = ({
     field: null,
     direction: "asc",
   });
+
+  // expandedRows: { [rowKey]: 'focus' | 'beat' | undefined }
+  const [expandedRows, setExpandedRows] = useState({});
+
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -90,10 +132,23 @@ const DataTable = ({
     }
   }, [columns, stickyHeader]);
 
-  // Reset to first page whenever data changes
+  // Reset to first page and clear expanded rows whenever data changes
   useEffect(() => {
     setPage(0);
+    setExpandedRows({});
   }, [data]);
+
+  // ── Stable row key ───────────────────────────────────────────────────────
+  const getRowKey = (row, ri) =>
+    row.id ?? `row-${ri}`;
+
+  // ── Toggle expand: same type = close, different type = switch ────────────
+  const handleRowExpand = (rowKey, type) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowKey]: prev[rowKey] === type ? undefined : type,
+    }));
+  };
 
   const handleSort = (field) => {
     if (!field) return;
@@ -690,118 +745,276 @@ const DataTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row, ri) => (
-                <TableRow
-                  key={row.id ?? `${page}-${ri}`}
-                  onClick={() => onRowClick?.(row)}
-                  sx={{
-                    cursor: onRowClick ? "pointer" : "default",
-                    "& td": { backgroundColor: "#ffffff" },
-                    // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
-                    // "&:hover td": { backgroundColor: "#e1f3ff" },
-                    "&:hover td": { backgroundColor: "#FAFAF8" },
-                    "& td": { color: "#706E69" },
-                    ...(rowStyle ? rowStyle(row) : {}),
-                  }}
-                >
-                  {flatColumns.map((col, ci) => {
-                    const rawContent = col.renderCell
-                      ? col.renderCell({ value: row[col.field], row })
-                      : formatCellValue(row[col.field], col);
-                    const isStatus = statusFields.includes(col.field);
-                    const statusStyle = isStatus
-                      ? getStatusStyle(rawContent, col.field)
-                      : {};
+              paginatedData.map((row, ri) => {
+                const rowKey = getRowKey(row, ri);
 
-                    return (
-                      <TableCell
-                        key={col.field ?? `col-${ci}`}
-                        align={["number", "currency", "date"].includes(col.type) ? "right"
-                          : col.type === "alignCenter" ? "center" : "left"
-                        }
-                        sx={{
-                          fontSize: "12px",
-                          // fontFamily: '"Open Sans", sans-serif',
-                          // borderRight:
-                          //   ci !== flatColumns.length - 1
-                          //     ? "1px solid #e5e7eb"
-                          //     : "none",
-                          // p: 0.5,
-                          padding: "4px 6px",
-                          color: "#343A40",
-                          fontWeight: 400,
-                          // borderBottom: "1px solid #f3f4f6",
-                          borderBottom: "1px solid rgba(0,0,0,0.08)",
-                          transition: "background 0.1s",
-                          animation: "rowIn 0.3s ease both",
-                          ...getStickyStyles(ci, flatColumns),
-                        }}
-                      >
-                        {isStatus ? (
-                          <Chip
-                            label={rawContent}
-                            size="small"
-                            sx={{
-                              fontSize: "11px",
-                              height: 20,
-                              "& .MuiChip-label": { px: 1 },
-                              ...statusStyle,
-                            }}
-                          />
-                        ) : col.headerName === "Customer Name" ||
-                          col.headerName === "Territory Details" ||
-                          col.headerName === "Invoice Remark" ||
-                          col.headerName === "Reporting To" ? (
-                          (() => {
-                            const showTooltip =
-                              typeof rawContent === "string" &&
-                              rawContent.length > 20;
+                // 'focus' | 'beat' | undefined
+                const expandedType = expandedRows[rowKey];
 
-                            const contentSpan = (
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  maxWidth: "200px",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                  verticalAlign: "middle",
-                                  cursor: showTooltip ? "pointer" : "default",
+                return (
+                  <React.Fragment key={rowKey}>
+
+                    {/* ── Main data row ── */}
+                    <TableRow
+                      onClick={() => onRowClick?.(row)}
+                      sx={{
+                        cursor: onRowClick ? "pointer" : "default",
+                        "& td": { backgroundColor: "#ffffff" },
+                        // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
+                        // "&:hover td": { backgroundColor: "#e1f3ff" },
+                        "&:hover td": { backgroundColor: "#FAFAF8" },
+                        "& td": { color: "#706E69" },
+                        ...(rowStyle ? rowStyle(row) : {}),
+                      }}
+                    >
+                      {flatColumns.map((col, ci) => {
+
+                        // ── ✅ __expand__ → Focus Range expansion ───────────
+                        if (col.field === "__expand__" && expandableRow) {
+                          return (
+                            <TableCell
+                              key="__expand__"
+                              sx={{
+                                padding: "4px 6px",
+                                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                cursor: "pointer",
+                                textAlign: "center",
+                                ...getStickyStyles(ci, flatColumns),
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowExpand(rowKey, "focus");
+                              }}
+                            >
+                              <Typography
+                                component="span"
+                                sx={{
+                                  color: "#1976d2",
+                                  fontWeight: "bold",
+                                  fontSize: 18,
+                                  lineHeight: 1,
+                                  userSelect: "none",
                                 }}
                               >
-                                {rawContent}
-                              </span>
-                            );
+                                {expandedType === "focus" ? "−" : "+"}
+                              </Typography>
+                            </TableCell>
+                          );
+                        }
 
-                            return showTooltip ? (
-                              <Tooltip
-                                arrow
-                                placement="top-start"
-                                title={
+                        // ── ✅ __expand_beat__ → Beat expansion ─────────────
+                        if (col.field === "__expand_beat__" && expandableRowBeat) {
+                          const hasBeat = row.beat_work && row.beat_work.trim() !== "";
+
+                          // No beat — render cell normally, no expand behavior
+                          if (!hasBeat) {
+                            return (
+                              <TableCell
+                                key="__expand_beat__"
+                                sx={{
+                                  padding: "4px 6px",
+                                  borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                  cursor: "default",
+                                  ...getStickyStyles(ci, flatColumns),
+                                }}
+                              >
+                                {col.renderCell
+                                  ? col.renderCell({ value: row[col.field], row, isExpanded: false })
+                                  : "-"
+                                }
+                              </TableCell>
+                            );
+                          }
+
+                          // Has beat — render with expand toggle
+                          return (
+                            <TableCell
+                              key="__expand_beat__"
+                              sx={{
+                                padding: "4px 6px",
+                                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                cursor: "pointer",
+                                ...getStickyStyles(ci, flatColumns),
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowExpand(rowKey, "beat");
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    fontSize: 15,
+                                    lineHeight: 1,
+                                    userSelect: "none",
+                                  }}
+                                >
+                                  {expandedType === "beat" ? "−" : "+"}
+                                </Typography>
+                                {col.renderCell
+                                  ? col.renderCell({ value: row[col.field], row, isExpanded: expandedType === "beat" })
+                                  : null
+                                }
+                              </Box>
+                            </TableCell>
+                          );
+                        }
+
+                        // ── Normal cell rendering ───────────────────────────
+                        const rawContent = col.renderCell
+                          ? col.renderCell({ value: row[col.field], row })
+                          : formatCellValue(row[col.field], col);
+                        const isStatus = statusFields.includes(col.field);
+                        const statusStyle = isStatus
+                          ? getStatusStyle(rawContent, col.field)
+                          : {};
+
+                        return (
+                          <TableCell
+                            key={col.field ?? `col-${ci}`}
+                            align={["number", "currency", "date"].includes(col.type) ? "right"
+                              : col.type === "alignCenter" ? "center" : "left"
+                            }
+                            sx={{
+                              fontSize: "12px",
+                              // fontFamily: '"Open Sans", sans-serif',
+                              // borderRight:
+                              //   ci !== flatColumns.length - 1
+                              //     ? "1px solid #e5e7eb"
+                              //     : "none",
+                              // p: 0.5,
+                              padding: "4px 6px",
+                              color: "#343A40",
+                              fontWeight: 400,
+                              // borderBottom: "1px solid #f3f4f6",
+                              borderBottom: "1px solid rgba(0,0,0,0.08)",
+                              transition: "background 0.1s",
+                              animation: "rowIn 0.3s ease both",
+                              ...getStickyStyles(ci, flatColumns),
+                            }}
+                          >
+                            {isStatus ? (
+                              <Chip
+                                label={rawContent}
+                                size="small"
+                                sx={{
+                                  fontSize: "11px",
+                                  height: 20,
+                                  "& .MuiChip-label": { px: 1 },
+                                  ...statusStyle,
+                                }}
+                              />
+                            ) : col.headerName === "Customer Name" ||
+                              col.headerName === "Territory Details" ||
+                              col.headerName === "Invoice Remark" ||
+                              col.headerName === "Reporting To" ? (
+                              (() => {
+                                const showTooltip =
+                                  typeof rawContent === "string" &&
+                                  rawContent.length > 20;
+
+                                const contentSpan = (
                                   <span
                                     style={{
-                                      fontSize: "10px",
-                                      fontWeight: 500,
+                                      display: "inline-block",
+                                      maxWidth: "200px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      verticalAlign: "middle",
+                                      cursor: showTooltip ? "pointer" : "default",
                                     }}
                                   >
                                     {rawContent}
                                   </span>
-                                }
-                              >
-                                {contentSpan}
-                              </Tooltip>
+                                );
+
+                                return showTooltip ? (
+                                  <Tooltip
+                                    arrow
+                                    placement="top-start"
+                                    title={
+                                      <span
+                                        style={{
+                                          fontSize: "10px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        {rawContent}
+                                      </span>
+                                    }
+                                  >
+                                    {contentSpan}
+                                  </Tooltip>
+                                ) : (
+                                  contentSpan
+                                );
+                              })()
                             ) : (
-                              contentSpan
-                            );
-                          })()
-                        ) : (
-                          renderCellContent(rawContent, false, searchTerm)
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))
+                              renderCellContent(rawContent, false, searchTerm)
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+
+                    {/* ── ✅ Expansion row (single row, two Collapses inside) ── */}
+                    {(expandableRow || expandableRowBeat) && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={flatColumns.length}
+                          sx={{
+                            p: 0,
+                            borderBottom: expandedType
+                              ? "2px solid #e5e7eb"
+                              : "none",
+                            backgroundColor: "#f9fafb",
+                          }}
+                        >
+                          {/* Focus Range expansion */}
+                          <Collapse
+                            in={expandedType === "focus"}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ p: 0.5, margin: 0 }}>
+                              {expandableRow && (
+                                <ExpandedContent
+                                  key={`focus-${rowKey}`}
+                                  row={row}
+                                  expandableRow={expandableRow}
+                                  cacheKey={`focus-${rowKey}`}
+                                />
+                              )}
+                            </Box>
+                          </Collapse>
+
+                          {/* Beat expansion */}
+                          <Collapse
+                            in={expandedType === "beat"}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ p: 0.5, margin: 0 }}>
+                              {expandableRowBeat && (
+                                <ExpandedContent
+                                  key={`beat-${rowKey}`}
+                                  row={row}
+                                  expandableRow={expandableRowBeat}
+                                  cacheKey={`beat-${rowKey}`}
+                                />
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
 
