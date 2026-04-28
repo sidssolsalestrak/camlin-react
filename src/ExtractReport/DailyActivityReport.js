@@ -111,7 +111,7 @@ export default function DailyActivityReport() {
         }
     }
 
-    console.log("All report Data",allReportData)
+    console.log("All report Data", allReportData)
 
     const columns = [
         {
@@ -478,16 +478,21 @@ export default function DailyActivityReport() {
                         columns={tableColumns}
                         data={allReportData}
                         expandableRow={async (row) => {
-                            let responsefocusData = await fetchFocusRangeData(row.mas_id);  // fetch when expanded
-                            return (
-                                <DataTable
-                                    data={responsefocusData}
-                                    columns={secondTableCol}
-                                    pagination={false}
-                                    showHeader={false}
-                                    sx={{ border: "none", boxShadow: "none" }}
-                                />
-                            );
+                            const responsefocusData = await fetchFocusRangeData(row.mas_id);
+
+                            if (responsefocusData.length > 0) {
+                                return (
+                                    <DataTable
+                                        data={responsefocusData}
+                                        columns={secondTableCol}
+                                        pagination={false}
+                                        showHeader={false}
+                                        sx={{ border: "none", boxShadow: "none" }}
+                                    />
+                                );
+                            }
+
+                            return <Box sx={{textAlign:'center',p:1}}>No Data available</Box>;
                         }}
                         expandableRowBeat={(row) => (
                             <BeatMapExpansion row={row} />
