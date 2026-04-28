@@ -12,18 +12,34 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import DataTable from "../utils/dataTable";
+import { IoLocationSharp } from "react-icons/io5";
+import { FaPlus } from "react-icons/fa";
+import { render } from "@testing-library/react";
+import { FaAndroid } from "react-icons/fa";
+import { FaApple } from "react-icons/fa";
+import { BeatMapExpansion } from "./BeatMapExpansion";
+import { AllLocationsMap } from "./BeatMapExpansion";
+import { FaMinus } from "react-icons/fa";
 
 
 export default function DailyActivityReport() {
-
+    const { frmdt, todt, status, type } = useParams()
+    // const decodedFrmDate=frmdt !== undefined && frmdt !== null ? dayjs(atob(frmdt)):dayjs().startOf('month')
+    // const decodedToDate=todt !== undefined && todt !== null ? dayjs(atob(todt)):dayjs()
+    // const decodedStatus=status!==undefined && status !==null ?atob(status):"1"
+    // const decodedType=type!==undefined  && type!==null ?atob(type):"0"
     const [fromDate, setFromDate] = useState(dayjs().startOf('month'))
     const [toDate, setToDate] = useState(dayjs())
     const [reportStat, setReportStat] = useState("1")
     const [typeStat, setTypeStat] = useState("0")
     const [allReportData, setAllReportData] = useState([])
+    const [focusRangeData, setFocusRangeData] = useState([])
+    const [userId, setUserId] = useState("")
     const [progress, setProgress] = useState(null);
+    const [coordinates, setCoordinates] = useState([]);
+    const [mapOpen, setMapOpen] = useState(false);
     const toast = useToast()
     const { enqueueSnackbar } = useSnackbar()
     const location = useLocation()
@@ -36,6 +52,10 @@ export default function DailyActivityReport() {
     // Map typeStat value to a readable label for the CSV meta header
     const typeLabel = typeStat === "0" ? "Approved" : "Pending";
 
+    useEffect(() => {
+        fetchReportData()
+    }, [fromDate, toDate, reportStat, typeStat])
+
     const fetchReportData = async () => {
         try {
             let payload = {
@@ -46,8 +66,16 @@ export default function DailyActivityReport() {
             }
             let response = await api.post("/getFieldVisit", payload)
             let activityRes = Array.isArray(response.data.data) ? response.data.data : []
-            let finalactivityRes = activityRes.map((val) => ({ ...val, app_type: val.app_type === 1 ? 'Android' : 'IOS' }))
+            let finalactivityRes = activityRes.map((val, index) => ({ ...val, app_type: val.app_type === 1 ? 'Android' : 'IOS', sl_no: index + 1 }))
             setAllReportData(finalactivityRes)
+            const coords = activityRes
+                .filter(val => val.latitude && val.longitude)
+                .map(val => ({
+                    latitude: val.latitude,
+                    longitude: val.longitude,
+                    location_name: val.location_name ?? val.beat_work ?? val.u_name,
+                }));
+            setCoordinates(coords);
             console.log("activity response", finalactivityRes)
             return finalactivityRes // return so handleDownloadExcel can use fresh data
 
@@ -57,6 +85,33 @@ export default function DailyActivityReport() {
             return []
         }
     }
+
+    const fetchFocusRangeData = async (id) => {
+        try {
+            let payload = {
+                masId: id
+            }
+            let response = await api.post("/getFocusRange", payload)
+            let focusRangeRes = Array.isArray(response.data.data) ? response.data.data : []
+
+            let focusrangeResData = focusRangeRes.map((val, index) => ({
+                ...val, sl_no: index + 1,
+                tgt_val_num: val.tgt_val && val.tgt_val > 0 ? Number(val.tgt_val).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-',
+                ach_val_num: val.ach_val && val.ach_val > 0 ? Number(val.ach_val).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-',
+                prod_call_new: val.prod_call && val.prod_call > 0 ? Number(val.prod_call).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-',
+
+            }))
+            console.log("focus range res data", focusrangeResData)
+            setFocusRangeData(focusrangeResData)
+            return focusrangeResData
+        }
+        catch (err) {
+            console.log("focus range Data err", err)
+            return []
+        }
+    }
+
+    console.log("All report Data", allReportData)
 
     const columns = [
         {
@@ -88,8 +143,9 @@ export default function DailyActivityReport() {
             headerName: "Call Date",
         },
         {
-            field: "",
+            field: "create_dt",
             headerName: "Received Date",
+            type: "date"
         },
         {
             field: "report_type",
@@ -123,23 +179,158 @@ export default function DailyActivityReport() {
 
     const tableColumns = [
         {
-            field: "",
+            field: "sl_no",
             headerName: "SL",
         },
         {
-            field: "",
+            field: "u_name",
             headerName: "Name",
+            width: 140,
+            renderCell: (params) => {
+                // Find previous row's user_id using the current row's index
+                const currentIndex = allReportData.findIndex(r => r === params.row);
+                const prevUserId = currentIndex > 0 ? allReportData[currentIndex - 1].user_id : null;
+
+                return prevUserId !== params.row.user_id ? (
+                    <Box>
+                        <Typography sx={{ color: '#133BDE' }}>{params.value}</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                            <Typography sx={{ fontSize: '9px' }}>{params.row.desig_name}|</Typography>
+                            <Typography sx={{ fontSize: '9px', textWrap: 'nowrap' }}>
+                                {params.row.area_name} HQ:{params.row.u_hq_name}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography sx={{ fontSize: '10px', color: '#00AF00' }}>{params.row.app_version}</Typography>
+                            {params.row.app_stat === 1
+                                ? params.row.app_type === 1
+                                    ? <FaAndroid color="#00AF00" />
+                                    : <FaApple color="#00AF00" />
+                                : null
+                            }
+                        </Box>
+                    </Box>
+                ) : null;
+            }
+        },
+        {
+            field: "create_dt",
+            headerName: "Date",
+            width: 160,
+            renderCell: (params) => (
+                <Box>
+                    <Typography>{params.row.create_dt ? dayjs(params.row.call_date).format("DD MMM YYYY") : null}</Typography>
+                    {params.row.call_date != '' && params.row.call_date !== '1970-01-01' && params.row.call_date &&
+                        <Typography sx={{ fontSize: '8px', color: dayjs(params.row.call_date).format('DD-MM-YYYY') !== dayjs(params.row.create_dt).format('DD-MM-YYYY') ? 'red' : null }}>
+                            Recieved Date:{params.row.call_date ? dayjs(params.row.create_dt).format("DD MMM YYYY hh:mm A") : null}
+                        </Typography>}
+                </Box>
+            )
+        },
+        {
+            field: "report_type",
+            headerName: "Type",
+            width: 60
+        },
+        {
+            field: "__expand_beat__",
+            headerName: "Beat Name",
+            width: 140,
+            renderCell: (params) => (
+                (params.row.beat_work !== " " && params.row.beat_work) ?
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography><IoLocationSharp size={11} color="green" /></Typography>
+                        <Typography>{params.row.beat_work}</Typography>
+                    </Box> : "-"
+            )
+        },
+        {
+            field: "tot_cus",
+            headerName: "Total Outlets",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+            )
+        },
+        {
+            field: "tot_call",
+            headerName: "Total Calls",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+            )
+        },
+        {
+            field: "prod_call",
+            headerName: "Productive Calls",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+            )
+        },
+        {
+            field: "sec_tgt_val",
+            headerName: "Sec. Target Rs.",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value && params.value > 0 ? params.value.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                }) : '-'}</Typography>
+            )
+        },
+        {
+            field: "sec_ach_val",
+            headerName: "Sec.Achieved Rs.",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value && params.value > 0 ? params.value : '-'}</Typography>
+            )
         },
         {
             field: "",
-            headerName: "Date",
+            headerName: "%age",
+            showTotal: true,
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+            )
         },
-         {
-            field: "",
-            headerName: "",
+        {
+            field: "__expand__",
+            headerName: "Status",
+            renderCell: (params) => (
+                <Typography sx={{ textAlign: 'right' }}><FaPlus size={10} color="blue" /></Typography>
+            )
         }
+    ]
 
-
+    const secondTableCol = [
+        {
+            field: "sl_no",
+            headerName: "SI",
+        },
+        {
+            field: "brand_name",
+            headerName: "Focus Range",
+        },
+        {
+            field: "tgt_val_num",
+            headerName: "Tgt. Rs.",
+            type: 'number',
+            showTotal: true
+        },
+        {
+            field: "ach_val_num",
+            headerName: "Ach. Rs.",
+            type: 'number',
+            showTotal: true
+        },
+        {
+            field: "prod_call_new",
+            headerName: "Prod.Calls",
+            showTotal: true,
+            type: 'number',
+        },
     ]
 
     const handleDownloadExcel = async () => {
@@ -280,13 +471,41 @@ export default function DailyActivityReport() {
                         )}
                     </IconButton>
 
-                    {URL != 'getfieldActivity_new' && <Button variant="contained">View all Location</Button>}
+                    {URL != 'getfieldActivity_new' && <Button variant="contained" onClick={() => setMapOpen(true)}  >View all Location</Button>}
                 </Box>
                 {URL !== 'getfieldActivity_new' &&
                     <DataTable
-                    // columns={columns}
-                    // data={allHierachyData}
+                        columns={tableColumns}
+                        data={allReportData}
+                        expandableRow={async (row) => {
+                            const responsefocusData = await fetchFocusRangeData(row.mas_id);
+
+                            if (responsefocusData.length > 0) {
+                                return (
+                                    <DataTable
+                                        data={responsefocusData}
+                                        columns={secondTableCol}
+                                        pagination={false}
+                                        showHeader={false}
+                                        sx={{ border: "none", boxShadow: "none" }}
+                                    />
+                                );
+                            }
+
+                            return <Box sx={{textAlign:'center',p:1}}>No Data available</Box>;
+                        }}
+                        expandableRowBeat={(row) => (
+                            <BeatMapExpansion row={row} />
+                        )}
                     />}
+
+
+                <AllLocationsMap
+                    coordinates={coordinates}
+                    open={mapOpen}
+                    onClose={() => setMapOpen(false)}
+                />
+
             </Box>
         </Layout>
     )
