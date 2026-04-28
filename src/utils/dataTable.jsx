@@ -92,6 +92,7 @@ const DataTable = ({
   footerActions = null,
   expandableRow = null,
   expandableRowBeat = null,
+  grandTotal = false,
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
@@ -318,7 +319,10 @@ const DataTable = ({
   }, [sortedData, page, rowsPerPage]);
 
   const calcTotal = (field) =>
-    data.reduce((sum, row) => sum + (Number(row[field]) || 0), 0);
+    data.reduce((sum, row) => {
+      if (row._isSubtotal) return sum;   // ← skip subtotal rows
+      return sum + (Number(row[field]) || 0);
+    }, 0);
 
   const formatTotal = (total) =>
     total.toLocaleString("en-IN", {
@@ -754,13 +758,13 @@ const DataTable = ({
                     <TableRow
                       onClick={() => onRowClick?.(row)}
                       sx={{
-                        ...(rowStyle ? rowStyle(row) : {}),
                         cursor: onRowClick ? "pointer" : "default",
                         "& td": { backgroundColor: "#ffffff" },
                         // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
                         // "&:hover td": { backgroundColor: "#e1f3ff" },
                         "&:hover td": { backgroundColor: "#FAFAF8" },
                         "& td": { color: "#706E69" },
+                        ...(rowStyle ? rowStyle(row) : {}),
                       }}
                     >
                       {flatColumns.map((col, ci) => {
@@ -1036,7 +1040,7 @@ const DataTable = ({
                   return (
                     <TableCell
                       key={col.field}
-                      align="right"
+                      align={grandTotal ? "center" : "right"}
                       sx={{
                         fontSize: "12px",
                         borderRight:
@@ -1051,7 +1055,7 @@ const DataTable = ({
                       {col.showTotal
                         ? formatTotal(total)
                         : i === firstIdx - 1
-                          ? "Total"
+                          ? (grandTotal ? "Grand Total" : "Total")
                           : ""}
                     </TableCell>
                   );
