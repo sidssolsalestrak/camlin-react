@@ -141,14 +141,6 @@ self.onmessage = function (e) {
         ? Object.keys(data[0]).length  // ✅ count keys from first data row
         : 10;                          // fallback default if no data either
 
-<<<<<<< HEAD:src/utils/DownloadCSV/CSVworksheet.js
-    metaEntries.forEach(([key, value]) => {
-      if (!key || (typeof value === "string" && value.includes(key))) {
-        // Empty key OR pre-formatted string → write value directly
-        csvContent += `${escapeCSV(value)}\n`;
-      } else {
-        csvContent += `${escapeCSV(key)}: ${escapeCSV(value)}\n`;
-=======
     const padCols = Math.max(0, Math.floor(colCount / 2) - 1);
     const pad = padCols > 0 ? ",".repeat(padCols) : "";
 
@@ -156,7 +148,6 @@ self.onmessage = function (e) {
       // ── Centered style: title + dateRange ──
       if (meta?.title) {
         csvContent += `${pad}${escapeCSV(meta.title)}\n`;
->>>>>>> 650b63cce82dec91431658c7d243522ad658166e:src/utils/Download CSV/CSVworksheet.js
       }
       if (meta?.dateRange) {
         csvContent += `${pad}${escapeCSV(meta.dateRange)}\n`;
