@@ -49,8 +49,9 @@ import DailyActivityReport from "./ExtractReport/DailyActivityReport";
 import DataSubmissionLog from "./ExtractReport/DataSubmissionLog";
 import KPIReport from "./ExtractReport/KPIReport";
 import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
-import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary";
-import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder";
+import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary"
+import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
+import OrderReport from "./ExtractReport/orderReport/OrderReport";
 import UserLog from "./view/UserLog";
 import CreateCustomer from "./view/account/CreateCustomer";
 
@@ -240,6 +241,9 @@ function App() {
           />
           <Route path="/reports/primary_order" element={<PrimaryOrder />} />
           <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
+          <Route path="/reports/pcm_kam" element={<OrderReport />} />
+          <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
+
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}
