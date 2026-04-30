@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Button, IconButton } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -10,6 +10,9 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import dayjs from 'dayjs'
 import DataTable from '../utils/dataTable'
 import axios from "../services/api";
+import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
+import { useSnackbar } from 'notistack'
+import FormatCurrency from "../utils/formatCurrency";
 
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
@@ -37,24 +40,27 @@ const RegionWiseSales = () => {
     let [searchParams] = useSearchParams();
     const location = useLocation();
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
     /*----------------- decode frm and to dt --------*/
     let decodeFromDate = decode(searchParams.get('frmDt'));
     let decodeToDate = decode(searchParams.get('toDt'));
 
     /*----------------- states --------*/
     const [tableData, settableData] = useState([]);
+    const [showTable, setshowTable] = useState(false);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
     const [toDate, settoDate] = useState(dayjs().endOf("month"));
 
     /*----------------- fetch table data --------*/
-    const fetchTableData = async () => {
+    const fetchTableData = async ({ from, to }) => {
+        setshowTable(true)
         try {
             setloading(true)
             let payload = {
-                fromDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
-                toDate: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
+                fromDate: from ? dayjs(from).format("YYYY-MM-DD") : "",
+                toDate: to ? dayjs(to).format("YYYY-MM-DD") : "",
             }
             const res = await axios.post("/getRegionWiseSecSales", payload);
             let data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
@@ -67,15 +73,11 @@ const RegionWiseSales = () => {
         }
     }
 
-    useEffect(() => {
-        fetchTableData()
-    }, [])
-
     //handle load
     const handleLoad = () => {
         let params = new URLSearchParams();
-        if (fromDate) params.append('frmDt', encode(fromDate));
-        if (toDate) params.append('toDt', encode(toDate));
+        if (fromDate) params.append('frmDt', encode(fromDate?.format("DD MMM YYYY")));
+        if (toDate) params.append('toDt', encode(toDate?.format("DD MMM YYYY")));
         navigate(`/reports/reg_sec_sales?${params.toString()}`)
     }
 
@@ -87,8 +89,16 @@ const RegionWiseSales = () => {
         } else {
             setFromDate(dayjs().startOf("month"))
             settoDate(dayjs().endOf("month"))
+            settableData([])
+            setshowTable(false)
         }
-        fetchTableData()
+    }, [decodeFromDate, decodeToDate])
+
+    //fetch data
+    useEffect(() => {
+        if (decodeFromDate && decodeToDate) {
+            fetchTableData({ from: decodeFromDate, to: decodeToDate })
+        }
     }, [decodeFromDate, decodeToDate])
 
     /*----------------- table columns --------*/
@@ -97,6 +107,7 @@ const RegionWiseSales = () => {
             field: "reg_name",
             headerName: "Region",
             filterable: true,
+            width: 100
         },
         {
             field: "ord_val",
@@ -105,7 +116,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
         {
@@ -115,7 +126,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
         {
@@ -125,7 +136,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
         {
@@ -135,7 +146,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
         {
@@ -145,7 +156,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
         {
@@ -155,10 +166,36 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? params?.value : "-"}</span>
+                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
         },
     ]
+
+    /*----------------- handle download xl --------*/
+    const handleDownloadExcel = async () => {
+        try {
+            let grandTotal = true;
+            // Build meta object from current filter state
+            const meta = {
+                centered: true,
+                title: "Regionwise Seconday Sales",
+                dateRange: `(${fromDate.format("DD MMM YYYY")} - ${toDate.format("DD MMM YYYY")})`,
+            };
+
+            DownloadCSV(
+                tableData,
+                columns,
+                `Regionwise_Secondary_Sales ${fromDate.format("DD MMM YYYY")}-${toDate.format("DD MMM YYYY")}`,
+                setProgress,
+                enqueueSnackbar,
+                meta,
+                grandTotal,
+            );
+        }
+        catch (err) {
+            console.log("excelDownload error", err)
+        }
+    }
 
     return (
         <Layout breadcrumb={[
@@ -196,14 +233,16 @@ const RegionWiseSales = () => {
                     <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
                     {progress ? <CircularProgress progress={progress} /> :
                         <span>
-                            <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
+                            <AiOutlineFileExcel onClick={handleDownloadExcel} style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                         </span>}
                 </Box>
             </Box>
             {/* table */}
-            <Box sx={headContainer}>
-                <DataTable data={tableData} columns={columns} loading={loading} />
-            </Box>
+            {showTable && (
+                <Box sx={headContainer}>
+                    <DataTable data={tableData} columns={columns} loading={loading} grandTotal={true} />
+                </Box>
+            )}
         </Layout>
     )
 }

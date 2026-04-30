@@ -46,8 +46,16 @@ import AddUser from "./view/AddUser";
 import RegionWiseSales from "./ExtractReport/RegionWiseSales";
 import SalesHierachy from "./ExtractReport/salesHierachy";
 import DailyActivityReport from "./ExtractReport/DailyActivityReport";
+<<<<<<< HEAD
 import DataSubmissionLog from "./ExtractReport/DataSubmissionLog";
 import KPIReport from "./ExtractReport/KPIReport";
+=======
+import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
+import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary";
+import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder";
+import UserLog from "./view/UserLog";
+import CreateCustomer from "./view/account/CreateCustomer";
+>>>>>>> 650b63cce82dec91431658c7d243522ad658166e
 
 function App() {
   const ProtectedRoute = () => {
@@ -82,7 +90,10 @@ function App() {
             <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
             {/* main master routes */}
             <Route path="/masters/cat/:id?" element={<ProductCategory />} />
-            <Route path="/masters/catSub/:id?" element={<ProductSubCategory />} />
+            <Route
+              path="/masters/catSub/:id?"
+              element={<ProductSubCategory />}
+            />
             <Route path="/masters/dept/:id?" element={<Department />} />
             <Route path="/masters/designation/:id?" element={<Designation />} />
             <Route path="/masters/city_mas/:id?" element={<City />} />
@@ -100,7 +111,10 @@ function App() {
               path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
               element={<AccountMas />}
             />
-            <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
+            <Route
+              path="/masters/menuMaster/:menuId?"
+              element={<MenuMaster />}
+            />
             <Route
               path="/masters/dashboardmaster/:editwidgetId?"
               element={<AppWidgetMaster />}
@@ -113,10 +127,18 @@ function App() {
               path="/masters/webMenuMaster/:editwebmenuId?"
               element={<WebMenuMaster />}
             />
-            <Route path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"
-              element={<AwsLogs />} />
-            <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />} />
-            <Route path="/masters/edetailing/:editEdetailing?" element={<EDetailingMaster />} />
+            <Route
+              path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"
+              element={<AwsLogs />}
+            />
+            <Route
+              path="/AdminPanel/ApiProcessing"
+              element={<ApiProcessing />}
+            />
+            <Route
+              path="/masters/edetailing/:editEdetailing?"
+              element={<EDetailingMaster />}
+            />
             <Route
               path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
               element={<AccountMas />}
@@ -145,7 +167,10 @@ function App() {
               path="/Auth/forgot_paswd/:userId?/:userEmail?"
               element={<ForgotPassword />}
             />
-            <Route path="/customers/account_transfer/" element={<AccountTransfer />} />
+            <Route
+              path="/customers/account_transfer/"
+              element={<AccountTransfer />}
+            />
             <Route
               path="/Users/users_list/:userType?/:dept?/:zone?/:reg?/:area?/:ter?/:channel?"
               element={<UserList />}
@@ -156,6 +181,7 @@ function App() {
               element={<AddUser />}
             />
 
+<<<<<<< HEAD
             <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
             <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
             <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
@@ -163,6 +189,39 @@ function App() {
             <Route path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"  element={<DataSubmissionLog />}       />
             <Route path="/reports/extract_new" element={<AccountExtract />}/>
             <Route path="/reports/capability_report" element={<KPIReport />}        />
+=======
+            <Route
+              path="/Users/userLog/:module?/:fromDt?/:toDt?/:userType?/:user?"
+              element={<UserLog />}
+            />
+
+            <Route
+              path="/reports/active_sales_new"
+              element={<SalesHierachy />}
+            />
+
+            <Route
+              path="/Customers/CreateDoctor"
+              element={<CreateCustomer />}
+            />
+            <Route
+              path="/reports/active_sales_new"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/getfieldActivity_new"
+              element={<DailyActivityReport />}
+            />
+            <Route
+              path="/reports/getfieldActivity"
+              element={<DailyActivityReport />}
+            />
+
+>>>>>>> 650b63cce82dec91431658c7d243522ad658166e
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
@@ -171,8 +230,18 @@ function App() {
             <Route path="/login" element={<Login />} />
           </Route>
 
-          {/* extract */}
+          {/* extract and report */}
           <Route path="/reports/reg_sec_sales" element={<RegionWiseSales />} />
+          <Route
+            path="/reports/stk_sales_details"
+            element={<StockAndSalesDetails />}
+          />
+          <Route
+            path="/reports/stk_sales_summary"
+            element={<StockAndSalesSummary />}
+          />
+          <Route path="/reports/primary_order" element={<PrimaryOrder />} />
+          <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

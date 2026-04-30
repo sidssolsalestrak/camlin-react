@@ -1,20 +1,3 @@
-.mainTitle {
-  font-size: 1.8em;
-  /* line-height: 29px; */
-  margin: 0;
-  padding: 0;
-  float: left !important;
-  /* color: #026cb6; */
-  color: #1a1917;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-
-.sl-cell {
-  color: #a09d97;
-  font-family: "DM Mono", monospace;
-}
-
 .status-chip {
   font-size: 11px;
   font-weight: 500;
