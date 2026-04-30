@@ -178,13 +178,26 @@ function App() {
               element={<AddUser />}
             />
 
-            <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
-            <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
-            <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
-            <Route path="/reports/getfieldActivity"  element={<DailyActivityReport />}     />
-            <Route path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"  element={<DataSubmissionLog />}       />
-            <Route path="/reports/extract_new" element={<AccountExtract />}/>
-            <Route path="/reports/capability_report" element={<KPIReport />}        />
+            <Route
+              path="/reports/active_sales_new"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"
+              element={<DataSubmissionLog />}
+            />
+            <Route
+              path="/reports/extract_new"
+              element={<AccountExtract />}
+            />
+            <Route
+              path="/reports/capability_report"
+              element={<KPIReport />}
+            />
             <Route
               path="/Users/userLog/:module?/:fromDt?/:toDt?/:userType?/:user?"
               element={<UserLog />}
