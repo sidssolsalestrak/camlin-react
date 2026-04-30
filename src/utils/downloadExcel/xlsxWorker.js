@@ -133,87 +133,38 @@ self.onmessage = function (e) {
     }
 
     // Add Three Title Rows in First Column for Quotation
-    if (moduleType === "quotation" || moduleType === 'inventory' || moduleType === 'currentoverdue') {
+    if (moduleType === 'Region_Wise_Distributor_Wise_Data_Submission') {
 
+      const totalCols = filteredColumns.length; // ✅ add this
       worksheet["!merges"] = [];
 
-      // First title row - only in column A
+      // First title row - span ALL columns
       XLSX.utils.sheet_add_aoa(worksheet, [[titleRow1]], { origin: "A1" });
-      // Merge only first column (A to A) instead of all columns
-      worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 0 } });
-      const titleCell1 = worksheet["A1"];
-      titleCell1.s = {
-        font: {
-          bold: titleBold,
-          sz: titleFontSize,
-          color: { rgb: titleFontColor },
-          name: "Calibri"
-        },
+      worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }); // ✅ was e: { r:0, c:0 }
+      if (!worksheet["A1"]) worksheet["A1"] = { v: titleRow1, t: "s" };
+      worksheet["A1"].s = {
+        font: { bold: titleBold, sz: titleFontSize, color: { rgb: titleFontColor }, name: "Calibri" },
         fill: { patternType: "solid", fgColor: { rgb: titleColor } },
         alignment: { horizontal: "left", vertical: "center" },
         border: borderStyle,
       };
 
-      // Second title row - only in column A
-      XLSX.utils.sheet_add_aoa(worksheet, [[titleRow2]], { origin: "A2" });
-      // Merge only first column (A to A)
-      worksheet["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 0 } });
-      const titleCell2 = worksheet["A2"];
-      titleCell2.s = {
-        font: {
-          bold: titleBold,
-          sz: titleFontSize,
-          color: { rgb: titleFontColor },
-          name: "Calibri"
-        },
-        fill: { patternType: "solid", fgColor: { rgb: titleColor } },
-        alignment: { horizontal: "left", vertical: "center" },
-        border: borderStyle,
-      };
-
-      // Third title row (dynamic date) - only in column A
-      const currentDate = dayjs().format("DD MMM YYYY HH:mm:ss");
-      const dynamicTitle3 = `Report Printing date : ${currentDate}`;
-      XLSX.utils.sheet_add_aoa(worksheet, [[dynamicTitle3]], { origin: "A3" });
-      // Merge only first column (A to A)
-      worksheet["!merges"].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 0 } });
-      const titleCell3 = worksheet["A3"];
-      titleCell3.s = {
-        font: {
-          bold: titleBold,
-          sz: titleFontSize,
-          color: { rgb: titleFontColor },
-          name: "Calibri"
-        },
-        fill: { patternType: "solid", fgColor: { rgb: titleColor } },
-        alignment: { horizontal: "left", vertical: "center" },
-        border: borderStyle,
-      };
-
-      currentRow = 3; // We've used 3 rows for titles
-
-      if (moduleType === 'inventory') {
-        const dynamicTitle4 = `Last Sync Date : ${additionalData}`;
-        XLSX.utils.sheet_add_aoa(worksheet, [[dynamicTitle4]], { origin: "A4" });
-        // Merge only first column (A to A)
-        worksheet["!merges"].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 0 } });
-        const titleCell4 = worksheet["A4"];
-        titleCell4.s = {
-          font: {
-            bold: titleBold,
-            sz: titleFontSize,
-            color: { rgb: titleFontColor },
-            name: "Calibri"
-          },
+      // Second title row - span ALL columns
+      if (titleRow2) {
+        XLSX.utils.sheet_add_aoa(worksheet, [[titleRow2]], { origin: "A2" });
+        worksheet["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }); // ✅ was e: { r:1, c:0 }
+        if (!worksheet["A2"]) worksheet["A2"] = { v: titleRow2, t: "s" };
+        worksheet["A2"].s = {
+          font: { bold: titleBold, sz: titleFontSize, color: { rgb: titleFontColor }, name: "Calibri" },
           fill: { patternType: "solid", fgColor: { rgb: titleColor } },
           alignment: { horizontal: "left", vertical: "center" },
-          border: borderStyle
+          border: borderStyle,
         };
-
-        currentRow = 4;
+        currentRow = 2;
+      } else {
+        currentRow = 1;
       }
     }
-
     // Add Main Table Headers
     const headerData = [filteredColumns.map((col) => col.headerName)]; // Use filteredColumns
     XLSX.utils.sheet_add_aoa(worksheet, headerData, {

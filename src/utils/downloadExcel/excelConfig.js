@@ -17,4 +17,23 @@ export const excelStyles = {
     alignment: { horizontal: "left", vertical: "center" },
     showFilters: false,
   },
+  Region_Wise_Distributor_Wise_Data_Submission:{
+      sheetName: "Region_Wise_Distributor",
+    filenameSuffix: "Region_Wise_Distributor_Wise_Data_Submission.xlsx",
+    titleRow1:"Region Wise Distributor Wise Data Submission",
+    titleRow2:'',
+    titleColor: "ebc881",
+    titleFontColor: "000000",
+    titleFontSize: 11,
+    titleBold: true,
+    headerColor: "95B3D7",
+    headerFontColor: "000000",
+    headerFontSize: 10,
+    headerBold: true,
+    dataFontSize: 10,
+    dataFontColor: "000000",
+    border: true,
+    alignment: { horizontal: "left", vertical: "center" },
+    showFilters: false,
+  }
 };

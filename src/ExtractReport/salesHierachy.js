@@ -118,7 +118,7 @@ export default function SalesHierachy() {
     }
     const fetchZone = async () => {
         try {
-            let response = await api.post("/read_zone", { zone_id: null })
+            let response = await api.post("/getReportsZone", { zone_id: null })
             let zoneRes = Array.isArray(response.data.data) ? response.data.data : []
             console.log("zoneRes", zoneRes)
             setAllZone(zoneRes)
@@ -382,7 +382,7 @@ export default function SalesHierachy() {
                 { label: "Extract", path:URL !== 'active_sales_new' ?"/reports/active_sales":"/reports/active_sales_new" },
                 { label: "Sales Hierachy"}
             ]}>
-            <Box sx={{ backgroundColor: "#fff" }} p={0.5}>
+            <Box p={0.5}>
                 <Box
                     p={2}
                     sx={{ borderRadius: 1 }}
@@ -393,12 +393,15 @@ export default function SalesHierachy() {
                     <Box>
                         <h1 className="mainTitle">Sales Hierachy</h1>
                     </Box>
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Box sx={{  display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' ,backgroundColor: "#fff", boxShadow:
+                            "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                        padding: "16px 18px",
+                        borderRadius: "10px"}}>
                         <FormControl sx={{ height: '3rem' }}>
                             <InputLabel id="zone">Zone </InputLabel>
                             <Select value={selZone} onChange={(e) =>{
                                 setSelRegion(0) 
-                                setSelZone(e.target.value) }} sx={{ width: URL !== 'active_sales_new'?170: 175 }} labelId="zone" label="Zone" size="small"
+                                setSelZone(e.target.value) }} sx={{ width: URL !== 'active_sales_new'?165: 175 }} labelId="zone" label="Zone" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -419,7 +422,7 @@ export default function SalesHierachy() {
                             <Select value={selRegion} onChange={(e) => {
                                 setSelDistributor(0)
                                 setSelRegion(e.target.value)
-                            }} sx={{ width:URL !== 'active_sales_new'?170: 175 }} labelId="region" label="Region" size="small"
+                            }} sx={{ width:URL !== 'active_sales_new'?165: 175 }} labelId="region" label="Region" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -439,7 +442,7 @@ export default function SalesHierachy() {
                         </FormControl>
                         <FormControl sx={{ height: '3rem' }}>
                             <InputLabel id="usr_type">User Type </InputLabel>
-                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new'?170:175 }} labelId="usr_type" label="User Type" size="small"
+                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new'?165:175 }} labelId="usr_type" label="User Type" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -471,7 +474,7 @@ export default function SalesHierachy() {
                                         size="small"
                                         error={!!userError}
                                         helperText={userError ? "Please Select User to Load" : ""}
-                                        sx={{ width: URL !== 'active_sales_new' ? 170 : 200 }}
+                                        sx={{ width: URL !== 'active_sales_new' ? 165 : 200 }}
                                     />
                                 )}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
@@ -479,12 +482,12 @@ export default function SalesHierachy() {
                         </FormControl>
                         <FormControl sx={{ height: '3rem' }}>
                             <InputLabel id="Distributor">Distributor</InputLabel>
-                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 180 : 200 }} labelId="Distributor" label="Distributor" size="small"
+                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 180 : 190 }} labelId="Distributor" label="Distributor" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
                                             maxHeight: 200,
-                                            maxWidth: URL !== 'active_sales_new' ? 180 : 200
+                                            maxWidth: URL !== 'active_sales_new' ? 175 : 200
                                         }
                                     }
                                 }}
@@ -544,6 +547,12 @@ export default function SalesHierachy() {
                         <DataTable
                             columns={columns}
                             data={allHierachyData}
+                             sx={{
+                            background: "#fff",
+                            borderRadius: "10px",
+                            boxShadow:
+                                "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                        }}
                         />}
                 </Box>
             </Box>

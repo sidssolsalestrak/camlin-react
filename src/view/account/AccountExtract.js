@@ -9,12 +9,18 @@ import {
   MenuItem,
   TextField,
   Autocomplete,
+  IconButton,Button
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../services/api";
 import DataTable from "../../utils/dataTable";
 import "../../assets/css/accountMas.css";
 import useToast from "../../utils/useToast";
+import { DownloadCSV } from "../../utils/Download CSV/DownloadCSV";
+import { AiOutlineFileExcel } from "react-icons/ai";
+import CircularProgress from "../../utils/CircularProgressLoading";
+import dayjs from "dayjs";
+import { useSnackbar } from "notistack";
 
 function AccountExtract() {
   const navigate = useNavigate();
@@ -29,11 +35,15 @@ function AccountExtract() {
   const [selectedAccType, setSelectedAccType] = useState("");
   const [selectedUserType, setSelectedUserType] = useState(0);
   const [selectedUser, setSelectedUser] = useState(0);
+  const [progress, setProgress] = useState(null);
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const toast = useToast();
+  const location = useLocation()
+  const URL = location.pathname.split('/')[2]
+  const { enqueueSnackbar } = useSnackbar()
 
   // ---------------- DECODE PARAMS ----------------
   const decode = (val) => {
@@ -140,6 +150,74 @@ function AccountExtract() {
     }
   }, [params]);
 
+  const handleDownloadCSV = async () => {
+    let FormattedData = tableData.map((val) => ({
+      ...val, id: `${val.main_id}_${val.sub_id}`,
+      user_name: `${val.u_fname || ""} ${val.u_lname || ""}`
+    }))
+
+    let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
+
+    const safeColumns = ExcelColumns.map(
+      ({ renderCell, renderHeader, ...rest }) => rest,
+    );
+
+    const meta = {
+      "": `Account Master Extract (${AccName})`,
+      Date: dayjs().format("DD MMM YYYY")
+    }
+    DownloadCSV(
+      FormattedData,
+      safeColumns,
+      `Account_Master_Extract_(${AccName})`,
+      setProgress,
+      enqueueSnackbar,
+      meta,
+    );
+  }
+
+  const handleExtractCSV = async () => {
+
+    try {
+      setProgress("0%")
+      let payload = {
+        country: selectedRegion,
+        accType: selectedAccType,
+        user: selectedUser,
+        userType: selectedUserType
+
+      }
+      let response = await api.post('/getAccountExtract', payload)
+      let extData = Array.isArray(response.data.data) ? response.data.data : []
+      let FormattedData = extData.map((val) => ({
+        ...val, id: `${val.main_id}_${val.sub_id}`,
+        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`
+      }))
+
+      let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
+
+      const safeColumns = ExcelColumns.map(
+        ({ renderCell, renderHeader, ...rest }) => rest,
+      );
+
+      const meta = {
+        "": `Account Master Extract (${AccName})`,
+        Date: dayjs().format("DD MMM YYYY")
+      }
+      DownloadCSV(
+        FormattedData,
+        safeColumns,
+        `Account_Master_Extract_(${AccName})`,
+        setProgress,
+        enqueueSnackbar,
+        meta,
+      );
+    }
+    catch (err) {
+      console.log("Extract CSV Error", err)
+    }
+  }
+
   // ---------------- LOAD BUTTON ----------------
   const handleLoad = () => {
     if (!selectedRegion || !selectedAccType) {
@@ -205,6 +283,23 @@ function AccountExtract() {
     { field: "mobile", headerName: "Mobile", width: 150 },
   ];
 
+  const ExcelColumns = [
+    { field: "reg_name", headerName: "Region" },
+    { field: "emp_code", headerName: "SO/User Code" },
+    { field: "user_name", headerName: "SO/User Name" },
+    { field: "so_hq_name", headerName: "SO/HQ" },
+    { field: "id", headerName: "Customer ID" },
+    { field: "stk_name", headerName: "WD Name" },
+    { field: "sup_name", headerName: "Distributor" },
+    { field: "clinic_name", headerName: "Store Name" },
+    { field: "P_class", headerName: "Potential Class" },
+    { field: "cus_visit_freq", headerName: "Frequency Class" },
+    { field: "area_name", headerName: "Area" },
+    { field: "beat_name", headerName: "Beat/Territory" },
+    { field: "mobile", headerName: "Mobile No" },
+
+  ]
+
   return (
     <Layout>
       <Box
@@ -218,7 +313,12 @@ function AccountExtract() {
           <h2 className="mainTitle">Account Master Extract</h2>
         </Box>
 
-        <Box sx={{ backgroundColor: "#fff" }} p={1.5}>
+        <Box sx={{
+          backgroundColor: "#fff", boxShadow:
+            "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+          padding: "16px 18px",
+          borderRadius: "10px",
+        }} >
           <Grid container spacing={2}>
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
@@ -294,32 +394,52 @@ function AccountExtract() {
             </Grid>
 
             {/* LOAD BUTTON */}
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <button
-                onClick={handleLoad}
-                style={{
-                  padding: "6px 16px",
-                  background: "#1976d2",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
+            {URL !== 'extract_new' &&
+              <Grid size={{ xs: 12, md: 2, lg: 1 }}>
+                <button
+                  onClick={handleLoad}
+                  style={{
+                    padding: "6px 16px",
+                    background: "#1976d2",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Load
+                </button>
+              </Grid>}
+            <Grid size={{ xs: 12, md: 2, lg: 1 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                color="warning"
+                sx={{height:'2.4rem',width:'2rem'}}
+                
+                onClick={() => URL !== 'extract_new' ? handleDownloadCSV() : handleExtractCSV()}
               >
-                Load
-              </button>
+                Excel
+              </Button>
             </Grid>
           </Grid>
         </Box>
 
         {/* ---------------- TABLE ---------------- */}
         <Box>
-          <DataTable
-            data={tableData}
-            columns={columns}
-            loading={loading}
-            title="Account Extract List"
-          />
+          {URL !== 'extract_new' &&
+            <DataTable
+              data={tableData}
+              columns={columns}
+              loading={loading}
+              title="Account Extract List"
+              sx={{
+                background: "#fff",
+                borderRadius: "10px",
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+              }}
+            />}
         </Box>
       </Box>
     </Layout>
