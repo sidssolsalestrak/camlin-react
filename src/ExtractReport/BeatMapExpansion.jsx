@@ -48,7 +48,7 @@ export function BeatMapExpansion({ row }) {
   const [markerIcon, setMarkerIcon] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.API_KEY,
+    googleMapsApiKey: process.env.REACT_APP_API_KEY,
     libraries: LIBRARIES,
   });
 
@@ -138,7 +138,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
   const markersRef = useRef([]);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.API_KEY,
+    googleMapsApiKey: process.env.REACT_APP_API_KEY,
     libraries: LIBRARIES,
   });
 
