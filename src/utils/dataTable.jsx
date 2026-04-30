@@ -92,6 +92,7 @@ const DataTable = ({
   footerActions = null,
   expandableRow = null,
   expandableRowBeat = null,
+  hideSubHeader = false,
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
@@ -606,7 +607,7 @@ const DataTable = ({
             </TableRow>
 
             {/* Sub-header row */}
-            {hasSubColumns && (
+            {hasSubColumns && !hideSubHeader && (
               <TableRow>
                 {columns.map((col, pi) =>
                   col.subColumns?.length ? (

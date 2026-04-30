@@ -46,6 +46,8 @@ import AddUser from "./view/AddUser";
 import RegionWiseSales from "./ExtractReport/RegionWiseSales";
 import SalesHierachy from "./ExtractReport/salesHierachy";
 import DailyActivityReport from "./ExtractReport/DailyActivityReport";
+import DataSubmissionLog from "./ExtractReport/DataSubmissionLog";
+import KPIReport from "./ExtractReport/KPIReport";
 
 function App() {
   const ProtectedRoute = () => {
@@ -158,7 +160,9 @@ function App() {
             <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
             <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
             <Route path="/reports/getfieldActivity"  element={<DailyActivityReport />}     />
-
+            <Route path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"  element={<DataSubmissionLog />}       />
+            <Route path="/reports/extract_new" element={<AccountExtract />}/>
+            <Route path="/reports/capability_report" element={<KPIReport />}        />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

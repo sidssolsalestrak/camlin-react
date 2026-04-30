@@ -55,11 +55,10 @@ self.onmessage = function (e) {
     const metaEntries = Object.entries(meta).filter(([, v]) => v !== null && v !== undefined && v !== "");
 
     metaEntries.forEach(([key, value]) => {
-      if (typeof value === "string" && value.includes(key)) {
-        // Value is already a pre-formatted label string — write it directly
+      if (!key || (typeof value === "string" && value.includes(key))) {
+        // Empty key OR pre-formatted string → write value directly
         csvContent += `${escapeCSV(value)}\n`;
       } else {
-        // Plain value — prepend the key as a label
         csvContent += `${escapeCSV(key)}: ${escapeCSV(value)}\n`;
       }
     });
