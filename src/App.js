@@ -49,6 +49,7 @@ import DailyActivityReport from "./ExtractReport/DailyActivityReport";
 import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
 import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary"
 import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
+import OrderReport from "./ExtractReport/orderReport/OrderReport";
 
 function App() {
   const ProtectedRoute = () => {
@@ -176,6 +177,8 @@ function App() {
           <Route path="/reports/stk_sales_summary" element={<StockAndSalesSummary />} />
           <Route path="/reports/primary_order" element={<PrimaryOrder />} />
           <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
+          <Route path="/reports/pcm_kam" element={<OrderReport />} />
+          <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
 
         </Routes>
       </BrowserRouter>

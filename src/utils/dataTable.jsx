@@ -324,6 +324,13 @@ const DataTable = ({
       return sum + (Number(row[field]) || 0);
     }, 0);
 
+  const calcAverageTotal = (field) => {
+    const total = data.reduce((sum, row) => {
+      return sum + (Number(row[field]) || 0);
+    }, 0);
+    return data.length ? Math.round(total / data.length) : 0;
+  };
+
   const formatTotal = (total) =>
     total.toLocaleString("en-IN", {
       minimumFractionDigits: 2,
@@ -1035,6 +1042,7 @@ const DataTable = ({
                 {flatColumns.map((col, i) => {
                   const firstIdx = flatColumns.findIndex((c) => c.showTotal);
                   const total = col.showTotal ? calcTotal(col.field) : null;
+                  const avgTotal = col.showAverageTotal ? calcAverageTotal(col.field) : null;
                   const isNumeric =
                     col.type === "number" || col.type === "currency";
                   return (
@@ -1054,9 +1062,11 @@ const DataTable = ({
                     >
                       {col.showTotal
                         ? formatTotal(total)
-                        : i === firstIdx - 1
-                          ? (grandTotal ? "Grand Total" : "Total")
-                          : ""}
+                        : col.showAverageTotal
+                          ? formatTotal(avgTotal)
+                          : i === firstIdx - 1
+                            ? (grandTotal ? "Grand Total" : "Total")
+                            : ""}
                     </TableCell>
                   );
                 })}
