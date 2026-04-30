@@ -46,16 +46,13 @@ import AddUser from "./view/AddUser";
 import RegionWiseSales from "./ExtractReport/RegionWiseSales";
 import SalesHierachy from "./ExtractReport/salesHierachy";
 import DailyActivityReport from "./ExtractReport/DailyActivityReport";
-<<<<<<< HEAD
 import DataSubmissionLog from "./ExtractReport/DataSubmissionLog";
 import KPIReport from "./ExtractReport/KPIReport";
-=======
 import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
 import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary";
 import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder";
 import UserLog from "./view/UserLog";
 import CreateCustomer from "./view/account/CreateCustomer";
->>>>>>> 650b63cce82dec91431658c7d243522ad658166e
 
 function App() {
   const ProtectedRoute = () => {
@@ -181,7 +178,6 @@ function App() {
               element={<AddUser />}
             />
 
-<<<<<<< HEAD
             <Route path="/reports/active_sales_new" element={<SalesHierachy />}   />
             <Route path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?" element={<SalesHierachy />}   />
             <Route path="/reports/getfieldActivity_new"  element={<DailyActivityReport />}     />
@@ -189,24 +185,14 @@ function App() {
             <Route path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"  element={<DataSubmissionLog />}       />
             <Route path="/reports/extract_new" element={<AccountExtract />}/>
             <Route path="/reports/capability_report" element={<KPIReport />}        />
-=======
             <Route
               path="/Users/userLog/:module?/:fromDt?/:toDt?/:userType?/:user?"
               element={<UserLog />}
             />
 
             <Route
-              path="/reports/active_sales_new"
-              element={<SalesHierachy />}
-            />
-
-            <Route
               path="/Customers/CreateDoctor"
               element={<CreateCustomer />}
-            />
-            <Route
-              path="/reports/active_sales_new"
-              element={<SalesHierachy />}
             />
             <Route
               path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
@@ -221,7 +207,6 @@ function App() {
               element={<DailyActivityReport />}
             />
 
->>>>>>> 650b63cce82dec91431658c7d243522ad658166e
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
