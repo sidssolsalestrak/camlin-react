@@ -67,7 +67,7 @@ export default function SalesHierachy() {
             setSelDistributor(0)
             setAllDistributor([])
         }
-        if (!selRegion || selRegion === 0) return
+        if ((!selRegion || selRegion === 0)&& (!selUsers || selUsers.id === 0)) return
         fetchDistributor()
     }, [selRegion, selUsers])
 

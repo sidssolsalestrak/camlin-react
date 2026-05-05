@@ -4,7 +4,6 @@ import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mu
 
 const LIBRARIES = ["geometry", "visualization"];
 
-
 const MAP_STYLES = [
   {
     featureType: "administrative.province",
@@ -28,18 +27,27 @@ const MAP_STYLES = [
   },
 ];
 
-// ✅ Custom SVG path marker — no external image needed
-const createCustomGreenMarker = () => {
-  return {
-    path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-    fillColor: "#4CAF50",
-    fillOpacity: 1,
-    strokeColor: "#FFFFFF",
-    strokeWeight: 2,
-    scale: 1.5,
-    anchor: new window.google.maps.Point(12, 24),
-  };
-};
+// For BeatMapExpansion — tip of pin anchors to coordinate (precise street-level)
+const createPinMarker = () => ({
+  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+  fillColor: "#4CAF50",
+  fillOpacity: 1,
+  strokeColor: "#FFFFFF",
+  strokeWeight: 2,
+  scale: 1.5,
+  anchor: new window.google.maps.Point(12, 24),
+});
+
+// For AllLocationsMap — center of icon aligns with heatmap dot
+const createCenteredMarker = () => ({
+  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+  fillColor: "#4CAF50",
+  fillOpacity: 1,
+  strokeColor: "#FFFFFF",
+  strokeWeight: 2,
+  scale: 1.5,
+  anchor: new window.google.maps.Point(12, 12),
+});
 
 // ── Single beat location map (inline row expansion) ───────────────────────────
 export function BeatMapExpansion({ row }) {
@@ -58,7 +66,7 @@ export function BeatMapExpansion({ row }) {
 
   useEffect(() => {
     if (isLoaded && window.google) {
-      setMarkerIcon(createCustomGreenMarker());
+      setMarkerIcon(createPinMarker());
     }
   }, [isLoaded]);
 
@@ -134,7 +142,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
   const [mapInstance, setMapInstance] = useState(null);
   const [heatmapInstance, setHeatmapInstance] = useState(null);
   const [activeInfo, setActiveInfo] = useState(null);
-  const [markerIcon, setMarkerIcon] = useState(null); // ✅ icon state
+  const [markerIcon, setMarkerIcon] = useState(null);
   const markersRef = useRef([]);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -142,22 +150,19 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
     libraries: LIBRARIES,
   });
 
-  // ✅ Initialize marker icon once Google Maps is loaded
-  useEffect(() => {
-    if (isLoaded && window.google) {
-      setMarkerIcon(createCustomGreenMarker());
-    }
-  }, [isLoaded]);
-
   const validCoords = coordinates.filter(coord => {
     const lat = parseFloat(coord.latitude);
     const lng = parseFloat(coord.longitude);
     return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
   });
 
+  // ✅ Icon is created inside handleMapLoad — window.google is guaranteed ready here
   const handleMapLoad = (map) => {
     setMapInstance(map);
     if (!window.google) return;
+
+    // ✅ Create icon here, not in useEffect — avoids race condition
+    setMarkerIcon(createCenteredMarker());
 
     const bounds = new window.google.maps.LatLngBounds(
       new window.google.maps.LatLng(8.1, 68.7),
@@ -178,15 +183,19 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
       radius: 20,
     });
     setHeatmapInstance(heatmap);
+
+    // Load India state boundaries
+    map.data.loadGeoJson('/json/states_india.geojson', {}, () => {
+      map.data.setStyle({
+        fillColor: 'transparent',
+        fillOpacity: 0,
+        strokeColor: '#00AF00',
+        strokeWeight: 2,
+        strokeOpacity: 1,
+      });
+    });
     window.google.maps.event.trigger(map, "resize");
   };
-
-  useEffect(() => {
-    if (!mapInstance || !window.google) return;
-    markersRef.current.forEach(marker => {
-      marker.setMap(showMarkers ? mapInstance : null);
-    });
-  }, [showMarkers, mapInstance]);
 
   useEffect(() => {
     if (!open) {
@@ -199,6 +208,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
       setShowMarkers(false);
       setMapInstance(null);
       setActiveInfo(null);
+      setMarkerIcon(null); // ✅ reset icon on close too
     }
   }, [open]);
 
@@ -283,8 +293,8 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
             }}
             onLoad={handleMapLoad}
           >
-            {/* ✅ Only render markers when icon is ready */}
-            {markerIcon && validCoords.map((coord, i) => {
+            {/* ✅ Render markers only when toggle is ON and icon is ready */}
+            {showMarkers && markerIcon && validCoords.map((coord, i) => {
               const lat = parseFloat(coord.latitude);
               const lng = parseFloat(coord.longitude);
               return (
@@ -292,8 +302,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
                   key={i}
                   position={{ lat, lng }}
                   title={coord.location_name ?? ""}
-                  visible={showMarkers}
-                  icon={markerIcon}  // ✅ same SVG path icon as BeatMapExpansion
+                  icon={markerIcon}
                   onMouseOver={() => setActiveInfo({ lat, lng, addr: coord.location_name })}
                   onMouseOut={() => setActiveInfo(null)}
                 />
