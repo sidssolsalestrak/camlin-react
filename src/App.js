@@ -54,6 +54,7 @@ import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
 import OrderReport from "./ExtractReport/orderReport/OrderReport";
 import UserLog from "./view/UserLog";
 import CreateCustomer from "./view/account/CreateCustomer";
+import OutletCount from "./ExtractReport/OutletCount";
 
 function App() {
   const ProtectedRoute = () => {
@@ -219,6 +220,10 @@ function App() {
             <Route
               path="/reports/getfieldActivity"
               element={<DailyActivityReport />}
+            />
+            <Route 
+              path="/reports/outlet_count"
+              element={<OutletCount />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

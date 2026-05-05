@@ -625,10 +625,10 @@ const DataTable = ({
                     col.subColumns.map((sub, si) => (
                       <TableCell
                         key={`${pi}-${si}`}
-                        align="center"
                         sx={{
                           minWidth: sub.width,
                           width: sub.width,
+                          color: '#706E69',
                           // borderRight: "1px solid #e5e7eb",
                           p: 0.5,
                           // borderBottom: "1px solid #e5e7eb",
@@ -1052,6 +1052,8 @@ const DataTable = ({
                       align={grandTotal ? "center" : "right"}
                       sx={{
                         fontSize: "12px",
+                        fontWeight: 700,
+                        color: '#706E69',
                         borderRight:
                           i !== flatColumns.length - 1
                             ? "1px solid #e5e7eb"
