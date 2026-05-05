@@ -16,9 +16,11 @@ import PopUpTable from './PopUpTable';
 import { DownloadCSV } from '../../utils/Download CSV/DownloadCSV';
 
 const headContainer = {
-    backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
-    m: 2, p: 2, borderRadius: '6px',
-    minHeight: '20vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' }
+    background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
+    m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
+        "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+    padding: "16px 18px",
+    width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
 }
 
 const menuStyle = {
@@ -444,12 +446,12 @@ const PrimaryOrder = () => {
             { label: extractPath ? "Extract" : "Report", path: location.pathname },
             { label: "Primary Order" },
         ]}>
-            <Box sx={headContainer}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Box>
-                        <h1 className="mainTitle">Primary Order</h1>
-                    </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end"}}>
+                <Box sx={{ml:1.5,mt:1.5}}>
+                    <h1 className="mainTitle">Primary Order</h1>
                 </Box>
+            </Box>
+            <Box sx={headContainer}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
@@ -520,8 +522,14 @@ const PrimaryOrder = () => {
             </Box>
             {/* table */}
             {showTable && (
-                <Box sx={headContainer}>
+                <Box p={1.5}>
                     <DataTable
+                        sx={{
+                            background: "#fff",
+                            borderRadius: "10px",
+                            boxShadow:
+                                "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                        }}
                         data={displayData}
                         columns={columns}
                         loading={loading}
@@ -536,6 +544,7 @@ const PrimaryOrder = () => {
                                 }
                                 : {}
                         }
+                        defaultPageSize={50}
                     />
                 </Box>
             )}

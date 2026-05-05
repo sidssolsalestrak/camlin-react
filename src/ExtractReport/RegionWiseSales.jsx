@@ -13,11 +13,14 @@ import axios from "../services/api";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { useSnackbar } from 'notistack'
 import FormatCurrency from "../utils/formatCurrency";
+import useToast from '../utils/useToast';
 
 const headContainer = {
-    backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
-    m: 2, p: 2, borderRadius: '6px',
-    minHeight: '20vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' }
+    background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
+    m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
+        "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+    padding: "16px 18px",
+    width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
 }
 
 // URL-safe encode - replaces + / = with cleaner characters
@@ -41,6 +44,8 @@ const RegionWiseSales = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+    const showAlert = useToast();
+
     /*----------------- decode frm and to dt --------*/
     let decodeFromDate = decode(searchParams.get('frmDt'));
     let decodeToDate = decode(searchParams.get('toDt'));
@@ -144,7 +149,7 @@ const RegionWiseSales = () => {
             headerName: "Average SKU per order",
             filterable: true,
             type: "alignCenter",
-            showTotal: true,
+            showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
@@ -154,7 +159,7 @@ const RegionWiseSales = () => {
             headerName: "Average order value per order",
             filterable: true,
             type: "alignCenter",
-            showTotal: true,
+            showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
@@ -164,7 +169,7 @@ const RegionWiseSales = () => {
             headerName: "Productivity %",
             filterable: true,
             type: "alignCenter",
-            showTotal: true,
+            showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
             )
@@ -182,8 +187,15 @@ const RegionWiseSales = () => {
                 dateRange: `(${fromDate.format("DD MMM YYYY")} - ${toDate.format("DD MMM YYYY")})`,
             };
 
+            let payload = {
+                fromDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
+                toDate: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
+            }
+            const res = await axios.post("/getRegionWiseSecSales", payload);
+            let excelData = Array.isArray(res?.data?.data) ? res?.data?.data : [];
+
             DownloadCSV(
-                tableData,
+                excelData,
                 columns,
                 `Regionwise_Secondary_Sales ${fromDate.format("DD MMM YYYY")}-${toDate.format("DD MMM YYYY")}`,
                 setProgress,
@@ -194,6 +206,7 @@ const RegionWiseSales = () => {
         }
         catch (err) {
             console.log("excelDownload error", err)
+            showAlert.error("Failed to Download")
         }
     }
 
@@ -203,12 +216,12 @@ const RegionWiseSales = () => {
             { label: "Extract", path: location.pathname },
             { label: "Regionwise Secondary Sales" },
         ]}>
-            <Box sx={headContainer}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Box>
-                        <h1 className="mainTitle">Regionwise Secondary Sales</h1>
-                    </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <Box sx={{ ml: 1.5, mt: 1.5 }}>
+                    <h1 className="mainTitle">Regionwise Secondary Sales</h1>
                 </Box>
+            </Box>
+            <Box sx={headContainer}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
@@ -239,8 +252,14 @@ const RegionWiseSales = () => {
             </Box>
             {/* table */}
             {showTable && (
-                <Box sx={headContainer}>
-                    <DataTable data={tableData} columns={columns} loading={loading} grandTotal={true} />
+                <Box p={1.5}>
+                    <DataTable sx={{
+                        background: "#fff",
+                        borderRadius: "10px",
+                        boxShadow:
+                            "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                    }}
+                        data={tableData} columns={columns} loading={loading} grandTotal={true} />
                 </Box>
             )}
         </Layout>
