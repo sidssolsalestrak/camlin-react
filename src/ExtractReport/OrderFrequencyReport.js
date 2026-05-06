@@ -13,7 +13,6 @@ import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import dayjs from "dayjs";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
-import { useSnackbar } from "notistack";
 import { PiWarningCircleLight } from "react-icons/pi";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -108,7 +107,6 @@ function OrderFrequencyReport() {
     const [loadedType, setLoadedType] = useState(false);
     const [warningDialog, setWarningDialog] = useState(false);
     const [zoneNullErr, setZoneNullErr] = useState(false);
-    const { enqueueSnackbar } = useSnackbar();
     const toast = useToast();
 
     // ── Initial zone load ──────────────────────────────────────────────────
@@ -375,7 +373,7 @@ function OrderFrequencyReport() {
         try {
             const excelData = await fetchDayWiseReportExcel();
             const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
-            DownloadCSV(excelData, safeColumns, "Order_Frequency_Report", setProgress, enqueueSnackbar);
+            DownloadCSV(excelData, safeColumns, "Order_Frequency_Report", setProgress,toast);
         } catch (err) {
             console.log("Download excel Error", err);
         }

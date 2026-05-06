@@ -12,7 +12,6 @@ import useToast from "../utils/useToast";
 import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { Download } from "../utils/downloadExcel/Download";
-import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 
 
@@ -243,7 +242,6 @@ export default function OutletCount() {
     const navigate = useNavigate()
 
     const toast = useToast();
-    const { enqueueSnackbar } = useSnackbar()
 
     useEffect(() => {
         fetchZoneList();
@@ -431,7 +429,7 @@ export default function OutletCount() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
             let fileName = 'Total Outlets'
-            Download(allOutLets, safeColumns, fileName, setProgress, enqueueSnackbar, 'Total_Outlets', {}, true)
+            Download(allOutLets, safeColumns, fileName, setProgress, toast, 'Total_Outlets', {}, true)
 
         }
         catch (err) {

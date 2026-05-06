@@ -14,7 +14,6 @@ import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { Download } from "../utils/downloadExcel/Download";
-import { useSnackbar } from "notistack";
 
 function DataSubmissionLog() {
     const { encodeyear, encodezone, encoderegion } = useParams()
@@ -30,7 +29,7 @@ function DataSubmissionLog() {
     const decodedZone = encodezone ? Number(atob(encodezone)) : 0
     const decodedRegion = encoderegion ? Number(atob(encoderegion)) : 0
     const decodedYearStr = decodedYear.format("YYYY")
-    const { enqueueSnackbar } = useSnackbar()
+    const toast=useToast()
 
     const navigate = useNavigate()
     console.log("encoded values", encodeyear, encodezone, encoderegion)
@@ -194,7 +193,7 @@ function DataSubmissionLog() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
             let fileName = `Region_Wise_Distributor_Wise_Data_Submission-${decodedYear ? decodedYear.format('YYYY') : null}`
-            Download(allSubmissionLog, safeColumns, fileName, setProgress, enqueueSnackbar, 'Region_Wise_Distributor_Wise_Data_Submission')
+            Download(allSubmissionLog, safeColumns, fileName, setProgress, toast, 'Region_Wise_Distributor_Wise_Data_Submission')
         }
         catch (err) {
             console.log("excel download err", err)

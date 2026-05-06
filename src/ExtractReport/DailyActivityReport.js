@@ -417,7 +417,7 @@ export default function DailyActivityReport() {
                 toDate: toDate ? toDate.format("DD MMM YYYY") : "",
                 type: typeLabel,
             };
-            DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress, enqueueSnackbar, meta);
+            DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress,toast, meta);
         } catch (err) {
             console.log("excelDownload error", err);
         }

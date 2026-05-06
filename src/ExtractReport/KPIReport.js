@@ -11,7 +11,6 @@ import { FaPlus } from "react-icons/fa";
 import { FaMinus } from "react-icons/fa";
 import { render } from "@testing-library/react";
 import { Download } from "../utils/downloadExcel/Download";
-import { useSnackbar } from "notistack";
 import useToast from "../utils/useToast";
 import { MdOutlineLoop } from "react-icons/md";
 import ConfirmationDialog from "../utils/confirmDialog";
@@ -124,7 +123,6 @@ function KPIReport() {
     const [allKpiReportData, setAllKpiReportData] = useState([])
     const [progress, setProgress] = useState(null);
     const [modifyLoading, setModifyLoading] = useState(false)
-    const { enqueueSnackbar } = useSnackbar()
     const toast = useToast()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -356,7 +354,7 @@ function KPIReport() {
                 excelColumns,
                 fileName,
                 setProgress,
-                enqueueSnackbar,
+                toast,
                 'KPI_Report',
                 {
                     titleRow1: dynamicTitle,
