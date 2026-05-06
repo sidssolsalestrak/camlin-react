@@ -72,30 +72,20 @@ export default function SalesHierachy() {
     }, [selRegion, selUsers])
 
     useEffect(() => {
-
-        const fetchTableData = async () => {
-            console.log("All decoded data", decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
-            if (URL !== 'active_sales_new') {
-                setSelZone(Number(zoneid ? decodedZoneId : 0))
-                setSelRegion(Number(regionid ? decodedRegionId : 0))
-                setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
-                setSelUsers(
-                    userid > 0
-                        ? allUsers.find((val) => val.id === Number(decodeduserId)) ?? { id: 0, u_name: "All" }
-                        : { id: 0, u_name: "All" }
-                );
-                setSelDistributor(Number(distributorid ? decodedDistributorId : 0))
-            }
-            let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
-            setAllHeirachyData(hierachyData)
+    const fetchTableData = async () => {
+        if (URL !== 'active_sales_new') {
+            setSelZone(Number(zoneid ? decodedZoneId : 0))
+            setSelRegion(Number(regionid ? decodedRegionId : 0))
+            setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
+            setSelDistributor(Number(decodedDistributorId ? decodedDistributorId : 0))
         }
-        if (zoneid || regionid || usertypeId || userid || distributorid) {
-            console.log("have params fetch table data is running")
-            fetchTableData()
-        }
-        else return
-
-    }, [zoneid, regionid, usertypeId, userid, distributorid])
+        let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
+        setAllHeirachyData(hierachyData)
+    }
+    if (zoneid || regionid || usertypeId || userid || distributorid) {
+        fetchTableData()
+    }
+}, [zoneid, regionid, usertypeId, userid, distributorid])
 
     useEffect(() => {
         if (!decodeduserId && allUsers) return
@@ -182,11 +172,11 @@ export default function SalesHierachy() {
         },
         {
             field: "stk_code",
-            headerName: "DistributorCode",
+            headerName: "Distributor Code",
         },
         {
             field: "stk_name",
-            headerName: "DistributorName",
+            headerName: "Distributor Name",
         },
         {
             field: "city_name",
@@ -352,7 +342,7 @@ export default function SalesHierachy() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
 
-            // ── Build dynamic meta from selected filter values ──────────────────
+            //  Build dynamic meta from selected filter values
             const getLabel = (list, selectedId, labelKey, prefix) => {
                 if (!selectedId || selectedId === 0) return `${prefix}- All`
                 const match = list.find((item) => item.id === selectedId)
@@ -360,25 +350,25 @@ export default function SalesHierachy() {
             }
 
             const selectedUserTypeLabel = (() => {
-                if (!selUserType || selUserType === 0) return "User Type - All"
+                if (!selUserType || selUserType === 0) return "UserType - All"
                 const match = allUserType.find((u) => u.id === selUserType)
-                return match ? `User Type - ${match.client_alias}` : "User Type - All"
+                return match ? `UserType- ${match.client_alias}` : "UserType - All"
             })()
 
             const selectedDistributorLabel = (() => {
                 if (!selDistributor || selDistributor === 0) return "Distributor- All"
                 const match = allDistributor.find((d) => d.stk_id === selDistributor)
-                return match ? `Distributor- ${match.stk_code}-${match.stk_name}` : "Distributor- All"
+                return match ? `Distributor-${match.stk_code}-${match.stk_name}` : "Distributor- All"
             })()
 
             const meta = {
-                zone: getLabel(allZone, selZone, "zone_name", "Zone"),
-                region: getLabel(allRegion, selRegion, "reg_name", "Region"),
-                userType: selectedUserTypeLabel,
-                user: `User - ${selUsers?.u_name ?? "All"}`,
-                distributor: selectedDistributorLabel,
+                Zone: getLabel(allZone, selZone, "zone_name", "Zone"),
+                Region: getLabel(allRegion, selRegion, "reg_name", "Region"),
+                UserType: selectedUserTypeLabel,
+                User: `User - ${selUsers?.u_name ?? "All"}`,
+                Distributor: selectedDistributorLabel,
             }
-            // ────────────────────────────────────────────────────────────────────
+          
 
             DownloadCSV(
                 finalHierachyData,

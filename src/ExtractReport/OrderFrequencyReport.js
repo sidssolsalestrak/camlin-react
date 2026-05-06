@@ -34,6 +34,10 @@ const getDataWithZoneTotals = (data) => {
     });
 
     const result = [];
+    let grandTotalOrders = 0;
+    let grandTotalSku = 0;
+    let grandTotalQty = 0;
+    let grandTotalVal = 0;
 
     zoneOrder.forEach((zoneName) => {
         const rows = grouped[zoneName];
@@ -44,6 +48,11 @@ const getDataWithZoneTotals = (data) => {
         const totalSku = rows.reduce((sum, r) => sum + (Number(r.tot_prod) || 0), 0);
         const totalQty = rows.reduce((sum, r) => sum + (Number(r.ord_qty) || 0), 0);
         const totalVal = rows.reduce((sum, r) => sum + (Number(r.ord_val) || 0), 0);
+
+        grandTotalOrders += totalOrders;
+        grandTotalSku += totalSku;
+        grandTotalQty += totalQty;
+        grandTotalVal += totalVal;
 
         // Inject a zone subtotal row
         result.push({
@@ -64,7 +73,7 @@ const getDataWithZoneTotals = (data) => {
         });
 
         result.push({
-              id: `grand_total_${zoneName}`,
+            id: `grand_total_${zoneName}`,
             call_date: "",
             full_name: "",
             hq_name: "",
@@ -73,10 +82,10 @@ const getDataWithZoneTotals = (data) => {
             cus_name: "",
             freq_name: "",
             beat_name: `Grand Total`,
-            mtd_tot_pc: totalOrders,
-            tot_prod: totalSku,
-            ord_qty: totalQty,
-            ord_val: totalVal,
+            mtd_tot_pc: grandTotalOrders,
+            tot_prod: grandTotalSku,
+            ord_qty: grandTotalQty,
+            ord_val: grandTotalVal,
             _isSubtotal: true,
         })
     });
@@ -109,14 +118,14 @@ function OrderFrequencyReport() {
     const [zoneNullErr, setZoneNullErr] = useState(false);
     const toast = useToast();
 
-    // ── Initial zone load ──────────────────────────────────────────────────
+    // Initial zone load 
     useEffect(() => {
         fetchReportZone();
     }, []);
 
     console.log("decoded params", decodeType, decodeMonth, decodeZoneId, decodeRegId, decodeUserId);
 
-    // ── Auto-fetch when navigated with encoded params ──────────────────────
+    //Auto-fetch when navigated with encoded params
     useEffect(() => {
         if (decodeType !== 'undefined' && decodeType) {
             fetchDayWiseReport();
@@ -143,7 +152,6 @@ function OrderFrequencyReport() {
         setSelUsers(UserData);
     }, [allUsers, decodeUserId]);
 
-    // ── API calls ──────────────────────────────────────────────────────────
     const fetchReportZone = async () => {
         try {
             let response = await api.post('/getReportsZone');
@@ -231,7 +239,7 @@ function OrderFrequencyReport() {
         }
     };
 
-    // ── Encode & navigate ──────────────────────────────────────────────────
+
     const encodeAndNavigate = () => {
         if (Number(selZone) === 0) {
             setZoneNullErr(true);
@@ -250,13 +258,13 @@ function OrderFrequencyReport() {
         navigate(`/reports/day_wise_report/${encType}/${encMonth}/${encZone}/${encReg}/${encUser}`);
     };
 
-    
+
     const subtotalSx = (isSubtotal) => ({
         fontWeight: isSubtotal ? 700 : 400,
         textAlign: 'right',
     });
 
-   
+
     const columns = [
         loadedType && {
             field: 'call_date',
@@ -358,6 +366,7 @@ function OrderFrequencyReport() {
         ...(loadedType ? [{ field: 'call_date', headerName: 'Order Month', type: 'date' }] : []),
         { field: 'zone_name', headerName: "Zone" },
         { field: 'full_name', headerName: "Sales Person" },
+        { field: 'hq_name', headerName: "HQ Name" },
         { field: 'area_name', headerName: "Area" },
         { field: 'cus_code', headerName: "Customer Code" },
         { field: 'cus_name', headerName: "Customer Name" },
@@ -373,7 +382,7 @@ function OrderFrequencyReport() {
         try {
             const excelData = await fetchDayWiseReportExcel();
             const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
-            DownloadCSV(excelData, safeColumns, "Order_Frequency_Report", setProgress,toast);
+            DownloadCSV(excelData, safeColumns, "Order_Frequency_Report", setProgress, toast);
         } catch (err) {
             console.log("Download excel Error", err);
         }
@@ -394,7 +403,7 @@ function OrderFrequencyReport() {
                 </Box>
             </Box>
 
-            {/* ── Filter bar ─────────────────────────────────────────────── */}
+           
             <Box sx={{
                 mx: 1.5,
                 display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap",
@@ -506,7 +515,7 @@ function OrderFrequencyReport() {
                 )}
             </Box>
 
-            {/* ── Data table ─────────────────────────────────────────────── */}
+          
             <Box sx={{ p: 1.5 }}>
                 <DataTable
                     data={tableData}
@@ -525,7 +534,7 @@ function OrderFrequencyReport() {
                 />
             </Box>
 
-            {/* ── Warning dialog ─────────────────────────────────────────── */}
+          
             <Dialog open={warningDialog} maxWidth="xs" PaperProps={{ sx: { width: '320px' } }}>
                 <DialogContent>
                     <Box sx={{ textAlign: 'center' }}>

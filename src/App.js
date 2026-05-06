@@ -223,7 +223,7 @@ function App() {
               element={<DailyActivityReport />}
             />
             <Route 
-              path="/reports/outlet_count"
+              path="/reports/outlet_count/:enzone?/:enRegion?/:enArea?/:enSo?"
               element={<OutletCount />}
             />
             <Route
