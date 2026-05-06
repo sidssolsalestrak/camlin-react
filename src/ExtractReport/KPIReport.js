@@ -24,7 +24,7 @@ const HCOLOR = {
     width: "100%",
     textAlign: "center",
     padding: "2px 0",
-    margin:"0px !important",
+    margin: "0px !important",
     borderRadius: "3px",
 };
 
@@ -116,59 +116,6 @@ function buildZoneData(rows) {
     return zones;
 }
 
-// Static columns with no state dependency
-const STATIC_COLUMNS = [
-    {
-        field: "_name",
-        headerName: "",
-        subColumns: [{
-            field: '_name', headerName: ' ', renderCell: ({ value, row }) =>
-                row._rowType === "zone" ? (
-                    <Box sx={{ fontWeight: 700, whiteSpace: "nowrap", fontSize: 13 }}>{value}</Box>
-                ) : (
-                    <Box >
-                        <Box sx={{ fontWeight: 500, fontSize: 12, textWrap: 'nowrap' }}>{row.full_name}</Box>
-                        <Box sx={{ fontSize: 9, color: "grey" }}>HQ: {row.hq_name}</Box>
-                    </Box>
-                )
-        },
-        {
-            field: 'area_name', headerName: '', renderCell: ({ value, row }) =>
-                row._rowType === "zone" ? "" : (
-                    <Typography sx={{ fontSize: 11, color: "#555", whiteSpace: "nowrap" }}>
-                        {value || "-"}
-                    </Typography>
-                ),
-        },],
-
-    },
-    { field: "sale_tgt", headerName: "Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "tot_cus", headerName: "Total Outlets", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "tot_call", headerName: "Total Calls", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "eco_no", headerName: "Total Outlets Visited", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "repeated", headerName: "Total Outlets Repeated", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "num_dist_per", headerName: "Numeric Distribution %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
-    { field: "tot_field_day", headerName: "Field Days", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "call_dy_tgt", headerName: "Calls/Day Target", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "mtd_tot_call", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "coverage_per", headerName: "Coverage %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
-    { field: "prod_dy_tgt", headerName: "Productivity Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "mtd_tot_pc", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "prod_per", headerName: "Productivity %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
-    { field: "visible_dy_tgt", headerName: "Visibility Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "mtd_visible_cnt", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "visible_per", headerName: "Visibility %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
-    { field: "train_stat", headerName: "Training Done (Y/N)", renderCell: ({ value }) => value || "-" },
-    { field: "cap_index", headerName: "Capability Index %", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-    { field: "exe_tier", headerName: "Execution Tier", renderCell: ({ value }) => <Box sx={tierStyle(value)}>{value || "-"}</Box> },
-    { field: "p_mult", headerName: "Potential Multiplier", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{value ? `${Number(value).toFixed(2)}%` : "-"}</Typography> },
-    { field: "exp_sec_val", headerName: "Expected Secondary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "exp_pri_val", headerName: "Expected Primary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "sec_val", headerName: "Actual Secondary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "pri_val", headerName: "Actual Primary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "sec_diff", headerName: "Secondary Difference", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-    { field: "pri_diff", headerName: "Primary Difference", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-];
 
 function KPIReport() {
     const [selMonth, setSelMonth] = useState(dayjs());
@@ -176,12 +123,12 @@ function KPIReport() {
     const [expanded, setExpanded] = useState(new Set());
     const [allKpiReportData, setAllKpiReportData] = useState([])
     const [progress, setProgress] = useState(null);
-    const [modifyLoading,setModifyLoading]=useState(false)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const { enqueueSnackbar } = useSnackbar()
     const toast = useToast()
     const [confirmationDialog, setConfirmationDialog] = useState({
-            open: false, title: "", message: "", onConfirm: null,
-            loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+        open: false, title: "", message: "", onConfirm: null,
+        loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
     const fetchKpiReport = async () => {
@@ -221,6 +168,61 @@ function KPIReport() {
             onConfirm: () => handleRender()
         })
     }
+
+    // Static columns with no state dependency
+    const STATIC_COLUMNS = [
+        {
+            field: "_name",
+            headerName: "",
+            subColumns: [{
+                field: '_name', headerName: ' ', renderCell: ({ value, row }) =>
+                    row._rowType === "zone" ? (
+                        <Box sx={{ fontWeight: 700, whiteSpace: "nowrap", fontSize: 13 }}>{value}</Box>
+                    ) : (
+                        <Box >
+                            <Box sx={{ fontWeight: 500, fontSize: 12, textWrap: 'nowrap' }}>{row.full_name}</Box>
+                            <Box sx={{ fontSize: 9, color: "grey" }}>HQ: {row.hq_name}</Box>
+                        </Box>
+                    )
+            },
+            {
+                field: 'area_name', headerName: '', renderCell: ({ value, row }) =>
+                    row._rowType === "zone" ? "" : (
+                        <Typography sx={{ fontSize: 11, color: "#555", whiteSpace: "nowrap" }}>
+                            {value || "-"}
+                        </Typography>
+                    ),
+            },],
+
+        },
+        { field: "sale_tgt", headerName: `${dayjs(selMonth).format('MMM YYYY')}-Tgt`, renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "tot_cus", headerName: "Total Outlets", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "tot_call", headerName: "Total Calls", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "eco_no", headerName: "Total Outlets Visited", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "repeated", headerName: "Total Outlets Repeated", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "num_dist_per", headerName: "Numeric Distribution %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "tot_field_day", headerName: "Field Days", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "call_dy_tgt", headerName: "Calls/Day Target", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "mtd_tot_call", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "coverage_per", headerName: "Coverage %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "prod_dy_tgt", headerName: "Productivity Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "mtd_tot_pc", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "prod_per", headerName: "Productivity %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "visible_dy_tgt", headerName: "Visibility Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "mtd_visible_cnt", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "visible_per", headerName: "Visibility %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "train_stat", headerName: "Training Done (Y/N)", renderCell: ({ value }) => value || "-" },
+        { field: "cap_index", headerName: "Capability Index %", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
+        { field: "exe_tier", headerName: "Execution Tier", renderCell: ({ value }) => <Box sx={tierStyle(value)}>{value || "-"}</Box> },
+        { field: "p_mult", headerName: "Potential Multiplier", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{value ? `${Number(value).toFixed(2)}%` : "-"}</Typography> },
+        { field: "exp_sec_val", headerName: "Expected Secondary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "exp_pri_val", headerName: "Expected Primary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "sec_val", headerName: "Actual Secondary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "pri_val", headerName: "Actual Primary", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "sec_diff", headerName: "Secondary Difference", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "pri_diff", headerName: "Primary Difference", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+    ];
+
 
 
     // Built inside component so renderCell closes over live `expanded` state
@@ -393,18 +395,18 @@ function KPIReport() {
             console.log("rendering month error", err)
             toast.warning("Unable to Render")
         }
-        finally{
+        finally {
             setModifyLoading(false)
             closeConfirmationDialog()
         }
     }
 
     return (
-        <Layout    breadcrumb={[
-                { label: "Home", path: "/" },
-                { label: "Report", path: "/reports/capability_report" },
-                { label: "KPI Report", path: "/reports/capability_report" }
-            ]}>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Report", path: "/reports/capability_report" },
+            { label: "KPI Report", path: "/reports/capability_report" }
+        ]}>
             <Box p={0.5}>
                 <Box p={2} display="flex" flexDirection="column" gap={2}>
                     <h1 className="mainTitle">KPI Report</h1>
@@ -422,7 +424,7 @@ function KPIReport() {
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
                                         label="Month"
-                                        views={["month","year"]}
+                                        views={["month", "year"]}
                                         format="MMM YYYY"
                                         value={selMonth}
                                         onChange={(v) => setSelMonth(v)}
@@ -441,7 +443,7 @@ function KPIReport() {
                             <Button onClick={() => handleDownloadExcel()} color="warning" variant="contained">Excel</Button>
                         </Box>
 
-                       
+
                         <Button color="warning" variant="contained" onClick={() => showSubmitConfirmation()}>
                             <MdOutlineLoop size={15} /> Render
                         </Button>
@@ -462,7 +464,7 @@ function KPIReport() {
                         }}
                     />
                 </Box>
-                 <ConfirmationDialog
+                <ConfirmationDialog
                     open={confirmationDialog.open}
                     onClose={closeConfirmationDialog}
                     onConfirm={confirmationDialog.onConfirm}

@@ -52,7 +52,7 @@ function DataSubmissionLog() {
         setSelYear(decodedYear)
         setSelZone(decodedZone)
 
-       
+
         if (decodedZone > 0) {
             fetchRegionList(decodedZone)
         }
@@ -150,6 +150,7 @@ function DataSubmissionLog() {
         return {
             field: `month_${i + 1}`,
             headerName: monthName,
+            type: 'date'
         };
     });
 
@@ -157,13 +158,33 @@ function DataSubmissionLog() {
         {
             field: "zone_name", headerName: "Zone",
             renderCell: (params) => (
-                <Typography sx={{ fontWeight: 600 }}>{params.value}</Typography>
+                <Typography sx={{ fontWeight: 600, textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
-        { field: "reg_name", headerName: "Region" },
-        { field: "state_name", headerName: "State" },
-        { field: "stk_code", headerName: "Distributor Code" },
-        { field: "stk_name", headerName: "Distributor Name" },
+        {
+            field: "reg_name",
+            headerName: "Region",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
+        {
+            field: "state_name",
+            headerName: "State",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
+        { field: "stk_code", 
+          headerName: "Distributor Code" 
+        },
+        {
+            field: "stk_name", 
+            headerName: "Distributor Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
         ...monthColumns,
     ];
 
