@@ -413,9 +413,9 @@ export default function DailyActivityReport() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
             const meta = {
-                fromDate: fromDate ? fromDate.format("DD MMM YYYY") : "",
-                toDate: toDate ? toDate.format("DD MMM YYYY") : "",
-                type: typeLabel,
+                FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
+                ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
+                Type: `Type-${typeLabel}`,
             };
             DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress,toast, meta);
         } catch (err) {

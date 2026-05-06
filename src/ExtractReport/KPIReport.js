@@ -29,6 +29,10 @@ const HCOLOR = {
 
 const fmt = (val) => (!val || Number(val) === 0 ? "-" : val);
 const fmtF = (val) => (!val || Number(val) === 0 ? "-" : Number(val).toFixed(2));
+const zeroToNullRound = (n) => {
+    if (n == 0 || n == null || n === '') return '-';
+    return Math.round(Number(n));
+};
 
 const tierStyle = (tier) => {
     if (tier === "Strategic") return { color: "darkgreen", fontWeight: 500 };
@@ -206,6 +210,11 @@ function KPIReport() {
         { field: "prod_dy_tgt", headerName: "Productivity Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "mtd_tot_pc", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "prod_per", headerName: "Productivity %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "unq_mtd_pc_call", headerName: "Unique Productive Calls", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
+        { field: "unq_prod_per", headerName: "Unique Productivity %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
+        { field: "tot_prod_call", headerName: "Productive Calls", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
+        { field: "lpc_cnt", headerName: "Total LPC", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
+        { field: "lpc_per", headerName: "Avg. LPC", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
         { field: "visible_dy_tgt", headerName: "Visibility Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "mtd_visible_cnt", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "visible_per", headerName: "Visibility %", renderCell: ({ value }) => <Box sx={HCOLOR}>{fmtF(value)}</Box> },
@@ -267,9 +276,14 @@ function KPIReport() {
         { field: "call_dy_tgt", headerName: "Calls/Day Target" },
         { field: "mtd_tot_call", headerName: "Actual " },
         { field: "coverage_per", headerName: "Coverage %" },
-        { field: "prod_dy_tgt", headerName: "Productivity Target" },
+        { field: "prod_dy_tgt", headerName: "Productivity Tgt" },
         { field: "mtd_tot_pc", headerName: "Productivity Actual" },
         { field: "prod_per", headerName: "Productivity %" },
+        { field: "unq_mtd_pc_call", headerName: "Unique Productive Calls" },
+        { field: "unq_prod_per", headerName: "Unique Productivity %" },
+        { field: "tot_prod_call", headerName: "Productive Calls" },
+        { field: "lpc_cnt", headerName: "Total LPC" },
+        { field: "lpc_per", headerName: "Avg. LPC" },
         { field: "visible_dy_tgt", headerName: "Visibility Target" },
         { field: "mtd_visible_cnt", headerName: "Actual" },
         { field: "visible_per", headerName: "Visibility %" },
@@ -303,7 +317,7 @@ function KPIReport() {
         try {
             const safe = (val) => (!val || Number(val) === 0 ? "-" : val);
             const safeF = (val) => (!val || Number(val) === 0 ? "-" : Number(val).toFixed(2));
-
+            const safeRound=(val)=> (!val || Number(val)===0?"-":Math.round(Number(val)))
             const allRows = [];
             zoneData.forEach(({ zoneRow, repRows }) => {
                 repRows.forEach((rep) => allRows.push(rep));
@@ -328,6 +342,11 @@ function KPIReport() {
                 prod_dy_tgt: safeF(row.prod_dy_tgt),
                 mtd_tot_pc: safeF(row.mtd_tot_pc),
                 prod_per: safeF(row.prod_per),
+                unq_mtd_pc_call:safeRound(row.unq_mtd_pc_call),
+                unq_prod_per:safeF(row. unq_prod_per),
+                tot_prod_call:safeRound(row.tot_prod_call),
+                lpc_cnt:safeRound(row.lpc_cnt),
+                lpc_per:safeF(row.lpc_per),
                 visible_dy_tgt: safeF(row.visible_dy_tgt),
                 mtd_visible_cnt: safeF(row.mtd_visible_cnt),
                 visible_per: safeF(row.visible_per),
