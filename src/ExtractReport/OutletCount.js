@@ -176,7 +176,7 @@ function buildColumns(expandedZones, expandedRegs, toggleZone, toggleReg, handle
                     field: "tot_cus",
                     headerName: "Total Outlets",
                     renderCell: ({ row }) => (
-                        <Typography sx={{ textAlign: "center", fontWeight: row._rowType !== "rep" ? 700 : 400, fontSize: 12, width: "100%" }}>
+                        <Typography sx={{ textAlign: "right", fontWeight: row._rowType !== "rep" ? 700 : 400, fontSize: 12, width: "80%"}}>
                             {fmt(row.tot_cus)}
                         </Typography>
                     ),

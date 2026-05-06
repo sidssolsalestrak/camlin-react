@@ -156,6 +156,10 @@ export default function DailyActivityReport() {
 
     const handleSubmit = async () => {
         try {
+            if(selectedRows.length===1 && selectedRows[0]===0){
+                toast.error("Please select at least one report.")
+                return
+            }
             let payload = {
                 selectedvalues: selectedRows
             }
@@ -215,17 +219,18 @@ export default function DailyActivityReport() {
 
                 return (
                     <Box sx={{ overflow: 'hidden' }}>
-                        <Tooltip title={params.value} placement="top">
                             <Typography sx={{
                                 color: '#133BDE',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
+                                '&:hover': {
+                                        textDecoration: 'underline',
+                                }
                               
                             }}>
                                 {params.value}
                             </Typography>
-                        </Tooltip>
 
                         <Tooltip title={`${params.row.desig_name} | ${params.row.area_name} HQ: ${params.row.u_hq_name}`} placement="top">
                             <Box sx={{ display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>

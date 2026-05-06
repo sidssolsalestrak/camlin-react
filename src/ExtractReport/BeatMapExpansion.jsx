@@ -45,10 +45,9 @@ const createCenteredMarker = () => ({
   fillOpacity: 1,
   strokeColor: "#FFFFFF",
   strokeWeight: 2,
-  scale: 1.5,
-  anchor: new window.google.maps.Point(12, 12),
+  scale: 1.1,
+  anchor: new window.google.maps.Point(13, 21), 
 });
-
 // ── Single beat location map (inline row expansion) ───────────────────────────
 export function BeatMapExpansion({ row }) {
   const [infoOpen, setInfoOpen] = useState(false);
