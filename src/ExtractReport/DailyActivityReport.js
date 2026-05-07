@@ -587,7 +587,7 @@ export default function DailyActivityReport() {
                 />
 
                 {/* ── Submit Button (visible only for allowed user types on Pending tab) ── */}
-                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && Number(typeStat) === 1) && (
+                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && Number(typeStat) === 1) && URL !== 'getfieldActivity_new' && (
                     <Button
                         variant="contained"
                         sx={{ ml: 3, mt: 1 }}

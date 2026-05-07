@@ -32,7 +32,7 @@ function AccountExtract() {
   const [userData, setUserData] = useState([]);
 
   const [selectedRegion, setSelectedRegion] = useState(0);
-  const [selectedAccType, setSelectedAccType] = useState("");
+  const [selectedAccType, setSelectedAccType] = useState(2);
   const [selectedUserType, setSelectedUserType] = useState(0);
   const [selectedUser, setSelectedUser] = useState(0);
   const [progress, setProgress] = useState(null);
@@ -222,7 +222,7 @@ function AccountExtract() {
 
   // ---------------- LOAD BUTTON ----------------
   const handleLoad = () => {
-    if (!selectedRegion || !selectedAccType) {
+    if ((!selectedRegion || !selectedAccType) && URL !== 'extract_new') {
       toast.error("Please select Zone and Account Type");
       return;
     }

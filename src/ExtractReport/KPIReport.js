@@ -9,115 +9,10 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { FaPlus } from "react-icons/fa";
 import { FaMinus } from "react-icons/fa";
-import { render } from "@testing-library/react";
 import { Download } from "../utils/downloadExcel/Download";
 import useToast from "../utils/useToast";
 import { MdOutlineLoop } from "react-icons/md";
 import ConfirmationDialog from "../utils/confirmDialog";
-
-const HCOLOR = {
-    backgroundColor: "#d0e8f5",
-    color: "#0047ab",
-    fontWeight: 600,
-    display: "block",
-    width: "100%",
-    textAlign: "center",
-    padding: "2px 0",
-    margin: "0px !important",
-    borderRadius: "3px",
-};
-
-const fmt = (val) => (!val || Number(val) === 0 ? "-" : val);
-const fmtF = (val) => (!val || Number(val) === 0 ? "-" : Number(val).toFixed(2));
-const zeroToNullRound = (n) => {
-    if (n == 0 || n == null || n === '') return '-';
-    return Math.round(Number(n));
-};
-
-const tierStyle = (tier) => {
-    if (tier === "Strategic") return { color: "darkgreen", fontWeight: 500 };
-    if (tier === "Predictive") return { color: "blue", fontWeight: 500 };
-    return { color: "orange", fontWeight: 500 };
-};
-
-function buildZoneData(rows) {
-    const map = new Map();
-    rows.forEach((r) => {
-        if (!map.has(r.zone_id))
-            map.set(r.zone_id, { zone_id: r.zone_id, zone_name: r.zone_name, reps: [] });
-        map.get(r.zone_id).reps.push(r);
-    });
-
-    const zones = [];
-    map.forEach(({ zone_id, zone_name, reps }) => {
-        let call_dy_tgt = 0, mtd_tot_call = 0, prod_dy_tgt = 0, mtd_tot_pc = 0,
-            visible_dy_tgt = 0, mtd_visible_cnt = 0, tot_cus = 0, eco_no = 0,
-            exp_sec_val = 0, exp_pri_val = 0, sec_val = 0, pri_val = 0,
-            tot_tgt = 0, sec_diff = 0, pri_diff = 0,
-            total_calls = 0, total_repeated = 0, field_days = 0;
-
-        reps.forEach((r) => {
-            call_dy_tgt += Number(r.call_dy_tgt) || 0;
-            mtd_tot_call += Number(r.mtd_tot_call) || 0;
-            prod_dy_tgt += Number(r.prod_dy_tgt) || 0;
-            mtd_tot_pc += Number(r.mtd_tot_pc) || 0;
-            visible_dy_tgt += Number(r.visible_dy_tgt) || 0;
-            mtd_visible_cnt += Number(r.mtd_visible_cnt) || 0;
-            tot_cus += Number(r.tot_cus) || 0;
-            eco_no += Number(r.eco_no) || 0;
-            exp_sec_val += Number(r.exp_sec_val) || 0;
-            exp_pri_val += Number(r.exp_pri_val) || 0;
-            sec_val += Number(r.sec_val) || 0;
-            pri_val += Number(r.pri_val) || 0;
-            tot_tgt += Number(r.sale_tgt) || 0;
-            sec_diff += Number(r.sec_diff) || 0;
-            pri_diff += Number(r.pri_diff) || 0;
-            total_calls += Number(r.tot_call) || 0;
-            total_repeated += Number(r.repeated) || 0;
-            field_days += Number(r.tot_field_day) || 0;
-        });
-
-        const coverage_per = call_dy_tgt > 0 ? (mtd_tot_call / call_dy_tgt) * 100 : 0;
-        const prod_per = prod_dy_tgt > 0 ? (mtd_tot_pc / prod_dy_tgt) * 100 : 0;
-        const visible_per = visible_dy_tgt > 0 ? (mtd_visible_cnt / visible_dy_tgt) * 100 : 0;
-        const cap_index = ((coverage_per * 40) + (prod_per * 40) + (visible_per * 20)) / 100;
-        const num_dist_per = tot_cus > 0 ? (eco_no / tot_cus) * 100 : 0;
-        const pot_diff = 1 + ((cap_index % 100) - 1) * 0.5;
-        const exe_tier = cap_index >= 90 ? "Strategic" : cap_index >= 80 ? "Predictive" : "Reactive";
-
-        zones.push({
-            zoneRow: {
-                id: `zone-${zone_id}`,
-                _rowType: "zone",          // explicit — never overridden
-                _zoneId: zone_id,
-                _name: `Total ${zone_name}`,
-                area_name: "",
-                sale_tgt: tot_tgt, tot_cus,
-                tot_call: total_calls, eco_no,
-                repeated: total_repeated, num_dist_per,
-                tot_field_day: field_days,
-                call_dy_tgt, mtd_tot_call, coverage_per,
-                prod_dy_tgt, mtd_tot_pc, prod_per,
-                visible_dy_tgt, mtd_visible_cnt, visible_per,
-                train_stat: "Y",
-                cap_index, exe_tier, p_mult: pot_diff,
-                exp_sec_val, exp_pri_val,
-                sec_val, pri_val,
-                sec_diff, pri_diff,
-            },
-            // _rowType: "rep" placed AFTER the spread so API data can never override it
-            repRows: reps.map((r, i) => ({
-                ...r,
-                id: `rep-${zone_id}-${r.user_id ?? i}`,
-                _rowType: "rep",           // after spread — cannot be overridden by r
-                _zoneId: zone_id,
-                _name: r.full_name,
-            })),
-        });
-    });
-
-    return zones;
-}
 
 
 function KPIReport() {
@@ -133,6 +28,19 @@ function KPIReport() {
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
 
+    const HCOLOR = {
+        backgroundColor: "#d0e8f5",
+        color: "#0047ab",
+        fontWeight: 600,
+        display: "block",
+        width: "100%",
+        textAlign: "center",
+        padding: "2px 0",
+        margin: "0px !important",
+        borderRadius: "3px",
+    };
+
+
     const fetchKpiReport = async () => {
         try {
             const response = await api.post("/getCapabilityReport", { month: selMonth });
@@ -144,6 +52,7 @@ function KPIReport() {
             console.error(err);
         }
     };
+    
 
     const toggleZone = (zoneId) => {
         setExpanded((prev) => {
@@ -170,6 +79,98 @@ function KPIReport() {
             onConfirm: () => handleRender()
         })
     }
+
+    const buildZoneData = (rows) => {
+        const map = new Map();
+        rows.forEach((r) => {
+            if (!map.has(r.zone_id))
+                map.set(r.zone_id, { zone_id: r.zone_id, zone_name: r.zone_name, reps: [] });
+            map.get(r.zone_id).reps.push(r);
+        });
+
+        const zones = [];
+        map.forEach(({ zone_id, zone_name, reps }) => {
+            let call_dy_tgt = 0, mtd_tot_call = 0, prod_dy_tgt = 0, mtd_tot_pc = 0,
+                visible_dy_tgt = 0, mtd_visible_cnt = 0, tot_cus = 0, eco_no = 0,
+                exp_sec_val = 0, exp_pri_val = 0, sec_val = 0, pri_val = 0,
+                tot_tgt = 0, sec_diff = 0, pri_diff = 0,
+                total_calls = 0, total_repeated = 0, field_days = 0;
+
+            reps.forEach((r) => {
+                call_dy_tgt += Number(r.call_dy_tgt) || 0;
+                mtd_tot_call += Number(r.mtd_tot_call) || 0;
+                prod_dy_tgt += Number(r.prod_dy_tgt) || 0;
+                mtd_tot_pc += Number(r.mtd_tot_pc) || 0;
+                visible_dy_tgt += Number(r.visible_dy_tgt) || 0;
+                mtd_visible_cnt += Number(r.mtd_visible_cnt) || 0;
+                tot_cus += Number(r.tot_cus) || 0;
+                eco_no += Number(r.eco_no) || 0;
+                exp_sec_val += Number(r.exp_sec_val) || 0;
+                exp_pri_val += Number(r.exp_pri_val) || 0;
+                sec_val += Number(r.sec_val) || 0;
+                pri_val += Number(r.pri_val) || 0;
+                tot_tgt += Number(r.sale_tgt) || 0;
+                sec_diff += Number(r.sec_diff) || 0;
+                pri_diff += Number(r.pri_diff) || 0;
+                total_calls += Number(r.tot_call) || 0;
+                total_repeated += Number(r.repeated) || 0;
+                field_days += Number(r.tot_field_day) || 0;
+            });
+
+            const coverage_per = call_dy_tgt > 0 ? (mtd_tot_call / call_dy_tgt) * 100 : 0;
+            const prod_per = prod_dy_tgt > 0 ? (mtd_tot_pc / prod_dy_tgt) * 100 : 0;
+            const visible_per = visible_dy_tgt > 0 ? (mtd_visible_cnt / visible_dy_tgt) * 100 : 0;
+            const cap_index = ((coverage_per * 40) + (prod_per * 40) + (visible_per * 20)) / 100;
+            const num_dist_per = tot_cus > 0 ? (eco_no / tot_cus) * 100 : 0;
+            const pot_diff = 1 + ((cap_index % 100) - 1) * 0.5;
+            const exe_tier = cap_index >= 90 ? "Strategic" : cap_index >= 80 ? "Predictive" : "Reactive";
+
+            zones.push({
+                zoneRow: {
+                    id: `zone-${zone_id}`,
+                    _rowType: "zone",          // explicit — never overridden
+                    _zoneId: zone_id,
+                    _name: `Total ${zone_name}`,
+                    area_name: "",
+                    sale_tgt: tot_tgt, tot_cus,
+                    tot_call: total_calls, eco_no,
+                    repeated: total_repeated, num_dist_per,
+                    tot_field_day: field_days,
+                    call_dy_tgt, mtd_tot_call, coverage_per,
+                    prod_dy_tgt, mtd_tot_pc, prod_per,
+                    visible_dy_tgt, mtd_visible_cnt, visible_per,
+                    train_stat: "Y",
+                    cap_index, exe_tier, p_mult: pot_diff,
+                    exp_sec_val, exp_pri_val,
+                    sec_val, pri_val,
+                    sec_diff, pri_diff,
+                },
+                // _rowType: "rep" placed AFTER the spread so API data can never override it
+                repRows: reps.map((r, i) => ({
+                    ...r,
+                    id: `rep-${zone_id}-${r.user_id ?? i}`,
+                    _rowType: "rep",           // after spread — cannot be overridden by r
+                    _zoneId: zone_id,
+                    _name: r.full_name,
+                })),
+            });
+        });
+
+        return zones;
+    }
+
+    const fmt = (val) => (!val || Number(val) === 0 ? "-" : val);
+    const fmtF = (val) => (!val || Number(val) === 0 ? "-" : Number(val).toFixed(2));
+    const zeroToNullRound = (n) => {
+        if (n == 0 || n == null || n === '') return '-';
+        return Math.round(Number(n));
+    };
+
+    const tierStyle = (tier) => {
+        if (tier === "Strategic") return { color: "darkgreen", fontWeight: 500 };
+        if (tier === "Predictive") return { color: "blue", fontWeight: 500 };
+        return { color: "orange", fontWeight: 500 };
+    };
 
     // Static columns with no state dependency
     const STATIC_COLUMNS = [
@@ -266,7 +267,7 @@ function KPIReport() {
         { field: 'full_name', headerName: 'Sales Rep' },
         { field: 'hq_name', headerName: 'HQ' },
         { field: 'area_name', headerName: 'Area' },
-        { field: 'sale_tgt', headerName: 'Target' },
+        { field: 'sale_tgt', headerName: `${dayjs(selMonth).format('MMM YYYY')}-TGT` },
         { field: "tot_cus", headerName: "Total Outlets" },
         { field: "tot_call", headerName: "Total Calls" },
         { field: "eco_no", headerName: "Total Outlets Visited" },
@@ -317,7 +318,7 @@ function KPIReport() {
         try {
             const safe = (val) => (!val || Number(val) === 0 ? "-" : val);
             const safeF = (val) => (!val || Number(val) === 0 ? "-" : Number(val).toFixed(2));
-            const safeRound=(val)=> (!val || Number(val)===0?"-":Math.round(Number(val)))
+            const safeRound = (val) => (!val || Number(val) === 0 ? "-" : Math.round(Number(val)))
             const allRows = [];
             zoneData.forEach(({ zoneRow, repRows }) => {
                 repRows.forEach((rep) => allRows.push(rep));
@@ -342,11 +343,11 @@ function KPIReport() {
                 prod_dy_tgt: safeF(row.prod_dy_tgt),
                 mtd_tot_pc: safeF(row.mtd_tot_pc),
                 prod_per: safeF(row.prod_per),
-                unq_mtd_pc_call:safeRound(row.unq_mtd_pc_call),
-                unq_prod_per:safeF(row. unq_prod_per),
-                tot_prod_call:safeRound(row.tot_prod_call),
-                lpc_cnt:safeRound(row.lpc_cnt),
-                lpc_per:safeF(row.lpc_per),
+                unq_mtd_pc_call: safeRound(row.unq_mtd_pc_call),
+                unq_prod_per: safeF(row.unq_prod_per),
+                tot_prod_call: safeRound(row.tot_prod_call),
+                lpc_cnt: safeRound(row.lpc_cnt),
+                lpc_per: safeF(row.lpc_per),
                 visible_dy_tgt: safeF(row.visible_dy_tgt),
                 mtd_visible_cnt: safeF(row.mtd_visible_cnt),
                 visible_per: safeF(row.visible_per),
