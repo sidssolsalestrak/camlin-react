@@ -32,7 +32,7 @@ function AccountExtract() {
   const [userData, setUserData] = useState([]);
 
   const [selectedRegion, setSelectedRegion] = useState(0);
-  const [selectedAccType, setSelectedAccType] = useState("");
+  const [selectedAccType, setSelectedAccType] = useState(2);
   const [selectedUserType, setSelectedUserType] = useState(0);
   const [selectedUser, setSelectedUser] = useState(0);
   const [progress, setProgress] = useState(null);
@@ -189,10 +189,12 @@ function AccountExtract() {
       }
       let response = await api.post('/getAccountExtract', payload)
       let extData = Array.isArray(response.data.data) ? response.data.data : []
-      let FormattedData = extData.map((val) => ({
+      let FormattedData = extData.map((val,index) => ({
         ...val, id: `${val.main_id}_${val.sub_id}`,
-        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`
-      }))
+        sl_no:index+1,
+        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
+        create_dt:val.create_dt?dayjs(val.create_dt).format('DD-MM-YYYY HH:mm'):''
+        }))
 
       let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
 
@@ -220,7 +222,7 @@ function AccountExtract() {
 
   // ---------------- LOAD BUTTON ----------------
   const handleLoad = () => {
-    if (!selectedRegion || !selectedAccType) {
+    if ((!selectedRegion || !selectedAccType) && URL !== 'extract_new') {
       toast.error("Please select Zone and Account Type");
       return;
     }
@@ -284,6 +286,7 @@ function AccountExtract() {
   ];
 
   const ExcelColumns = [
+    {field:"sl_no",headerName:"SL NO"},
     { field: "reg_name", headerName: "Region" },
     { field: "emp_code", headerName: "SO/User Code" },
     { field: "user_name", headerName: "SO/User Name" },
@@ -297,6 +300,7 @@ function AccountExtract() {
     { field: "area_name", headerName: "Area" },
     { field: "beat_name", headerName: "Beat/Territory" },
     { field: "mobile", headerName: "Mobile No" },
+    {field:"create_dt",headerName:"Created Date"}
 
   ]
 

@@ -55,6 +55,8 @@ import OrderReport from "./ExtractReport/orderReport/OrderReport";
 import UserLog from "./view/UserLog";
 import CreateCustomer from "./view/account/CreateCustomer";
 import StockAndSalesReport from "./ExtractReport/StockAndSalesReport";
+import OutletCount from "./ExtractReport/OutletCount";
+import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
 
 function App() {
   const ProtectedRoute = () => {
@@ -220,6 +222,14 @@ function App() {
             <Route
               path="/reports/getfieldActivity"
               element={<DailyActivityReport />}
+            />
+            <Route 
+              path="/reports/outlet_count/:enzone?/:enRegion?/:enArea?/:enSo?"
+              element={<OutletCount />}
+            />
+            <Route
+             path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
+             element={<OrderFrequencyReport />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

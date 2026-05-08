@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress,Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress, Grid
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
@@ -67,35 +67,25 @@ export default function SalesHierachy() {
             setSelDistributor(0)
             setAllDistributor([])
         }
-        if (!selRegion || selRegion === 0) return
+        if ((!selRegion || selRegion === 0) && (!selUsers || selUsers.id === 0)) return
         fetchDistributor()
     }, [selRegion, selUsers])
 
     useEffect(() => {
-          
-        const fetchTableData = async () => {
-            console.log("All decoded data", decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
-            if (URL !== 'active_sales_new') {
-                setSelZone(Number(zoneid ? decodedZoneId : 0))
-                setSelRegion(Number(regionid ? decodedRegionId : 0))
-                setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
-                setSelUsers(
-                    userid > 0
-                        ? allUsers.find((val) => val.id === Number(decodeduserId)) ?? { id: 0, u_name: "All" }
-                        : { id: 0, u_name: "All" }
-                );
-                setSelDistributor(Number(distributorid ? decodedDistributorId : 0))
-            }
-            let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
-            setAllHeirachyData(hierachyData)
+    const fetchTableData = async () => {
+        if (URL !== 'active_sales_new') {
+            setSelZone(Number(zoneid ? decodedZoneId : 0))
+            setSelRegion(Number(regionid ? decodedRegionId : 0))
+            setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
+            setSelDistributor(Number(decodedDistributorId ? decodedDistributorId : 0))
         }
-       if(zoneid || regionid|| usertypeId || userid|| distributorid){
-        console.log("have params fetch table data is running")
+        let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
+        setAllHeirachyData(hierachyData)
+    }
+    if (zoneid || regionid || usertypeId || userid || distributorid) {
         fetchTableData()
-       }
-       else return
-
-    }, [ zoneid, regionid, usertypeId, userid, distributorid])
+    }
+}, [zoneid, regionid, usertypeId, userid, distributorid])
 
     useEffect(() => {
         if (!decodeduserId && allUsers) return
@@ -161,7 +151,7 @@ export default function SalesHierachy() {
         try {
             let payload = {
                 reg_id: selRegion,
-                user_id: selUsers?.id 
+                user_id: selUsers?.id
             }
             let response = await api.post('/getStockstk', payload)
             let distributorres = Array.isArray(response.data.data) ? response.data.data : []
@@ -182,11 +172,11 @@ export default function SalesHierachy() {
         },
         {
             field: "stk_code",
-            headerName: "DistributorCode",
+            headerName: "Distributor Code",
         },
         {
             field: "stk_name",
-            headerName: "DistributorName",
+            headerName: "Distributor Name",
         },
         {
             field: "city_name",
@@ -195,6 +185,9 @@ export default function SalesHierachy() {
         {
             field: "state_name",
             headerName: "State",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "zone_name",
@@ -203,10 +196,16 @@ export default function SalesHierachy() {
         {
             field: "reg_name",
             headerName: "Region",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "area_name",
             headerName: "Area",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "ter_name",
@@ -219,6 +218,9 @@ export default function SalesHierachy() {
         {
             field: "rsm_name",
             headerName: "RSM Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "rsm_email",
@@ -235,6 +237,9 @@ export default function SalesHierachy() {
         {
             field: "zbm_name",
             headerName: "ZBM Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "zbm_email",
@@ -247,10 +252,16 @@ export default function SalesHierachy() {
         {
             field: "am_code",
             headerName: "AM Code",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "am_name",
             headerName: "AM Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "am_email",
@@ -267,6 +278,9 @@ export default function SalesHierachy() {
         {
             field: "sr_name",
             headerName: "SR Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
         },
         {
             field: "sr_hq_name",
@@ -306,9 +320,9 @@ export default function SalesHierachy() {
 
     let handleLoad = () => {
         if (selUsers?.id === 0 && selUserType > 0) {
-                setUserError(true)
-                toast.warning("Please Select User to Load")
-                return
+            setUserError(true)
+            toast.warning("Please Select User to Load")
+            return
         }
         setUserError(false)
         navigate(`/reports/active_sales/${btoa(selZone || 0)}/${btoa(selRegion || 0)}/${btoa(selUserType || 0)}/${btoa(selUsers?.id || 0)}/${btoa(selDistributor || 0)}`)
@@ -328,7 +342,7 @@ export default function SalesHierachy() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
 
-            // ── Build dynamic meta from selected filter values ──────────────────
+            //  Build dynamic meta from selected filter values
             const getLabel = (list, selectedId, labelKey, prefix) => {
                 if (!selectedId || selectedId === 0) return `${prefix}- All`
                 const match = list.find((item) => item.id === selectedId)
@@ -336,25 +350,25 @@ export default function SalesHierachy() {
             }
 
             const selectedUserTypeLabel = (() => {
-                if (!selUserType || selUserType === 0) return "User Type - All"
+                if (!selUserType || selUserType === 0) return "UserType - All"
                 const match = allUserType.find((u) => u.id === selUserType)
-                return match ? `User Type - ${match.client_alias}` : "User Type - All"
+                return match ? `UserType- ${match.client_alias}` : "UserType - All"
             })()
 
             const selectedDistributorLabel = (() => {
                 if (!selDistributor || selDistributor === 0) return "Distributor- All"
                 const match = allDistributor.find((d) => d.stk_id === selDistributor)
-                return match ? `Distributor- ${match.stk_code}-${match.stk_name}` : "Distributor- All"
+                return match ? `Distributor-${match.stk_code}-${match.stk_name}` : "Distributor- All"
             })()
 
             const meta = {
-                zone: getLabel(allZone, selZone, "zone_name", "Zone"),
-                region: getLabel(allRegion, selRegion, "reg_name", "Region"),
-                userType: selectedUserTypeLabel,
-                user: `User - ${selUsers?.u_name ?? "All"}`,
-                distributor: selectedDistributorLabel,
+                Zone: getLabel(allZone, selZone, "zone_name", "Zone"),
+                Region: getLabel(allRegion, selRegion, "reg_name", "Region"),
+                UserType: selectedUserTypeLabel,
+                User: `User - ${selUsers?.u_name ?? "All"}`,
+                Distributor: selectedDistributorLabel,
             }
-            // ────────────────────────────────────────────────────────────────────
+          
 
             DownloadCSV(
                 finalHierachyData,
@@ -373,14 +387,14 @@ export default function SalesHierachy() {
     console.log("All Heirachy Data", allHierachyData)
     console.log("All user ids", allUsers)
     console.log("selected distributor id", selDistributor)
-    console.log("params ",zoneid,regionid,distributorid)
+    console.log("params ", zoneid, regionid, distributorid)
 
     return (
         <Layout
             breadcrumb={[
                 { label: "Home", path: "/" },
-                { label: "Extract", path:URL !== 'active_sales_new' ?"/reports/active_sales":"/reports/active_sales_new" },
-                { label: "Sales Hierachy"}
+                { label: "Extract", path: URL !== 'active_sales_new' ? "/reports/active_sales" : "/reports/active_sales_new" },
+                { label: "Sales Hierachy" }
             ]}>
             <Box p={0.5}>
                 <Box
@@ -393,15 +407,18 @@ export default function SalesHierachy() {
                     <Box>
                         <h1 className="mainTitle">Sales Hierachy</h1>
                     </Box>
-                    <Box sx={{  display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' ,backgroundColor: "#fff", boxShadow:
+                    <Box sx={{
+                        display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
-                        borderRadius: "10px"}}>
+                        borderRadius: "10px"
+                    }}>
                         <FormControl sx={{ height: '3rem' }}>
                             <InputLabel id="zone">Zone </InputLabel>
-                            <Select value={selZone} onChange={(e) =>{
-                                setSelRegion(0) 
-                                setSelZone(e.target.value) }} sx={{ width: URL !== 'active_sales_new'?165: 175 }} labelId="zone" label="Zone" size="small"
+                            <Select value={selZone} onChange={(e) => {
+                                setSelRegion(0)
+                                setSelZone(e.target.value)
+                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="zone" label="Zone" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -422,7 +439,7 @@ export default function SalesHierachy() {
                             <Select value={selRegion} onChange={(e) => {
                                 setSelDistributor(0)
                                 setSelRegion(e.target.value)
-                            }} sx={{ width:URL !== 'active_sales_new'?165: 175 }} labelId="region" label="Region" size="small"
+                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="region" label="Region" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -442,7 +459,7 @@ export default function SalesHierachy() {
                         </FormControl>
                         <FormControl sx={{ height: '3rem' }}>
                             <InputLabel id="usr_type">User Type </InputLabel>
-                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new'?165:175 }} labelId="usr_type" label="User Type" size="small"
+                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="usr_type" label="User Type" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -547,12 +564,12 @@ export default function SalesHierachy() {
                         <DataTable
                             columns={columns}
                             data={allHierachyData}
-                             sx={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            boxShadow:
-                                "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                        }}
+                            sx={{
+                                background: "#fff",
+                                borderRadius: "10px",
+                                boxShadow:
+                                    "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                            }}
                         />}
                 </Box>
             </Box>

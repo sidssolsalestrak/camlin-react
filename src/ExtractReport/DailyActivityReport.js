@@ -156,6 +156,10 @@ export default function DailyActivityReport() {
 
     const handleSubmit = async () => {
         try {
+            if(selectedRows.length===1 && selectedRows[0]===0){
+                toast.error("Please select at least one report.")
+                return
+            }
             let payload = {
                 selectedvalues: selectedRows
             }
@@ -215,17 +219,18 @@ export default function DailyActivityReport() {
 
                 return (
                     <Box sx={{ overflow: 'hidden' }}>
-                        <Tooltip title={params.value} placement="top">
                             <Typography sx={{
                                 color: '#133BDE',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
+                                '&:hover': {
+                                        textDecoration: 'underline',
+                                }
                               
                             }}>
                                 {params.value}
                             </Typography>
-                        </Tooltip>
 
                         <Tooltip title={`${params.row.desig_name} | ${params.row.area_name} HQ: ${params.row.u_hq_name}`} placement="top">
                             <Box sx={{ display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
@@ -408,11 +413,11 @@ export default function DailyActivityReport() {
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
             const meta = {
-                fromDate: fromDate ? fromDate.format("DD MMM YYYY") : "",
-                toDate: toDate ? toDate.format("DD MMM YYYY") : "",
-                type: typeLabel,
+                FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
+                ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
+                Type: `Type-${typeLabel}`,
             };
-            DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress, enqueueSnackbar, meta);
+            DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress,toast, meta);
         } catch (err) {
             console.log("excelDownload error", err);
         }
@@ -582,7 +587,7 @@ export default function DailyActivityReport() {
                 />
 
                 {/* ── Submit Button (visible only for allowed user types on Pending tab) ── */}
-                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && Number(typeStat) === 1) && (
+                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && Number(typeStat) === 1) && URL !== 'getfieldActivity_new' && (
                     <Button
                         variant="contained"
                         sx={{ ml: 3, mt: 1 }}

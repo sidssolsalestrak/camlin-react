@@ -14,7 +14,6 @@ import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { Download } from "../utils/downloadExcel/Download";
-import { useSnackbar } from "notistack";
 
 function DataSubmissionLog() {
     const { encodeyear, encodezone, encoderegion } = useParams()
@@ -30,7 +29,7 @@ function DataSubmissionLog() {
     const decodedZone = encodezone ? Number(atob(encodezone)) : 0
     const decodedRegion = encoderegion ? Number(atob(encoderegion)) : 0
     const decodedYearStr = decodedYear.format("YYYY")
-    const {enqueueSnackbar}=useSnackbar()
+    const toast=useToast()
 
     const navigate = useNavigate()
     console.log("encoded values", encodeyear, encodezone, encoderegion)
@@ -39,6 +38,10 @@ function DataSubmissionLog() {
     }, [])
 
     useEffect(() => {
+        if (!selZone || selZone === 0) {
+            setAllRegion([])   // clear region list when zone is reset
+            return
+        }
         fetchRegionList(selZone)
     }, [selZone])
 
@@ -47,6 +50,12 @@ function DataSubmissionLog() {
         setSelRegion(decodedRegion)
         setSelYear(decodedYear)
         setSelZone(decodedZone)
+
+
+        if (decodedZone > 0) {
+            fetchRegionList(decodedZone)
+        }
+
         fetchSubmitlog()
     }, [encodeyear, encodezone, encoderegion])
 
@@ -140,6 +149,7 @@ function DataSubmissionLog() {
         return {
             field: `month_${i + 1}`,
             headerName: monthName,
+            type: 'date'
         };
     });
 
@@ -147,22 +157,47 @@ function DataSubmissionLog() {
         {
             field: "zone_name", headerName: "Zone",
             renderCell: (params) => (
-                <Typography sx={{ fontWeight: 600 }}>{params.value}</Typography>
+                <Typography sx={{ fontWeight: 600, textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
-        { field: "reg_name", headerName: "Region" },
-        { field: "state_name", headerName: "State" },
-        { field: "stk_code", headerName: "Distributor Code" },
-        { field: "stk_name", headerName: "Distributor Name" },
+        {
+            field: "reg_name",
+            headerName: "Region",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
+        {
+            field: "state_name",
+            headerName: "State",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
+        { field: "stk_code", 
+          headerName: "Distributor Code" 
+        },
+        {
+            field: "stk_name", 
+            headerName: "Distributor Name",
+            renderCell: (params) => (
+                <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
+            )
+        },
         ...monthColumns,
     ];
 
-    const handleDownloadExcel=()=>{
-          const safeColumns = columns.map(
+    const handleDownloadExcel = () => {
+        try {
+            const safeColumns = columns.map(
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
-           let fileName=`Region_Wise_Distributor_Wise_Data_Submission-${decodedYear?decodedYear.format('YYYY'):null}`
-          Download(allSubmissionLog,safeColumns,fileName, setProgress,enqueueSnackbar,'Region_Wise_Distributor_Wise_Data_Submission')
+            let fileName = `Region_Wise_Distributor_Wise_Data_Submission-${decodedYear ? decodedYear.format('YYYY') : null}`
+            Download(allSubmissionLog, safeColumns, fileName, setProgress, toast, 'Region_Wise_Distributor_Wise_Data_Submission')
+        }
+        catch (err) {
+            console.log("excel download err", err)
+        }
     }
 
     return (
@@ -211,7 +246,10 @@ function DataSubmissionLog() {
                         </FormControl>
                         <FormControl sx={{ width: 200 }}>
                             <InputLabel id="zone">Zone</InputLabel>
-                            <Select labelId="zone" label="Zone" size="small" onChange={(e) => setSelZone(e.target.value)} value={selZone}>
+                            <Select labelId="zone" label="Zone" size="small" onChange={(e) => {
+                                setSelRegion(0)
+                                setSelZone(e.target.value)
+                            }} value={selZone}>
                                 <MenuItem value={0}>All</MenuItem>
                                 {allZone.map((val) => (
                                     <MenuItem value={val.id}>{val.zone_name}</MenuItem>
@@ -229,7 +267,7 @@ function DataSubmissionLog() {
                         </FormControl>
                         <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
                         {progress ? <CircularProgress progress={progress} /> :
-                            <span onClick={()=>handleDownloadExcel()}>
+                            <span onClick={() => handleDownloadExcel()}>
                                 <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                             </span>}
                     </Box>
