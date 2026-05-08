@@ -54,6 +54,7 @@ import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
 import OrderReport from "./ExtractReport/orderReport/OrderReport";
 import UserLog from "./view/UserLog";
 import CreateCustomer from "./view/account/CreateCustomer";
+import StockAndSalesReport from "./ExtractReport/StockAndSalesReport";
 import OutletCount from "./ExtractReport/OutletCount";
 import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
 
@@ -253,7 +254,7 @@ function App() {
           <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
           <Route path="/reports/pcm_kam" element={<OrderReport />} />
           <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
-
+          <Route path="/reports/stock_salesReport" element={<StockAndSalesReport />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

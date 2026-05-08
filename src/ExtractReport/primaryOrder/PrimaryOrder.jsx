@@ -8,12 +8,13 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material';
 import Layout from '../../layout';
 import axios from "../../services/api";
 import DataTable from '../../utils/dataTable';
 import PopUpTable from './PopUpTable';
 import { DownloadCSV } from '../../utils/Download CSV/DownloadCSV';
+import { addSubtotalsPrimary } from './addSubtotalsPrimary';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -296,14 +297,12 @@ const PrimaryOrder = () => {
             headerName: "Total Ord. Qty",
             filterable: true,
             type: "alignCenter",
-            showTotal: true,
         },
         {
             field: "ord_val",
             headerName: "Total Ord.Value",
             filterable: true,
             type: "alignCenter",
-            showTotal: true,
         },
     ]
 
@@ -347,47 +346,6 @@ const PrimaryOrder = () => {
         setRowData(row)
     };
 
-    const buildDataWithSubtotals = (data, levels) => {
-        if (!levels || levels.length === 0) return [...data];
-
-        const [currentLevel, ...remainingLevels] = levels;
-        const groupMap = new Map();
-        const groupOrder = [];
-
-        data.forEach((row) => {
-            const key = row[currentLevel] || "Unknown";
-            if (!groupMap.has(key)) { groupMap.set(key, []); groupOrder.push(key); }
-            groupMap.get(key).push(row);
-        });
-
-        const result = [];
-        groupOrder.forEach((groupKey) => {
-            const rows = groupMap.get(groupKey);
-            const subResult = remainingLevels.length > 0
-                ? buildDataWithSubtotals(rows, remainingLevels)
-                : [...rows];
-            result.push(...subResult);
-
-            const subtotalRow = { _isSubtotal: true };   //marker for UI styling
-            columns.forEach((col) => { subtotalRow[col.field] = ""; });
-            subtotalRow["user_name"] = groupKey;
-            ["ord_qty", "ord_val"].forEach((field) => {
-                const sum = rows.reduce((s, r) => s + (parseFloat(r[field]) || 0), 0);
-                subtotalRow[field] = Math.round(sum * 100) / 100;
-            });
-            result.push(subtotalRow);
-        });
-
-        return result;
-    };
-
-    const groupLevels = ["zone_name", "reg_name"];
-
-    const displayData = useMemo(() => {
-        if (!tableData.length) return [];
-        return buildDataWithSubtotals(tableData, groupLevels);
-    }, [tableData]);
-
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
         try {
@@ -407,8 +365,6 @@ const PrimaryOrder = () => {
                 distributor: getLabel(allDistributor, formData.distributor, (item) => `${item.stk_code} - ${item.stk_name}`, ""),
             };
 
-            const numericFields = ["ord_qty", "ord_val"];
-
             // ── Fetch fresh data for extractPath, use state for report path ────────
             let sourceData = tableData;
             if (extractPath) {
@@ -419,24 +375,14 @@ const PrimaryOrder = () => {
                 sourceData = newData ?? [];
             }
 
-            const processedData = buildDataWithSubtotals(sourceData, groupLevels);
-
-            const grandTotalRow = {};
-            columnsExcel.forEach((col) => {
-                if (col.field === "user_name") {
-                    grandTotalRow[col.field] = "Grand Total";
-                } else if (numericFields.includes(col.field)) {
-                    const sum = sourceData.reduce((s, row) => s + (parseFloat(row[col.field]) || 0), 0);
-                    grandTotalRow[col.field] = Math.round(sum * 100) / 100;
-                } else {
-                    grandTotalRow[col.field] = "";
-                }
-            });
-            processedData.push(grandTotalRow);
-
-            DownloadCSV(processedData, columnsExcel, `Primary_Order`, setProgress, enqueueSnackbar, meta, false);
+            DownloadCSV(addSubtotalsPrimary(sourceData), columnsExcel, `Primary_Order`, setProgress, enqueueSnackbar, meta, false);
         } catch (err) {
-            console.log("excelDownload error", err);
+            if (err?.response?.status === 404) {
+                showAlert.error("No Data Available To Export Excel")
+            } else {
+                console.error(err);
+                showAlert.error("Failed to Export Excel")
+            }
         }
     };
 
@@ -446,79 +392,88 @@ const PrimaryOrder = () => {
             { label: extractPath ? "Extract" : "Report", path: location.pathname },
             { label: "Primary Order" },
         ]}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end"}}>
-                <Box sx={{ml:1.5,mt:1.5}}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <Box sx={{ ml: 1.5, mt: 1.5 }}>
                     <h1 className="mainTitle">Primary Order</h1>
                 </Box>
             </Box>
             <Box sx={headContainer}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="Month *"
-                            format="MMM YYYY"
-                            views={["month", "year"]}
-                            value={month}
-                            onChange={(newValue) => setMonth(newValue)}
-                            slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
-                        />
-                    </LocalizationProvider>
-
-                    <FormControl size="small" sx={{ width: 150 }}>
-                        <InputLabel id="zone">Zone</InputLabel>
-                        <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label="Zone" MenuProps={menuStyle}
-                            labelId="zone" variant="outlined" >
-                            <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
-                            {zoneData?.map((val) => (
-                                <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ width: 150 }}>
-                        <InputLabel id="Region">Region</InputLabel>
-                        <Select id='Region' label="Region" MenuProps={menuStyle}
-                            value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
-                            labelId="Region" variant="outlined" >
-                            <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
-                            {regionData?.map((val) => (
-                                <MenuItem key={val.id} value={val.id}>{val?.reg_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ width: 150 }}>
-                        <InputLabel id="Area">Area</InputLabel>
-                        <Select id='Area' label="Area" MenuProps={menuStyle}
-                            value={formData.area} onChange={(e) => handleChange("area", e.target.value)}
-                            labelId="Area" variant="outlined" >
-                            <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
-                            {area?.map((val) => (
-                                <MenuItem key={val.id} value={val.id}>{val?.area_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ width: 150 }}>
-                        <InputLabel id="Distributor">Distributor</InputLabel>
-                        <Select id='Distributor' label="Distributor" MenuProps={menuStyle}
-                            value={formData.distributor} onChange={(e) => handleChange("distributor", e.target.value)}
-                            labelId="Distributor" variant="outlined" >
-                            <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
-                            {allDistributor.map((val) => (
-                                <MenuItem sx={{ textWrap: 'wrap' }} key={val.id} value={val.id}>{val.stk_code}-{val.stk_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    {!extractPath && (
-                        <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
-                    )}
-
-                    {progress ? <CircularProgress progress={progress} /> :
-                        <span onClick={handleDownloadExcel}>
-                            <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
-                        </span>}
-                </Box>
+                <Grid container spacing={1}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="Month *"
+                                format="MMM YYYY"
+                                views={["month", "year"]}
+                                value={month}
+                                onChange={(newValue) => setMonth(newValue)}
+                                slotProps={{ textField: { size: "small", fullWidth: true } }}
+                            />
+                        </LocalizationProvider>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel id="zone">Zone</InputLabel>
+                            <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label="Zone" MenuProps={menuStyle}
+                                labelId="zone" variant="outlined" >
+                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                {zoneData?.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel id="Region">Region</InputLabel>
+                            <Select id='Region' label="Region" MenuProps={menuStyle}
+                                value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
+                                labelId="Region" variant="outlined" >
+                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                {regionData?.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>{val?.reg_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel id="Area">Area</InputLabel>
+                            <Select id='Area' label="Area" MenuProps={menuStyle}
+                                value={formData.area} onChange={(e) => handleChange("area", e.target.value)}
+                                labelId="Area" variant="outlined" >
+                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                {area?.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>{val?.area_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel id="Distributor">Distributor</InputLabel>
+                            <Select id='Distributor' label="Distributor" MenuProps={menuStyle}
+                                value={formData.distributor} onChange={(e) => handleChange("distributor", e.target.value)}
+                                labelId="Distributor" variant="outlined" >
+                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                {allDistributor.map((val) => (
+                                    <MenuItem sx={{ textWrap: 'wrap' }} key={val.id} value={val.id}>{val.stk_code}-{val.stk_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 3, sm: 3, md: 1, lg: 1 }}>
+                        {!extractPath && (
+                            <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                        )}
+                    </Grid>
+                    <Grid size={{ xs: 3, sm: 3, md: 1, lg: 1 }}>
+                        {progress ? <CircularProgress progress={progress} /> :
+                            <span onClick={handleDownloadExcel}>
+                                <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
+                            </span>}
+                    </Grid>
+                </Grid>
             </Box>
             {/* table */}
             {showTable && (
@@ -530,10 +485,9 @@ const PrimaryOrder = () => {
                             boxShadow:
                                 "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         }}
-                        data={displayData}
+                        data={addSubtotalsPrimary(tableData)}
                         columns={columns}
                         loading={loading}
-                        grandTotal={true}
                         onRowClick={handleRowClick}
                         rowStyle={(row) =>
                             row._isSubtotal

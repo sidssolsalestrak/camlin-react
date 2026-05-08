@@ -27,8 +27,9 @@ self.onmessage = function (e) {
       if (!grandTotal) return null;
 
       // If caller passed an explicit per-field object, use it directly
-      if (typeof grandTotal === "object" && !grandTotal.label) {
-        return grandTotal; // keyed by field name
+      if (typeof grandTotal === "object" && grandTotal !== null && !Array.isArray(grandTotal)) {
+        const { label, ...fieldConfig } = grandTotal;
+        return fieldConfig; // strip label, return only field mappings
       }
 
       // Auto-detect: inspect the first data row to classify each column
@@ -75,11 +76,10 @@ self.onmessage = function (e) {
         const numbers = data.map((row) => toNumber(row[col.field]));
         const sum = numbers.reduce((acc, n) => acc + n, 0);
         if (agg === "sum") {
-          totals[col.field] = sum;
+          totals[col.field] = parseFloat(sum.toFixed(2));
         } else if (agg === "avg") {
           const avg = numbers.length > 0 ? sum / numbers.length : 0;
-          // Round to at most 2 decimal places; show "-" if result is 0
-          const rounded = Math.round(avg * 100) / 100;
+          const rounded = parseFloat(avg.toFixed(2));  // always 2 decimal places
           totals[col.field] = rounded === 0 ? "-" : rounded;
         }
       });

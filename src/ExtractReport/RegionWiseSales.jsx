@@ -179,7 +179,16 @@ const RegionWiseSales = () => {
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
         try {
-            let grandTotal = true;
+            let grandTotal = {
+                label: "Grand Total",
+                reg_name: "label",      // first col → shows "Grand Total" text
+                ord_val: "sum",
+                tot_cus: "sum",
+                tot_ord_recd: "sum",
+                avg_sku: "avg",         // ← average
+                avg_val: "avg",         // ← average
+                prod_per: "avg",        // ← average
+            };
             // Build meta object from current filter state
             const meta = {
                 centered: true,
@@ -205,8 +214,12 @@ const RegionWiseSales = () => {
             );
         }
         catch (err) {
-            console.log("excelDownload error", err)
-            showAlert.error("Failed to Download")
+            if (err?.response?.status === 404) {
+                showAlert.error("No Data Available To Export Excel")
+            } else {
+                console.error(err);
+                showAlert.error("Failed to Export Excel")
+            }
         }
     }
 
