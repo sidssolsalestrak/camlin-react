@@ -513,8 +513,8 @@ const StockAndSalesReport = () => {
                     loading={loading}
                     defaultPageSize={100}
                     rowStyle={(row) => {
-                        if (row._grandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 800 } };
-                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 700 } };
+                        if (row._grandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600 } };
+                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600 } };
                         if (row._subtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600 } };
                         return {};
                     }}
