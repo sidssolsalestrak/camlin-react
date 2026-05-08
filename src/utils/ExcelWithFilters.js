@@ -152,6 +152,25 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
 
     const maxContentLengths = new Array(totalCols).fill(0);
     styleDataCells(ws, dataStartRow, dataStartRow + formattedData.length, totalCols, borderStyle, maxContentLengths);
+    // ── Apply subtotal row colors ──
+    tableData.forEach((row, rowIndex) => {
+      const r = dataStartRow + rowIndex;
+      let bgColor = null;
+      if (row._grandTotal) bgColor = "bdbdbd";
+      else if (row._zoneTotal) bgColor = "e0e0e0";
+      else if (row._isSubtotal || row._subtotal) bgColor = "eeeeee";
+      if (!bgColor) return;
+
+      for (let c = 0; c < totalCols; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r, c });
+        if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+        ws[cellRef].s = {
+          ...ws[cellRef].s,
+          fill: { patternType: "solid", fgColor: { rgb: bgColor } },
+          font: { ...ws[cellRef].s?.font, bold: true, sz: 9, name: "Calibri" },
+        };
+      }
+    });
     setColumnWidths(ws, headers, maxContentLengths);
     setRowHeights(ws, mergedTitleRows, formattedData);
 

@@ -489,15 +489,12 @@ const PrimaryOrder = () => {
                         columns={columns}
                         loading={loading}
                         onRowClick={handleRowClick}
-                        rowStyle={(row) =>
-                            row._isSubtotal
-                                ? {
-                                    "& td": {
-                                        backgroundColor: "#eef2ff !important",
-                                    }
-                                }
-                                : {}
-                        }
+                        rowStyle={(row) => {
+                            if (row._grandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600 } };
+                            if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600 } };
+                            if (row._isSubtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600 } };  // ← was _subtotal
+                            return {};
+                        }}
                         defaultPageSize={50}
                     />
                 </Box>
