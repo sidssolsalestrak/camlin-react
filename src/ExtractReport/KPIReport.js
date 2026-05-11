@@ -52,7 +52,7 @@ function KPIReport() {
             console.error(err);
         }
     };
-    
+
 
     const toggleZone = (zoneId) => {
         setExpanded((prev) => {
@@ -475,6 +475,10 @@ function KPIReport() {
                         searchable={false}
                         showHeader={true}
                         hideSubHeader
+                        rowStyle={(row) => {
+                        if (row._rowType === 'zone' && row._expanded) return { "& td": { backgroundColor: "#eeeeee !important",color:row._expanded?'#555':null} };
+                            return {};
+                        }}
                         sx={{
                             background: "#fff",
                             borderRadius: "10px",
