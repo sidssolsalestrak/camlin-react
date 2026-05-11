@@ -87,6 +87,7 @@ const getDataWithZoneTotals = (data) => {
             ord_qty: grandTotalQty,
             ord_val: grandTotalVal,
             _isSubtotal: true,
+            _isGrandTotal:true
         })
     });
 
@@ -315,6 +316,7 @@ function OrderFrequencyReport() {
                     fontWeight: params.row._isSubtotal ? 700 : 400,
                     textAlign: params.row._isSubtotal ? 'right' : 'left',
                     width: '100%',
+                    color:'#555'
                 }}>
                     {params.value}
                 </Typography>
@@ -525,6 +527,12 @@ function OrderFrequencyReport() {
                     getRowClassName={(params) =>
                         params.row._isSubtotal ? 'zone-subtotal-row' : ''
                     }
+                    rowStyle={(row) => {
+                        if (row._isGrandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600, color:'#555 !important'} };
+                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600 , color:'#555 !important'} };
+                        if (row. _isSubtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600, color:'#555 !important' } };
+                        return {};
+                    }}
                     sx={{
                         background: "#fff",
                         borderRadius: "10px",

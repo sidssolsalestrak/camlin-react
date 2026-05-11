@@ -517,11 +517,11 @@ export default function OutletCount() {
                         loading={loading}
                         showHeader={true}
                         defaultPageSize={100}
-                        getRowSx={(row) => {
-                            if (row._rowType === "subheader") return { backgroundColor: "#e8f5e9", fontWeight: 700, borderBottom: "1px solid #a5d6a7" };
-                            if (row._rowType === "zone") return { backgroundColor: "#f0f0f0", fontWeight: 700, borderBottom: "2px solid #ccc" };
-                            if (row._rowType === "region") return { backgroundColor: "#fad8d8", fontWeight: 700 };
-                            if (row._rowType === "grand") return { backgroundColor: "#f0f0f0", fontWeight: 700, borderTop: "2px solid #aaa" };
+                        rowStyle={(row) => {
+                            if (row._rowType === "grand") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 700,  color: "#555"  } };
+                            if (row._rowType === "zone" && expandedZones.has(row._zoneId)) return { "& td": { backgroundColor: "#f0f0f0 !important",  color: "#555" } };
+                            if (row._rowType === "region" ) return { "& td": { backgroundColor: "#fad8d8b6 !important",  color: "#555"  } };
+                            if (row._rowType === "subheader") return { "& td": { fontWeight: 700, color: "#555"  } };
                             return {};
                         }}
                         sx={{

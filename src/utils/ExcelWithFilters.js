@@ -59,7 +59,7 @@ const addTitleRows = (ws, mergedTitleRows, borderStyle) => {
   });
 };
 
-const addHeaderRow = (ws, headers, currentRow, borderStyle) => {
+const addHeaderRow = (ws, headers, currentRow, borderStyle, headerFontSize) => {
   XLSX.utils.sheet_add_aoa(ws, [headers], { origin: `A${currentRow + 1}` });
 
   headers.forEach((header, c) => {
@@ -67,7 +67,7 @@ const addHeaderRow = (ws, headers, currentRow, borderStyle) => {
     if (!ws[cellRef]) ws[cellRef] = { v: header, t: "s" };
 
     ws[cellRef].s = {
-      font: { bold: false, sz: 9, color: { rgb: "FFFFFF" }, name: "Calibri" },
+      font: { bold: false, sz: headerFontSize || 9, color: { rgb: "FFFFFF" }, name: "Calibri" },
       fill: { patternType: "solid", fgColor: { rgb: "3464a7" } },
       alignment: { horizontal: "left", vertical: "center", wrapText: true },
       border: borderStyle
@@ -75,7 +75,7 @@ const addHeaderRow = (ws, headers, currentRow, borderStyle) => {
   });
 };
 
-const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, maxContentLengths) => {
+const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, maxContentLengths,  cellFontSize) => {
   for (let r = dataStartRow; r < dataEndRow; r++) {
     for (let c = 0; c < totalCols; c++) {
       const cellRef = XLSX.utils.encode_cell({ r, c });
@@ -90,7 +90,7 @@ const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, ma
 
       const horizontalAlign = getHorizontalAlign(cellValue);
       cell.s = {
-        font: { sz: 9, color: { rgb: "000000" }, name: "Calibri" },
+        font: { sz: cellFontSize || 9, color: { rgb: "000000" }, name: "Calibri" },
         alignment: { horizontal: horizontalAlign, vertical: "center", wrapText: true },
         border: borderStyle
       };
@@ -113,7 +113,7 @@ const setRowHeights = (ws, mergedTitleRows, formattedData) => {
   ];
 };
 
-export const excelWithFilters = async (tableData, tableColumns, fileName, filters, setProgress) => {
+export const excelWithFilters = async (tableData, tableColumns, fileName, filters, setProgress,{ headerFontSize = 9, cellFontSize = 9 } = {}) => {
   try {
     setProgress("0%");
     const wb = XLSX.utils.book_new();
@@ -135,7 +135,7 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
 
     addTitleRows(ws, mergedTitleRows, borderStyle);
     const headerRowIndex = mergedTitleRows.length;
-    addHeaderRow(ws, headers, headerRowIndex, borderStyle);
+    addHeaderRow(ws, headers, headerRowIndex, borderStyle, headerFontSize);
 
     await new Promise((r) => setTimeout(r, 200));
     setProgress("50%");
@@ -151,7 +151,7 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
     setProgress("90%");
 
     const maxContentLengths = new Array(totalCols).fill(0);
-    styleDataCells(ws, dataStartRow, dataStartRow + formattedData.length, totalCols, borderStyle, maxContentLengths);
+    styleDataCells(ws, dataStartRow, dataStartRow + formattedData.length, totalCols, borderStyle, maxContentLengths, cellFontSize);
     // ── Apply subtotal row colors ──
     tableData.forEach((row, rowIndex) => {
       const r = dataStartRow + rowIndex;
@@ -167,7 +167,7 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
         ws[cellRef].s = {
           ...ws[cellRef].s,
           fill: { patternType: "solid", fgColor: { rgb: bgColor } },
-          font: { ...ws[cellRef].s?.font, bold: true, sz: 9, name: "Calibri" },
+          font: { ...ws[cellRef].s?.font, bold: true, sz: cellFontSize, name: "Calibri" },
         };
       }
     });
