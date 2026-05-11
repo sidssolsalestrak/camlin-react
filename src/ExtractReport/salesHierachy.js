@@ -526,7 +526,7 @@ export default function SalesHierachy() {
                             </Select>
                         </FormControl>
                         </Grid>
-                        {URL !== 'active_sales_new' && <Grid size={{ md:2, lg: 1, xs: 12,sm:6 }}> <Button variant="contained" onClick={() => handleLoad()} >
+                        {URL !== 'active_sales_new' && <Grid size={{ md:2, lg: 1, xs: 12,sm:6 }}> <Button variant="contained" sx={{mt:0.1}} onClick={() => handleLoad()} >
                             Load
                         </Button>
                          </Grid>
@@ -567,7 +567,7 @@ export default function SalesHierachy() {
                                     </Box>
                                 </Box>
                             ) : (
-                                <Box sx={{mt:-0.3}}>
+                                <Box sx={{mt:-0.4}}>
                                 <AiOutlineFileExcel size={25} color="green" />
                                 </Box>
                             )}
