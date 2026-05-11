@@ -271,10 +271,10 @@ function DataSubmissionLog() {
                             </Select>
                         </FormControl>
                         </Grid>
-                        <Grid  size={{ md:1.5, lg: 1, xs: 12 }}>
+                        <Grid  size={{ md:1.5, lg: 1, xs: 4,sm:1.5 }}>
                         <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
                         </Grid>
-                        <Grid  size={{ md:0.5, lg: 0.5, xs: 12 }}>
+                        <Grid  size={{ md:0.5, lg: 0.5, xs: 3,sm:1 }}>
                         {progress ? <CircularProgress progress={progress} /> :
                             <span onClick={() => handleDownloadExcel()}>
                                 <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />

@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress, Checkbox, Tooltip, Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Checkbox, Tooltip, Grid
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
@@ -22,6 +22,7 @@ import { BeatMapExpansion } from "./BeatMapExpansion";
 import { AllLocationsMap } from "./BeatMapExpansion";
 import { FaMinus } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
+import CircularProgress from "../utils/CircularProgressLoading";
 
 
 
@@ -447,7 +448,7 @@ export default function DailyActivityReport() {
                         borderRadius: "10px"
                     }}>
                         <Grid container spacing={0.95}>
-                        <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                        <Grid size={{ md:3, lg: 2, xs: 12, sm:6 }}>
                         <FormControl fullWidth>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
@@ -466,7 +467,7 @@ export default function DailyActivityReport() {
                             </LocalizationProvider>
                         </FormControl>
                         </Grid>
-                        <Grid  size={{ md:3, lg: 2, xs: 12 }}>
+                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
                         <FormControl fullWidth>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
@@ -485,7 +486,7 @@ export default function DailyActivityReport() {
                             </LocalizationProvider>
                         </FormControl>
                         </Grid>
-                        <Grid  size={{ md:3, lg: 2, xs: 12 }}>
+                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
                         <FormControl fullWidth>
                             <Select
                                 value={reportStat}
@@ -497,7 +498,7 @@ export default function DailyActivityReport() {
                             </Select>
                         </FormControl>
                         </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
                         <FormControl fullWidth >
                             <InputLabel id='type'>Type</InputLabel>
                             <Select
@@ -512,36 +513,16 @@ export default function DailyActivityReport() {
                             </Select>
                         </FormControl>
                         </Grid>
-                        <Grid size={{ md:1, lg: 0.5, xs: 3 }}>
-                        <IconButton onClick={handleDownloadExcel}>
-                            {progress ? (
-                                <Box position="relative" display="inline-flex" alignItems="center">
-                                    <CircularProgress
-                                        variant={numericProgress !== null ? "determinate" : "indeterminate"}
-                                        value={numericProgress || 0}
-                                        size={30}
-                                        thickness={3}
-                                    />
-                                    <Box
-                                        top={0} left={0} bottom={0} right={0}
-                                        position="absolute"
-                                        display="flex"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <Typography variant="caption" component="div" color="textSecondary">
-                                            {progress}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            ) : (
-                                <Box sx={{mt:-0.2}}>
-                                <AiOutlineFileExcel  size={25} color="green" />
-                                </Box>
-                            )}
-                        </IconButton>
+                        <Grid size={{ md:1, lg: 0.5, xs: 3,sm:2  }}>
+                          {progress ? (
+                        <CircularProgress progress={progress} />
+                    ) : (
+                        <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                            <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                        </span>
+                    )}
                         </Grid>
-                        <Grid size={{ md:3, lg: 2, xs:12 }}>
+                        <Grid size={{ md:3, lg: 2, xs:12,sm:3 }}>
                         {URL !== 'getfieldActivity_new' && (
                             <Button sx={{mt:0.2}} variant="contained" onClick={() => setMapOpen(true)}>
                                 View all Location
