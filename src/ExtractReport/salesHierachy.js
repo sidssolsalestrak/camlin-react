@@ -408,17 +408,19 @@ export default function SalesHierachy() {
                         <h1 className="mainTitle">Sales Hierachy</h1>
                     </Box>
                     <Box sx={{
-                        display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', backgroundColor: "#fff", boxShadow:
+                        backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px"
                     }}>
-                        <FormControl sx={{ height: '3rem' }}>
+                        <Grid container spacing={0.95}>
+                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="zone">Zone </InputLabel>
                             <Select value={selZone} onChange={(e) => {
                                 setSelRegion(0)
                                 setSelZone(e.target.value)
-                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="zone" label="Zone" size="small"
+                            }}  labelId="zone" label="Zone" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -434,12 +436,14 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="region">Region </InputLabel>
                             <Select value={selRegion} onChange={(e) => {
                                 setSelDistributor(0)
                                 setSelRegion(e.target.value)
-                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="region" label="Region" size="small"
+                            }}  labelId="region" label="Region" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -457,9 +461,11 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="usr_type">User Type </InputLabel>
-                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="usr_type" label="User Type" size="small"
+                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)}  labelId="usr_type" label="User Type" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -475,7 +481,9 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <Autocomplete
                                 options={[{ id: 0, u_name: "All" }, ...allUsers]}
                                 getOptionLabel={(option) => option.u_name}
@@ -491,20 +499,20 @@ export default function SalesHierachy() {
                                         size="small"
                                         error={!!userError}
                                         helperText={userError ? "Please Select User to Load" : ""}
-                                        sx={{ width: URL !== 'active_sales_new' ? 165 : 200 }}
                                     />
                                 )}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                             />
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="Distributor">Distributor</InputLabel>
-                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 180 : 190 }} labelId="Distributor" label="Distributor" size="small"
+                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)}  labelId="Distributor" label="Distributor" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
                                             maxHeight: 200,
-                                            maxWidth: URL !== 'active_sales_new' ? 175 : 200
                                         }
                                     }
                                 }}
@@ -517,10 +525,13 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        {URL !== 'active_sales_new' && <Button variant="contained" onClick={() => handleLoad()} >
+                        </Grid>
+                        {URL !== 'active_sales_new' && <Grid size={{ md:2, lg: 1, xs: 12,sm:6 }}> <Button variant="contained" onClick={() => handleLoad()} >
                             Load
                         </Button>
+                         </Grid>
                         }
+                        <Grid size={{ md:2, lg: 0.5, xs: 12,sm:6 }}>
                         <IconButton onClick={() => handleDownloadExcel()} >
                             {progress ? (
                                 <Box
@@ -556,9 +567,13 @@ export default function SalesHierachy() {
                                     </Box>
                                 </Box>
                             ) : (
+                                <Box sx={{mt:-0.3}}>
                                 <AiOutlineFileExcel size={25} color="green" />
+                                </Box>
                             )}
                         </IconButton>
+                        </Grid>
+                        </Grid>
                     </Box>
                     {URL !== 'active_sales_new' &&
                         <DataTable

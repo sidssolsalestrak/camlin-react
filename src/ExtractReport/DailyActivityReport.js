@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress, Checkbox, Tooltip
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress, Checkbox, Tooltip, Grid
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
@@ -441,12 +441,14 @@ export default function DailyActivityReport() {
 
                     {/* ── Filters & Actions ── */}
                     <Box sx={{
-                        mb: 0.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', backgroundColor: "#fff", boxShadow:
+                        mb: 0.5, gap: 1,backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px"
                     }}>
-                        <FormControl>
+                        <Grid container spacing={0.95}>
+                        <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                        <FormControl fullWidth>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="From Date"
@@ -455,7 +457,6 @@ export default function DailyActivityReport() {
                                     onChange={(newVal) => setFromDate(newVal)}
                                     slotProps={{
                                         textField: {
-                                            sx: { minWidth: 90, maxWidth: 190 },
                                             size: "small",
                                             className: "date-input",
                                         },
@@ -464,8 +465,9 @@ export default function DailyActivityReport() {
                                 />
                             </LocalizationProvider>
                         </FormControl>
-
-                        <FormControl>
+                        </Grid>
+                        <Grid  size={{ md:3, lg: 2, xs: 12 }}>
+                        <FormControl fullWidth>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="To Date"
@@ -474,7 +476,6 @@ export default function DailyActivityReport() {
                                     onChange={(newVal) => setToDate(newVal)}
                                     slotProps={{
                                         textField: {
-                                            sx: { minWidth: 90, maxWidth: 190 },
                                             size: "small",
                                             className: "date-input",
                                         },
@@ -483,20 +484,21 @@ export default function DailyActivityReport() {
                                 />
                             </LocalizationProvider>
                         </FormControl>
-
-                        <FormControl>
+                        </Grid>
+                        <Grid  size={{ md:3, lg: 2, xs: 12 }}>
+                        <FormControl fullWidth>
                             <Select
                                 value={reportStat}
                                 onChange={(e) => setReportStat(e.target.value)}
                                 size="small"
-                                sx={{ width: 180 }}
                             >
                                 <MenuItem value="0">All</MenuItem>
                                 <MenuItem value="1">Reported</MenuItem>
                             </Select>
                         </FormControl>
-
-                        <FormControl>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                        <FormControl fullWidth >
                             <InputLabel id='type'>Type</InputLabel>
                             <Select
                                 value={typeStat}
@@ -504,13 +506,13 @@ export default function DailyActivityReport() {
                                 labelId="type"
                                 label="Type"
                                 size="small"
-                                sx={{ width: 180 }}
                             >
                                 <MenuItem value="0">Approved</MenuItem>
                                 <MenuItem value="1">Pending</MenuItem>
                             </Select>
                         </FormControl>
-
+                        </Grid>
+                        <Grid size={{ md:1, lg: 0.5, xs: 3 }}>
                         <IconButton onClick={handleDownloadExcel}>
                             {progress ? (
                                 <Box position="relative" display="inline-flex" alignItems="center">
@@ -533,15 +535,20 @@ export default function DailyActivityReport() {
                                     </Box>
                                 </Box>
                             ) : (
-                                <AiOutlineFileExcel size={25} color="green" />
+                                <Box sx={{mt:-0.2}}>
+                                <AiOutlineFileExcel  size={25} color="green" />
+                                </Box>
                             )}
                         </IconButton>
-
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs:12 }}>
                         {URL !== 'getfieldActivity_new' && (
-                            <Button variant="contained" onClick={() => setMapOpen(true)}>
+                            <Button sx={{mt:0.2}} variant="contained" onClick={() => setMapOpen(true)}>
                                 View all Location
                             </Button>
                         )}
+                        </Grid>
+                      </Grid>
                     </Box>
                 </Box>
 
