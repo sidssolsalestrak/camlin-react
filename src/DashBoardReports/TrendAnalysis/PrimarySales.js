@@ -226,7 +226,7 @@ function PrimarySales({ enType }) {
 
     const fetchSubCatData = async (catId) => {
         try {
-            const r = await api.post('/getReportSubCat', { catId });
+            const r = await api.post('/getReportSubCat', { pCat: catId });
             setAllSubCategory(Array.isArray(r.data.data) ? r.data.data : []);
         } catch (err) { console.log(err); }
     };
@@ -466,16 +466,17 @@ function PrimarySales({ enType }) {
         return {};
     };
 
-    const handleDownLoadExcel = async () => {
-        try {
-            const getLabel = (list, selectedId, labelKey, prefix, idKey = "id") => {
-                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix}- All`;
+       const getLabel = (list, selectedId, labelKey, prefix, idKey = "id") => {
+                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
                 const match = list.find((item) => String(item[idKey]) === String(selectedId));
-                if (!match) return `${prefix}- All`;
+                if (!match) return `${prefix} All`;
                 const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
-                return `${prefix}- ${label}`;
+                return `${prefix} ${label}`;
             };
 
+    const handleDownLoadExcel = async () => {
+        try {
+         
             const excelTableData = tableData.map(row => ({
                 ...row,
                 saliency_val: (!row.saliency_val || Number(row.saliency_val) === 0 || row.saliency_val === "0.00") ? "-" : row.saliency_val,
@@ -493,8 +494,8 @@ function PrimarySales({ enType }) {
                 { label: `Territory : ${getLabel(allTerritory, selTerritory, 'ter_name', "")}`, bold: false, sz: 10 },
                 { label: `Distributor : ${getLabel(allDistributor, selDistributor, 'stk_name', "")}`, bold: false, sz: 10 },
                 { label: `Category : ${getLabel(allCatData, selCategory, 'cat_name', "")}`, bold: false, sz: 10 },
-                { label: `Sub Category : ${getLabel(allSubCategory, selSubCategory, 'area_name', "")}`, bold: false, sz: 10 },
-                { label: `Product : ${getLabel(allProduct, selProduct, 'sub_name', "")}`, bold: false, sz: 10 },
+                { label: `Sub Category : ${getLabel(allSubCategory, selSubCategory, 'sub_name', "")}`, bold: false, sz: 10 },
+                { label: `Product : ${getLabel(allProduct, selProduct, 'prod_name', "")}`, bold: false, sz: 10 },
             ];
 
             const filename = `Trend_Analysis_${yr}`;
@@ -550,6 +551,8 @@ function PrimarySales({ enType }) {
         },
     ];
 
+    console.log("selected category id",selCategory)
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -569,8 +572,10 @@ function PrimarySales({ enType }) {
                         boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px", borderRadius: "10px",
                     }}>
-                        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
-                            <FormControl>
+                        <Box sx={{width:'100%'}}>
+                            <Grid container spacing={0.95} >
+                            <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                            <FormControl fullWidth >
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
                                         label="Year"
@@ -579,15 +584,17 @@ function PrimarySales({ enType }) {
                                         value={selYear}
                                         onChange={(v) => setSelYear(v)}
                                         slotProps={{
-                                            textField: { sx: { minWidth: 90, maxWidth: 170 }, size: "small", className: "date-input" },
+                                            textField: { size: "small", className: "date-input" },
                                         }}
                                         maxDate={dayjs()}
                                     />
                                 </LocalizationProvider>
                             </FormControl>
-                            <FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12 }}>
+                            <FormControl fullWidth>
                                 <InputLabel id="type">Type</InputLabel>
-                                <Select labelId="type" label="Type" size="small" sx={{ width: 170 }}
+                                <Select labelId="type" label="Type" size="small"
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                     onChange={(e) => setAnalyseType(e.target.value)} value={analyseType}>
                                     <MenuItem value={1}>Primary Analysis</MenuItem>
@@ -595,10 +602,12 @@ function PrimarySales({ enType }) {
                                     <MenuItem value={3}>Closing</MenuItem>
                                 </Select>
                             </FormControl>
-                            <FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg:2, xs: 12 }}>
+                            <FormControl fullWidth>
                                 <InputLabel id="grpBy">Group By</InputLabel>
                                 <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)}
-                                    size="small" sx={{ width: 170 }}
+                                    size="small"
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                     labelId="grpBy" label="Group By">
                                     <MenuItem value={1}>Zone</MenuItem>
@@ -611,22 +620,44 @@ function PrimarySales({ enType }) {
                                     <MenuItem value={8}>Product</MenuItem>
                                 </Select>
                             </FormControl>
-                            <FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg:2, xs: 12 }}>
+                            <FormControl fullWidth>
                                 <InputLabel id="rep_type">Report Type</InputLabel>
                                 <Select size="small" MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                                    sx={{ width: 170 }}
+                                  
                                     onChange={(e) => setSelRepType(e.target.value)}
                                     value={selRepType} labelId="rep_type" label="Report Type">
                                     <MenuItem value={1}>Qty</MenuItem>
                                     <MenuItem value={2}>Value (Lacs)</MenuItem>
                                 </Select>
                             </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 4, lg:4, xs: 12 }}>
+                            <Box sx={{display:'flex',gap:1.5}}>
                             <Button color="warning" onClick={() => setFiltersOpen(true)} variant="contained">Filters</Button>
+                            
                             <Button variant="contained" onClick={handleLoad} disabled={loading}>
                                 {loading ? "Loading..." : "Load"}
                             </Button>
                             <Button onClick={() => handleDownLoadExcel()} color="warning" variant="contained">Excel</Button>
+                            </Box>
+                           </Grid>
+                            </Grid>
+                          
+                           
                         </Box>
+                    </Box>
+                    <Box sx={{display:'flex',gap:2,ml:2,flexWrap:'wrap'}}>
+                        <Typography sx={{fontWeight:600}}>Zone:<span style={{fontWeight:500}}> {`${getLabel(allZone, decodeZone, "zone_name", "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Region:<span  style={{fontWeight:500}}>{`${getLabel(allRegion, decodeRegion, "reg_name", "")}`}</span></Typography>
+                           <Typography sx={{fontWeight:600}}>Area:<span  style={{fontWeight:500}}>{`${getLabel(allArea, decodeArea, 'area_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Territory:<span  style={{fontWeight:500}}>{`${getLabel(allTerritory, decodeTerritory, 'ter_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Distributor:<span  style={{fontWeight:500}}>{`${getLabel(allDistributor, decodeDistributor, 'stk_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Category:<span  style={{fontWeight:500}}>{`${getLabel(allCatData, decodeCategory, 'cat_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Sub Category:<span  style={{fontWeight:500}}>{` ${getLabel(allSubCategory, decodeSubCategory, 'sub_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Product:<span  style={{fontWeight:500}}>{` ${getLabel(allProduct, decodeProduct, 'prod_name', "")}`}</span></Typography>
+
                     </Box>
 
                     <Box sx={{ p: 0 }}>
@@ -663,7 +694,10 @@ function PrimarySales({ enType }) {
                                 <FormControl sx={{ width: '100%' }}>
                                     <InputLabel id="zone">Zone</InputLabel>
                                     <Select MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                                        value={selZone} onChange={(e) => setSelZone(e.target.value)}
+                                        value={selZone} onChange={(e) => {
+                                            setSelRegion(0)
+                                            setAllRegion([])
+                                            setSelZone(e.target.value)}}
                                         labelId="zone" label="Zone" size="small" fullWidth>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allZone.map((val) => (<MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>))}
@@ -721,7 +755,10 @@ function PrimarySales({ enType }) {
                                     <InputLabel id="category">Category</InputLabel>
                                     <Select value={selCategory}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                                        onChange={(e) => setSelCategory(e.target.value)}
+                                        onChange={(e) =>{ 
+                                            setSelSubCategory(0)
+                                            setAllSubCategory([])
+                                            setSelCategory(e.target.value)}}
                                         size="small" labelId="category" label="Category">
                                         <MenuItem value={0}>All</MenuItem>
                                         {allCatData.map((val) => (<MenuItem key={val.id} value={val.id}>{val.cat_name}</MenuItem>))}
@@ -733,7 +770,10 @@ function PrimarySales({ enType }) {
                                     <InputLabel id="sub_category">Sub Category</InputLabel>
                                     <Select value={selSubCategory}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                                        onChange={(e) => setSelSubCategory(e.target.value)}
+                                        onChange={(e) => {
+                                            setSelProduct(0)
+                                            setAllProduct([])
+                                            setSelSubCategory(e.target.value)}}
                                         size="small" labelId="sub_category" label="Sub Category">
                                         <MenuItem value={0}>All</MenuItem>
                                         {allSubCategory.map((val) => (<MenuItem key={val.id} value={val.id}>{val.sub_name}</MenuItem>))}
