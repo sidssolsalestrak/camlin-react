@@ -57,6 +57,7 @@ import CreateCustomer from "./view/account/CreateCustomer";
 import StockAndSalesReport from "./ExtractReport/StockAndSalesReport";
 import OutletCount from "./ExtractReport/OutletCount";
 import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
+import SalesAnalysis from "./dashboard/salesAnalysis/SalesAnalysis";
 
 function App() {
   const ProtectedRoute = () => {
@@ -223,13 +224,13 @@ function App() {
               path="/reports/getfieldActivity"
               element={<DailyActivityReport />}
             />
-            <Route 
+            <Route
               path="/reports/outlet_count/:enzone?/:enRegion?/:enArea?/:enSo?"
               element={<OutletCount />}
             />
             <Route
-             path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
-             element={<OrderFrequencyReport />}
+              path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
+              element={<OrderFrequencyReport />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -255,6 +256,9 @@ function App() {
           <Route path="/reports/pcm_kam" element={<OrderReport />} />
           <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
           <Route path="/reports/stock_salesReport" element={<StockAndSalesReport />} />
+
+          {/* sales analysis */}
+          <Route path="/reports/performance_report" element={<SalesAnalysis />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}
