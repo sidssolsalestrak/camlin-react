@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../layout";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { decode } from "../../utils/common";
 import "../../assets/css/accountMas.css";
 import {
@@ -23,10 +23,11 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import { Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LinearProgress } from "@mui/material";
 import dayjs from "dayjs";
+import "../../assets/css/accountMas.css";
 
 function AccountMas() {
   const user = getUserFromToken();
-
+  const location = useLocation();
   const loggedInUserId = user?.user_id;
   const loggedInUserType = Number(user?.user_type);
   // console.log("Logged User:", user);
@@ -102,7 +103,7 @@ function AccountMas() {
 
   const fetchRegionData = async () => {
     try {
-      const response = await api.post("/getRegionData");
+      const response = await api.post("/getRegionData", { zoneId: 0 });
       setRegionData(response.data.data || []);
     } catch (error) {
       console.error("Error fetching region data:", error);
@@ -252,7 +253,7 @@ function AccountMas() {
             <div
               style={{
                 fontSize: "1.125em",
-                color: row.cus_type_id == 1 ? "orange" : "blue",
+                color: row.cus_type_id == 1 ? "orange" : "#1A1917",
               }}
             >
               {type} | {name}
@@ -428,14 +429,12 @@ function AccountMas() {
             field: "edit",
             headerName: "UPDATE",
             renderCell: ({ row }) => (
-              <FaEdit
-                style={{
-                  cursor: "pointer",
-                  color: "#1976d2",
-                  fontSize: "20px",
-                }}
-                onClick={() => handleEdit(row)}
-              />
+              <div className="editBtn actionBtn">
+                <FaEdit
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleEdit(row)}
+                />
+              </div>
             ),
           },
         ]
@@ -447,11 +446,12 @@ function AccountMas() {
             field: "delete",
             headerName: "DELETE",
             renderCell: ({ row }) => (
-              <FaTrash
-                size={24}
-                style={{ cursor: "pointer", color: "red", fontSize: "12px" }}
-                onClick={() => handleDelete(row)}
-              />
+              <div className="dltBtn actionBtn">
+                <FaTrash
+                  style={{ cursor: "pointer", color: "red" }}
+                  onClick={() => handleDelete(row)}
+                />
+              </div>
             ),
           },
         ]
@@ -785,191 +785,193 @@ function AccountMas() {
 
   const Wrapper = decodedParams.login_id ? React.Fragment : Layout;
   return (
-    <Wrapper>
-      <Box
-        p={2}
-        sx={{ backgroundColor: "#fff", borderRadius: 1 }}
-        display="flex"
-        flexDirection="column"
-        gap={2}
-      >
-        <Box>
-          <h1 className="mainTitle">{title}</h1>
-        </Box>
-        <Box>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl required fullWidth size="small">
-                <InputLabel id="region-label">Region</InputLabel>
+    <Wrapper
+      {...(!decodedParams.login_id && {
+        breadcrumb: [
+          { label: "Home", path: "/" },
+          { label: "Account", path: location.pathname },
+          { label: "Account List" },
+        ],
+      })}
+    >
+      <Box p={2} display="flex" flexDirection="column" gap={2}>
+        <h2>{title}</h2>
 
-                <Select
-                  labelId="region-label"
-                  value={selectedRegion}
-                  label="Region"
-                  onChange={(e) => {
-                    setSelectedRegion(e.target.value);
+        <Grid
+          container
+          spacing={2}
+          sx={{
+            background: "#fff",
+            borderRadius: "10px",
+            boxShadow:
+              "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+            padding: "16px 18px",
+          }}
+        >
+          <Grid size={{ xs: 12, md: 2, lg: 2 }}>
+            <FormControl required fullWidth size="small">
+              <InputLabel id="region-label">Region</InputLabel>
 
-                    // fetchUsers({
-                    //   trigger_type: 1,
-                    // });
-                  }}
-                >
-                  <MenuItem value={0}>All</MenuItem>
-                  {regionData.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.reg_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+              <Select
+                labelId="region-label"
+                value={selectedRegion}
+                label="Region"
+                onChange={(e) => {
+                  setSelectedRegion(e.target.value);
 
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl required fullWidth size="small">
-                <InputLabel id="userType-label">User Type</InputLabel>
-
-                <Select
-                  labelId="userType-label"
-                  value={selectedUserType}
-                  label="Region"
-                  onChange={(e) => {
-                    setSelectedUserType(e.target.value);
-
-                    // fetchUsers({
-                    //   trigger_type: 2,
-                    // });
-                  }}
-                >
-                  <MenuItem value={0}>All</MenuItem>
-                  {userType.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.client_alias}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <Autocomplete
-                  size="small"
-                  options={userData}
-                  getOptionLabel={(option) => {
-                    const name = [option.first_name, option.last_name]
-                      .filter((val) => val && val !== "null")
-                      .join(" ");
-
-                    return `${name}${
-                      cusReq == 2 && option.count ? ` (${option.count})` : ""
-                    }`;
-                  }}
-                  isOptionEqualToValue={(option, value) =>
-                    option.id === value.id
-                  }
-                  renderOption={(props, option) => {
-                    const name = [option.first_name, option.last_name]
-                      .filter(Boolean)
-                      .join(" ");
-
-                    return (
-                      <li {...props} key={option.id}>
-                        {name}
-                        {cusReq == 2 && option.count
-                          ? ` (${option.count})`
-                          : ""}
-                      </li>
-                    );
-                  }}
-                  value={userData.find((u) => u.id === selectedUser) || null}
-                  onChange={(e, newValue) => {
-                    const userId = newValue ? newValue.id : 0;
-                    setSelectedUser(userId);
-                    handleLoad(userId);
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select User"
-                      variant="outlined"
-                      label="User"
-                    />
-                  )}
-                />
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="cusReq-label">Customers / Requests</InputLabel>
-
-                <Select
-                  labelId="cusReq-label"
-                  value={cusReq}
-                  label="Customers / Requests"
-                  onChange={(e) => setCusReq(e.target.value)}
-                >
-                  <MenuItem value={1}>All Current Customers</MenuItem>
-                  <MenuItem value={2}>Requests</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid
-              size={{ xs: 12, md: 2 }}
-              style={{ display: cusReq == 2 ? "block" : "none" }}
-            >
-              <FormControl fullWidth size="small">
-                <InputLabel id="reqType-label">Request Type</InputLabel>
-
-                <Select
-                  labelId="reqType-label"
-                  value={reqType}
-                  label="Request Type"
-                  onChange={(e) => setReqType(e.target.value)}
-                >
-                  {decodedParams.userType == 1 ||
-                  decodedParams.userType == 2 ? (
-                    <MenuItem value={4}>All</MenuItem>
-                  ) : (
-                    <MenuItem value={0}>All</MenuItem>
-                  )}
-
-                  <MenuItem value={1}>Add New</MenuItem>
-                  <MenuItem value={2}>Update</MenuItem>
-                  <MenuItem value={3}>Delete</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <Box>
-                <button
-                  onClick={() => handleLoad()}
-                  style={{
-                    padding: "6px 16px",
-                    background: "#1976d2",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Load
-                </button>
-              </Box>
-            </Grid>
+                  // fetchUsers({
+                  //   trigger_type: 1,
+                  // });
+                }}
+              >
+                <MenuItem value={0}>All</MenuItem>
+                {regionData.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.reg_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
-        </Box>
 
-        <Box mt={3}>
-          <DataTable
-            data={tableData}
-            columns={columns}
-            loading={loadingTable}
-            title="Customers List"
-          />
-        </Box>
+          <Grid size={{ xs: 12, md: 2, lg: 2 }}>
+            <FormControl required fullWidth size="small">
+              <InputLabel id="userType-label">User Type</InputLabel>
+
+              <Select
+                labelId="userType-label"
+                value={selectedUserType}
+                label="Region"
+                onChange={(e) => {
+                  setSelectedUserType(e.target.value);
+
+                  // fetchUsers({
+                  //   trigger_type: 2,
+                  // });
+                }}
+              >
+                <MenuItem value={0}>All</MenuItem>
+                {userType.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.client_alias}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <Autocomplete
+                size="small"
+                options={userData}
+                getOptionLabel={(option) => {
+                  const name = [option.first_name, option.last_name]
+                    .filter((val) => val && val !== "null")
+                    .join(" ");
+
+                  return `${name}${
+                    cusReq == 2 && option.count ? ` (${option.count})` : ""
+                  }`;
+                }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => {
+                  const name = [option.first_name, option.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <li {...props} key={option.id}>
+                      {name}
+                      {cusReq == 2 && option.count ? ` (${option.count})` : ""}
+                    </li>
+                  );
+                }}
+                value={userData.find((u) => u.id === selectedUser) || null}
+                onChange={(e, newValue) => {
+                  const userId = newValue ? newValue.id : 0;
+                  setSelectedUser(userId);
+                  handleLoad(userId);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select User"
+                    variant="outlined"
+                    label="User"
+                  />
+                )}
+              />
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="cusReq-label">Customers / Requests</InputLabel>
+
+              <Select
+                labelId="cusReq-label"
+                value={cusReq}
+                label="Customers / Requests"
+                onChange={(e) => setCusReq(e.target.value)}
+              >
+                <MenuItem value={1}>All Current Customers</MenuItem>
+                <MenuItem value={2}>Requests</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid
+            size={{ xs: 12, md: 2 }}
+            style={{ display: cusReq == 2 ? "block" : "none" }}
+          >
+            <FormControl fullWidth size="small">
+              <InputLabel id="reqType-label">Request Type</InputLabel>
+
+              <Select
+                labelId="reqType-label"
+                value={reqType}
+                label="Request Type"
+                onChange={(e) => setReqType(e.target.value)}
+              >
+                {decodedParams.userType == 1 || decodedParams.userType == 2 ? (
+                  <MenuItem value={4}>All</MenuItem>
+                ) : (
+                  <MenuItem value={0}>All</MenuItem>
+                )}
+
+                <MenuItem value={1}>Add New</MenuItem>
+                <MenuItem value={2}>Update</MenuItem>
+                <MenuItem value={3}>Delete</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <Box>
+              <button
+                onClick={() => handleLoad()}
+                style={{
+                  padding: "6px 16px",
+                  background: "#1976d2",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Load
+              </button>
+            </Box>
+          </Grid>
+        </Grid>
+
+        <DataTable
+          data={tableData}
+          columns={columns}
+          loading={loadingTable}
+          title="Customers List"
+        />
 
         {cusReq == 2 &&
           tableData.some(

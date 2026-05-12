@@ -356,29 +356,29 @@ const Layout = ({ children, breadcrumb = [] }) => {
       "data-chatbot-url",
       "http://ec2-13-201-74-231.ap-south-1.compute.amazonaws.com/chatbot",
     );
-    // script.setAttribute("data-user-id", user.user_id);
-    // script.setAttribute("data-user-email", user.email || user.identity);
-    // script.setAttribute("data-role", user.user_type || "region_admin");
-    // script.setAttribute("data-dataset", user.dataset || "salestrak-camlin");
-    // script.setAttribute(
-    //   "data-allowed-datasets",
-    //   JSON.stringify(["salestrak-camlin"]),
-    // );
-    // script.setAttribute(
-    //   "data-dataset-scope",
-    //   JSON.stringify({ reg_name: ["South"] }),
-    // );
-
-    script.setAttribute("data-user-id", "schueco_admin");
-    script.setAttribute("data-user-email", "admin@schueco.com");
-    script.setAttribute("data-company", "schueco");
-    script.setAttribute("data-role", "admin");
-    script.setAttribute("data-dataset", "schueco-so");
+    script.setAttribute("data-user-id", user.user_id);
+    script.setAttribute("data-user-email", user.email || user.identity);
+    script.setAttribute("data-role", user.user_type || "region_admin");
+    script.setAttribute("data-dataset", user.dataset || "salestrak-camlin");
     script.setAttribute(
       "data-allowed-datasets",
-      JSON.stringify(["schueco-so", "schueco-invoice"]),
+      JSON.stringify(["salestrak-camlin"]),
     );
-    script.setAttribute("data-dataset-scope", JSON.stringify({}));
+    script.setAttribute(
+      "data-dataset-scope",
+      JSON.stringify({ reg_name: ["South"] }),
+    );
+
+    // script.setAttribute("data-user-id", "schueco_admin");
+    // script.setAttribute("data-user-email", "admin@schueco.com");
+    // script.setAttribute("data-company", "schueco");
+    // script.setAttribute("data-role", "admin");
+    // script.setAttribute("data-dataset", "schueco-so");
+    // script.setAttribute(
+    //   "data-allowed-datasets",
+    //   JSON.stringify(["schueco-so", "schueco-invoice"]),
+    // );
+    // script.setAttribute("data-dataset-scope", JSON.stringify({}));
 
     // script.setAttribute("data-user-id", "login_admin_1");
     // script.setAttribute("data-user-email", "admin1@test.com");

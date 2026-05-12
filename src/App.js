@@ -58,6 +58,7 @@ import StockAndSalesReport from "./ExtractReport/StockAndSalesReport";
 import OutletCount from "./ExtractReport/OutletCount";
 import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
 import SalesAnalysis from "./dashboard/salesAnalysis/SalesAnalysis";
+import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
 
 function App() {
   const ProtectedRoute = () => {
@@ -231,6 +232,18 @@ function App() {
             <Route
               path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
               element={<OrderFrequencyReport />}
+            />
+            <Route 
+             path="/reports/trendanalysis/MQ==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+             element={<PrimarySales enType="MQ==" />}
+            />
+            <Route 
+             path="/reports/trendanalysis/Mg==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+             element={<PrimarySales enType="Mg==" />}
+            />
+            <Route 
+             path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+             element={<PrimarySales enType="Mw==" />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

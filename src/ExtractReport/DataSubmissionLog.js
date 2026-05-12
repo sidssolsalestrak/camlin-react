@@ -4,7 +4,7 @@ import api from "../services/api";
 import useToast from "../utils/useToast";
 import DataTable from "../utils/dataTable";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete,
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete,Grid
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -220,12 +220,14 @@ function DataSubmissionLog() {
                         <h1 className="mainTitle">Data Submission Log</h1>
                     </Box>
                     <Box sx={{
-                        mb: 0.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', backgroundColor: "#fff", boxShadow:
+                        mb: 0.5,  backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px",
                     }}>
-                        <FormControl>
+                        <Grid container spacing={0.95}>
+                        <Grid  size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
+                        <FormControl fullWidth>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="Year"
@@ -235,7 +237,6 @@ function DataSubmissionLog() {
                                     onChange={(newVal) => setSelYear(newVal)}
                                     slotProps={{
                                         textField: {
-                                            sx: { minWidth: 90, maxWidth: 190 },
                                             size: "small",
                                             className: "date-input",
                                         },
@@ -244,7 +245,9 @@ function DataSubmissionLog() {
                                 />
                             </LocalizationProvider>
                         </FormControl>
-                        <FormControl sx={{ width: 200 }}>
+                        </Grid>
+                        <Grid  size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
+                        <FormControl fullWidth>
                             <InputLabel id="zone">Zone</InputLabel>
                             <Select labelId="zone" label="Zone" size="small" onChange={(e) => {
                                 setSelRegion(0)
@@ -256,7 +259,9 @@ function DataSubmissionLog() {
                                 ))}
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ width: 200 }}>
+                        </Grid>
+                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth >
                             <InputLabel id='region'>Region</InputLabel>
                             <Select labelId="region" label="Region" size="small" value={selRegion} onChange={(e) => setSelRegion(e.target.value)}>
                                 <MenuItem value={0}>All</MenuItem>
@@ -265,11 +270,17 @@ function DataSubmissionLog() {
                                 ))}
                             </Select>
                         </FormControl>
+                        </Grid>
+                        <Grid  size={{ md:1.5, lg: 1, xs: 4,sm:1.5 }}>
                         <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
+                        </Grid>
+                        <Grid  size={{ md:0.5, lg: 0.5, xs: 3,sm:1 }}>
                         {progress ? <CircularProgress progress={progress} /> :
                             <span onClick={() => handleDownloadExcel()}>
                                 <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                             </span>}
+                        </Grid>
+                        </Grid>
                     </Box>
                 </Box>
                 <Box sx={{ px: 1.5 }}>

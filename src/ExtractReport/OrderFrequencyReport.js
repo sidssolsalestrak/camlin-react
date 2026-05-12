@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import DataTable from "../utils/dataTable";
 import {
-    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, TextField, Autocomplete, Dialog, DialogContent, DialogActions
+    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, TextField, Autocomplete, Dialog, DialogContent, DialogActions, Grid
 } from "@mui/material";
 import useToast from "../utils/useToast";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -87,6 +87,7 @@ const getDataWithZoneTotals = (data) => {
             ord_qty: grandTotalQty,
             ord_val: grandTotalVal,
             _isSubtotal: true,
+            _isGrandTotal:true
         })
     });
 
@@ -315,6 +316,7 @@ function OrderFrequencyReport() {
                     fontWeight: params.row._isSubtotal ? 700 : 400,
                     textAlign: params.row._isSubtotal ? 'right' : 'left',
                     width: '100%',
+                    color:'#555'
                 }}>
                     {params.value}
                 </Typography>
@@ -406,28 +408,29 @@ function OrderFrequencyReport() {
            
             <Box sx={{
                 mx: 1.5,
-                display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap",
                 backgroundColor: "#fff",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                 padding: "16px 18px",
                 borderRadius: "10px",
             }}>
-                <FormControl>
+                <Grid container spacing={0.95}>
+                <Grid size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
+                <FormControl fullWidth>
                     <InputLabel id='type'>Type</InputLabel>
                     <Select
                         value={selType}
                         labelId="type"
                         label='Type'
                         size="small"
-                        sx={{ width: 200 }}
                         onChange={(e) => setSelType(e.target.value)}
                     >
                         <MenuItem value={1}>Month Wise</MenuItem>
                         <MenuItem value={2}>Day Wise</MenuItem>
                     </Select>
                 </FormControl>
-
-                <FormControl>
+                </Grid>
+                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                <FormControl fullWidth>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="Month"
@@ -437,7 +440,6 @@ function OrderFrequencyReport() {
                             onChange={(v) => setSelMonth(v)}
                             slotProps={{
                                 textField: {
-                                    sx: { minWidth: 90, maxWidth: 130 },
                                     size: "small",
                                     className: "date-input",
                                 },
@@ -446,8 +448,9 @@ function OrderFrequencyReport() {
                         />
                     </LocalizationProvider>
                 </FormControl>
-
-                <FormControl>
+                </Grid>
+                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                <FormControl fullWidth>
                     <InputLabel id="zone">Zone</InputLabel>
                     <Select
                         value={selZone}
@@ -455,7 +458,6 @@ function OrderFrequencyReport() {
                         labelId="zone"
                         label="Zone"
                         size="small"
-                        sx={{ width: 150 }}
                         error={zoneNullErr}
                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                     >
@@ -465,8 +467,9 @@ function OrderFrequencyReport() {
                         ))}
                     </Select>
                 </FormControl>
-
-                <FormControl>
+                </Grid>
+                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                <FormControl fullWidth>
                     <InputLabel id='region'>Region</InputLabel>
                     <Select
                         labelId="region"
@@ -474,7 +477,6 @@ function OrderFrequencyReport() {
                         label="Region"
                         size="small"
                         value={selRegion}
-                        sx={{ width: 150 }}
                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                     >
                         <MenuItem value={0}>All</MenuItem>
@@ -483,8 +485,9 @@ function OrderFrequencyReport() {
                         ))}
                     </Select>
                 </FormControl>
-
-                <FormControl sx={{ height: '3rem' }}>
+                </Grid>
+                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                <FormControl fullWidth sx={{ height: '3rem' }}>
                     <Autocomplete
                         options={[{ id: 0, u_name: "All" }, ...allUsers]}
                         getOptionLabel={(option) => option.u_name}
@@ -495,17 +498,18 @@ function OrderFrequencyReport() {
                                 {...params}
                                 label="User"
                                 size="small"
-                                sx={{ width: 165 }}
                             />
                         )}
                         isOptionEqualToValue={(option, value) => option.id === value?.id}
                     />
                 </FormControl>
-
+                </Grid>
+                <Grid  size={{ md:1.3, lg: 1, xs: 3,sm:2 }}>
                 <Button onClick={encodeAndNavigate} variant="contained" sx={{ width: '2rem' }}>
                     Load
                 </Button>
-
+                </Grid>
+                <Grid  size={{ md:1, lg: 0.5, xs:2,sm:1 }}>
                 {progress ? (
                     <CircularProgress progress={progress} />
                 ) : (
@@ -513,6 +517,8 @@ function OrderFrequencyReport() {
                         <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
                     </span>
                 )}
+                </Grid>
+                </Grid>
             </Box>
 
           
@@ -525,6 +531,12 @@ function OrderFrequencyReport() {
                     getRowClassName={(params) =>
                         params.row._isSubtotal ? 'zone-subtotal-row' : ''
                     }
+                    rowStyle={(row) => {
+                        if (row._isGrandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600, color:'#555 !important'} };
+                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600 , color:'#555 !important'} };
+                        if (row. _isSubtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600, color:'#555 !important' } };
+                        return {};
+                    }}
                     sx={{
                         background: "#fff",
                         borderRadius: "10px",

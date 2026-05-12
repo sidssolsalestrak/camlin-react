@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import DataTable from "../utils/dataTable";
 import {
-    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, IconButton
+    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, IconButton, Grid
 } from "@mui/material";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
@@ -439,15 +439,16 @@ export default function OutletCount() {
 
                 <Box sx={{
                     mx: 1.5,
-                    display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap",
                     backgroundColor: "#fff",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                     padding: "16px 18px",
                     borderRadius: "10px",
                 }}>
-                    <FormControl>
+                    <Grid container spacing={0.95}>
+                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
+                    <FormControl fullWidth>
                         <InputLabel id="zone">Zone</InputLabel>
-                        <Select value={selZone} labelId="zone" label="Zone" size="small" sx={{ width: 130 }}
+                        <Select value={selZone} labelId="zone" label="Zone" size="small"
                             onChange={(e) => handleZoneChange(e.target.value)}>
                             <MenuItem value={0}>All</MenuItem>
                             {allZone.map((z) => (
@@ -455,10 +456,11 @@ export default function OutletCount() {
                             ))}
                         </Select>
                     </FormControl>
-
-                    <FormControl>
+                    </Grid>
+                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
+                    <FormControl fullWidth>
                         <InputLabel id="region">Region</InputLabel>
-                        <Select value={selRegion} labelId="region" label="Region" size="small" sx={{ width: 130 }}
+                        <Select value={selRegion} labelId="region" label="Region" size="small" 
                             onChange={(e) => handleRegionChange(e.target.value)}>
                             <MenuItem value={0}>All</MenuItem>
                             {allRegion.map((r) => (
@@ -466,11 +468,12 @@ export default function OutletCount() {
                             ))}
                         </Select>
                     </FormControl>
-
-                    <FormControl>
+                    </Grid>
+                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
+                    <FormControl fullWidth>
                         <InputLabel id="area">Area</InputLabel>
                         <Select value={selArea} labelId="area" label="Area" size="small"
-                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} sx={{ width: 130 }}
+                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} 
                             onChange={(e) => handleAreaChange(e.target.value)}>
                             <MenuItem value={0}>All</MenuItem>
                             {allArea.map((a) => (
@@ -478,11 +481,12 @@ export default function OutletCount() {
                             ))}
                         </Select>
                     </FormControl>
-
-                    <FormControl>
+                    </Grid>
+                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
+                    <FormControl fullWidth>
                         <InputLabel id="so">SO</InputLabel>
                         <Select value={selSo} labelId="so" label="SO" size="small"
-                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} sx={{ width: 170 }}
+                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} 
                             onChange={(e) => setSelSo(e.target.value)}>
                             <MenuItem value={0}>All</MenuItem>
                             {allSo.map((s) => (
@@ -490,16 +494,21 @@ export default function OutletCount() {
                             ))}
                         </Select>
                     </FormControl>
-
-                    <Button variant="contained" onClick={encodeAndNavigate}>Load</Button>
-                    <Button variant="contained" onClick={() => setMapOpen(true)}>Location Map</Button>
-
+                    </Grid>
+                    <Grid  size={{ md:1.2, lg: 0.9, xs:3.5,sm:1.4 }}>
+                    <Button variant="contained" fullWidth onClick={encodeAndNavigate}>Load</Button>
+                    </Grid>
+                    <Grid size={{ md:2.1, lg: 1.5, xs:8,sm:3.1 }}>
+                    <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
+                    </Grid>
                     {Number(userType) < 4 && (
-                        <Button variant="contained" color="warning" onClick={handleRenderLocation}>
+                        <Grid size={{ md:2.5, lg: 1.7, xs:8,sm:3.3 }}>
+                        <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
                             Render Location
                         </Button>
+                        </Grid>
                     )}
-
+                    <Grid size={{ md:1, lg: 0.5, xs:3,sm:3 }}>
                     {progress ? (
                         <CircularProgress progress={progress} />
                     ) : (
@@ -507,6 +516,8 @@ export default function OutletCount() {
                             <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
                         </span>
                     )}
+                    </Grid>
+                 </Grid>
                 </Box>
 
                 <Box sx={{ p: 1.5, width: { md: '70%', xs: '100%' } }}>
@@ -517,11 +528,11 @@ export default function OutletCount() {
                         loading={loading}
                         showHeader={true}
                         defaultPageSize={100}
-                        getRowSx={(row) => {
-                            if (row._rowType === "subheader") return { backgroundColor: "#e8f5e9", fontWeight: 700, borderBottom: "1px solid #a5d6a7" };
-                            if (row._rowType === "zone") return { backgroundColor: "#f0f0f0", fontWeight: 700, borderBottom: "2px solid #ccc" };
-                            if (row._rowType === "region") return { backgroundColor: "#fad8d8", fontWeight: 700 };
-                            if (row._rowType === "grand") return { backgroundColor: "#f0f0f0", fontWeight: 700, borderTop: "2px solid #aaa" };
+                        rowStyle={(row) => {
+                            if (row._rowType === "grand") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 700,  color: "#555"  } };
+                            if (row._rowType === "zone" && expandedZones.has(row._zoneId)) return { "& td": { backgroundColor: "#f0f0f0 !important",  color: "#555" } };
+                            if (row._rowType === "region" ) return { "& td": { backgroundColor: "#fad8d8b6 !important",  color: "#555"  } };
+                            if (row._rowType === "subheader") return { "& td": { fontWeight: 700, color: "#555"  } };
                             return {};
                         }}
                         sx={{

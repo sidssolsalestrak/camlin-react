@@ -3,12 +3,13 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, CircularProgress, Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Grid
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import DataTable from "../utils/dataTable";
+import CircularProgress from "../utils/CircularProgressLoading";
 
 export default function SalesHierachy() {
     const [selZone, setSelZone] = useState(0)
@@ -408,17 +409,19 @@ export default function SalesHierachy() {
                         <h1 className="mainTitle">Sales Hierachy</h1>
                     </Box>
                     <Box sx={{
-                        display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', backgroundColor: "#fff", boxShadow:
+                        backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px"
                     }}>
-                        <FormControl sx={{ height: '3rem' }}>
+                        <Grid container spacing={0.95}>
+                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="zone">Zone </InputLabel>
                             <Select value={selZone} onChange={(e) => {
                                 setSelRegion(0)
                                 setSelZone(e.target.value)
-                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="zone" label="Zone" size="small"
+                            }}  labelId="zone" label="Zone" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -434,12 +437,14 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="region">Region </InputLabel>
                             <Select value={selRegion} onChange={(e) => {
                                 setSelDistributor(0)
                                 setSelRegion(e.target.value)
-                            }} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="region" label="Region" size="small"
+                            }}  labelId="region" label="Region" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -457,9 +462,11 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="usr_type">User Type </InputLabel>
-                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 165 : 175 }} labelId="usr_type" label="User Type" size="small"
+                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)}  labelId="usr_type" label="User Type" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -475,7 +482,9 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <Autocomplete
                                 options={[{ id: 0, u_name: "All" }, ...allUsers]}
                                 getOptionLabel={(option) => option.u_name}
@@ -491,20 +500,20 @@ export default function SalesHierachy() {
                                         size="small"
                                         error={!!userError}
                                         helperText={userError ? "Please Select User to Load" : ""}
-                                        sx={{ width: URL !== 'active_sales_new' ? 165 : 200 }}
                                     />
                                 )}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                             />
                         </FormControl>
-                        <FormControl sx={{ height: '3rem' }}>
+                        </Grid>
+                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
                             <InputLabel id="Distributor">Distributor</InputLabel>
-                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)} sx={{ width: URL !== 'active_sales_new' ? 180 : 190 }} labelId="Distributor" label="Distributor" size="small"
+                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)}  labelId="Distributor" label="Distributor" size="small"
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
                                             maxHeight: 200,
-                                            maxWidth: URL !== 'active_sales_new' ? 175 : 200
                                         }
                                     }
                                 }}
@@ -517,48 +526,22 @@ export default function SalesHierachy() {
 
                             </Select>
                         </FormControl>
-                        {URL !== 'active_sales_new' && <Button variant="contained" onClick={() => handleLoad()} >
+                        </Grid>
+                        {URL !== 'active_sales_new' && <Grid size={{ md:1.3, lg: 1, xs: 4,sm:2 }}> <Button variant="contained" sx={{mt:0.1}} onClick={() => handleLoad()} >
                             Load
                         </Button>
+                         </Grid>
                         }
-                        <IconButton onClick={() => handleDownloadExcel()} >
-                            {progress ? (
-                                <Box
-                                    position="relative"
-                                    display="inline-flex"
-                                    alignItems="center"
-                                >
-                                    <CircularProgress
-                                        variant={
-                                            numericProgress !== null ? "determinate" : "indeterminate"
-                                        }
-                                        value={numericProgress || 0}
-                                        size={30}
-                                        thickness={3}
-                                    />
-                                    <Box
-                                        top={0}
-                                        left={0}
-                                        bottom={0}
-                                        right={0}
-                                        position="absolute"
-                                        display="flex"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <Typography
-                                            variant="caption"
-                                            component="div"
-                                            color="textSecondary"
-                                        >
-                                            {progress}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            ) : (
-                                <AiOutlineFileExcel size={25} color="green" />
-                            )}
-                        </IconButton>
+                        <Grid size={{ md:1, lg: 0.5, xs: 2,sm:1 }}>
+                          {progress ? (
+                        <CircularProgress progress={progress} />
+                    ) : (
+                        <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                            <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                        </span>
+                    )}
+                        </Grid>
+                        </Grid>
                     </Box>
                     {URL !== 'active_sales_new' &&
                         <DataTable
