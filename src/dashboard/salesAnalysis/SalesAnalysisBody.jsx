@@ -82,14 +82,14 @@ const SalesAnalysisBody = ({ formData, month }) => {
     return (
         <Box sx={headContainer}>
             <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 12, md: 4.5, lg: 4.5 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 4.7, lg: 4.7 }}>
                     <Box sx={subContainer}>
                         <Box>
                             <PrimarySales month={month} formData={formData} />
                         </Box>
                     </Box>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 12, md: 3, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 2.6, lg: 2.6 }}>
                     <Box sx={subContainer}>
                         <Box>
                             <ClosingSub
@@ -101,7 +101,7 @@ const SalesAnalysisBody = ({ formData, month }) => {
                         </Box>
                     </Box>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 12, md: 4.5, lg: 4.5 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 4.7, lg: 4.7 }}>
                     <Box sx={subContainer}>
                         <Box>
                             <DailyReportSub
@@ -118,9 +118,9 @@ const SalesAnalysisBody = ({ formData, month }) => {
                         <Box sx={subHeader}>
                             <span style={fontStyle}>Trend Analysis</span>
                             <Box sx={{ display: "flex", gap: 1 }}>
-                                <span style={subFont}>Primary : {primary}</span>
-                                <span style={subFont}>Secondary : {secondary}</span>
-                                <span style={subFont}>Closing : {closing}</span>
+                                <span style={subFont}>Primary : <span style={{ fontWeight: "lighter" }}>{primary}</span></span>
+                                <span style={subFont}>Secondary : <span style={{ fontWeight: "lighter" }}>{secondary}</span></span>
+                                <span style={subFont}>Closing : <span style={{ fontWeight: "lighter" }}>{closing}</span></span>
                             </Box>
                         </Box>
                         <Box sx={{ p: 2 }}>

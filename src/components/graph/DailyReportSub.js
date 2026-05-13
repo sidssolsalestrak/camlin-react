@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { RechartsDevtools } from '@recharts/devtools';
 import axios from "../../services/api";
 import dayjs from "dayjs";
@@ -12,9 +12,33 @@ const subHeader = { display: "flex", justifyContent: "space-between", p: 1 }
 const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
     const [data, setData] = useState([]);
     const [loading, setloading] = useState(false);
+    const [hoveredBar, setHoveredBar] = useState(null);
+    const [hiddenBars, setHiddenBars] = useState(new Set());
 
     const totalTarget = data.reduce((sum, d) => sum + parseFloat(d.tgt_val), 0).toFixed(2);
     const totalAch = data.reduce((sum, d) => sum + parseFloat(d.ach_val), 0).toFixed(2);
+
+    const getOpacity = (key) => {
+        if (hiddenBars.has(key)) return 0;           // hidden → invisible
+        if (hoveredBar && hoveredBar !== key) return 0.2; // hover dims others
+        return 1;
+    };
+
+    const handleLegendClick = (entry) => {
+        setHiddenBars(prev => {
+            const next = new Set(prev);
+            next.has(entry.dataKey) ? next.delete(entry.dataKey) : next.add(entry.dataKey);
+            return next;
+        });
+    };
+
+    const handleLegendMouseEnter = (entry) => {
+        if (!hiddenBars.has(entry.dataKey)) setHoveredBar(entry.dataKey);
+    };
+
+    const handleLegendMouseLeave = () => {
+        setHoveredBar(null);
+    };
 
     const fetchData = async () => {
         try {
@@ -30,7 +54,7 @@ const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
             const formatted = data.map(d => ({
                 ...d,
-                label: dayjs(d.call_date).add(1, 'day').format("DD MMM"), // +1 day offset for IST
+                label: dayjs(d.call_date).format("DD MMM"), // +1 day offset for IST
                 tgt_val: parseFloat(d.tgt_val),
                 ach_val: parseFloat(d.ach_val),
             }));
@@ -53,11 +77,11 @@ const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
                 </Typography>
 
                 <Box sx={{ display: "flex", gap: 1 }}>
-                    <Typography style={subFont}>Target : {totalTarget}</Typography>
-                    <Typography style={subFont}>Achievement : {totalAch}</Typography>
+                    <Typography style={subFont}>Target : <span style={{ fontWeight: "lighter" }}>{totalTarget}</span></Typography>
+                    <Typography style={subFont}>Achievement : <span style={{ fontWeight: "lighter" }}>{totalAch}</span></Typography>
                 </Box>
             </Box>
-            <Box sx={{ width: '100%', height: 200 }}>
+            <Box sx={{ width: '100%', height: 220 }}>
                 {loading ? (
                     <Box sx={{
                         display: "flex",
@@ -70,30 +94,41 @@ const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
                 ) : (
                     data.length > 0 ?
                         (
-                            <BarChart
-                                style={{ width: '100%', maxWidth: '700px', maxHeight: '70vh', aspectRatio: 1.618 }}
-                                responsive
-                                data={data}
-                                margin={{
-                                    top: 5,
-                                    right: 15,
-                                    left: 5,
-                                    bottom: 5,
-                                }}
-                            >
-                                <CartesianGrid
-                                    vertical={false}
-                                    strokeDasharray=""
-                                    stroke="#e0e0e0"
-                                />
-                                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                                <YAxis tick={{ fontSize: 10 }} width="auto" axisLine={false} tickLine={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="tgt_val" name="Target" fill="#8B8B8B" radius={[5, 5, 0, 0]} />
-                                <Bar dataKey="ach_val" name="Achievement" fill="#E8824A" radius={[5, 5, 0, 0]} />
-                                <RechartsDevtools />
-                            </BarChart>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={data}
+                                    margin={{
+                                        top: 5,
+                                        right: 15,
+                                        left: 15,
+                                        bottom: -5,
+                                    }}
+                                >
+                                    <CartesianGrid
+                                        vertical={false}
+                                        strokeDasharray=""
+                                        stroke="#e0e0e0"
+                                    />
+                                    <XAxis
+                                        dataKey="label"
+                                        tick={{ fontSize: 10 }}
+                                        interval={0}
+                                        angle={data.length > 5 ? -45 : 0}
+                                        textAnchor="end"
+                                        height={45} />
+                                    <YAxis tick={{ fontSize: 10 }} width="auto" axisLine={false} tickLine={false} interval={0} />
+                                    <Tooltip />
+                                    <Legend
+                                        onClick={handleLegendClick}
+                                        onMouseEnter={handleLegendMouseEnter}
+                                        onMouseLeave={handleLegendMouseLeave}
+                                        wrapperStyle={{ cursor: 'pointer' }}
+                                    />
+                                    <Bar dataKey="tgt_val" name="Target" fill="#8B8B8B" radius={[0, 0, 0, 0]} opacity={getOpacity('tgt_val')} />
+                                    <Bar dataKey="ach_val" name="Achievement" fill="#E8824A" radius={[0, 0, 0, 0]} opacity={getOpacity('ach_val')} />
+                                    <RechartsDevtools />
+                                </BarChart>
+                            </ResponsiveContainer>
                         ) : (
                             <Box sx={{ textAlign: "center", mt: 4 }}>No data available for the selected filters</Box>
                         )
