@@ -498,11 +498,11 @@ export default function OutletCount() {
                     <Grid  size={{ md:1.2, lg: 0.9, xs:3.5,sm:1.4 }}>
                     <Button variant="contained" fullWidth onClick={encodeAndNavigate}>Load</Button>
                     </Grid>
-                    <Grid size={{ md:2.1, lg: 1.5, xs:8,sm:3.1 }}>
+                    <Grid size={{ md:2.5, lg: 1.5, xs:8,sm:3.1 }}>
                     <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
                     </Grid>
                     {Number(userType) < 4 && (
-                        <Grid size={{ md:2.5, lg: 1.7, xs:8,sm:3.3 }}>
+                        <Grid size={{ md:3, lg: 1.7, xs:8,sm:3.3 }}>
                         <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
                             Render Location
                         </Button>
@@ -520,7 +520,7 @@ export default function OutletCount() {
                  </Grid>
                 </Box>
 
-                <Box sx={{ p: 1.5, width: { md: '70%', xs: '100%' } }}>
+                <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%',md:'100%' } }}>
                     <DataTable
                         data={tableData}
                         columns={COLUMNS}

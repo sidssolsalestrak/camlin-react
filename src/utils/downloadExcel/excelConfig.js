@@ -73,5 +73,25 @@ export const excelStyles = {
     border: true,
     alignment: { horizontal: "left", vertical: "center" },
     showFilters: false,
-  }
+  },
+  Primary_Sales_Report:{
+     sheetName: "Total_Outlets",
+    filenameSuffix: "Total_Outlets.xlsx",
+    titleRow1:'',
+    titleRow2:'',
+    titleColor: "ffffff",
+    titleFontColor: "000000",
+    titleFontSize: 14,
+    titleBold: true,
+    headerColor: "BDD7EE",
+    headerFontColor: "000000",
+    headerFontSize: 10,
+    headerBold: true,
+    dataFontSize: 10,
+    dataFontColor: "000000",
+    border: true,
+    alignment: { horizontal: "left", vertical: "center" },
+    showFilters: false,
+  },
 };
+

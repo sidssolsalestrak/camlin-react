@@ -59,6 +59,8 @@ import OutletCount from "./ExtractReport/OutletCount";
 import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
 import SalesAnalysis from "./dashboard/salesAnalysis/SalesAnalysis";
 import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
+import PrimarySalesAnalze from "./DashBoardReports/PrimaryAnalysis/primarySalesAnalyse";
+import SalesAnalysisReport from "./DashBoardReports/PrimaryAnalysis/SalesAnalysisReport";
 
 function App() {
   const ProtectedRoute = () => {
@@ -244,6 +246,14 @@ function App() {
             <Route 
              path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
              element={<PrimarySales enType="Mw==" />}
+            />
+            <Route            
+             path="/dashboard/primarysalesview/:enMonth?/:enCatType?"
+             element={<PrimarySalesAnalze />}
+            />
+            <Route 
+            path="/dashboard/salesanalysis/:encYear?/:enType?/:enSubCat?"
+            element={<SalesAnalysisReport />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
