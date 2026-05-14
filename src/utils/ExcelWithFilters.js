@@ -37,7 +37,7 @@ const formatDataRows = (tableData, fieldIds, headers) => {
   });
 };
 
-const addTitleRows = (ws, mergedTitleRows, borderStyle) => {
+const addTitleRows = (ws, mergedTitleRows, borderStyle, type) => {
   ws["!merges"] = [];
 
   mergedTitleRows.forEach((title, i) => {
@@ -50,8 +50,8 @@ const addTitleRows = (ws, mergedTitleRows, borderStyle) => {
       if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
 
       ws[cellRef].s = {
-        font: { bold: title.bold, sz: title.sz, color: { rgb: "000000" }, name: "Calibri" },
-        fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
+        font: { bold: title.bold, sz: title.sz, color: { rgb: type > 0 ? "FFFFFF" : "000000" }, name: "Calibri" },
+        fill: { patternType: "solid", fgColor: { rgb: type > 0 ? "3464a7" : "FFFFFF" } },
         alignment: { horizontal: "left", vertical: "center" },
         border: borderStyle
       };
@@ -59,7 +59,7 @@ const addTitleRows = (ws, mergedTitleRows, borderStyle) => {
   });
 };
 
-const addHeaderRow = (ws, headers, currentRow, borderStyle, headerFontSize) => {
+const addHeaderRow = (ws, headers, currentRow, borderStyle, headerFontSize, type) => {
   XLSX.utils.sheet_add_aoa(ws, [headers], { origin: `A${currentRow + 1}` });
 
   headers.forEach((header, c) => {
@@ -68,14 +68,14 @@ const addHeaderRow = (ws, headers, currentRow, borderStyle, headerFontSize) => {
 
     ws[cellRef].s = {
       font: { bold: false, sz: headerFontSize || 9, color: { rgb: "FFFFFF" }, name: "Calibri" },
-      fill: { patternType: "solid", fgColor: { rgb: "3464a7" } },
+      fill: { patternType: "solid", fgColor: { rgb: type > 0 ? "6398c3" : "3464a7" } },
       alignment: { horizontal: "left", vertical: "center", wrapText: true },
       border: borderStyle
     };
   });
 };
 
-const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, maxContentLengths,  cellFontSize) => {
+const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, maxContentLengths, cellFontSize) => {
   for (let r = dataStartRow; r < dataEndRow; r++) {
     for (let c = 0; c < totalCols; c++) {
       const cellRef = XLSX.utils.encode_cell({ r, c });
@@ -113,7 +113,7 @@ const setRowHeights = (ws, mergedTitleRows, formattedData) => {
   ];
 };
 
-export const excelWithFilters = async (tableData, tableColumns, fileName, filters, setProgress,{ headerFontSize = 9, cellFontSize = 9 } = {}) => {
+export const excelWithFilters = async (tableData, tableColumns, fileName, filters, setProgress, type = 0, { headerFontSize = 9, cellFontSize = 9 } = {}) => {
   try {
     setProgress("0%");
     const wb = XLSX.utils.book_new();
@@ -133,9 +133,9 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
       // { label: `Records Returned : ${tableData.length}`, bold: false, sz: 10 }
     ];
 
-    addTitleRows(ws, mergedTitleRows, borderStyle);
+    addTitleRows(ws, mergedTitleRows, borderStyle, type);
     const headerRowIndex = mergedTitleRows.length;
-    addHeaderRow(ws, headers, headerRowIndex, borderStyle, headerFontSize);
+    addHeaderRow(ws, headers, headerRowIndex, borderStyle, headerFontSize, type);
 
     await new Promise((r) => setTimeout(r, 200));
     setProgress("50%");
@@ -156,6 +156,14 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
     tableData.forEach((row, rowIndex) => {
       const r = dataStartRow + rowIndex;
       let bgColor = null;
+      let fontColor = "000000";
+      let isBold = false;
+
+      if (row._isGroupHeader) {
+        bgColor = "f59e0b";      // orange — matches UI
+        fontColor = "FFFFFF";
+        isBold = true;
+      }
       if (row._grandTotal) bgColor = "bdbdbd";
       else if (row._zoneTotal) bgColor = "e0e0e0";
       else if (row._isSubtotal || row._subtotal) bgColor = "eeeeee";
@@ -167,7 +175,10 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
         ws[cellRef].s = {
           ...ws[cellRef].s,
           fill: { patternType: "solid", fgColor: { rgb: bgColor } },
-          font: { ...ws[cellRef].s?.font, bold: true, sz: cellFontSize, name: "Calibri" },
+          font: {
+            ...ws[cellRef].s?.font, bold: isBold, sz: cellFontSize, name: "Calibri",
+            color: { rgb: fontColor },
+          },
         };
       }
     });

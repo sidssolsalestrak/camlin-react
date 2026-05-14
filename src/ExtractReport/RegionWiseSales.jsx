@@ -121,7 +121,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
@@ -131,7 +131,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
@@ -141,7 +141,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
@@ -151,7 +151,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showAverageTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
@@ -161,7 +161,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showAverageTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
@@ -171,7 +171,7 @@ const RegionWiseSales = () => {
             type: "alignCenter",
             showAverageTotal: true,
             renderCell: (params) => (
-                <span>{params?.value > 0 ? FormatCurrency(params?.value) : "-"}</span>
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
     ]
