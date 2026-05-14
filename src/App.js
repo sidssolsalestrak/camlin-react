@@ -61,6 +61,7 @@ import SalesAnalysis from "./dashboard/salesAnalysis/SalesAnalysis";
 import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
 import PrimarySalesAnalze from "./DashBoardReports/PrimaryAnalysis/primarySalesAnalyse";
 import SalesAnalysisReport from "./DashBoardReports/PrimaryAnalysis/SalesAnalysisReport";
+import AreaWiseSalesAnalysis from "./dashboard/AreaWiseSalesAnalysis";
 
 function App() {
   const ProtectedRoute = () => {
@@ -235,17 +236,17 @@ function App() {
               path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
               element={<OrderFrequencyReport />}
             />
-            <Route 
-             path="/reports/trendanalysis/MQ==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
-             element={<PrimarySales enType="MQ==" />}
+            <Route
+              path="/reports/trendanalysis/MQ==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="MQ==" />}
             />
-            <Route 
-             path="/reports/trendanalysis/Mg==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
-             element={<PrimarySales enType="Mg==" />}
+            <Route
+              path="/reports/trendanalysis/Mg==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="Mg==" />}
             />
-            <Route 
-             path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
-             element={<PrimarySales enType="Mw==" />}
+            <Route
+              path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="Mw==" />}
             />
             <Route            
              path="/dashboard/primarysalesview/:enMonth?/:enCatType?"
@@ -282,6 +283,8 @@ function App() {
 
           {/* sales analysis */}
           <Route path="/reports/performance_report" element={<SalesAnalysis />} />
+          <Route path="/dashboard/districtsales" element={<AreaWiseSalesAnalysis />} />
+
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

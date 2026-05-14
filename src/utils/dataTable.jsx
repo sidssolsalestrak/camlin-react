@@ -94,6 +94,8 @@ const DataTable = ({
   expandableRowBeat = null,
   hideSubHeader = false,
   grandTotal = false,
+  tableTitle = "",
+  showTableTitle = false
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
@@ -315,9 +317,10 @@ const DataTable = ({
   }, [filteredData, sortConfig]);
 
   const paginatedData = useMemo(() => {
+    if (!pagination) return sortedData;   // ← show all rows when pagination is false
     const start = page * rowsPerPage;
     return sortedData.slice(start, start + rowsPerPage);
-  }, [sortedData, page, rowsPerPage]);
+}, [sortedData, page, rowsPerPage, pagination]);
 
   const calcTotal = (field) =>
     data.reduce((sum, row) => {
@@ -366,6 +369,20 @@ const DataTable = ({
         ...sx,
       }}
     >
+      {showTableTitle && (
+        <Box sx={{ display: "flex", justifyContent: "center", bgcolor: "#3464a7", alignSelf: "center", p: 1 }}>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "white",
+            }}
+          >
+            {tableTitle}
+          </Typography>
+        </Box>
+      )}
+
       {/* ── Header Controls ── */}
       {showHeader && (
         <Box
@@ -901,6 +918,7 @@ const DataTable = ({
                               transition: "background 0.1s",
                               animation: "rowIn 0.3s ease both",
                               ...getStickyStyles(ci, flatColumns),
+                              ...(col.cellSx || {}),  
                             }}
                           >
                             {isStatus ? (
