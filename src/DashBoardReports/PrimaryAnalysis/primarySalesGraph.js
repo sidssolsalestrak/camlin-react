@@ -20,7 +20,7 @@ function CustomTooltip({ active, payload, label, activeKey }) {
     if (!entry || entry.value == null) return null;
 
     return (
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={{ position: "relative", display: "inline-block", }}>
             {/* Tooltip Box */}
             <div
                 style={{
@@ -32,6 +32,7 @@ function CustomTooltip({ active, payload, label, activeKey }) {
                     whiteSpace: "nowrap",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     lineHeight: 1.5,
+                    
                 }}
             >
                 <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 2 }}>
@@ -46,7 +47,6 @@ function CustomTooltip({ active, payload, label, activeKey }) {
             <div
                 style={{
                     position: "absolute",
-                    bottom: -6,
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: 0,
@@ -174,7 +174,7 @@ export default function DayWiseSalesChart({
                         stroke="#0000ff"
                         strokeWidth={2}
                         dot={<NoDot />}
-                        activeDot={{ r: 5, strokeWidth: 2 }}
+                        activeDot={false}
                         connectNulls={false}
                         onMouseEnter={() => setActiveKey("cm_qty")}
                     />
@@ -187,7 +187,7 @@ export default function DayWiseSalesChart({
                         strokeWidth={2}
                         strokeDasharray="7 7"
                         dot={<NoDot />}
-                        activeDot={{ r: 5, strokeWidth: 2 }}
+                        activeDot={false}
                         onMouseEnter={() => setActiveKey("lm_qty")}
                     />
 
@@ -199,7 +199,7 @@ export default function DayWiseSalesChart({
                         strokeWidth={2}
                         strokeDasharray="4 4"
                         dot={<NoDot />}
-                        activeDot={{ r: 5, strokeWidth: 2 }}
+                        activeDot={false}
                         onMouseEnter={() => setActiveKey("lym_qty")}
                     />
                 </LineChart>

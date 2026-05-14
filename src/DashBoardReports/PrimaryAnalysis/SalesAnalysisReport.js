@@ -15,6 +15,8 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import CircularProgress from "../../utils/CircularProgressLoading";
 import DataTable from "../../utils/dataTable";
 import SalesAnalysisCharts from "./SalesAnalyzeChart";
+import { Download } from "../../utils/downloadExcel/Download";
+import useToast from "../../utils/useToast";
 
 function SalesAnalysisReport() {
     const [selYear, setSelYear] = useState(dayjs());
@@ -26,6 +28,8 @@ function SalesAnalysisReport() {
     const [years, setYears] = useState({});
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(null);
+    const [showTable, setShowTable] = useState(false)
+    const toast=useToast()
 
     useEffect(() => { fetchSubCats(); }, []);
 
@@ -39,7 +43,7 @@ function SalesAnalysisReport() {
     };
 
     const zeroToNull = (val) =>
-        val === 0 || val === null || val === undefined ? "-" : val;
+        Number(val) === 0 || val === null || val === undefined ? "-" : val;
 
     const redIfNegative = (val) => (
         <span style={{ color: val < 0 ? "red" : "inherit" }}>
@@ -47,9 +51,6 @@ function SalesAnalysisReport() {
         </span>
     );
 
-    // ── Pivot: transform processed regions into flat rows keyed by brand/SKU ──
-    // Input:  [ { reg_id, regName, rows:[{label,fy1,fy2,fy3,growth}], total } ]
-    // Output: [ { label, r1_fy1, r1_fy2, r1_fy3, r1_growth, r2_fy1, ... } ]
     const pivotData = (processed) => {
         // collect all unique labels (brands/SKUs) in order
         const allLabels = [];
@@ -66,6 +67,13 @@ function SalesAnalysisReport() {
         // build one flat row per label
         const pivoted = allLabels.map((label) => {
             const flatRow = { label, isTotal: false };
+
+            // Initialize all regions totals
+            let allRegions_fy1 = 0;
+            let allRegions_fy2 = 0;
+            let allRegions_fy3 = 0;
+            let allRegions_growth = 0;
+
             for (const region of processed) {
                 const match = region.rows.find((r) => r.label === label);
                 const key = `r${region.reg_id}`;
@@ -73,24 +81,57 @@ function SalesAnalysisReport() {
                 flatRow[`${key}_fy2`] = match?.fy2 ?? 0;
                 flatRow[`${key}_fy3`] = match?.fy3 ?? 0;
                 flatRow[`${key}_growth`] = match?.growth ?? 0;
+
+                // Accumulate for all regions
+                allRegions_fy1 += Number(match?.fy1) ?? 0;
+                allRegions_fy2 += Number(match?.fy2) ?? 0;
+                allRegions_fy3 += Number(match?.fy3) ?? 0;
+                allRegions_growth += Number(match?.growth ?? 0)
             }
+
+
+            flatRow.all_fy1 = allRegions_fy1;
+            flatRow.all_fy2 = allRegions_fy2;
+            flatRow.all_fy3 = allRegions_fy3;
+            flatRow.all_growth = allRegions_growth
+
             return flatRow;
         });
 
         // grand total row
         const totalRow = { label: "TOTAL", isTotal: true };
+        let grandTotal_fy1 = 0;
+        let grandTotal_fy2 = 0;
+        let grandTotal_fy3 = 0;
+
         for (const region of processed) {
             const key = `r${region.reg_id}`;
             totalRow[`${key}_fy1`] = region.total.fy1;
             totalRow[`${key}_fy2`] = region.total.fy2;
             totalRow[`${key}_fy3`] = region.total.fy3;
             totalRow[`${key}_growth`] = region.total.growth;
+
+            // Accumulate for all regions total
+            grandTotal_fy1 += region.total.fy1;
+            grandTotal_fy2 += region.total.fy2;
+            grandTotal_fy3 += region.total.fy3;
         }
+
+        // Calculate all regions total growth
+        const grandTotal_growth = grandTotal_fy2 > 0 && grandTotal_fy3 > 0
+            ? +(((grandTotal_fy3 / grandTotal_fy2) * 100) - 100).toFixed(2)
+            : 0;
+
+        totalRow.all_fy1 = grandTotal_fy1;
+        totalRow.all_fy2 = grandTotal_fy2;
+        totalRow.all_fy3 = grandTotal_fy3;
+        totalRow.all_growth = grandTotal_growth;
 
         return [...pivoted, totalRow];
     };
 
     const handleLoad = async () => {
+        setShowTable(true)
         try {
             setLoading(true);
             setTableData([]);
@@ -154,8 +195,8 @@ function SalesAnalysisReport() {
                     const rowArr = Object.values(region.items);
                     const total = rowArr.reduce(
                         (acc, r) => ({
-                            fy1: acc.fy1 + r.fy1, fy2: acc.fy2 + r.fy2,
-                            fy3: acc.fy3 + r.fy3, growth: acc.growth + r.growth,
+                            fy1: acc.fy1 + Number(r.fy1), fy2: acc.fy2 + Number(r.fy2),
+                            fy3: acc.fy3 + Number(r.fy3), growth: acc.growth + Number(r.growth),
                         }),
                         { fy1: 0, fy2: 0, fy3: 0, growth: 0 }
                     );
@@ -175,7 +216,7 @@ function SalesAnalysisReport() {
 
     const nameHeader = selType == 3 ? "SKU" : "Brand";
 
-    // ── Build columns dynamically: first col = Brand, then one group per region ──
+    // ── Build columns dynamically: first col = Brand, then one group per region, then All Regions ──
     const columns = useMemo(() => {
         const fyLabel1 = `FY${String(years.secondLastYear).slice(2)}-${String(years.lastYear).slice(2)}`;
         const fyLabel2 = `FY${String(years.lastYear).slice(2)}-${String(years.currentYear).slice(2)}`;
@@ -223,14 +264,109 @@ function SalesAnalysisReport() {
                             headerName: "Growth",
                             renderCell: (params) => {
                                 const row = params?.row ?? params;
-                                return (redIfNegative(row[`${key}_growth`]));
+                                return (<Typography sx={{ textAlign: 'center' }}>{zeroToNull(row[`${key}_growth`])}</Typography>);
                             },
                         },
                     ]
                 };
             }),
+
+            // ── All Regions column ──
+            {
+                field: "",
+                headerName: "Total",
+                subColumns: [
+                    {
+                        field: "all_fy1",
+                        headerName: fyLabel1,
+                        renderCell: (params) => {
+                            const row = params?.row ?? params;
+                            return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy1)}</Typography>);
+                        },
+                    },
+                    {
+                        field: "all_fy2",
+                        headerName: fyLabel2,
+                        renderCell: (params) => {
+                            const row = params?.row ?? params;
+                            return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy2)}</Typography>);
+                        },
+                    },
+                    {
+                        field: "all_fy3",
+                        headerName: fyLabel3,
+                        renderCell: (params) => {
+                            const row = params?.row ?? params;
+                            return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy3)}</Typography>);
+                        },
+                    },
+                    {
+                        field: "all_growth",
+                        headerName: "Growth",
+                        type: "number",
+                        renderCell: (params) => {
+                            const row = params?.row ?? params;
+                            return (<Typography sx={{ textAlign: 'center' }}>{zeroToNull(Number(row.all_growth).toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            }))}</Typography>);
+                        },
+                    },
+                ]
+            },
         ];
     }, [regions, years, nameHeader]);
+
+   const excelColumns = useMemo(() => {
+    const fyLabel1 = `FY${String(years.secondLastYear).slice(2)}-${String(years.lastYear).slice(2)}`;
+    const fyLabel2 = `FY${String(years.lastYear).slice(2)}-${String(years.currentYear).slice(2)}`;
+    const fyLabel3 = `FY${String(years.currentYear).slice(2)}-${String(years.nextYear).slice(2)}`;
+
+    return [
+        { field: "label", headerName: nameHeader },
+
+        ...regions.map((region) => {
+            const key = `r${region.reg_id}`;
+            return {
+                field: "",
+                headerName: region.regName,
+                subColumns: [
+                    { field: `${key}_fy1`, headerName: fyLabel1 },
+                    { field: `${key}_fy2`, headerName: fyLabel2 },
+                    { field: `${key}_fy3`, headerName: fyLabel3 },
+                    { field: `${key}_growth`, headerName: "Growth" },
+                ],
+            };
+        }),
+
+        {
+            field: "",
+            headerName: "Total",
+            subColumns: [
+                { field: "all_fy1", headerName: fyLabel1 },
+                { field: "all_fy2", headerName: fyLabel2 },
+                { field: "all_fy3", headerName: fyLabel3 },
+                { field: "all_growth", headerName: "Growth" },
+            ],
+        },
+    ];
+}, [regions, years, nameHeader]);
+
+    const columnBgColors = useMemo(() => {
+        const colors = {};
+        regions.forEach((region) => {
+            const key = `r${region.reg_id}`;
+            colors[`${key}_growth`] = '#F0FDE7';
+        });
+        colors['all_growth'] = '#F0FDE7';
+        return colors;
+    }, [regions]);
+
+    const handleDownLoadExcel=async()=>{
+        const safeColumns = excelColumns.map(({ renderCell, renderHeader, ...rest }) => rest); 
+        const dynamicTitle = `${Number(selType===2)?"PRODUCT CATEGORY WISE":Number(selType===3)?"SKU WISE":"MONTH WISE"}PRIMARY SALES ANALYSIS`;
+         Download(tableData,safeColumns, 'Sales_Analysis',setProgress,toast, 'Sales_Analysis',{titleRow1:dynamicTitle, highlightHeaders:[],})
+    }
 
     return (
         <Layout breadcrumb={[
@@ -304,7 +440,7 @@ function SalesAnalysisReport() {
                                 {progress ? (
                                     <CircularProgress progress={progress} />
                                 ) : (
-                                    <span style={{ cursor: "pointer" }}>
+                                    <span style={{ cursor: "pointer" }} onClick={()=>handleDownLoadExcel()}>
                                         <AiOutlineFileExcel
                                             style={{ color: "green", height: "30px", width: "30px" }}
                                         />
@@ -315,22 +451,30 @@ function SalesAnalysisReport() {
                     </Box>
 
                     {/* ── Single DataTable with all regions as column groups ── */}
-                    <DataTable
-                        searchable={false}
-                        columns={columns}
-                        data={tableData}
-                        getRowClassName={(row) => row.isTotal ? "total-row" : ""}
-                        sx={{
-                            backgroundColor: "#fff",
-                            borderRadius: "10px",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                        }}
-                    />
-                    <SalesAnalysisCharts
-                        regions={regions}
-                        tableData={tableData}
-                        years={years}
-                    />
+                    {showTable && (
+                        <DataTable
+                            searchable={false}
+                            columns={columns}
+                            data={tableData}
+                            getRowClassName={(row) => row.isTotal ? "total-row" : ""}
+                            tableTitle="PRODUCT CATEGORY WISE PRIMARY SALES ANALYSIS"
+                            showTableTitle={true}
+                            showHeader={false}
+                            sx={{
+                                backgroundColor: "#fff",
+                                borderRadius: "10px",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                            }}
+                            columnBgColors={columnBgColors}
+
+                        />)}
+                    {showTable && (
+                        <SalesAnalysisCharts
+                            regions={regions}
+                            tableData={tableData}
+                            years={years}
+                        />
+                    )}
                 </Box>
             </Box>
         </Layout>

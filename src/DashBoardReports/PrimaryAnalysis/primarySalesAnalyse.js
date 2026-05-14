@@ -19,6 +19,7 @@ import useToast from "../../utils/useToast";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Download } from "../../utils/downloadExcel/Download";
+import { downloadPrimarySalesExcelWithChart } from './DownLoadPrimarySalesExcel'
 
 function PrimarySalesAnalze() {
     const { enMonth, enCatType } = useParams()
@@ -32,6 +33,7 @@ function PrimarySalesAnalze() {
     const [graphdataDialog, setGraphDialog] = useState(false)
     const [allGraphData, setAllGraphData] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
+    const [showTable, setShowTable] = useState(false)
     const toast = useToast()
     const navigate = useNavigate()
     const location = useLocation()
@@ -86,7 +88,9 @@ function PrimarySalesAnalze() {
 
     useEffect(() => {
         console.log("fetching Sales Analysis Data")
-
+        if (enMonth) {
+            setShowTable(true)
+        }
         fetchSaleAnalysisData()
     }, [enMonth, enCatType, location.pathname])
 
@@ -187,6 +191,7 @@ function PrimarySalesAnalze() {
     }
 
     const handleLoad = () => {
+        setShowTable(true)
         try {
             const encMonth = btoa(selMonth ? selMonth.format("YYYY-MM") : dayjs().format("YYYY-MM"));
             const enType = btoa(selType)
@@ -311,15 +316,15 @@ function PrimarySalesAnalze() {
             field: "sale_day",
             headerName: "Date"
         },
-         {
+        {
             field: "cm_qty1",
             headerName: "CM"
         },
-         {
+        {
             field: "lm_qty1",
             headerName: "LM"
         },
-         {
+        {
             field: "lym_qty1",
             headerName: "LY"
         }
@@ -353,12 +358,16 @@ function PrimarySalesAnalze() {
         },
     ]
 
-    const handleDownloadExcel=async()=>{
-            const safeColumns = excelColumn.map(({ renderCell, renderHeader, ...rest }) => rest);
-            const formattedAllGraphData=allGraphData.map((val)=>({...val,cm_qty1:Math.round(val.cm_qty,2),lm_qty1:Math.round(val.lm_qty,2),lym_qty1:Math.round(val.lym_qty,2)}))
-            console.log("Formated graph Data",formattedAllGraphData)
-            Download(formattedAllGraphData, safeColumns, 'Primary_Sales_Report', setProgress, toast, 'Primary_Sales_Report', {}, true);
-            
+    const handleDownloadExcel = async () => {
+        downloadPrimarySalesExcelWithChart({
+            graphData: allGraphData,
+            primaryData: allPrimaryData,
+            nameField,                          // already computed via useMemo
+            selTypeName,
+            selMonth,
+            selectedMonthStr: dayjs(selMonth).format("YYYY-MM"),
+        });
+
     }
 
     console.log("All primary Data", allPrimaryData);
@@ -441,7 +450,7 @@ function PrimarySalesAnalze() {
                                 {progress ? (
                                     <CircularProgress progress={progress} />
                                 ) : (
-                                    <span style={{ cursor: "pointer" }} onClick={()=>handleDownloadExcel()}>
+                                    <span style={{ cursor: "pointer" }} onClick={() => handleDownloadExcel()}>
                                         <AiOutlineFileExcel
                                             style={{ color: "green", height: "30px", width: "30px" }}
                                         />
@@ -461,20 +470,23 @@ function PrimarySalesAnalze() {
                         </Grid>
                     </Box>
                     <Box>
-                        <DataTable
-                            searchable={false}
-                            columns={column}
-                            data={allPrimaryData}
-                            getRowClassName={(row) => row.isTotal ? "total-row" : ""}
-                            sx={{
-                                backgroundColor: "#fff",
-                                borderRadius: "10px",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                            }}
-                        />
+                        {showTable && (
+                            <DataTable
+                                searchable={false}
+                                columns={column}
+                                data={allPrimaryData}
+                                getRowClassName={(row) => row.isTotal ? "total-row" : ""}
+                                sx={{
+                                    backgroundColor: "#fff",
+                                    borderRadius: "10px",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                                }}
+                            />
+                        )}
                     </Box>
-                    <Button sx={{ width: '2rem' }} onClick={() => setGraphDialog(true)} variant="contained">Data</Button>
-                    <Box sx={{
+                    {showTable && (<Button sx={{ width: '2rem' }} onClick={() => setGraphDialog(true)} variant="contained">Data</Button>)}
+
+                    {showTable && (<Box sx={{
                         width: '95%',
                         backgroundColor: "#fff",
                         borderRadius: "10px",
@@ -482,7 +494,7 @@ function PrimarySalesAnalze() {
                         boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                     }}>
                         <DayWiseSalesChart data={allGraphData} selectedMonth={`${dayjs(selMonth).format('YYYY-MM-DD')}`} height={400} />
-                    </Box>
+                    </Box>)}
                 </Box>
 
             </Box>

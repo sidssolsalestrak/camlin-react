@@ -93,5 +93,24 @@ export const excelStyles = {
     alignment: { horizontal: "left", vertical: "center" },
     showFilters: false,
   },
+  Sales_Analysis:{
+    sheetName: "Sales_Analysis",
+    filenameSuffix: "Sales_Analysis.xlsx",
+    titleRow1:'',
+    titleRow2:'',
+    titleColor: "3464A7",
+    titleFontColor: "ffffff",
+    titleFontSize: 12,
+    titleBold: true,
+    headerColor: "BDD7EE",
+    headerFontColor: "000000",
+    headerFontSize: 10,
+    headerBold: true,
+    dataFontSize: 10,
+    dataFontColor: "000000",
+    border: true,
+    alignment: { horizontal: "left", vertical: "center" },
+    showFilters: false,
+  }
 };
 

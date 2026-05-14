@@ -95,7 +95,8 @@ const DataTable = ({
   hideSubHeader = false,
   grandTotal = false,
   tableTitle = "",
-  showTableTitle = false
+  showTableTitle = false,
+  columnBgColors = {},
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
@@ -636,7 +637,7 @@ const DataTable = ({
 
             {/* Sub-header row */}
             {hasSubColumns && !hideSubHeader && (
-              <TableRow>
+              <TableRow sx={{  backgroundColor: "#eceae65a"}}>
                 {columns.map((col, pi) =>
                   col.subColumns?.length ? (
                     col.subColumns.map((sub, si) => (
@@ -647,7 +648,7 @@ const DataTable = ({
                           width: sub.width,
                           color: '#706E69',
                           // borderRight: "1px solid #e5e7eb",
-                          p: 0.5,
+                          p: 1,
                           // borderBottom: "1px solid #e5e7eb",
                           // borderBottom: "1px solid rgba(0,0,0,0.08)",
                           // transition: "background 0.1s",
@@ -672,6 +673,7 @@ const DataTable = ({
                             sx={{
                               // fontFamily: '"Open Sans", sans-serif',
                               fontSize: "11px",
+                              textWrap:'nowrap'
                             }}
                           >
                             {sub.headerName}
@@ -787,6 +789,15 @@ const DataTable = ({
                         "& td": { backgroundColor: "#ffffff" },
                         // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
                         // "&:hover td": { backgroundColor: "#e1f3ff" },
+                        ...Object.keys(columnBgColors).reduce((acc, field) => {
+                        const colIndex = flatColumns.findIndex(c => c.field === field);
+                        if (colIndex !== -1) {
+                          acc[`&:hover td:nth-of-type(${colIndex + 1})`] = {
+                            backgroundColor: columnBgColors[field],
+                          };
+                        }
+                        return acc;
+                      }, {}),
                         "&:hover td": { backgroundColor: "#FAFAF8" },
                         "& td": { color: "#706E69" },
                         ...(rowStyle ? rowStyle(row) : {}),
@@ -896,6 +907,8 @@ const DataTable = ({
                           ? getStatusStyle(rawContent, col.field)
                           : {};
 
+                        const columnBgColor = columnBgColors[col.field];
+
                         return (
                           <TableCell
                             key={col.field ?? `col-${ci}`}
@@ -915,6 +928,7 @@ const DataTable = ({
                               fontWeight: 400,
                               // borderBottom: "1px solid #f3f4f6",
                               borderBottom: "1px solid rgba(0,0,0,0.08)",
+                              backgroundColor: columnBgColor || "inherit", 
                               transition: "background 0.1s",
                               animation: "rowIn 0.3s ease both",
                               ...getStickyStyles(ci, flatColumns),
