@@ -176,10 +176,10 @@ export default function Beat() {
         try {
             setModifyLoading(true)
             if (decodedEditBeatId) {
-                let check = hdnBeatName.toLowerCase() === beatName.toLowerCase() ? 0 : 1
+                let check = hdnBeatName.toLowerCase().trim() === beatName.toLowerCase().trim() ? 0 : 1
                 let response = await api.post("/beatUpdate", {
                     id: decodedEditBeatId,
-                    beat_name: beatName,
+                    beat_name: beatName.trim(),
                     ter_id: selTerritory,
                     check: check
                 })
@@ -192,7 +192,7 @@ export default function Beat() {
                 }
             } else {
                 let response = await api.post("/beatCreate", {
-                    beat_name: beatName,
+                    beat_name: beatName.trim(),
                     ter_id: selTerritory
                 })
                 if (response.data.success) {
