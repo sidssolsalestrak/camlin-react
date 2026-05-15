@@ -1,6 +1,6 @@
 import {
-    ComposedChart, Bar, Line, XAxis, YAxis,
-    CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area
+    ComposedChart, Bar, XAxis, YAxis,
+    CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import { Box, Typography } from "@mui/material";
 import { useState } from "react";
@@ -31,7 +31,6 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
         );
     };
 
-    // Custom tooltip — shows only the hovered bar's value
     const CustomTooltip = ({ active, payload, label, activeBarKey }) => {
         if (!active || !payload || !payload.length || !activeBarKey) return null;
 
@@ -51,25 +50,37 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                     borderRadius: "6px",
                     padding: "8px 12px",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                    width: 'auto',
-                    
+                    width: "auto",
                 }}
             >
                 <Typography sx={{ fontSize: 11, color: "#706E69", mb: 0.5 }}>{label}</Typography>
                 <Box display="flex" alignItems="center">
-                    <Box
-                    />
-                    <Typography >
-                        {hoveredEntry.name}: <span style={{ fontSize: 12, fontWeight: 600, color: "#4a4e55" }}>{displayValue}</span>
+                    <Typography>
+                        {hoveredEntry.name}:{" "}
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#4a4e55" }}>
+                            {displayValue}
+                        </span>
                     </Typography>
                 </Box>
             </Box>
         );
     };
 
-    // Reusable chart component to keep activeBarKey state isolated per chart
     const SalesChart = ({ data, title, height = 320 }) => {
         const [activeBarKey, setActiveBarKey] = useState(null);
+
+        const maxVal = Math.max(
+            ...data.flatMap((d) => [
+                Number(d[fyLabel1]) || 0,
+                Number(d[fyLabel2]) || 0,
+                Number(d[fyLabel3]) || 0,
+            ])
+        );
+
+        // Round up to a clean number for even grid lines
+        const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal || 1)));
+        const domainMax = Math.ceil((maxVal * 1.1) / magnitude) * magnitude;
+
 
         return (
             <Box
@@ -87,31 +98,50 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                 <ResponsiveContainer width="100%" height={height}>
                     <ComposedChart
                         data={data}
-                        margin={{ top: 10, right: 60, left: 60, bottom: 60 }}
+                        margin={{ top: 10, right: 20, left: 0, bottom: 60 }}
                     >
-                        <CartesianGrid  horizontal={true} vertical={false} stroke="#e0e0e0" strokeWidth={1} />
+                        <CartesianGrid
+                            horizontal={true}
+                            vertical={false}
+                            stroke="#d9d9d9"
+                            strokeWidth={1}
+                            strokeDasharray=""
+                        />
 
-                        <XAxis dataKey="name" axisLine={{ stroke: "#aaaaaa", strokeWidth: 1 }}  tick={<CustomXAxisTick />} interval={0} height={70} />
-
-                        <YAxis
-                            yAxisId="left"
-                            axisLine={false}
+                        <XAxis
+                            dataKey="name"
+                            axisLine={{ stroke: "#b3b3b3", strokeWidth: 1 }}
                             tickLine={false}
+                            tick={<CustomXAxisTick />}
+                            interval={0}
+                            height={70}
+                        />
+
+                       
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            width={80}
+                            domain={[0, domainMax]}
+                            tickFormatter={(value) => value.toLocaleString("en-IN")}
+                            tick={{ fontSize: 12, fill: "#706E69" }}
                         />
 
                         <Tooltip
-                            content={(props) => <CustomTooltip {...props} activeBarKey={activeBarKey} />}
+                            content={(props) => (
+                                <CustomTooltip {...props} activeBarKey={activeBarKey} />
+                            )}
                         />
+
                         <Legend
                             layout="vertical"
                             align="right"
                             verticalAlign="top"
                             wrapperStyle={{ fontSize: 11, paddingLeft: 30 }}
                         />
-                        <ReferenceLine yAxisId="left" y={0} stroke="#aaaaaa" strokeWidth={1} />
 
+                        {/* ✅ No yAxisId on Bar — matches YAxis above */}
                         <Bar
-                            yAxisId="left"
                             dataKey={fyLabel1}
                             fill="#cccccc"
                             barSize={18}
@@ -119,7 +149,6 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                             onMouseLeave={() => setActiveBarKey(null)}
                         />
                         <Bar
-                            yAxisId="left"
                             dataKey={fyLabel2}
                             fill="#FFAF4C"
                             barSize={18}
@@ -127,14 +156,12 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                             onMouseLeave={() => setActiveBarKey(null)}
                         />
                         <Bar
-                            yAxisId="left"
                             dataKey={fyLabel3}
                             fill="#73E4F7"
                             barSize={18}
                             onMouseEnter={() => setActiveBarKey(fyLabel3)}
                             onMouseLeave={() => setActiveBarKey(null)}
                         />
-                 
                     </ComposedChart>
                 </ResponsiveContainer>
             </Box>

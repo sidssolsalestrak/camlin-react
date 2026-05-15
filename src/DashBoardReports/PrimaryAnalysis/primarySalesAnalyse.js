@@ -34,6 +34,8 @@ function PrimarySalesAnalze() {
     const [allGraphData, setAllGraphData] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
     const [showTable, setShowTable] = useState(false)
+    var now=dayjs()
+    var dateLabel=''
     const toast = useToast()
     const navigate = useNavigate()
     const location = useLocation()
@@ -164,6 +166,16 @@ function PrimarySalesAnalze() {
             console.log("sales Analysis Err", err);
         }
     };
+
+    const selectedMonth = dayjs(decodeEnMonth);
+
+    if (now.format('MM-YYYY') === selectedMonth.format('MM-YYYY')) {
+           
+         dateLabel = ' /  as of ' + selectedMonth.format('DD MMM YYYY hh:mm a');
+    }
+     else {
+        dateLabel = ' /  as of ' + selectedMonth.endOf('month').format('DD MMM YYYY 00:00:a');
+    }
 
     const renderPrimarySalesAnalyse = async () => {
         setModifyLoading(true)
@@ -366,6 +378,7 @@ function PrimarySalesAnalze() {
             selTypeName,
             selMonth,
             selectedMonthStr: dayjs(selMonth).format("YYYY-MM"),
+            dateLabel
         });
 
     }
@@ -471,17 +484,20 @@ function PrimarySalesAnalze() {
                     </Box>
                     <Box>
                         {showTable && (
-                            <DataTable
-                                searchable={false}
-                                columns={column}
-                                data={allPrimaryData}
-                                getRowClassName={(row) => row.isTotal ? "total-row" : ""}
-                                sx={{
-                                    backgroundColor: "#fff",
-                                    borderRadius: "10px",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                                }}
-                            />
+                            <Box  sx={{
+                                        backgroundColor: "#fff",
+                                        borderRadius: "10px",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                                    }}>
+                                <Typography sx={{ fontStyle: 'italic', textAlign: 'center',pt:2 }}>{`* Qty in Pcs${dateLabel}`}</Typography>
+                                <DataTable
+                                    searchable={false}
+                                    columns={column}
+                                    data={allPrimaryData}
+                                    showHeader={false}
+                                    getRowClassName={(row) => row.isTotal ? "total-row" : ""}
+                                />
+                            </Box>
                         )}
                     </Box>
                     {showTable && (<Button sx={{ width: '2rem' }} onClick={() => setGraphDialog(true)} variant="contained">Data</Button>)}
