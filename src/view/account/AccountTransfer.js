@@ -13,7 +13,7 @@ import {
     Checkbox, ListItemText,
     Button
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams,useLocation } from "react-router-dom";
 import api from "../../services/api";
 import DataTable from "../../utils/dataTable";
 import "../../assets/css/accountMas.css";
@@ -35,6 +35,7 @@ function AccountTransfer() {
     const [errors, setErrors] = useState({})
     const [modifyLoading, setModifyLoading] = useState(false)
     const toast = useToast()
+    const location=useLocation()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -298,10 +299,10 @@ function AccountTransfer() {
             sortable: true,
             renderCell: (params) => (
                 <Box>
-                    <Typography sx={{ color: '#666666', fontSize: '12px' }}>
+                    <Typography sx={{ color: '#666666', fontSize: '12px',textWrap:'nowrap' }}>
                         {params.row.req_first_name}
                     </Typography>
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: 'flex',textWrap:'nowrap' }}>
                         <Typography>{params.row.usertype} |</Typography>
                         <Typography>{params.row.reg_name}</Typography>
                     </Box>
@@ -333,13 +334,13 @@ function AccountTransfer() {
                                     ? "Retailer|"
                                     : null}
                         </Typography>
-                        <Typography>{params.row.first_name}</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.first_name}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex' }}>
-                        <Typography>{params.row.cat_type}-</Typography>
-                        <Typography>{params.row.cus_freq}|</Typography>
-                        <Typography>{params.row.clinic_name}|</Typography>
-                        <Typography>{params.row.ter_name}</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.cat_type}-</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.cus_freq}|</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.clinic_name}|</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.ter_name}</Typography>
                     </Box>
                 </Box>
             )
@@ -376,137 +377,161 @@ function AccountTransfer() {
     ]
 
     return (
-        <Layout>
-            <Box
-                p={2}
-                sx={{ backgroundColor: "#fff", borderRadius: 1}}
-                display="flex"
-                flexDirection="column"
-                gap={2}
-            >
-                <Box>
-                    <h2 className="mainTitle">Account Transfer</h2>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
-                    <FormControl sx={{ width: {md:200,xs:250} }}>
-                        <Autocomplete
-                            options={allRegion}
-                            getOptionLabel={(option) => option.reg_name || ""}
-                            getOptionKey={(option) => option.id}
-                            onChange={(e, newValue) => setSelRegion(newValue)}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Region *"
-                                    size="small"
-                                    error={!!errors.region}
-                                    helperText={errors.region ? "Please Select Zone" : ""}
-                                />
-                            )}
-                        />
-                    </FormControl>
-
-                    <FormControl sx={{ width: {md:200,xs:250} }}>
-                        <Autocomplete
-                            options={allFromTransferList}
-                            getOptionLabel={(option) => option.user_name || ""}
-                            getOptionKey={(option) => option.id}
-                            onChange={(e, newValue) => setSelFromUser(newValue)}
-                            value={selFromUser}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="From User *"
-                                    size="small"
-                                    error={!!errors.fromUser}
-                                    helperText={errors.fromUser ? "Please Select Transfer From User" : ""}
-                                />
-                            )}
-                        />
-                        <Box>
-                            {allBeat.length > 0 && <Typography sx={{ mb: 1, mt: 0.5 }}>Beat Mapped*</Typography>}
-                        </Box>
-                        {allBeat.map((val) => (
-                            <MenuItem
-                                key={val.beat_id}
-                                value={val.beat_id}
-                                sx={{ p: 0, mt: '-0.9rem' }}
-                                onClick={() => {
-                                    const isSelected = selBeat.includes(val.beat_id);
-
-                                    // FIX 1: return early to prevent removing last beat
-                                    if (isSelected && selBeat.length === 1) {
-                                        toast.error("Please Select At Least 1 Beat to Load");
-                                        return;
-                                    }
-
-                                    setSelBeat((prev) =>
-                                        isSelected
-                                            ? prev.filter((beat_id) => beat_id !== val.beat_id)
-                                            : [...prev, val.beat_id]
-                                    );
-                                }}
-                            >
-                                <Checkbox checked={selBeat.includes(val.beat_id)} />
-                                <ListItemText primary={val.beat_name} />
-                            </MenuItem>
-                        ))}
-                    </FormControl>
-
-                    <FormControl sx={{ width: {md:200,xs:250} }}>
-                        <Autocomplete
-                            options={allToTransferList}
-                            getOptionLabel={(option) => option.user_name || ""}
-                            getOptionKey={(option) => option.id}
-                            onChange={(e, newValue) => setSelToUser(newValue)}
-                            value={selToUser}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="To User *"
-                                    size="small"
-                                    error={!!errors.toUser}
-                                    helperText={errors.toUser ? "Please Select Transfer To User" : ""}
-                                />
-                            )}
-                        />
-                    </FormControl>
-                </Box>
-
-                <Box>
-                    {allCustomerList.length > 0 && (
-                        <Box>
-                            <DataTable
-                                columns={columns}
-                                data={allCustomerList}
-                                defaultPageSize={10}
+        <Layout     
+            breadcrumb={ [
+          { label: "Home", path: "/" },
+          { label: "Account", path: location.pathname },
+          { label: "Account Transfer" },
+        ]}
+        >
+            <Box p={0.5}>
+                <Box
+                    p={2}
+                    display="flex"
+                    flexDirection="column"
+                    gap={2}
+                >
+                    <Box>
+                        <h2 className="mainTitle">Account Transfer</h2>
+                    </Box>
+                    <Box sx={{
+                        mb: 0.5,
+                        backgroundColor: "#fff",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                        padding: "16px 18px",
+                        borderRadius: "10px",
+                    }}>
+                        <Grid container spacing={0.95}>
+                        <Grid size={{ md: 3.3, lg:2.3, xs: 12, sm: 4 }}>
+                        <FormControl fullWidth>
+                            <Autocomplete
+                                options={allRegion}
+                                getOptionLabel={(option) => option.reg_name || ""}
+                                getOptionKey={(option) => option.id}
+                                onChange={(e, newValue) => setSelRegion(newValue)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Region *"
+                                        size="small"
+                                        error={!!errors.region}
+                                        helperText={errors.region ? "Please Select Zone" : ""}
+                                    />
+                                )}
                             />
-                            <Button
-                                onClick={() => {
-                                    if (validateFields()) {
-                                        showSubmitTransferConfirmation()
-                                    }
-                                }}
-                                variant="contained"
-                                sx={{ mt: 3, ml: 2,mb:2, textTransform: 'none' }}
-                            >
-                                Transfer
-                            </Button>
-                        </Box>
-                    )}
+                        </FormControl>
+                        </Grid>
+                        <Grid size={{ md: 3.3, lg: 2.3, xs: 12, sm: 4 }}>
+                        <FormControl fullWidth>
+                            <Autocomplete
+                                options={allFromTransferList}
+                                getOptionLabel={(option) => option.user_name || ""}
+                                getOptionKey={(option) => option.id}
+                                onChange={(e, newValue) => setSelFromUser(newValue)}
+                                value={selFromUser}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="From User *"
+                                        size="small"
+                                        error={!!errors.fromUser}
+                                        helperText={errors.fromUser ? "Please Select Transfer From User" : ""}
+                                    />
+                                )}
+                            />
+                            <Box>
+                                {allBeat.length > 0 && <Typography sx={{ mb: 1, mt: 0.5 }}>Beat Mapped*</Typography>}
+                            </Box>
+                            {allBeat.map((val) => (
+                                <MenuItem
+                                    key={val.beat_id}
+                                    value={val.beat_id}
+                                    sx={{ p: 0, mt: '-0.9rem' }}
+                                    onClick={() => {
+                                        const isSelected = selBeat.includes(val.beat_id);
+
+                                        // FIX 1: return early to prevent removing last beat
+                                        if (isSelected && selBeat.length === 1) {
+                                            toast.error("Please Select At Least 1 Beat to Load");
+                                            return;
+                                        }
+
+                                        setSelBeat((prev) =>
+                                            isSelected
+                                                ? prev.filter((beat_id) => beat_id !== val.beat_id)
+                                                : [...prev, val.beat_id]
+                                        );
+                                    }}
+                                >
+                                    <Checkbox checked={selBeat.includes(val.beat_id)} />
+                                    <ListItemText primary={val.beat_name} />
+                                </MenuItem>
+                            ))}
+                        </FormControl>
+                        </Grid>
+                        <Grid size={{ md: 3.3, lg: 2.3, xs: 12, sm: 4 }}>
+                        <FormControl fullWidth>
+                            <Autocomplete
+                                options={allToTransferList}
+                                getOptionLabel={(option) => option.user_name || ""}
+                                getOptionKey={(option) => option.id}
+                                onChange={(e, newValue) => setSelToUser(newValue)}
+                                value={selToUser}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="To User *"
+                                        size="small"
+                                        error={!!errors.toUser}
+                                        helperText={errors.toUser ? "Please Select Transfer To User" : ""}
+                                    />
+                                )}
+                            />
+                        </FormControl>
+                        </Grid>
+                        </Grid>
+                    </Box>
+
+                    <Box>
+                        {allCustomerList.length > 0 && (
+                            <Box>
+                                <DataTable
+                                    columns={columns}
+                                    data={allCustomerList}
+                                    defaultPageSize={10}
+                                    sx={{
+                                        backgroundColor: "#fff",
+                                        borderRadius: "10px",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                                    }}
+                                />
+                                <Button
+                                    onClick={() => {
+                                        if (validateFields()) {
+                                            showSubmitTransferConfirmation()
+                                        }
+                                    }}
+                                    variant="contained"
+                                    sx={{ mt: 3, ml: 2, mb: 2, textTransform: 'none' }}
+                                >
+                                    Transfer
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
                 </Box>
+                <ConfirmationDialog
+                    open={confirmationDialog.open}
+                    onClose={closeConfirmationDialog}
+                    onConfirm={confirmationDialog.onConfirm}
+                    title={confirmationDialog.title}
+                    message={confirmationDialog.message}
+                    confirmText={confirmationDialog.confirmText}
+                    loading={modifyLoading}
+                    cancelText={confirmationDialog.cancelText}
+                    confirmColor={confirmationDialog.confirmColor}
+                />
             </Box>
-            <ConfirmationDialog
-                open={confirmationDialog.open}
-                onClose={closeConfirmationDialog}
-                onConfirm={confirmationDialog.onConfirm}
-                title={confirmationDialog.title}
-                message={confirmationDialog.message}
-                confirmText={confirmationDialog.confirmText}
-                loading={modifyLoading}
-                cancelText={confirmationDialog.cancelText}
-                confirmColor={confirmationDialog.confirmColor}
-            />
         </Layout>
     )
 }
