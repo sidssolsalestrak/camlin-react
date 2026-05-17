@@ -470,26 +470,38 @@ export default function WebMenuMaster() {
             setModifyLoading(false)
         }
     }
-
+  
     const collectEditData = async (id) => {
-        try {
-            let response = await api.post('/readEditWebMenuData', { usr_id: id })
-            let data = Array.isArray(response.data.data) ? response.data.data : []
-            const matchedUser = userInputData.find(u => u.id === data[0].user_type_id) || null
-            setSelUserInput(matchedUser)
-            let menuArrData = data[0].menu_id.split(',').map(Number)
-            setTabValue(0)
-            let chkobject = {};
-            menuArrData.forEach((val) => {
-                chkobject[val] = true;
-            });
-            setChecked(chkobject)
+    try {
+        // like PHP: $masData — get checked menu ids
+        const masRes = await api.post('/getWebChecked', { uid: id })
+        const masData = masRes.data.data[0]
+        console.log("mas Data from backend",masData)
+        const arr = masData?.menu_id?.split(',').map(Number) || []  
+      
+        const repRes = await api.post('/readEditWebMenuData', { usr_id: id })
+        const repData = Array.isArray(repRes.data.data) ? repRes.data.data : []
+        console.log("rep data backend",repData)
+        const matchedUser = userInputData.find(u => u.id === id) || null
+        setSelUserInput(matchedUser)
+        setTabValue(0)
 
-        }
-        catch (err) {
-            console.log(err)
-        }
+        let chkobject = {}
+        let rolesObject = {}
+
+        repData.forEach((item) => {
+            if (arr.includes(item.id)) {          // like PHP: if(in_array($key->id, $arr))
+                chkobject[item.id] = true
+                rolesObject[item.id] = String(item.acc_stat ?? "0")  // like PHP: $key->acc_stat
+            }
+        })
+
+        setChecked(chkobject)
+        setRoles(rolesObject)
+    } catch (err) {
+        console.log(err)
     }
+}
 
 
     const columns = [
@@ -552,7 +564,7 @@ export default function WebMenuMaster() {
                     )}
 
                     {tabValue === 0 && (
-                        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3, width: "90%" }}>
+                        <Box sx={{ p: {lg:3,xs:0,md:3}, display: "flex", flexDirection: "column", gap: 3, width: {lg:"90%",sm:"95%",xs:'100%'} }}>
 
                             {/* User Type */}
                             <Autocomplete

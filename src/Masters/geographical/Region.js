@@ -137,8 +137,8 @@ export default function Region() {
         try {
             setModifyLoading(true)
             if (decodedEditRegionId) {
-                let check = hdnRegionName.toLowerCase() === regionName.toLowerCase() ? 0 : 1
-                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName, check: check })
+                let check = hdnRegionName.toLowerCase().trim() === regionName.toLowerCase().trim() ? 0 : 1
+                let response = await api.post("/regionUpdate", { id: editId, zone_id: selectedZone, regName: regionName.trim(), check: check })
                 if (response.data.success) {
                     toast.success(response.data.message)
                     fetchRegData()
@@ -147,7 +147,7 @@ export default function Region() {
                     toast.error(response.data.message || "Update Failed")
                 }
             } else {
-                let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName })
+                let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName.trim() })
                 if (response.data.success) {
                     toast.success("Region added successfully")
                     setSelectedZone("0")

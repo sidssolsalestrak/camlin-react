@@ -233,9 +233,9 @@ export default function MenuMaster() {
         <Layout
             breadcrumb={[
                 { label: "Home", path: "/" },
-                { label: "Master", path: location.pathname },
-                { label: "Admin Panel", path: location.pathname },
-                { label: "Menu Master", path: location.pathname },
+                { label: "Master", path: "/masters/menuMaster" },
+                { label: "Admin Panel", path: "/masters/menuMaster" },
+                { label: "Menu Master", path: "/masters/menuMaster" },
             ]}
 
         >

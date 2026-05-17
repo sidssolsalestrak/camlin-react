@@ -20,10 +20,18 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
 
     const CustomXAxisTick = ({ x, y, payload }) => {
         const fullText = payload.value;
-        const displayText = truncateLabel(fullText);
+        const displayText = truncateLabel(fullText, 15);
         return (
             <g transform={`translate(${x},${y})`}>
-                <text x={0} y={0} dy={8} textAnchor="end" fill="#706E69" fontSize={12} transform="rotate(-35)">
+                <text
+                    x={0}
+                    y={0}
+                    dy={8}
+                    textAnchor="end"
+                    fill="#706E69"
+                    fontSize={12}
+                    transform="rotate(-35)"
+                >
                     <title>{fullText}</title>
                     {displayText}
                 </text>
@@ -45,12 +53,38 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
         return (
             <Box
                 sx={{
+                    position: "relative",
                     backgroundColor: "#fff",
                     border: "1px solid #e0e0e0",
                     borderRadius: "6px",
                     padding: "8px 12px",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                    width: "auto",
+                    width: "max-content",
+                    mb: "10px",
+                    "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: "-8px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0,
+                        height: 0,
+                        borderLeft: "7px solid transparent",
+                        borderRight: "7px solid transparent",
+                        borderTop: "8px solid #e0e0e0",
+                    },
+                    "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: "-6px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0,
+                        height: 0,
+                        borderLeft: "6px solid transparent",
+                        borderRight: "6px solid transparent",
+                        borderTop: "7px solid #fff",
+                    },
                 }}
             >
                 <Typography sx={{ fontSize: 11, color: "#706E69", mb: 0.5 }}>{label}</Typography>
@@ -66,21 +100,36 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
         );
     };
 
+    const getXAxisInterval = (labelCount) => {
+        const maxVisibleLabels = 22;
+        if (labelCount <= maxVisibleLabels) return 0;
+        return Math.ceil(labelCount / maxVisibleLabels) - 1;
+    };
+
     const SalesChart = ({ data, title, height = 320 }) => {
         const [activeBarKey, setActiveBarKey] = useState(null);
+        const [activeBarIndex, setActiveBarIndex] = useState(null);
+        const [tooltipActive, setTooltipActive] = useState(false);
+        const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-        const maxVal = Math.max(
-            ...data.flatMap((d) => [
-                Number(d[fyLabel1]) || 0,
-                Number(d[fyLabel2]) || 0,
-                Number(d[fyLabel3]) || 0,
-            ])
-        );
+        const HoverBar = (props) => {
+            const { x, y, width, height, fill, index, barKey } = props;
+            const isActive = activeBarKey === barKey && activeBarIndex === index;
+            const expandBy = 4;
+            const barWidth = isActive ? width + expandBy : width;
+            const barX = isActive ? x - expandBy / 2 : x;
 
-        // Round up to a clean number for even grid lines
-        const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal || 1)));
-        const domainMax = Math.ceil((maxVal * 1.1) / magnitude) * magnitude;
-
+            return (
+                <rect
+                    x={barX}
+                    y={y}
+                    width={barWidth}
+                    height={height}
+                    fill={fill}
+                    style={{ transition: "width 0.15s ease, x 0.15s ease" }}
+                />
+            );
+        };
 
         return (
             <Box
@@ -113,21 +162,26 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                             axisLine={{ stroke: "#b3b3b3", strokeWidth: 1 }}
                             tickLine={false}
                             tick={<CustomXAxisTick />}
-                            interval={0}
-                            height={70}
+                            interval={getXAxisInterval(data.length)}
+                            height={90}
                         />
 
-                       
                         <YAxis
                             tickLine={false}
                             axisLine={false}
                             width={80}
-                            domain={[0, domainMax]}
-                            tickFormatter={(value) => value.toLocaleString("en-IN")}
+                            domain={[0, "auto"]}
+                            allowDecimals={false}
+                            tickFormatter={(value) =>
+                                Number(value).toLocaleString("en-US", { maximumFractionDigits: 0 })
+                            }
                             tick={{ fontSize: 12, fill: "#706E69" }}
                         />
 
                         <Tooltip
+                            cursor={false}
+                            active={tooltipActive}
+                            position={{ x: tooltipPos.x - 60, y: tooltipPos.y - 80 }}
                             content={(props) => (
                                 <CustomTooltip {...props} activeBarKey={activeBarKey} />
                             )}
@@ -140,27 +194,56 @@ function SalesAnalysisCharts({ regions, tableData, years }) {
                             wrapperStyle={{ fontSize: 11, paddingLeft: 30 }}
                         />
 
-                        {/* ✅ No yAxisId on Bar — matches YAxis above */}
                         <Bar
                             dataKey={fyLabel1}
                             fill="#cccccc"
                             barSize={18}
-                            onMouseEnter={() => setActiveBarKey(fyLabel1)}
-                            onMouseLeave={() => setActiveBarKey(null)}
+                            shape={(props) => <HoverBar {...props} fill="#cccccc" barKey={fyLabel1} />}
+                            onMouseEnter={(data, index) => {
+                                setActiveBarKey(fyLabel1);
+                                setActiveBarIndex(index);
+                                setTooltipActive(true);
+                                setTooltipPos({ x: data.x + data.width / 2, y: data.y });
+                            }}
+                            onMouseLeave={() => {
+                                setActiveBarKey(null);
+                                setActiveBarIndex(null);
+                                setTooltipActive(false);
+                            }}
                         />
                         <Bar
                             dataKey={fyLabel2}
                             fill="#FFAF4C"
                             barSize={18}
-                            onMouseEnter={() => setActiveBarKey(fyLabel2)}
-                            onMouseLeave={() => setActiveBarKey(null)}
+                            shape={(props) => <HoverBar {...props} fill="#FFAF4C" barKey={fyLabel2} />}
+                            onMouseEnter={(data, index) => {
+                                setActiveBarKey(fyLabel2);
+                                setActiveBarIndex(index);
+                                setTooltipActive(true);
+                                setTooltipPos({ x: data.x + data.width / 2, y: data.y });
+                            }}
+                            onMouseLeave={() => {
+                                setActiveBarKey(null);
+                                setActiveBarIndex(null);
+                                setTooltipActive(false);
+                            }}
                         />
                         <Bar
                             dataKey={fyLabel3}
                             fill="#73E4F7"
                             barSize={18}
-                            onMouseEnter={() => setActiveBarKey(fyLabel3)}
-                            onMouseLeave={() => setActiveBarKey(null)}
+                            shape={(props) => <HoverBar {...props} fill="#73E4F7" barKey={fyLabel3} />}
+                            onMouseEnter={(data, index) => {
+                                setActiveBarKey(fyLabel3);
+                                setActiveBarIndex(index);
+                                setTooltipActive(true);
+                                setTooltipPos({ x: data.x + data.width / 2, y: data.y });
+                            }}
+                            onMouseLeave={() => {
+                                setActiveBarKey(null);
+                                setActiveBarIndex(null);
+                                setTooltipActive(false);
+                            }}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
