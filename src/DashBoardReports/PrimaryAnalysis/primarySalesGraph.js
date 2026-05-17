@@ -20,7 +20,7 @@ function CustomTooltip({ active, payload, label, activeKey }) {
     if (!entry || entry.value == null) return null;
 
     return (
-        <div style={{ position: "relative", display: "inline-block", }}>
+        <div style={{ position: "relative", display: "inline-block" }}>
             {/* Tooltip Box */}
             <div
                 style={{
@@ -32,7 +32,8 @@ function CustomTooltip({ active, payload, label, activeKey }) {
                     whiteSpace: "nowrap",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     lineHeight: 1.5,
-                    
+                    border: "1px solid #e0e0e0",
+                    marginBottom: 8,
                 }}
             >
                 <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 2 }}>
@@ -43,22 +44,43 @@ function CustomTooltip({ active, payload, label, activeKey }) {
                 </div>
             </div>
 
-            {/* MUI-style bottom arrow */}
+            {/* Bottom arrow — border (outline) */}
             <div
                 style={{
                     position: "absolute",
+                    bottom: 1,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 0,
+                    height: 0,
+                    borderLeft: "7px solid transparent",
+                    borderRight: "7px solid transparent",
+                    borderTop: "8px solid #e0e0e0",
+                }}
+            />
+            {/* Bottom arrow — white fill */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: 2,
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: 0,
                     height: 0,
                     borderLeft: "6px solid transparent",
                     borderRight: "6px solid transparent",
-                    borderTop: `6px solid ${entry.stroke}`,
+                    borderTop: "7px solid white",
                 }}
             />
         </div>
     );
 }
+
+const LINE_COLORS = {
+    cm_qty: "#0000ff",
+    lm_qty: "#f1ca3a",
+    lym_qty: "#6f9654",
+};
 
 export default function DayWiseSalesChart({
     data,
@@ -67,12 +89,31 @@ export default function DayWiseSalesChart({
     height = 400,
 }) {
     const [activeKey, setActiveKey] = useState(null);
+    const [thickKeys, setThickKeys] = useState(new Set());
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+    const [tooltipActive, setTooltipActive] = useState(false);
 
     const cmLabel = "CM";
     const lmLabel = "LM";
     const lyLabel = "LY";
 
     const tooltipLabels = { cm_qty: cmLabel, lm_qty: lmLabel, lym_qty: lyLabel };
+    console.log("graph data ",data)
+
+    const handleLegendClick = (e) => {
+        const dataKey = e.dataKey;
+        setThickKeys((prev) => {
+            const next = new Set(prev);
+            if (next.has(dataKey)) {
+                next.delete(dataKey);
+            } else {
+                next.add(dataKey);
+            }
+            return next;
+        });
+    };
+
+    const strokeWidth = (key) => (thickKeys.has(key) ? 4 : 2);
 
     const todayDay = useMemo(() => {
         const now = new Date();
@@ -85,6 +126,22 @@ export default function DayWiseSalesChart({
         }
         return null;
     }, [selectedMonth]);
+
+    // Capture mouse position from chart for tooltip centering
+    const handleMouseMove = (e) => {
+        if (e && e.activeCoordinate) {
+            setTooltipPos({
+                x: e.activeCoordinate.x - 60,
+                y: e.activeCoordinate.y - 90,
+            });
+            setTooltipActive(true);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setActiveKey(null);
+        setTooltipActive(false);
+    };
 
     return (
         <div style={{ fontFamily: "var(--font-sans)", padding: "16px 0" }}>
@@ -114,7 +171,8 @@ export default function DayWiseSalesChart({
                 <LineChart
                     data={data}
                     margin={{ top: 8, right: 24, left: 0, bottom: 8 }}
-                    onMouseLeave={() => setActiveKey(null)}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
                 >
                     <CartesianGrid
                         stroke="#e0e0e0"
@@ -138,19 +196,22 @@ export default function DayWiseSalesChart({
                         axisLine={false}
                         tickLine={false}
                         type="number"
+                        domain={["auto", "auto"]}
                         tick={{ fontSize: 12, fill: "var(--color-text-secondary)" }}
                         width={90}
                         tickFormatter={(value) => value.toLocaleString("en-US")}
-                        allowDataOverflow={true}
                     />
                     <Tooltip
                         content={<CustomTooltip activeKey={activeKey} />}
                         cursor={false}
+                        active={tooltipActive}
+                        position={{ x: tooltipPos.x, y: tooltipPos.y }}
                         isAnimationActive={false}
                     />
                     <Legend
-                        wrapperStyle={{ fontSize: 13, paddingTop: 8 }}
+                        wrapperStyle={{ fontSize: 13, paddingTop: 8, cursor: "pointer" }}
                         formatter={(value) => tooltipLabels[value] ?? value}
+                        onClick={handleLegendClick}
                     />
 
                     {todayDay && (
@@ -171,11 +232,15 @@ export default function DayWiseSalesChart({
                         type="monotone"
                         dataKey="cm_qty"
                         name={cmLabel}
-                        stroke="#0000ff"
-                        strokeWidth={2}
+                        stroke={LINE_COLORS.cm_qty}
+                        strokeWidth={strokeWidth("cm_qty")}
                         dot={<NoDot />}
-                        activeDot={false}
                         connectNulls={false}
+                        activeDot={
+                            activeKey === "cm_qty"
+                                ? { r: 5, fill: LINE_COLORS.cm_qty, stroke: "#fff", strokeWidth: 2 }
+                                : false
+                        }
                         onMouseEnter={() => setActiveKey("cm_qty")}
                     />
 
@@ -183,11 +248,16 @@ export default function DayWiseSalesChart({
                         type="monotone"
                         dataKey="lm_qty"
                         name={lmLabel}
-                        stroke="#f1ca3a"
-                        strokeWidth={2}
+                        stroke={LINE_COLORS.lm_qty}
+                        strokeWidth={strokeWidth("lm_qty")}
                         strokeDasharray="7 7"
                         dot={<NoDot />}
-                        activeDot={false}
+                        connectNulls={false}
+                        activeDot={
+                            activeKey === "lm_qty"
+                                ? { r: 5, fill: LINE_COLORS.lm_qty, stroke: "#fff", strokeWidth: 2 }
+                                : false
+                        }
                         onMouseEnter={() => setActiveKey("lm_qty")}
                     />
 
@@ -195,11 +265,16 @@ export default function DayWiseSalesChart({
                         type="monotone"
                         dataKey="lym_qty"
                         name={lyLabel}
-                        stroke="#6f9654"
-                        strokeWidth={2}
+                        stroke={LINE_COLORS.lym_qty}
+                        strokeWidth={strokeWidth("lym_qty")}
                         strokeDasharray="4 4"
                         dot={<NoDot />}
-                        activeDot={false}
+                        connectNulls={false}
+                        activeDot={
+                            activeKey === "lym_qty"
+                                ? { r: 5, fill: LINE_COLORS.lym_qty, stroke: "#fff", strokeWidth: 2 }
+                                : false
+                        }
                         onMouseEnter={() => setActiveKey("lym_qty")}
                     />
                 </LineChart>
