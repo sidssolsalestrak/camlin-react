@@ -113,8 +113,8 @@ export default function AppVersion() {
             try{
                 let Payload={
                     os_type:selOs,
-                    appVersion:appVersion,
-                    appBuild:appBuild
+                    appVersion:appVersion.trim(),
+                    appBuild:appBuild.trim()
                 }
                 console.log("App version submit",Payload)
                 let response=await api.post("/appVersionCreate",Payload)
