@@ -235,6 +235,7 @@ const Layout = ({ children, breadcrumb = [] }) => {
   useEffect(() => {
     window.acc_stat_view = (acc_stat, num, url) => {
       console.log("Clicked:", acc_stat, num, url);
+      localStorage.setItem("acc_stat",acc_stat)
       navigate(`/${url}`);
     };
   }, []);

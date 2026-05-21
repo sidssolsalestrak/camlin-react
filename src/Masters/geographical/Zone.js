@@ -25,7 +25,7 @@ export default function Zone() {
   const [zoneName, setZoneName] = useState("");
   const [hdnZoneName, setHdnZoneName] = useState("");
   const [zoneError, setZoneError] = useState(false);
-  const [userType, setUserType] = useState(null);
+  const [accStat, setAccStat] = useState(null);
   const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required");
   const [zoneList, setZoneList] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -56,15 +56,14 @@ export default function Zone() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("session-token");
-    if (token) {
       try {
-        let decoded = jwtDecode(token);
-        setUserType(decoded.user_type);
+        const accStat = localStorage.getItem("acc_stat");
+        setAccStat(accStat);
+        console.log("Acc Stat",accStat)
       } catch (err) {
         console.log(err);
       }
-    }
+
   }, []);
 
   useEffect(() => {
