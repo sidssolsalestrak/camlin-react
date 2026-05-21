@@ -13,7 +13,8 @@ self.onmessage = function (e) {
 
     const {
       headerColor, headerFontColor, headerFontSize, headerBold,
-      titleRow1, titleColor, titleFontColor, titleFontSize, titleBold,
+      titleRow1, titleRow2, titleRow3, // Added titleRow2 and titleRow3
+      titleColor, titleFontColor, titleFontSize, titleBold,
       sheetName, dataFontSize, dataFontColor,
     } = mergedConfig;
 
@@ -56,23 +57,31 @@ self.onmessage = function (e) {
 
     let currentRow = 0;
 
-    // ── Title Row ──────────────────────────────────────────────────────────
-    if (titleRow1) {
-      XLSX.utils.sheet_add_aoa(worksheet, [[titleRow1]], { origin: "A1" });
-      worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } });
-      const cell = worksheet["A1"] || (worksheet["A1"] = { v: titleRow1, t: "s" });
+    // ── Title Rows (up to 3) ───────────────────────────────────────────────
+    const titleRows = [titleRow1, titleRow2, titleRow3].filter(Boolean);
+
+    titleRows.forEach((titleText, idx) => {
+      const rowIdx = idx;
+      XLSX.utils.sheet_add_aoa(worksheet, [[titleText]], { origin: `A${rowIdx + 1}` });
+      worksheet["!merges"].push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: totalCols - 1 } });
+      
+      const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: 0 });
+      const cell = worksheet[cellRef] || (worksheet[cellRef] = { v: titleText, t: "s" });
       cell.s = {
         font:      { bold: titleBold, sz: titleFontSize, color: { rgb: titleFontColor }, name: "Calibri" },
         fill:      { patternType: "solid", fgColor: { rgb: titleColor } },
         alignment: { horizontal: "left", vertical: "center" },
         border:    borderStyle,
       };
+      
+      // Fill remaining cells in the title row with borders
       for (let c = 1; c < totalCols; c++) {
-        const ref = XLSX.utils.encode_cell({ r: 0, c });
+        const ref = XLSX.utils.encode_cell({ r: rowIdx, c });
         worksheet[ref] = { v: "", t: "s", s: { border: borderStyle } };
       }
-      currentRow = 1;
-    }
+      
+      currentRow++;
+    });
 
     // ── Header Row 1 — Group labels ────────────────────────────────────────
     const groupRowIdx = currentRow;
@@ -174,9 +183,15 @@ self.onmessage = function (e) {
 
     // ── Row heights ────────────────────────────────────────────────────────
     worksheet["!rows"] = [];
-    if (titleRow1)          worksheet["!rows"][0]          = { hpt: 22 };
-                            worksheet["!rows"][groupRowIdx] = { hpt: 13 };
-    if (subRowIdx !== null) worksheet["!rows"][subRowIdx]   = { hpt: 13 };
+    
+    // Set height for all title rows
+    titleRows.forEach((_, idx) => {
+      worksheet["!rows"][idx] = { hpt: 22 };
+    });
+    
+    // Set height for header rows
+    worksheet["!rows"][groupRowIdx] = { hpt: 13 };
+    if (subRowIdx !== null) worksheet["!rows"][subRowIdx] = { hpt: 13 };
 
     // ── Sheet range ────────────────────────────────────────────────────────
     const lastDataRow   = dataStartRow + data.length - 1;

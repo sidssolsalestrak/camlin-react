@@ -111,6 +111,47 @@ export const excelStyles = {
     border: true,
     alignment: { horizontal: "left", vertical: "center" },
     showFilters: false,
-  }
+  },
+  User_Details:{
+    sheetName: "User_Details",
+    filenameSuffix: "User_Details.xlsx",
+    titleRow1:'',
+    titleRow2:'',
+    titleColor: "",
+    titleFontColor: "000000",
+    titleFontSize: 13,
+    titleBold: true,
+    headerColor: "ffffff",
+    headerFontColor: "000000",
+    headerFontSize: 11.5,
+    headerBold: true,
+    dataFontSize: 11.5,
+    dataFontColor: "000000",
+    border: true,
+    alignment: { horizontal: "left", vertical: "center" },
+    showFilters: false,
+  },
+   User_Logs:{
+    sheetName: "User_Logs",
+    filenameSuffix: "User_Logs.xlsx",
+    titleRow1:'User Logs',
+    titleRow2:'',
+    titleRow3:'',
+    titleColor: "ffffff",
+    titleFontColor: "000000",
+    titleFontSize: 12,
+    titleBold: true,
+    headerColor: "ffffff",
+    headerFontColor: "000000",
+    headerFontSize: 11.5,
+    headerBold: false,
+    dataFontSize: 11.5,
+    dataFontColor: "000000",
+    border: true,
+    alignment: { horizontal: "left", vertical: "center" },
+    showFilters: false,
+    
+    }
+
 };
 
