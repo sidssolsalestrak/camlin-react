@@ -211,7 +211,7 @@ function App() {
             />
 
             <Route
-              path="/Customers/CreateDoctor"
+              path="/Customers/CreateDoctor/:id?"
               element={<CreateCustomer />}
             />
             <Route
