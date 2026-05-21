@@ -754,6 +754,45 @@ function AccountMas() {
     }
   };
 
+  const handleApproveAll = () => {
+  if (!selectedUser || selectedUser == 0) {
+    toast.warning("Please select User to Approve All");
+    return;
+  }
+  const updates = {};
+  tableData.forEach((row) => {
+    const isAllowed =
+      row.mgr_approved_stat == 0 &&
+      (row.am_user_id == loggedInUserId ||
+        row.zbm_user_id == loggedInUserId ||
+        row.rsm_user_id == loggedInUserId ||
+        row.sh_user_id == loggedInUserId ||
+        loggedInUserType == 2 ||
+        loggedInUserType == 3);
+    if (isAllowed) updates[row.id] = 1;
+  });
+  setApprovalState((prev) => ({ ...prev, ...updates }));
+};
+
+  const handleRejectAll = () => {
+    if (!selectedUser || selectedUser == 0) {
+      toast.warning("Please select User to Reject All");
+      return;
+    }
+    const updates = {};
+    tableData.forEach((row) => {
+      const isAllowed =
+        row.mgr_approved_stat == 0 &&
+        (row.am_user_id == loggedInUserId ||
+          row.zbm_user_id == loggedInUserId ||
+          row.rsm_user_id == loggedInUserId ||
+          row.sh_user_id == loggedInUserId ||
+          loggedInUserType == 2 ||
+          loggedInUserType == 3);
+      if (isAllowed) updates[row.id] = 2;
+    });
+    setApprovalState((prev) => ({ ...prev, ...updates }));
+  };
   const buildPayload = (rows) => {
     return {
       val: reqType, // req type (Add/Update/Delete)
@@ -966,13 +1005,93 @@ function AccountMas() {
             </Box>
           </Grid>
         </Grid>
+           <Box  sx={{backgroundColor: "#fff",borderRadius: "10px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                                            }}>
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            borderRadius: "10px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+          }}
+        >
+          {/* Approve All / Reject All header — only shown in requests mode for eligible users */}
+         {cusReq == 2 &&
+  tableData.some(
+    (row) =>
+      row.mgr_approved_stat == 0 &&
+      (row.am_user_id == loggedInUserId ||
+        row.zbm_user_id == loggedInUserId ||
+        row.rsm_user_id == loggedInUserId ||
+        row.sh_user_id == loggedInUserId ||
+        loggedInUserType == 2 ||
+        loggedInUserType == 3),
+  ) && (
+    <Box display="flex" justifyContent="flex-end" gap={3} px={4} pt={2}>
+      <span
+        onClick={handleApproveAll}
+        style={{
+          fontSize: "15px",
+          color: tableData
+            .filter(
+              (row) =>
+                row.mgr_approved_stat == 0 &&
+                (row.am_user_id == loggedInUserId ||
+                  row.zbm_user_id == loggedInUserId ||
+                  row.rsm_user_id == loggedInUserId ||
+                  row.sh_user_id == loggedInUserId ||
+                  loggedInUserType == 2 ||
+                  loggedInUserType == 3),
+            )
+            .every((row) => approvalState[row.id] === 1)
+            ? "#0bd00b"   // all approved → green
+            : "#a5a0a0",  // not all approved → grey
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        Approve All <FaThumbsUp size={19} style={{marginBottom:'8px'}} />
+      </span>
 
-        <DataTable
-          data={tableData}
-          columns={columns}
-          loading={loadingTable}
-          title="Customers List"
-        />
+      <span
+        onClick={handleRejectAll}
+        style={{
+          fontSize: "15px",
+          color: tableData
+            .filter(
+              (row) =>
+                row.mgr_approved_stat == 0 &&
+                (row.am_user_id == loggedInUserId ||
+                  row.zbm_user_id == loggedInUserId ||
+                  row.rsm_user_id == loggedInUserId ||
+                  row.sh_user_id == loggedInUserId ||
+                  loggedInUserType == 2 ||
+                  loggedInUserType == 3),
+            )
+            .every((row) => approvalState[row.id] === 2)
+            ? "red"       // all rejected → red
+            : "#a5a0a0",  // not all rejected → grey
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        Reject All <FaThumbsDown size={19}  style={{marginTop:'6px'}}/>
+      </span>
+    </Box>
+  )}
+
+          <DataTable
+            data={tableData}
+            columns={columns}
+            loading={loadingTable}
+            title="Customers List"
+          />
+        </Box>
+        </Box>
 
         {cusReq == 2 &&
           tableData.some(
