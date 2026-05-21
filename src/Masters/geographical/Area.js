@@ -152,12 +152,12 @@ export default function Area() {
             setModifyLoading(true)
             if (decodedAreaId) {
                 let check = 1
-                if (hdnAreaName.toLowerCase() === areaName.toLowerCase()) check = 0
+                if (hdnAreaName.toLowerCase().trim() === areaName.toLowerCase().trim()) check = 0
                 let response = await api.post("/areaUpdate", {
                     updId: decodedAreaId,
                     reg_name: selRegion?.id,        // ← extract id
                     state_name: selState?.id,       // ← extract id
-                    area_name: areaName,
+                    area_name: areaName.trim(),
                     check: check
                 })
                 if (response.data.success) {
@@ -171,7 +171,7 @@ export default function Area() {
                 let response = await api.post("/areaCreate", {
                     reg_name: selRegion?.id,        // ← extract id
                     state_name: selState?.id,       // ← extract id
-                    area_name: areaName
+                    area_name: areaName.trim()
                 })
                 if (response.data.success) {
                     toast.success(response.data.message)

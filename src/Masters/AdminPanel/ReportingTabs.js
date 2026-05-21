@@ -125,7 +125,7 @@ export default function ReportingTabs() {
         }
         let replength = selRepInputData.length
         if (replength === 0 || replength < 0) {
-            toast.success("Please Select atleast one Reporting Module !")
+            toast.error("Please Select atleast one Reporting Module !")
             setRepInputError(true)
             isValid = false
         }
@@ -258,9 +258,9 @@ export default function ReportingTabs() {
         <Layout
             breadcrumb={[
                 { label: "Home", path: "/" },
-                { label: "Master", path: location.pathname },
-                { label: "Admin Panel", path:location.pathname },
-                { label: "Reporting Tabs", path: location.pathname },
+                { label: "Master", path: '/masters/repTabs/'},
+                { label: "Admin Panel", path:'/masters/repTabs/' },
+                { label: "Reporting Tabs", path: '/masters/repTabs/' },
             ]}
         >
             <Box

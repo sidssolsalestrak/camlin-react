@@ -519,7 +519,6 @@ function PrimarySales({ enType }) {
                     fontWeight: row._rowType === "grand_total" ? 700 : row._rowType === "data" ? 500 : 600,
                     color: '#555',
                     whiteSpace: "nowrap",
-                    fontSize: 13,
                 }}>
                     {value}
                 </Box>
@@ -567,14 +566,14 @@ function PrimarySales({ enType }) {
                     </Box>
 
                     <Box sx={{
-                        mb: 0.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap',
+                        mb: 0.5,
                         backgroundColor: "#fff",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px", borderRadius: "10px",
                     }}>
                         <Box sx={{width:'100%'}}>
                             <Grid container spacing={0.95} >
-                            <Grid size={{ md:3, lg: 2, xs: 12 }}>
+                            <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
                             <FormControl fullWidth >
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
@@ -591,7 +590,7 @@ function PrimarySales({ enType }) {
                                 </LocalizationProvider>
                             </FormControl>
                             </Grid>
-                            <Grid size={{ md: 3, lg: 2, xs: 12 }}>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm:6 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="type">Type</InputLabel>
                                 <Select labelId="type" label="Type" size="small"
@@ -603,7 +602,7 @@ function PrimarySales({ enType }) {
                                 </Select>
                             </FormControl>
                             </Grid>
-                            <Grid size={{ md: 3, lg:2, xs: 12 }}>
+                            <Grid size={{ md: 3, lg:2, xs: 12, sm:6 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="grpBy">Group By</InputLabel>
                                 <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)}
@@ -621,7 +620,7 @@ function PrimarySales({ enType }) {
                                 </Select>
                             </FormControl>
                             </Grid>
-                            <Grid size={{ md: 3, lg:2, xs: 12 }}>
+                            <Grid size={{ md: 3, lg:2, xs: 12,sm:6 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="rep_type">Report Type</InputLabel>
                                 <Select size="small" MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
@@ -633,16 +632,17 @@ function PrimarySales({ enType }) {
                                 </Select>
                             </FormControl>
                             </Grid>
-                            <Grid size={{ md: 4, lg:4, xs: 12 }}>
-                            <Box sx={{display:'flex',gap:1.5}}>
+                            <Grid size={{ md: 1.5, lg:1, xs:4,sm:2}}>
                             <Button color="warning" onClick={() => setFiltersOpen(true)} variant="contained">Filters</Button>
-                            
+                            </Grid>
+                            <Grid size={{ md:1.5, lg:1, xs: 4,sm:2 }}>
                             <Button variant="contained" onClick={handleLoad} disabled={loading}>
                                 {loading ? "Loading..." : "Load"}
                             </Button>
+                            </Grid>
+                            <Grid size={{ md:1.5, lg:1, xs: 4,sm:2 }}>
                             <Button onClick={() => handleDownLoadExcel()} color="warning" variant="contained">Excel</Button>
-                            </Box>
-                           </Grid>
+                            </Grid>
                             </Grid>
                           
                            

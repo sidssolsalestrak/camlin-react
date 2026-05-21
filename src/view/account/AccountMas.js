@@ -79,7 +79,7 @@ function AccountMas() {
   const [selectedRegion, setSelectedRegion] = useState("");
 
   const [userType, setUserType] = useState([]);
-  const [selectedUserType, setSelectedUserType] = useState("");
+  const [selectedUserType, setSelectedUserType] = useState(0);
 
   const [userData, setUserData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(0);
@@ -561,7 +561,7 @@ function AccountMas() {
   }, [selectedRegion]);
 
   useEffect(() => {
-    if (selectedUserType) {
+    if (selectedUserType || selectedUserType===0) {
       fetchUsers({ trigger_type: 1 });
     }
   }, [selectedUserType]);
@@ -816,6 +816,7 @@ function AccountMas() {
                 labelId="region-label"
                 value={selectedRegion}
                 label="Region"
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 onChange={(e) => {
                   setSelectedRegion(e.target.value);
 

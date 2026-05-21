@@ -135,10 +135,11 @@ function AddUser() {
   const [selfie, setSelfie] = useState("0");
   const [attendance, setAttendance] = useState("0");
 
-  const [weeklyOff, setWeeklyOff] = useState([]);
+  const [weeklyOff, setWeeklyOff] = useState([1]);
   const [weekDays, setWeekDays] = useState([]);
   const [flag, setFlag] = useState(0)
   const [oldProfileImage,setOldProfileImage]=useState("")
+  const [existingPass,setExistingPass]=useState(null)
 
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
@@ -185,8 +186,9 @@ function AddUser() {
   };
 
   const getReportToUsers = async (typeId) => {
+    try{
     const res = await axios.post("/get_repo_to_user", {
-      rep_to_type: String(typeId),
+      usrtyp: String(typeId),
     });
 
     if (res.data.status === 200) {
@@ -197,6 +199,13 @@ function AddUser() {
 
       setReportToUsers(formatted);
     }
+    else{
+       setReportToUsers([])
+    }
+  }
+  catch(err){
+     console.log("fetching get to user err",err)
+  }
   };
 
   const getEmpDropdowns = async () => {
@@ -243,7 +252,6 @@ function AddUser() {
         setEmail(d.email_id || "");
         setAddress(d.user_addr || "");
 
-        setDateOfBirth(d.emp_dob || "");
         setOtherRef(d.user_ref || "")
         setDateOfJoin(
           d.emp_doj && d.emp_doj !== "1900-01-01T00:00:00.000Z"
@@ -311,10 +319,26 @@ function AddUser() {
         setAppConfigStatus(d.app_config_stat || 0);
         setDelFlag(d.del_flag || 0);
         setAccStatus(d.acc_stat || 0);
-        setRelievingDate(d.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "");
         setDeactivateType(String(d.deact_type || "0"));
         setDeactivateRemarks(d.deact_rem || "");
+        setExistingPass(d.user_pass || null)
         setFlag(d.id > 0 ? 1 : 0)
+
+        // Handle relieving date - filter out invalid default dates
+        const relievingDateStr = d.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "";
+        const invalidDates = ['1900-01-01', '1970-01-01', '0000-00-00', '1899-12-31'];
+        setRelievingDate(
+          relievingDateStr && !invalidDates.includes(relievingDateStr) 
+            ? relievingDateStr 
+            : ""
+        );
+
+        const dobStr = d.emp_dob ? d.emp_dob.split("T")[0] : "";
+        setDateOfBirth(
+          dobStr && !invalidDates.includes(dobStr) 
+            ? dobStr 
+            : ""
+        );
 
         if (d.zone_id) {
           const zones = d.zone_id.split(",");
@@ -355,7 +379,7 @@ function AddUser() {
         setPsDay(d.plan_rule_day || "");
 
         setRepSubCutoff(String(d.report_rule_id || "0"));
-        setWeekend(""); // if needed
+        setWeekend(d. report_rule_day || ""); // if needed
         setRsDay(d.report_rule_lag || "");
 
         setReportType(String(d.rep_type || "0"));
@@ -639,7 +663,7 @@ function AddUser() {
     formData.append("report_type", selectedReportType);
     formData.append("report_user_id", selectedReportTo);
     formData.append("user_name", userId);
-    formData.append("password", password);
+    formData.append("password", password || existingPass);
     formData.append("conf_password", confirmPassword);
     formData.append("web_access", webAccess === "yes" ? 0 : 1);
     formData.append("app_access", appAccess === "yes" ? 0 : 1);
@@ -648,7 +672,7 @@ function AddUser() {
     formData.append("plan_approval", planApproval);
     formData.append("rep_sub_cutoff", repSubCutoff);
     formData.append("weekend", weekend);
-    formData.append("rs_day", rsDay);
+    formData.append("rs_day", rsDay || 0);
     formData.append("data_mode", dataMode);
     formData.append("location_tracking", locationTracking);
     formData.append("selfie", selfie);
@@ -848,7 +872,10 @@ function AddUser() {
     const val = Array.isArray(value) ? value : [value];
 
     setSelectedZones(val);
-
+    setSelectedRegions([])
+    setSelectedAreas([])
+    setSelectedTerritories([])
+    setSelectedBeats([])
     if (val.length > 0) {
       const res = await axios.post("/getRegion", {
         zone: val,
@@ -866,7 +893,9 @@ function AddUser() {
   const handleRegionChange = async (value) => {
     const val = Array.isArray(value) ? value : [value];
     setSelectedRegions(val);
-
+    setSelectedAreas([])
+    setSelectedTerritories([])
+    setSelectedBeats([])
     if (val.length > 0) {
       const res = await axios.post("/getAreaData", {
         reg: val,
@@ -883,6 +912,8 @@ function AddUser() {
   const handleAreaChange = async (value) => {
     const val = Array.isArray(value) ? value : [value];
     setSelectedAreas(val);
+    setSelectedTerritories([])
+    setSelectedBeats([])
     if (val.length > 0) {
       const res = await axios.post("/getTerritory", {
         area: val,
@@ -899,7 +930,7 @@ function AddUser() {
     const val = Array.isArray(value) ? value : [value];
 
     setSelectedTerritories(val);
-
+    setSelectedBeats([])
     if (val.length > 0) {
       const res = await axios.post("/getBeat", {
         ter: val,
@@ -947,7 +978,7 @@ function AddUser() {
         setShowTerritory(true);
       }
       if (mng === 0) {
-        if (selected === 12) {
+        if (Number(selected) === 12) {
           return; // hide all
         }
         setShowZone(true);
@@ -1380,7 +1411,7 @@ function AddUser() {
                   label="Report Type"
                   value={selectedReportType}
                   onChange={(e) => setSelectedReportType(e.target.value)}
-                  options={userTypes}
+                  options={userTypes.filter(type => type.id !== 2)}
                   valueKey="id"
                   labelKey="client_alias"
                   error={Boolean(errors.reportType)}
@@ -1617,6 +1648,8 @@ function AddUser() {
                           format="DD MMM YYYY"
                           maxDate={dayjs()}
                           value={relievingDate ? dayjs(relievingDate) : null}
+                          defaultCalendarMonth={dayjs()}
+                          placeholder="Select Date of Relieving"
                           onChange={(newValue) => {
                             setRelievingDate(
                               newValue ? newValue.format("YYYY-MM-DD") : "",
@@ -1677,6 +1710,7 @@ function AddUser() {
                         onChange={(e) => setDeactivateRemarks(e.target.value)}
                         error={Boolean(errors.deactivateRemarks)}
                         helperText={errors.deactivateRemarks}
+                        placeholder="Enter Remarks on Deactivation"
                       />
                     </Box>
 
@@ -1710,7 +1744,7 @@ function AddUser() {
                   onChange={(e) => setPlanSubCutoff(e.target.value)}
                   options={[
                     { id: "0", name: "No Rules" },
-                    { id: "1", name: "End Of Previous Month" },
+                    { id: "1", name: "End of Previous Month" },
                     { id: "2", name: "End of Current Month" },
                     { id: "3", name: "Specific Date Previous Month" },
                     { id: "4", name: "Specific Date Current Month" },
@@ -1747,7 +1781,15 @@ function AddUser() {
                 <CommonAppSelect
                   label="Report Submission Cutoff"
                   value={repSubCutoff}
-                  onChange={(e) => setRepSubCutoff(e.target.value)}
+                  onChange={(e) => {
+                    setRepSubCutoff(e.target.value)
+                     if(e.target.value==="3" && weekend.length===0){
+                      setWeekend([1])
+                    }
+                    if(e.target.value==="5" && rsDay===""){
+                      setRsDay(1)
+                    }
+                  }}
                   options={[
                     { id: "0", name: "No Rules" },
                     { id: "1", name: "Real Time" },

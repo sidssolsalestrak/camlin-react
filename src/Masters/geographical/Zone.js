@@ -120,7 +120,7 @@ export default function Zone() {
 
       if (decodedEditZoneid) {
         let check =
-          hdnZoneName.toLowerCase() === zoneName.toLowerCase() ? 0 : 1;
+          hdnZoneName.toLowerCase().trim() === zoneName.toLowerCase().trim() ? 0 : 1;
         let response = await api.post("/updateZone", {
           id: editId,
           newZone: zoneName.trim(),

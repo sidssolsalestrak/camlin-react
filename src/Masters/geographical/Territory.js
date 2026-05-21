@@ -131,10 +131,10 @@ export default function Territory() {
         try {
             setModifyLoading(true)
             if (decodedEditTerritoryId) {
-                let check = hdnTerName.toLowerCase() === terName.toLowerCase() ? 0 : 1
+                let check = hdnTerName.toLowerCase().trim() === terName.toLowerCase().trim() ? 0 : 1
                 let response = await api.post("/terMasUpdate", {
                     id: decodedEditTerritoryId,
-                    ter_name: terName,
+                    ter_name: terName.trim(),
                     area_id: selArea?.id,
                     check: check
                 })
@@ -147,7 +147,7 @@ export default function Territory() {
                 }
             } else {
                 let response = await api.post("/terMasCreate", {
-                    ter_name: terName,
+                    ter_name: terName.trim(),
                     areaId: selArea?.id
                 })
                 if (response.data.success) {
