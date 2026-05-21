@@ -57,7 +57,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
-                                    {/* Account Owner / POS (Retailer) */}
+                                    {/* Account Owner / POS (Retailer) jfj */}
                                     {isRetailer && (
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <CommonAppSelect
