@@ -501,7 +501,7 @@ function AccountMas() {
 
   const handleEdit = (row) => {
     console.log("Edit:", row.id);
-    // navigate(`/customers/editDoctor/${row.id}`)
+    navigate(`/Customers/CreateDoctor/${btoa(row.id)}`)
   };
 
   const handleDelete = (row) => {
