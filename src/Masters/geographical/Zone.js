@@ -17,7 +17,6 @@ import { MdOutlineEdit } from "react-icons/md";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import { useSnackbar } from "notistack";
 
 
@@ -71,6 +70,7 @@ export default function Zone() {
       setZoneName("");
       setHdnZoneName("");
       setZoneError(false);
+      setEditId(null)
       setTabValue(1);
       return;
     }
@@ -236,9 +236,11 @@ export default function Zone() {
           <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
             <MdOutlineEdit size={15} />
           </IconButton>
+          {[0,2].includes(Number(accStat)) &&
           <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
             <DeleteIcon size={15} />
           </IconButton>
+          }
         </>
       ),
     },
@@ -302,6 +304,7 @@ export default function Zone() {
                 error={!!zoneError}
                 helperText={zoneError ? zoneErrorMsg : ""}
               />
+              {(!editId && [0,1].includes(Number(accStat))) && (
               <Button
                 sx={{ ml: 1, width: "2rem" }}
                 variant="contained"
@@ -313,8 +316,21 @@ export default function Zone() {
                   }
                 }}
               >
-                {editId ? "Update" : "Submit"}
-              </Button>
+               Submit
+              </Button>)}
+             {(editId && [0,2].includes(Number(accStat))) && ( <Button 
+                sx={{ ml: 1, width: "2rem" }}
+                variant="contained"
+                onClick={() => {
+                  if (validateZone()) {
+                    showSubmitConfirmation();
+                  } else {
+                    toast.error("Please fix all mandatory fields")
+                  }
+                }}
+              >
+              Update
+              </Button>)}
             </Box>
           )}
 
