@@ -12,7 +12,6 @@ import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 
@@ -39,7 +38,7 @@ export default function Beat() {
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
     const [beatError, setBeatError] = useState(false)
-    const [userType, setUserType] = useState(null)
+    const [accStat, setAccStat] = useState(null)
     const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -52,16 +51,15 @@ export default function Beat() {
     }, [])
 
     useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setUserType(decoded.user_type)
-            } catch (err) {
-                console.log(err)
-            }
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
         }
-    }, [])
+
+    }, []);
 
     useEffect(() => {
         fetchAllArea()
@@ -284,9 +282,10 @@ export default function Beat() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.beatID)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) &&
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>}
                 </>
             )
         }
@@ -368,13 +367,23 @@ export default function Beat() {
                                 error={!!beatError}
                                 helperText={beatError ? "Beat Name is required." : ""}
                             />
-                            <Button
-                                variant="contained"
-                                sx={{ width: '2rem', textTransform: 'none' }}
-                                onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
-                            >
-                                {decodedEditBeatId ? "Update" : "Create"}
-                            </Button>
+                            {!decodedEditBeatId && [0,1].includes(Number(accStat)) &&
+                                <Button
+                                    variant="contained"
+                                    sx={{ width: '2rem', textTransform: 'none' }}
+                                    onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
+                                >
+                                   Create
+                                </Button>
+                            }
+                            {decodedEditBeatId && [0, 2].includes(Number(accStat)) &&
+                                <Button
+                                    variant="contained"
+                                    sx={{ width: '2rem', textTransform: 'none' }}
+                                    onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
+                                >
+                                   Update
+                                </Button>}
                         </Box>
                     )}
                     {tabValue === 1 && (

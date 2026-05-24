@@ -12,7 +12,6 @@ import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 
@@ -22,7 +21,7 @@ export default function Territory() {
     const decodedEditTerritoryId = editTeritoryId !== undefined && editTeritoryId !== null ? Number(atob(editTeritoryId)) : null
     const toast = useToast()
     const navigate = useNavigate()
-    const [userType, setUserType] = useState(null)
+    const [accStat, setAccStat] = useState(null)
     const [tabValue, setTabValue] = useState(1)
     const [selArea, setSelArea] = useState(null)
     const [terName, setTerName] = useState("")
@@ -45,16 +44,15 @@ export default function Territory() {
     }, [])
 
     useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setUserType(decoded.user_type)
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    }, [])
+             try {
+               const accStat = localStorage.getItem("acc_stat");
+               setAccStat(accStat);
+               console.log("Acc Stat",accStat)
+             } catch (err) {
+               console.log(err);
+             }
+       
+    }, []);
 
     useEffect(() => {
         if (!decodedEditTerritoryId || allArea.length === 0) {
@@ -231,9 +229,10 @@ export default function Territory() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
+                    { [0,2].includes(Number(accStat)) &&
                     <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
                         <DeleteIcon size={15} />
-                    </IconButton>
+                    </IconButton>}
                 </>
             )
         }
@@ -297,10 +296,18 @@ export default function Territory() {
                                 error={!!terError}
                                 helperText={terError ? "Territory Name is required." : ""}
                             />
+                            {!decodedEditTerritoryId && [0,1].includes(Number(accStat)) &&
+                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateTerritoryFields()) showSubmitConfirmation() }}>
+                                Create
+                            </Button>
+                            }
+                            {decodedEditTerritoryId && [0,2].includes(Number(accStat)) &&
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
                                 onClick={() => { if (validateTerritoryFields()) showSubmitConfirmation() }}>
-                                {decodedEditTerritoryId ? "Update" : "Create"}
+                              Update
                             </Button>
+                            }
                         </Box>
                     )}
                     {tabValue === 1 && (

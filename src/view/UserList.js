@@ -19,6 +19,7 @@ import { Download } from '../utils/downloadExcel/Download'
 import dayjs from "dayjs";
 import useToast from "../utils/useToast";
 import {DownloadNoCell} from ".././utils/xlsnoCellsDownload/DownloadNoCell";
+import ConfirmationDialog from "../utils/confirmDialog";
 
 function UserList() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function UserList() {
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
   const toast=useToast()
+  const [modifyLoading, setModifyLoading] = useState(false);
   const [filters, setFilters] = useState({
     userType: 0,
     dept: 0,
@@ -45,6 +47,35 @@ function UserList() {
     territory: 0,
     channel: 0,
   });
+
+  const [confirmationDialog, setConfirmationDialog] = useState({
+      open: false,
+      title: "",
+      message: "",
+      onConfirm: null,
+      confirmText: "Confirm",
+      cancelText: "Cancel",
+      confirmColor: "primary",
+    });
+
+    const showConfirmationDialog = (config) => {
+    setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+  };
+
+  const closeConfirmationDialog = () => {
+    setConfirmationDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  const showDeleteConfirmation = (row) => {
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: "Are you sure you want to delete this record?",
+      confirmText: "OK",
+      cancelText: "Close",
+      confirmColor: "primary",
+      onConfirm: () => handleDelete(row),
+    });
+  };
 
   // ---------------- DECODE ----------------
   const decode = (val) => {
@@ -352,7 +383,7 @@ function UserList() {
           <div className="dltBtn actionBtn">
             <FaTrash
               style={{ cursor: "pointer", color: "red" }}
-              onClick={() => handleDelete(row)}
+              onClick={() => showDeleteConfirmation(row)}
             />
           </div>
         </div>
@@ -430,9 +461,29 @@ function UserList() {
     navigate(`/users/adminUserNew/${id}`);
   };
 
-  const handleDelete = (row) => {
-    if (!window.confirm("Are you sure to delete?")) return;
-    console.log("Delete API call", row.user_id);
+  const handleDelete = async(row) => {
+    try{
+      setModifyLoading(true)
+      let payload={
+        user_id:row.user_id
+      }
+      let response=await api.post("/userDelete",payload)
+      if(response.data.status===200){
+        toast.success(response.data.message)
+        navigate("/Users/users_list")
+      }
+      else{
+        toast.error(response.data.message)
+      }
+
+    }
+    catch(err){
+      console.log("delete Error",err)
+    }
+    finally{
+      setModifyLoading(false)
+      closeConfirmationDialog()
+    }
   };
 
   const handleAddNew = () => {
@@ -658,6 +709,17 @@ function UserList() {
             title="Users List"
           />
         </Box>
+           <ConfirmationDialog
+                  open={confirmationDialog.open}
+                  onClose={closeConfirmationDialog}
+                  onConfirm={confirmationDialog.onConfirm}
+                  title={confirmationDialog.title}
+                  message={confirmationDialog.message}
+                  confirmText={confirmationDialog.confirmText}
+                  cancelText={confirmationDialog.cancelText}
+                  loading={modifyLoading}
+                  confirmColor={confirmationDialog.confirmColor}
+                />
       </Box>
     </Layout>
   );

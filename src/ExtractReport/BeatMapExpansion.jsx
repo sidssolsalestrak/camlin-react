@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mui/material";
+import { GoogleMapsOverlay } from "@deck.gl/google-maps";
+import { HeatmapLayer } from "@deck.gl/aggregation-layers";
 
-const LIBRARIES = ["geometry", "visualization"];
+const LIBRARIES = [];
 
 const MAP_STYLES = [
   {
@@ -46,8 +48,9 @@ const createCenteredMarker = () => ({
   strokeColor: "#FFFFFF",
   strokeWeight: 2,
   scale: 1.1,
-  anchor: new window.google.maps.Point(13, 21), 
+  anchor: new window.google.maps.Point(13, 21),
 });
+
 // ── Single beat location map (inline row expansion) ───────────────────────────
 export function BeatMapExpansion({ row }) {
   const [infoOpen, setInfoOpen] = useState(false);
@@ -103,7 +106,7 @@ export function BeatMapExpansion({ row }) {
         zoom={20}
         options={{
           mapTypeId: "roadmap",
-          mapTypeControl: false,
+          mapTypeControl: true,
           streetViewControl: false,
           fullscreenControl: true,
         }}
@@ -139,10 +142,9 @@ export function BeatMapExpansion({ row }) {
 export function AllLocationsMap({ coordinates = [], open, onClose }) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
-  const [heatmapInstance, setHeatmapInstance] = useState(null);
   const [activeInfo, setActiveInfo] = useState(null);
   const [markerIcon, setMarkerIcon] = useState(null);
-  const markersRef = useRef([]);
+  const deckOverlayRef = useRef(null); // ← deck.gl overlay ref
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_API_KEY,
@@ -155,12 +157,16 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
     return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
   });
 
-  // ✅ Icon is created inside handleMapLoad — window.google is guaranteed ready here
+  // Build deck.gl heatmap data points
+  const heatmapData = validCoords.map(coord => ({
+    position: [parseFloat(coord.longitude), parseFloat(coord.latitude)],
+    weight: 1,
+  }));
+
   const handleMapLoad = (map) => {
     setMapInstance(map);
     if (!window.google) return;
 
-    // ✅ Create icon here, not in useEffect — avoids race condition
     setMarkerIcon(createCenteredMarker());
 
     const bounds = new window.google.maps.LatLngBounds(
@@ -170,18 +176,30 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
     map.fitBounds(bounds);
     setTimeout(() => map.setZoom(4.7), 500);
 
-    const heatmapData = validCoords.map(coord =>
-      new window.google.maps.LatLng(
-        parseFloat(coord.latitude),
-        parseFloat(coord.longitude),
-      )
-    );
-    const heatmap = new window.google.maps.visualization.HeatmapLayer({
-      data: heatmapData,
-      map: map,
-      radius: 20,
+    // ✅ deck.gl GoogleMapsOverlay with HeatmapLayer
+    const overlay = new GoogleMapsOverlay({
+      layers: [
+        new HeatmapLayer({
+          id: "heatmap-layer",
+          data: heatmapData,
+          getPosition: d => d.position,
+          getWeight: d => d.weight,
+          radiusPixels: 40,
+          intensity: 1,
+          threshold: 0.03,
+          colorRange: [
+            [0, 0, 255, 0],       // transparent blue (low)
+            [0, 255, 255, 128],   // cyan
+            [0, 255, 0, 180],     // green
+            [255, 255, 0, 200],   // yellow
+            [255, 128, 0, 220],   // orange
+            [255, 0, 0, 255],     // red (high)
+          ],
+        }),
+      ],
     });
-    setHeatmapInstance(heatmap);
+    overlay.setMap(map);
+    deckOverlayRef.current = overlay;
 
     // Load India state boundaries
     map.data.loadGeoJson('/json/states_india.geojson', {}, () => {
@@ -193,21 +211,21 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
         strokeOpacity: 1,
       });
     });
+
     window.google.maps.event.trigger(map, "resize");
   };
 
+  // Cleanup on modal close
   useEffect(() => {
     if (!open) {
-      markersRef.current.forEach(m => m.setMap(null));
-      markersRef.current = [];
-      if (heatmapInstance) {
-        heatmapInstance.setMap(null);
-        setHeatmapInstance(null);
+      if (deckOverlayRef.current) {
+        deckOverlayRef.current.setMap(null); // ← detach deck overlay
+        deckOverlayRef.current = null;
       }
       setShowMarkers(false);
       setMapInstance(null);
       setActiveInfo(null);
-      setMarkerIcon(null); // ✅ reset icon on close too
+      setMarkerIcon(null);
     }
   }, [open]);
 
@@ -281,18 +299,18 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
         {isLoaded && (
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
-            zoom={5}
+            zoom={5.5}
             center={{ lat: 20.5937, lng: 78.9629 }}
             options={{
               mapTypeId: "roadmap",
               styles: MAP_STYLES,
-              mapTypeControl: false,
+              mapTypeControl: true,
               streetViewControl: false,
               fullscreenControl: true,
             }}
             onLoad={handleMapLoad}
           >
-            {/* ✅ Render markers only when toggle is ON and icon is ready */}
+            {/* Render markers only when toggle is ON and icon is ready */}
             {showMarkers && markerIcon && validCoords.map((coord, i) => {
               const lat = parseFloat(coord.latitude);
               const lng = parseFloat(coord.longitude);
