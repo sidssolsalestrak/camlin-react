@@ -62,7 +62,7 @@ function CreateCustomer() {
   const isTemp = decodedReq !== "0";
   
   const showAlert = useToast();
-  // ---------------- STATE ----------------
+  // ---------------- STATE ---------------------------
   const [fieldConfig, setFieldConfig] = useState({});
   const [dropdowns, setDropdowns] = useState({
     cusTypeMas: [],
