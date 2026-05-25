@@ -136,7 +136,7 @@ export default function OutletCount() {
     const handleBeatClick = (row) => {
         const encode = (val) => btoa(val || 0);
         navigate(
-            `/customers/AllDoctors/${encode(0)}/${encode(row.reg_id)}/${encode(row.user_id)}/${encode(0)}/${encode(1)}/${encode(row.beat_id)}/${encode(0)}`
+            `/customers/AllDoctors/${encode(0)}/${encode(row.reg_id)}/${encode(row.user_id)}/${encode(0)}/${encode(1)}/${encode(row.beat_id)}`
         );
     };
 

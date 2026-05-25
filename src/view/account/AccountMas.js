@@ -520,6 +520,7 @@ function AccountMas() {
       const userType = Number(decodedParams.userType) || 0;
       const cus_req = Number(decodedParams.cusReq);
       const req_type = Number(decodedParams.reqType) || 0;
+      const beatId= Number(decodedParams.beatId) || 0;
 
       if (cus_req === 2) {
         if (!(country || req_type || users || userType)) return;
@@ -539,6 +540,7 @@ function AccountMas() {
         userType,
         cus_req,
         req_type,
+        beatId
       });
 
       setTableData(
