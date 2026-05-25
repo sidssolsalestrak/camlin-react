@@ -4,7 +4,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box, Checkbox, Divider, FormControlLabel, FormGroup, Grid, TextField } from '@mui/material';
+import { Box, Checkbox, Divider, FormControl, FormControlLabel, FormGroup, Grid, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import CommonAppSelect from '../../utils/CommonAppSelect';
 
 const headContainer = {
@@ -25,7 +25,9 @@ const MEETING_DAYS = [
 ];
 
 const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange, updateClinic, toggleMeetingDay
-    , repInchargeOptions, repPOSOptions, hospitalOptions, distributorOptions, pharmacyOptions
+    , repInchargeOptions, repPOSOptions, hospitalOptions, distributorOptions, pharmacyOptions,
+    fieldErrors = {},
+    handleClinicContactNoChange,
 }) => {
     const id = React.useId();
     return (
@@ -67,6 +69,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 options={repPOSOptions}
                                                 valueKey="id"
                                                 labelKey="first_name"
+                                                required={true}
                                             />
                                         </Grid>
                                     )}
@@ -81,6 +84,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 options={clinic.beatOptions}
                                                 valueKey="id"
                                                 labelKey="beat_name"
+                                                required={true}
                                             />
                                         </Grid>
                                     )}
@@ -104,9 +108,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <TextField
                                                 label={isRetailer ? fieldConfig["Branch Name"]?.label : "Clinic Name"}
-                                                fullWidth size="small"
+                                                fullWidth size="small" placeholder='Enter Clinic Name'
                                                 value={clinic.clinicName}
                                                 onChange={(e) => updateClinic(idx, "clinicName", e.target.value)}
+                                                required={true}
                                             />
                                         </Grid>
                                     )}
@@ -116,7 +121,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <TextField
                                                 label={fieldConfig["Contact Person"]?.label || "Contact Name"}
-                                                fullWidth size="small"
+                                                fullWidth size="small" placeholder='Enter Contact Name'
                                                 value={clinic.contactName}
                                                 onChange={(e) => updateClinic(idx, "contactName", e.target.value)}
                                             />
@@ -128,9 +133,14 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <TextField
                                                 label={fieldConfig["Contact No"]?.label || "Contact No"}
-                                                fullWidth size="small"
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Enter Contact No"
                                                 value={clinic.contactNo}
-                                                onChange={(e) => updateClinic(idx, "contactNo", e.target.value)}
+                                                inputProps={{ maxLength: 10 }}
+                                                onChange={(e) => handleClinicContactNoChange(idx, e.target.value)}
+                                                error={!!fieldErrors.contactNum}
+                                                helperText={fieldErrors.contactNum}
                                             />
                                         </Grid>
                                     )}
@@ -152,7 +162,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <TextField
                                                 label={fieldConfig["City"]?.label || "City Name"}
-                                                fullWidth size="small"
+                                                fullWidth size="small" placeholder='Enter City Name'
                                                 value={clinic.city}
                                                 onChange={(e) => updateClinic(idx, "city", e.target.value)}
                                             />
@@ -164,7 +174,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <TextField
                                                 label={fieldConfig["Zip Code"]?.label || "Zip Code"}
-                                                fullWidth size="small"
+                                                fullWidth size="small" placeholder='Enter Zip Code'
                                                 value={clinic.zipCode}
                                                 onChange={(e) => updateClinic(idx, "zipCode", e.target.value)}
                                             />
@@ -188,14 +198,18 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                     {/* Distributor */}
                                     {fieldConfig["Distributor"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
-                                            <CommonAppSelect
-                                                label={fieldConfig["Distributor"]?.label || "Distributor"}
-                                                value={clinic.stkId}
-                                                onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}
-                                                options={distributorOptions}
-                                                valueKey="id"
-                                                labelKey="stk_name"
-                                            />
+                                            <FormControl fullWidth size="small" required>
+                                                <InputLabel id="Distributor">Distributor</InputLabel>
+                                                <Select value={clinic.stkId} id='Distributor' label="Distributor" 
+                                                    labelId="Distributor" variant="outlined"
+                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}>
+                                                    {distributorOptions?.map((item, index) => (
+                                                        <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
+                                                            {item?.stk_code} - {item?.stk_name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
                                         </Grid>
                                     )}
 

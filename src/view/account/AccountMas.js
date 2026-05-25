@@ -245,15 +245,25 @@ function AccountMas() {
       headerName: "ACCOUNT DETAILS",
       renderCell: ({ row }) => {
         const name = [row.first_name, row.last_name].filter(Boolean).join(" ");
-
         const type = row.cus_type_id == 1 ? "HCP" : "Retailer";
 
+        // ── navigate based on cusReq
+        const handleClick = () => {
+          if (decodedParams.cusReq == 2) {
+            // Requests list → temp record
+            navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
+          } else {
+            // Current customers → normal record
+            navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(1)}/${btoa(0)}`);
+          }
+        };
+
         return (
-          <div>
+          <div style={{ cursor: "pointer" }} onClick={handleClick}>
             <div
               style={{
                 fontSize: "1.125em",
-                color: row.cus_type_id == 1 ? "orange" : "#1A1917",
+                color: row.cus_type_id == 1 ? "orange" : "blue",
               }}
             >
               {type} | {name}
@@ -292,187 +302,187 @@ function AccountMas() {
 
     ...(decodedParams.cusReq == 2
       ? [
-          {
-            field: "remark",
-            headerName: "REMARK",
-            renderCell: ({ row }) => {
-              if (decodedParams.cusReq != 2) return "";
+        {
+          field: "remark",
+          headerName: "REMARK",
+          renderCell: ({ row }) => {
+            if (decodedParams.cusReq != 2) return "";
 
-              const remarkMap = {
-                1: "New",
-                2: row.remark || "",
-                3: "",
-              };
+            const remarkMap = {
+              1: "New",
+              2: row.remark || "",
+              3: "",
+            };
 
-              return remarkMap[row.request_type] ?? "";
-            },
-            width: 150,
+            return remarkMap[row.request_type] ?? "";
           },
-        ]
+          width: 150,
+        },
+      ]
       : []),
 
     ...(decodedParams.cusReq == 2
       ? [
-          {
-            field: "update",
-            headerName: "UPDATE",
-            renderCell: ({ row }) => (
-              <span style={{ color: "red" }}>{row.upd_data || "-"}</span>
-            ),
-            width: 150,
-          },
-        ]
+        {
+          field: "update",
+          headerName: "UPDATE",
+          renderCell: ({ row }) => (
+            <span style={{ color: "red" }}>{row.upd_data || "-"}</span>
+          ),
+          width: 150,
+        },
+      ]
       : []),
 
     ...(cusReq == 2
       ? [
-          {
-            field: "manager_status",
-            headerName: "",
-            renderCell: ({ row }) => {
-              if (row.mgr_approve_user > 0) {
-                const name = [row.mgr_first_name, row.mgr_last_name]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <span>
-                    {name} Approved.
-                    <br />
-                    ZM/NSM Pending
-                  </span>
-                );
-              } else {
-                return <span>Manager Approval Pending.</span>;
-              }
-            },
-            width: 200,
-          },
-        ]
-      : []),
-
-    ...(cusReq == 2
-      ? [
-          {
-            field: "approve",
-            headerName: "APPROVE",
-            renderCell: ({ row }) => {
-              const state = approvalState[row.id] || 0;
-              const isAllowed =
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3);
-
-              if (!isAllowed) return <span>-</span>;
+        {
+          field: "manager_status",
+          headerName: "",
+          renderCell: ({ row }) => {
+            if (row.mgr_approve_user > 0) {
+              const name = [row.mgr_first_name, row.mgr_last_name]
+                .filter(Boolean)
+                .join(" ");
 
               return (
-                <span
-                  style={{
-                    fontSize: "20px",
-                    color: state === 1 ? "#0bd00b" : "#a5a0a0",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleApprove(row)}
-                >
-                  <FaThumbsUp />
+                <span>
+                  {name} Approved.
+                  <br />
+                  ZM/NSM Pending
                 </span>
               );
-            },
-            width: 100,
+            } else {
+              return <span>Manager Approval Pending.</span>;
+            }
           },
-        ]
+          width: 200,
+        },
+      ]
       : []),
 
     ...(cusReq == 2
       ? [
-          {
-            field: "reject",
-            headerName: "REJECT",
-            renderCell: ({ row }) => {
-              const state = approvalState[row.id] || 0;
-              const isAllowed =
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3);
+        {
+          field: "approve",
+          headerName: "APPROVE",
+          renderCell: ({ row }) => {
+            const state = approvalState[row.id] || 0;
+            const isAllowed =
+              row.mgr_approved_stat == 0 &&
+              (row.am_user_id == loggedInUserId ||
+                row.zbm_user_id == loggedInUserId ||
+                row.rsm_user_id == loggedInUserId ||
+                row.sh_user_id == loggedInUserId ||
+                loggedInUserType == 2 ||
+                loggedInUserType == 3);
 
-              if (!isAllowed) return <span>-</span>;
+            if (!isAllowed) return <span>-</span>;
 
-              return (
-                <span
-                  style={{
-                    fontSize: "20px",
-                    color: state === 2 ? "red" : "#a5a0a0",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleReject(row)}
-                >
-                  <FaThumbsDown />
-                </span>
-              );
-            },
-            width: 100,
-          },
-        ]
-      : []),
-
-    ...(decodedParams.cusReq == 1
-      ? [
-          {
-            field: "edit",
-            headerName: "UPDATE",
-            renderCell: ({ row }) => (
-              <div className="editBtn actionBtn">
-                <FaEdit
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleEdit(row)}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
-
-    ...(decodedParams.cusReq == 1
-      ? [
-          {
-            field: "delete",
-            headerName: "DELETE",
-            renderCell: ({ row }) => (
-              <div className="dltBtn actionBtn">
-                <FaTrash
-                  style={{ cursor: "pointer", color: "red" }}
-                  onClick={() => handleDelete(row)}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
-
-    ...(decodedParams.cusReq == 1
-      ? [
-          {
-            field: "logs",
-            headerName: "",
-            renderCell: ({ row }) => (
+            return (
               <span
-                style={{ cursor: "pointer", color: "#1976d2" }}
-                onClick={() => handleViewLogs(row)}
+                style={{
+                  fontSize: "20px",
+                  color: state === 1 ? "#0bd00b" : "#a5a0a0",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleApprove(row)}
               >
-                View Logs
+                <FaThumbsUp />
               </span>
-            ),
-            width: 140,
+            );
           },
-        ]
+          width: 100,
+        },
+      ]
+      : []),
+
+    ...(cusReq == 2
+      ? [
+        {
+          field: "reject",
+          headerName: "REJECT",
+          renderCell: ({ row }) => {
+            const state = approvalState[row.id] || 0;
+            const isAllowed =
+              row.mgr_approved_stat == 0 &&
+              (row.am_user_id == loggedInUserId ||
+                row.zbm_user_id == loggedInUserId ||
+                row.rsm_user_id == loggedInUserId ||
+                row.sh_user_id == loggedInUserId ||
+                loggedInUserType == 2 ||
+                loggedInUserType == 3);
+
+            if (!isAllowed) return <span>-</span>;
+
+            return (
+              <span
+                style={{
+                  fontSize: "20px",
+                  color: state === 2 ? "red" : "#a5a0a0",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleReject(row)}
+              >
+                <FaThumbsDown />
+              </span>
+            );
+          },
+          width: 100,
+        },
+      ]
+      : []),
+
+    ...(decodedParams.cusReq == 1
+      ? [
+        {
+          field: "edit",
+          headerName: "UPDATE",
+          renderCell: ({ row }) => (
+            <div className="editBtn actionBtn">
+              <FaEdit
+                style={{ cursor: "pointer" }}
+                onClick={() => handleEdit(row)}
+              />
+            </div>
+          ),
+        },
+      ]
+      : []),
+
+    ...(decodedParams.cusReq == 1
+      ? [
+        {
+          field: "delete",
+          headerName: "DELETE",
+          renderCell: ({ row }) => (
+            <div className="dltBtn actionBtn">
+              <FaTrash
+                style={{ cursor: "pointer", color: "red" }}
+                onClick={() => handleDelete(row)}
+              />
+            </div>
+          ),
+        },
+      ]
+      : []),
+
+    ...(decodedParams.cusReq == 1
+      ? [
+        {
+          field: "logs",
+          headerName: "",
+          renderCell: ({ row }) => (
+            <span
+              style={{ cursor: "pointer", color: "#1976d2" }}
+              onClick={() => handleViewLogs(row)}
+            >
+              View Logs
+            </span>
+          ),
+          width: 140,
+        },
+      ]
       : []),
   ];
 
@@ -500,8 +510,12 @@ function AccountMas() {
   };
 
   const handleEdit = (row) => {
-    console.log("Edit:", row.id);
-    navigate(`/Customers/CreateDoctor/${btoa(row.id)}`)
+    navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(2)}/${btoa(0)}`);
+  };
+
+  // For req=2 (Requests) — clicking account name in approval list
+  const handleViewRequest = (row) => {
+    navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
   };
 
   const handleDelete = (row) => {
@@ -561,7 +575,7 @@ function AccountMas() {
   }, [selectedRegion]);
 
   useEffect(() => {
-    if (selectedUserType || selectedUserType===0) {
+    if (selectedUserType || selectedUserType === 0) {
       fetchUsers({ trigger_type: 1 });
     }
   }, [selectedUserType]);
@@ -871,9 +885,8 @@ function AccountMas() {
                     .filter((val) => val && val !== "null")
                     .join(" ");
 
-                  return `${name}${
-                    cusReq == 2 && option.count ? ` (${option.count})` : ""
-                  }`;
+                  return `${name}${cusReq == 2 && option.count ? ` (${option.count})` : ""
+                    }`;
                 }}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 renderOption={(props, option) => {

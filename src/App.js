@@ -212,10 +212,11 @@ function App() {
               element={<UserLog />}
             />
 
-            <Route
-              path="/Customers/CreateDoctor/:id?"
-              element={<CreateCustomer />}
-            />
+            <Route path="/customers/editDoctor/:id?/:reqType?/:req?" element={<CreateCustomer />} />
+            <Route path="/customers/editDoctor/:id?/:reqType?" element={<CreateCustomer />} />
+            <Route path="/customers/editDoctor/:id?" element={<CreateCustomer />} />
+            <Route path="/customers/CreateDoctor" element={<CreateCustomer />} />
+
             <Route
               path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
               element={<SalesHierachy />}
@@ -248,13 +249,13 @@ function App() {
               path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
               element={<PrimarySales enType="Mw==" />}
             />
-            <Route            
-             path="/dashboard/primarysalesview/:enMonth?/:enCatType?"
-             element={<PrimarySalesAnalze />}
+            <Route
+              path="/dashboard/primarysalesview/:enMonth?/:enCatType?"
+              element={<PrimarySalesAnalze />}
             />
-            <Route 
-            path="/dashboard/salesanalysis/:encYear?/:enType?/:enSubCat?"
-            element={<SalesAnalysisReport />}
+            <Route
+              path="/dashboard/salesanalysis/:encYear?/:enType?/:enSubCat?"
+              element={<SalesAnalysisReport />}
             />
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

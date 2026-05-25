@@ -55,7 +55,6 @@ const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal }) =
                         {brandData.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} sx={{ textAlign: "center", fontSize: "12px", color: "#999", py: 2 }}>
-                                    Select a Region to load brands
                                 </TableCell>
                             </TableRow>
                         ) : (
