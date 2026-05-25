@@ -17,6 +17,8 @@ import { LocationTaggingMap } from "./LocationTaggingMap";
 import { useSubmitCustomer } from "./useSubmitCustomer";
 import { useParams } from "react-router-dom";
 import AddCompetitor from "./AddCompetitor";
+import { jwtDecode } from "jwt-decode";
+import useToast from "../../utils/useToast";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -48,9 +50,19 @@ const DEFAULT_CLINIC = {
 };
 
 function CreateCustomer() {
-  const { id } = useParams();
-  let decodedID = id ? atob(id) : null;
-  // ---------------- STATE ----------------
+  const { id, reqType = "0", req = "0" } = useParams();
+
+  const safeAtob = (str) => {
+    try { return atob(str); } catch (e) { return str; }
+  };
+
+  let decodedID = id ? safeAtob(id) : null;
+  let decodedReqType = reqType ? safeAtob(reqType) : "0";
+  let decodedReq = req ? safeAtob(req) : "0";
+  const isTemp = decodedReq !== "0";
+  
+  const showAlert = useToast();
+  // ---------------- STATE ---------------------------
   const [fieldConfig, setFieldConfig] = useState({});
   const [dropdowns, setDropdowns] = useState({
     cusTypeMas: [],
@@ -99,10 +111,67 @@ function CreateCustomer() {
   const competitorBrands = brandData
     .filter(b => b.competition === 1)
     .map(b => b.subCatId);
+  const [userType, setUserType] = useState(null)
+  const [pendingRequest, setPendingRequest] = useState(null); // { request_type: 2 or 3 } or null
+  const [delFlag, setDelFlag] = useState(0); // 0 = Active, 1 = Inactive
+  const [fieldErrors, setFieldErrors] = useState({
+    mobile: "",
+    email: "",
+    contactNum: ""
+  });
 
   const { handleSubmit, handleUpdate } = useSubmitCustomer({
-    form, clinics, brandData, competitorBrands, competitorRows
-  });  // ---------------- GENERIC LOADER ----------------
+    form, clinics, brandData, competitorBrands, competitorRows, setFieldErrors, setForm
+  });
+
+  const handleMobileChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ""); // numbers only
+    setForm((f) => ({ ...f, mobile: val, sendSms: "0" }));
+    setFieldErrors((prev) => ({ ...prev, mobile: "" })); // clear error on type
+  };
+
+  const handleSendSmsChange = (e) => {
+    const val = e.target.value;
+    if (val === "1") {
+      if (!form.mobile) {
+        showAlert.error("Mobile No is required to enable this feature..!")
+        setForm((f) => ({ ...f, sendSms: "0" }));
+        return;
+      }
+    }
+    setForm((f) => ({ ...f, sendSms: val }));
+  };
+
+  const handleEmailChange = (e) => {
+    setForm((f) => ({ ...f, email: e.target.value, sendEmail: "0" }));
+    setFieldErrors((prev) => ({ ...prev, email: "" }));
+  };
+
+  const handleSendEmailChange = (e) => {
+    const val = e.target.value;
+    if (val === "1") {
+      if (!form.email) {
+        showAlert.error("Email address is required to enable this feature..!")
+        setForm((f) => ({ ...f, sendEmail: "0" }));
+        return;
+      }
+    }
+    setForm((f) => ({ ...f, sendEmail: val }));
+  };
+
+  const handleClinicContactNoChange = (idx, value) => {
+    const numericValue = value.replace(/\D/g, "");
+    updateClinic(idx, "contactNo", numericValue);
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      contactNum: numericValue && numericValue.length !== 10
+        ? "Please enter valid 10-digit Contact No"
+        : "",
+    }));
+  };
+
+  // ---------------- GENERIC LOADER ----------------
   const loadIfNeeded = async ({
     key,
     state,
@@ -131,6 +200,18 @@ function CreateCustomer() {
   useEffect(() => {
     loadDropdowns();
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("session-token");
+    if (token) {
+      try {
+        let decoded = jwtDecode(token)
+        setUserType(decoded.user_type || null)
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }, [])
 
   const loadDropdowns = async () => {
     try {
@@ -221,7 +302,7 @@ function CreateCustomer() {
       setDistributorOptions((distRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
 
       // brands for CompetitorMappping
-      setBrandData((brandsRes.data.data || []).map(b => ({
+      setBrandData((decodedID ? (brandsRes.data.data || []) : []).map(b => ({
         subCatId: String(b.id),
         name: b.sub_name,      // ← matches SQL: sc.sub_name
         focus: b.focusChecked ? 1 : 0,   // backend already calculates this
@@ -229,15 +310,6 @@ function CreateCustomer() {
         competition: 0,
       })));
 
-    } catch (err) { console.error(err); }
-  };
-
-  const handlePotentialityChange = async (val) => {
-    setForm((f) => ({ ...f, potentiality: val, frequency: "" }));
-    setFrequencyOptions([]);
-    try {
-      const res = await api.post("/getCustomerFreq", { potentialityId: val, hdnCustomerFrequency: "" });
-      setFrequencyOptions((res.data.data || []).map((i) => ({ ...i, id: String(i.id) })));
     } catch (err) { console.error(err); }
   };
 
@@ -312,14 +384,14 @@ function CreateCustomer() {
       setter: setAdoptionOptions,
       apiCall: "/getAdoption"
     });
-  }, [fieldConfig]);
 
-  const columns = [
-    { field: "zone_name", headerName: "Brand", filterable: true },
-    { field: "zone_name", headerName: "Focus", filterable: true },
-    { field: "zone_name", headerName: "Reminder", filterable: true },
-    { field: "zone_name", headerName: "Competition", filterable: true },
-  ]
+    loadIfNeeded({
+      key: "Visit Frequency/Year",
+      state: frequencyOptions,
+      setter: setFrequencyOptions,
+      apiCall: "/getCustomerFreq"
+    });
+  }, [fieldConfig]);
 
   const handleRepChange = async (idx, repId, isPos = false) => {
     const updated = clinics.map((c, i) => {
@@ -351,33 +423,67 @@ function CreateCustomer() {
     );
 
   const handleConfirmTagging = () => {
-    if (!selectedLocation.latitude || !selectedLocation.longitude) {
-      alert("Please select a location on the map to continue!");
+    const lat = parseFloat(selectedLocation.latitude);
+    const lng = parseFloat(selectedLocation.longitude);
+
+    if (!lat || !lng || lat === 0 || lng === 0) {
+      showAlert.error("Please select a location on the map to continue!");
       return;
     }
     setLocationTagged(true);
     setMapDialogOpen(false);
-    // Persist to form so it gets submitted
     setForm((f) => ({
       ...f,
-      customerLatitude: selectedLocation.latitude,
-      customerLongitude: selectedLocation.longitude,
+      customerLatitude: String(lat),
+      customerLongitude: String(lng),
     }));
+  };
+
+  const checkPendingRequest = async () => {
+    try {
+      const pendingRes = await api.post("/getPendingRequest", { cus_id: decodedID });
+      const pendingData = pendingRes.data.data;
+      if (pendingData && pendingData.length > 0) {
+        setPendingRequest(pendingData[0]); // { request_type: 2 or 3, ... }
+      } else {
+        setPendingRequest(null);
+      }
+    } catch (err) {
+      console.error("pending request check failed", err);
+      setPendingRequest(null);
+    }
+  }
+
+  const getPendingRequestName = (requestType) => {
+    if (requestType === 2) return "Update";
+    if (requestType === 3) return "Delete";
+    return "";
   };
 
   //get edit data
   useEffect(() => {
     if (!decodedID || decodedID === "0") return;
+
     const getEditData = async () => {
       try {
-        const res = await api.post("/getDoctorsData", { id: decodedID });
+        // ── 1. PRIMARY data based on isTemp
+        const primaryEndpoint = isTemp ? "/getDoctorsDatatemp" : "/getDoctorsData";
+        const res = await api.post(primaryEndpoint, { id: decodedID });
         const d = res.data.data[0];
         if (!d) return;
 
-        // ── 1. Load dynamic form for this cusType first ──────────────────────
+        // ── 2. Load dynamic form first
         await loadDynamicForm(String(d.cus_type_id));
 
-        // ── 2. Populate primary form fields ──────────────────────────────────
+        // ── 3. Load regions before setting form.region
+        let regions = regionOptions;
+        if (regions.length === 0) {
+          const regRes = await api.post("/getRegionMas");
+          regions = (regRes.data.data || []).map(i => ({ ...i, id: String(i.id) }));
+          setRegionOptions(regions);
+        }
+
+        // ── 4. Populate primary form fields (no lat/long here)
         setForm({
           cusType: String(d.cus_type_id || "2"),
           retailerType: String(d.retail_type || "1"),
@@ -391,10 +497,10 @@ function CreateCustomer() {
           sendSms: String(d.mobile_stat || "0"),
           email: d.email || "",
           sendEmail: String(d.email_stat || "0"),
-          potentiality: String(d.p_class_id || "0"),
+          potentiality: String(d.p_class_id || "1"),
           loyalty: String(d.l_class_id || "0"),
           loyaltyType: String(d.loyality_id || "0"),
-          frequency: String(d.cus_visit_freq || "0"),
+          frequency: String(d.cus_visit_freq || ""),
           keyOpinionLeader: String(d.kol_stat || "1"),
           adoption: String(d.adoption_id || "0"),
           region: String(d.reg_id || "0"),
@@ -406,106 +512,137 @@ function CreateCustomer() {
           dobNA: d.dob_stat === 1,
           anniversary: d.wedding_stat === 1 ? "" : (d.wedding_dt?.split("T")[0] || ""),
           anniversaryNA: d.wedding_stat === 1,
-          customerLatitude: d.gps_lat || "0",
-          customerLongitude: d.gps_long || "0",
+          customerLatitude: "0",   // ← will be updated from clinic row
+          customerLongitude: "0",   // ← will be updated from clinic row
         });
 
-        // ── 3. Location tag icon ─────────────────────────────────────────────
-        if (d.gps_tag_stat === 1) {
-          setLocationTagged(true);
-          setSelectedLocation({
-            latitude: String(d.gps_lat || "0"),
-            longitude: String(d.gps_long || "0"),
-          });
-        }
+        setDelFlag(d.del_flag ?? 0);
+        await checkPendingRequest();
 
-        // ── 4. Populate clinic row ───────────────────────────────────────────
-        setClinics([{
-          ...DEFAULT_CLINIC,
-            clinicId: d.detId || 0,         
-          repIncharge: String(d.user_id || "0"),
-          repInchargePOS: String(d.user_id || "0"),
-          beat: String(d.beat_id || "0"),
-          beatOptions: [],
-          clinicName: d.clinic_name || "",
-          contactName: d.cont_person || "",
-          contactNo: d.clinic_phone || "",
-          address: d.clinic_addr || "",
-          city: d.city || "",
-          zipCode: String(d.zip_code || ""),
-          stkId: String(d.stk_id || "0"),
-          phChain: String(d.chain_id || "0"),
-          hospitalAttached: String(d.hospital_id || "0"),
-          pharmacyAttached: String(d.pharmacy_id || "0"),
-          meetingTime: d.visit_time || "",
-          meetingDays: d.visit_day ? d.visit_day.split(",").filter(Boolean) : [],
-        }]);
-
-        // ── 5. Load regions first to get correct zone_id ─────────────────────
-        // FIX: regionOptions is empty at this point (race condition)
-        // so we fetch directly instead of relying on handleRegionChange
+        // ── 5. Load all dependent dropdowns in parallel
         if (d.reg_id) {
-          let regions = regionOptions;
-          if (regions.length === 0) {
-            const regRes = await api.post("/getRegionMas");
-            regions = (regRes.data.data || []).map(i => ({ ...i, id: String(i.id) }));
-            setRegionOptions(regions);
-          }
-
-          // Now zone_id is correctly resolved
-          const selectedRegion = regions.find(r => r.id === String(d.reg_id));
-          const zoneId = selectedRegion?.zone_id || "0";
-
-          const [repRes, repPosRes, distRes, brandsRes] = await Promise.all([
+          const [repRes, repPosRes, distRes, brandsRes, freqRes] = await Promise.all([
             api.post("/getRepIncharge", { regId: String(d.reg_id), requestType: String(d.cus_type_id) }),
             api.post("/getRepInchargePos", { regId: String(d.reg_id) }),
             api.post("/getDistributor", { regId: String(d.reg_id) }),
-            api.post("/getBrands", { doctorId: decodedID > 0 ? decodedID : 0 }), // ← correct zoneId
+            api.post("/getBrands", { doctorId: decodedID > 0 ? decodedID : 0 }),
+            api.post("/getCustomerFreq"),
           ]);
 
           setRepInchargeOptions((repRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
           setRepPOSOptions((repPosRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
           setDistributorOptions((distRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
-
-          // FIX: b.sub_name not b.subcat_name — matches backend SQL (sc.sub_name)
+          setFrequencyOptions((freqRes.data.data || []).map(i => ({
+            ...i,
+            id: String(i.id),
+            no_freq_visit: String(i.no_freq_visit),
+          })));
           setBrandData((brandsRes.data.data || []).map(b => ({
             subCatId: String(b.id),
-            name: b.sub_name,             // ← fixed field name
-            focus: b.focusChecked ? 1 : 0, // ← backend pre-calculates this
+            name: b.sub_name,
+            focus: b.focusChecked ? 1 : 0,
             reminder: b.remChecked ? 1 : 0,
             competition: 0,
           })));
         }
 
-        // ── 6. Load beat options for saved rep ──────────────────────────────
-        if (d.user_id) {
-          const beatRes = await api.post("/getClinicBeat", { repInchargeId: d.user_id });
-          const opts = (Array.isArray(beatRes.data.data.beats) ? beatRes.data.data.beats : [])
-            .map(i => ({ ...i, id: String(i.id) }));
-          setClinics(prev => [{
-            ...prev[0],
-            beatOptions: opts,
-            beat: String(d.beat_id || "0"),
-          }]);
-        }
+        // ── 6. CLINIC rows — API based on isTemp
+        //       isTemp=false → /getcusdetData    → cus_det table
+        //       isTemp=true  → /getTempCusClinic → temp_cus_det table
+        const clinicEndpoint = isTemp ? "/getTempCusClinic" : "/getcusdetData";
+        const clinicPayload = isTemp ? { Id: decodedID } : { id: decodedID };
+        const clinicRes = await api.post(clinicEndpoint, clinicPayload);
+        const clinicRows = clinicRes.data.data || [];
 
-        // ── 7. Load frequency options for saved potentiality ─────────────────
-        if (d.p_class_id) {
-          const freqRes = await api.post("/getCustomerFreq", {
-            potentialityId: d.p_class_id,
-            hdnCustomerFrequency: d.cus_visit_freq || "",
-          });
-          setFrequencyOptions(
-            (freqRes.data.data || []).map(i => ({ ...i, id: String(i.id) }))
+        if (clinicRows.length > 0) {
+          // ── 7. lat/long comes from FIRST clinic row (not from getDoctorsData)
+          const firstClinic = clinicRows[0];
+          const lat = firstClinic.gps_lat || "0";
+          const long = firstClinic.gps_long || "0";
+
+          // ── update form with lat/long
+          setForm(prev => ({
+            ...prev,
+            customerLatitude: String(lat),
+            customerLongitude: String(long),
+          }));
+
+          // ── update location tag icon
+          if (firstClinic.gps_tag_stat === 1) {
+            setLocationTagged(true);
+            setSelectedLocation({
+              latitude: String(lat),
+              longitude: String(long),
+            });
+          }
+
+          // ── 8. Load beat options for each clinic row in parallel
+          const clinicsWithBeats = await Promise.all(
+            clinicRows.map(async (c) => {
+              let beatOptions = [];
+              if (c.user_id) {
+                try {
+                  const beatRes = await api.post("/getClinicBeat", { repInchargeId: c.user_id });
+                  beatOptions = (
+                    Array.isArray(beatRes.data.data?.beats)
+                      ? beatRes.data.data.beats
+                      : []
+                  ).map(i => ({ ...i, id: String(i.id) }));
+                } catch (e) {
+                  console.error("beat load error", e);
+                }
+              }
+
+              return {
+                ...DEFAULT_CLINIC,
+                clinicId: c.id || 0,
+                repIncharge: String(c.user_id || "0"),
+                repInchargePOS: String(c.user_id || "0"),
+                beat: String(c.beat_id || "0"),
+                beatOptions,
+                clinicName: c.clinic_name || "",
+                contactName: c.cont_person || "",
+                contactNo: c.clinic_phone || "",
+                address: c.clinic_addr || "",
+                city: c.city || "",
+                zipCode: String(c.zip_code || ""),
+                stkId: String(c.stk_id || "0"),
+                phChain: String(c.chain_id || "0"),
+                hospitalAttached: String(c.hospital_id || "0"),
+                pharmacyAttached: String(c.pharmacy_id || "0"),
+                pharmacistName: c.pharmacy_cont_person || "",
+                meetingTime: c.visit_time || "",
+                meetingDays: c.visit_day
+                  ? c.visit_day.split(",").filter(Boolean)
+                  : [],
+              };
+            })
           );
+
+          setClinics(clinicsWithBeats);
+        } else {
+          setClinics([{ ...DEFAULT_CLINIC }]);
         }
 
       } catch (error) {
-        console.error(error);
+        console.error("getEditData error:", error);
       }
     };
+
     getEditData();
   }, [decodedID]);
+
+  const ALLOWED_USER_TYPES = [2, 6, 8, 15];
+
+  // In CreateCustomer.jsx
+  const handleOpenMap = () => {
+    // ── use saved lat/long from form (set from clinic row)
+    setSelectedLocation({
+      latitude: form.customerLatitude || "0",
+      longitude: form.customerLongitude || "0",
+    });
+    setMapDialogOpen(true);
+  };
 
   // ---------------- UI ----------------
   return (
@@ -517,12 +654,47 @@ function CreateCustomer() {
           <h1 className="mainTitle">Account Master</h1>
         </Box>
         <Box sx={{ display: "flex", gap: 1, mt: 1.5, mr: 1.5 }}>
-          {decodedID && (
-            <Button variant="contained" onClick={() => handleUpdate(decodedID)}>
-              Generate Update Request
-            </Button>
-          )}          {!decodedID && <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>}
-          <Button variant="contained" sx={{ bgcolor: "#2196f3", color: "white" }}>HCP / Retailer List</Button>
+          {/* Only show for allowed user types */}
+          {decodedID && ALLOWED_USER_TYPES.includes(Number(userType)) && (
+            <>
+              {pendingRequest ? (
+                // ── Pending request exists → show warning label ──
+                <Box
+                  sx={{
+                    background: "#ffd36f",
+                    padding: "2px 8px",
+                    display: "flex",
+                    alignItems: "center",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                  }}
+                >
+                  {getPendingRequestName(pendingRequest.request_type)} Request is pending
+                  for this account ! Waiting for Approval..
+                </Box>
+              ) : (
+                // ── No pending request + account is Active → show button ──
+                delFlag === 0 && (
+                  <Button
+                    variant="contained"
+                    onClick={() => handleUpdate(decodedID)}
+                  >
+                    Generate Update Request
+                  </Button>
+                )
+              )}
+            </>
+          )}
+
+          {!decodedID && <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>}
+
+          <Button
+            variant="contained"
+            sx={{ bgcolor: "#2196f3", color: "white" }}
+            href="/customers/AllDoctors"
+          >
+            HCP / Retailer List
+          </Button>
         </Box>
       </Box>
       <Box sx={headContainer}>
@@ -538,6 +710,7 @@ function CreateCustomer() {
               options={dropdowns.cusTypeMas}
               valueKey="id"
               labelKey="cus_type_name"
+              required={true}
             />
           </Grid>
 
@@ -558,6 +731,7 @@ function CreateCustomer() {
                 ]}
                 valueKey="id"
                 labelKey="name"
+                required={true}
               />
             </Grid>
           )}
@@ -567,7 +741,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3, lg: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Retailer Type"]?.label}
-                value={form.pharmaType || ""}
+                value={form.pharmaType || "1"}
                 onChange={(e) =>
                   setForm({ ...form, pharmaType: String(e.target.value) })
                 }
@@ -601,7 +775,7 @@ function CreateCustomer() {
                 cursor: "pointer",
                 transition: "color 0.3s ease",
               }}
-              onClick={() => setMapDialogOpen(true)}
+              onClick={handleOpenMap}
             />
           </Grid>
 
@@ -626,7 +800,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3, lg: 3 }}>
               <TextField
                 label={fieldConfig["First Name"]?.label || "First Name"}
-                fullWidth
+                fullWidth required
                 size="small"
                 value={form.firstName || ""}
                 onChange={(e) =>
@@ -667,13 +841,16 @@ function CreateCustomer() {
 
           {/* Mobile */}
           {fieldConfig["Mobile"]?.show && (
-            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 label={fieldConfig["Mobile"]?.label || "Mobile"}
                 fullWidth
                 size="small"
                 value={form.mobile || ""}
-                onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                onChange={handleMobileChange}          // ← updated
+                inputProps={{ maxLength: 10 }}          // ← limit to 10 digits
+                error={!!fieldErrors.mobile}
+                helperText={fieldErrors.mobile}         // ← shows error below field
               />
             </Grid>
           )}
@@ -688,10 +865,7 @@ function CreateCustomer() {
                 <RadioGroup
                   row
                   value={form.sendSms?.toString() || "0"}
-                  onChange={(e) => {
-                    console.log("Send SMS changed to:", e.target.value);
-                    setForm({ ...form, sendSms: e.target.value });
-                  }}
+                  onChange={handleSendSmsChange}        // ← updated
                 >
                   <FormControlLabel value="1" control={<Radio size="small" />} label="Yes" />
                   <FormControlLabel value="0" control={<Radio size="small" />} label="No" />
@@ -702,13 +876,15 @@ function CreateCustomer() {
 
           {/* Email */}
           {fieldConfig["Email"]?.show && (
-            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 label={fieldConfig["Email"]?.label || "Email"}
                 fullWidth
                 size="small"
                 value={form.email || ""}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={handleEmailChange}            // ← updated
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email}          // ← shows error below field
               />
             </Grid>
           )}
@@ -723,10 +899,7 @@ function CreateCustomer() {
                 <RadioGroup
                   row
                   value={form.sendEmail?.toString() || "0"}
-                  onChange={(e) => {
-                    console.log("Send Email changed to:", e.target.value);
-                    setForm({ ...form, sendEmail: e.target.value });
-                  }}
+                  onChange={handleSendEmailChange}      // ← updated
                 >
                   <FormControlLabel value="1" control={<Radio size="small" />} label="Yes" />
                   <FormControlLabel value="0" control={<Radio size="small" />} label="No" />
@@ -740,11 +913,14 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Potentiality Class"]?.label || "Potentiality Class"}
-                value={form.potentiality}
-                onChange={(e) => handlePotentialityChange(String(e.target.value))}
+                value={form.potentiality || "1"}
+                onChange={(e) =>
+                  setForm({ ...form, potentiality: String(e.target.value) })
+                }
                 options={potentialityOptions}
                 valueKey="id"
                 labelKey="cat_type"
+                required={true}
               />
             </Grid>
           )}
@@ -789,13 +965,14 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Visit Frequency/Year"]?.label || "Visit Frequency / Year"}
-                value={form.frequency}
+                value={form.frequency || "48"}
                 onChange={(e) =>
                   setForm({ ...form, frequency: String(e.target.value) })
                 }
                 options={frequencyOptions}
-                valueKey="id"
+                valueKey="no_freq_visit"
                 labelKey="freq_name"
+                required={true}
               />
             </Grid>
           )}
@@ -841,6 +1018,7 @@ function CreateCustomer() {
                 options={regionOptions}
                 valueKey="id"
                 labelKey="reg_name"
+                required={true}
               />
             </Grid>
           )}
@@ -900,6 +1078,8 @@ function CreateCustomer() {
         pharmacyOptions={pharmacyOptions}
         hospitalOptions={hospitalOptions}
         distributorOptions={distributorOptions}
+        fieldErrors={fieldErrors}
+        handleClinicContactNoChange={handleClinicContactNoChange}
       />
       {/* ---------------- Map Dialog ------------------------- */}
       <Dialog
@@ -946,14 +1126,13 @@ function CreateCustomer() {
         setCompModalOpen={setCompModalOpen}
         cusId={decodedID || 0}
         tempId={0}
-        onSave={(editedRows) => {
-          // Attach subcat_id to each row so competitor_subcat_id array is correct
+        onSave={(saveData) => {
+          const editedRows = saveData.rows; // Extract rows array from saveData
           const rowsWithSubcat = editedRows.map(r => ({
             ...r,
             subcat_id: selectedBrand?.subCatId || 0,
           }));
           setCompetitorRows(prev => {
-            // Replace rows for this subcat, keep others
             const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
             return [...filtered, ...rowsWithSubcat];
           });

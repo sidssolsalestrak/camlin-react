@@ -2,7 +2,17 @@ import { useCallback } from "react";
 import api from "../../services/api";
 import useToast from "../../utils/useToast";
 
-export function useSubmitCustomer({ form, clinics, brandData = [], competitorBrands = [], competitorRows = [] }) {
+const validateEmail = (email) => {
+  const filter =
+    /^([\w-.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+  return filter.test(email);
+};
+
+const validateMobile = (mobile) => {
+  return mobile && mobile.length === 10;
+};
+
+export function useSubmitCustomer({ form, clinics, brandData = [], competitorBrands = [], competitorRows = [], setFieldErrors, setForm }) {
   const toast = useToast();
 
   // ── Shared validation & payload builder ──────────────────────────────────
@@ -13,6 +23,26 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
       toast.error("Please Add Location By Clicking Location Icon!");
       return null;
     }
+
+    if (!validateMobile(form.mobile)) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        mobile: "Please enter valid Mobile No",
+      }));
+      setForm((f) => ({ ...f, sendSms: "0" }));
+      return;
+    }
+    setFieldErrors((prev) => ({ ...prev, mobile: "" }));
+
+    if (!validateEmail(form.email)) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        email: "Please enter valid Email address",
+      }));
+      setForm((f) => ({ ...f, sendEmail: "0" }));
+      return;
+    }
+    setFieldErrors((prev) => ({ ...prev, email: "" }));
 
     // ── 2. DUPLICATE REP VALIDATION ──────────────────────────────────────────
     if (form.cusType === "1") {
@@ -54,6 +84,20 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
       toast.error("Please add Beat to the Clinical");
       return null;
     }
+
+    // ── CLINIC CONTACT NO VALIDATION ─────────────────────────────────────
+    for (let i = 0; i < clinics.length; i++) {
+      const no = clinics[i].contactNo;
+      if (no && no.length !== 10) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          contactNum: `Contact No in Contact Info ${i + 1} must be 10 digits`,
+        }));
+        toast.error(`Contact No in Contact Info ${i + 1} must be 10 digits`);
+        return null;
+      }
+    }
+    setFieldErrors((prev) => ({ ...prev, contactNum: "" }));
 
     // ── 6. DISTRIBUTOR VALIDATION ────────────────────────────────────────────
     if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
@@ -178,6 +222,9 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
       if (res.data.status === 200) {
         toast.success("Request to Add new, Generated successfully!!");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else if (res.data.status === 300) {
         toast.error(res.data.message || "Submission failed.");
       } else {
@@ -206,6 +253,9 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
       if (res.data.status === 200) {
         toast.success("Update Request Generated successfully!!");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else if (res.data.status === 300) {
         toast.error(res.data.message || "Update failed.");
       } else {
