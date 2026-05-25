@@ -9,7 +9,6 @@ import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import DataTable from "../../utils/dataTable";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 
@@ -33,7 +32,7 @@ export default function Region() {
     const [regionErrMsg, setRegionErrMsg] = useState("")
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
-    const [userType, setUserType] = useState(null)
+    const [accStat, setAccStat] = useState(null)
     const location = useLocation()
 
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -47,16 +46,15 @@ export default function Region() {
     }, [])
 
     useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setUserType(decoded.user_type)
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    }, [])
+         try {
+           const accStat = localStorage.getItem("acc_stat");
+           setAccStat(accStat);
+           console.log("Acc Stat",accStat)
+         } catch (err) {
+           console.log(err);
+         }
+   
+     }, []);
 
     useEffect(() => {
         if (!decodedEditRegionId) {
@@ -65,6 +63,7 @@ export default function Region() {
             setHdnRegionName("")
             setZoneError(false)
             setRegionError(false)
+            setEditId(null)
             setTabValue(1)
             return
         }
@@ -228,9 +227,11 @@ export default function Region() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
+                    {[0,2].includes(Number(accStat)) && 
                     <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
                         <DeleteIcon size={15} />
                     </IconButton>
+                  }
                 </>
             )
         }
@@ -307,10 +308,18 @@ export default function Region() {
                                 }}
                             />
 
+                            {(!decodedEditRegionId && [0,1].includes(Number(accStat))) &&  (<Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
+                             Create
+                            </Button>)
+                            }
+                            {(decodedEditRegionId && [0,2].includes(Number(accStat))) && (
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
                                 onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
-                                {decodedEditRegionId ? "Update" : "Create"}
+                             Update
                             </Button>
+                            )
+                            }
                         </Box>
                     )}
 

@@ -332,6 +332,7 @@ function AccountExtract() {
                   value={selectedRegion}
                   label="Zone"
                   onChange={(e) => setSelectedRegion(e.target.value)}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>Select</MenuItem>
                   {regionData.map((r) => (
@@ -351,6 +352,7 @@ function AccountExtract() {
                   value={selectedAccType}
                   label="Account Type"
                   onChange={(e) => setSelectedAccType(e.target.value)}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   {accTypeData.map((a) => (
                     <MenuItem key={a.id} value={a.id}>
@@ -369,6 +371,7 @@ function AccountExtract() {
                   value={selectedUserType}
                   label="User Type"
                   onChange={(e) => setSelectedUserType(e.target.value)}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>All</MenuItem>
                   {userTypeData

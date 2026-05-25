@@ -15,6 +15,11 @@ import DataTable from "../utils/dataTable";
 import Layout from "../layout";
 import { FaMobileAlt, FaEdit, FaTrash } from "react-icons/fa";
 import "../assets/css/accountMas.css";
+import { Download } from '../utils/downloadExcel/Download'
+import dayjs from "dayjs";
+import useToast from "../utils/useToast";
+import {DownloadNoCell} from ".././utils/xlsnoCellsDownload/DownloadNoCell";
+import ConfirmationDialog from "../utils/confirmDialog";
 
 function UserList() {
   const location = useLocation();
@@ -30,7 +35,9 @@ function UserList() {
   const [terList, setTerList] = useState([]);
 
   const [tableData, setTableData] = useState([]);
-
+  const [progress, setProgress] = useState(null);
+  const toast=useToast()
+  const [modifyLoading, setModifyLoading] = useState(false);
   const [filters, setFilters] = useState({
     userType: 0,
     dept: 0,
@@ -40,6 +47,35 @@ function UserList() {
     territory: 0,
     channel: 0,
   });
+
+  const [confirmationDialog, setConfirmationDialog] = useState({
+      open: false,
+      title: "",
+      message: "",
+      onConfirm: null,
+      confirmText: "Confirm",
+      cancelText: "Cancel",
+      confirmColor: "primary",
+    });
+
+    const showConfirmationDialog = (config) => {
+    setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+  };
+
+  const closeConfirmationDialog = () => {
+    setConfirmationDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  const showDeleteConfirmation = (row) => {
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: "Are you sure you want to delete this record?",
+      confirmText: "OK",
+      cancelText: "Close",
+      confirmColor: "primary",
+      onConfirm: () => handleDelete(row),
+    });
+  };
 
   // ---------------- DECODE ----------------
   const decode = (val) => {
@@ -68,34 +104,64 @@ function UserList() {
   }, []);
 
   const fetchUserTypes = async () => {
+    try{
     const res = await api.post("/getUsertypeList");
     setUserTypeList(res.data.userRes || []);
+    }
+    catch(err){
+      console.log("fetchuser type err",err)
+    }
   };
 
   const fetchDept = async () => {
+    try{
     const res = await api.post("/dept");
     setDeptList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch dept err",err)
+    }
   };
 
   const fetchZones = async () => {
+    try{
     const res = await api.post("/getZoneData");
     setZoneList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch zone lis err",err)
+    }
   };
 
   // ---------------- CASCADE ----------------
   const fetchRegions = async (zoneId) => {
+    try{
     const res = await api.post("/getRegionData", { zoneId });
     setRegionList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch Region list err",err)
+    }
   };
 
   const fetchAreas = async (regionId) => {
+    try{
     const res = await api.post("/areaData", { reqionId: regionId });
     setAreaList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch areas err",err)
+    }
   };
 
   const fetchTerritory = async (areaId) => {
-    const res = await api.post("/territoryData", { areaId });
+    try{
+    const res = await api.post("/getTerriTb", { area_id:areaId });
     setTerList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch territory Error",err)
+    }
   };
 
   // ---------------- PREFILL ----------------
@@ -176,6 +242,7 @@ function UserList() {
   }, [params]);
 
   const fetchTable = async (payload) => {
+    try{
     const res = await api.post("/userList", payload);
 
     setTableData(
@@ -184,6 +251,11 @@ function UserList() {
         sl: i + 1,
       })),
     );
+  }
+  catch(err){
+    console.log("fetch userList Error",err)
+  }
+
   };
 
   // ---------------- TABLE ----------------
@@ -311,13 +383,74 @@ function UserList() {
           <div className="dltBtn actionBtn">
             <FaTrash
               style={{ cursor: "pointer", color: "red" }}
-              onClick={() => handleDelete(row)}
+              onClick={() => showDeleteConfirmation(row)}
             />
           </div>
         </div>
       ),
     },
   ];
+
+  const ExcelColumn=[
+    {
+      field: "sl",
+      headerName: "#",
+    },
+    {
+      field: "name",
+      headerName: "Name",
+    },
+    {
+      field: "user_desig",
+      headerName: "Designation",
+    },
+    {
+      field: "dept_name",
+      headerName: "Department",
+    },
+    {
+      field:"zone_name",
+      headerName:"Zone"
+    },
+    {
+      field:"reg_name",
+      headerName:"Region"
+    },
+    {
+      field:"ter_name",
+      headerName:"Territory Details"
+    },
+    {
+      field:"user_addr",
+      headerName:"Address"
+    },
+    {
+      field:"repto_fname",
+      headerName:"Reporting To"
+    },
+    {
+      field:"email_id",
+      headerName:"Email ID"
+    },
+    {
+      field:"mob_no",
+      headerName:"Mobile No."
+    },
+    {
+      field:"emp_dob",
+      headerName:"Date of Birth",
+      type:'date'
+    },
+    {
+      field:"emp_doj",
+      headerName:"Date of Joining",
+      type:'date'
+    },
+    {
+      field:"acc_stat",
+      headerName:"Status"
+    }
+  ]
 
   const handleUserClick = (row) => {
     console.log("Open modal (same as PHP)", row);
@@ -328,9 +461,29 @@ function UserList() {
     navigate(`/users/adminUserNew/${id}`);
   };
 
-  const handleDelete = (row) => {
-    if (!window.confirm("Are you sure to delete?")) return;
-    console.log("Delete API call", row.user_id);
+  const handleDelete = async(row) => {
+    try{
+      setModifyLoading(true)
+      let payload={
+        user_id:row.user_id
+      }
+      let response=await api.post("/userDelete",payload)
+      if(response.data.status===200){
+        toast.success(response.data.message)
+        navigate("/Users/users_list")
+      }
+      else{
+        toast.error(response.data.message)
+      }
+
+    }
+    catch(err){
+      console.log("delete Error",err)
+    }
+    finally{
+      setModifyLoading(false)
+      closeConfirmationDialog()
+    }
   };
 
   const handleAddNew = () => {
@@ -338,15 +491,30 @@ function UserList() {
   };
 
   const handleExcel = () => {
+    try{
     const encode = (val) => btoa(val || 0);
+    const safeColumns = ExcelColumn.map(
+      ({ renderCell, renderHeader, ...rest }) => rest,
+    );
+    const invalidDates = ['1900-01-01', '1970-01-01', '0000-00-00', '1899-12-31'];
+    const dojChanges=tableData.map((val)=>({...val,emp_dob:val.emp_dob?val.emp_dob.split("T")[0]:null,emp_doj:val.emp_doj?val.emp_doj.split("T")[0]:null}))
+    const excelData=dojChanges.map((val)=>({...val,acc_stat:val.acc_stat===1?"Inactive":"Active",name:`${val.first_name?val.first_name:""} ${val.last_name?val.last_name:''}`,
+      emp_dob:val.emp_dob && !invalidDates.includes(val.emp_dob)?dayjs(val.emp_dob).format('DD-MMM-YYYY'):"-",
+      emp_doj:val.emp_doj && !invalidDates.includes(val.emp_doj)?dayjs(val.emp_doj).format('DD-MMM-YYYY'):"-",}))
+    let filename=`User-Details-${dayjs().format("DD-MMM-YYYY")}`
+    DownloadNoCell(excelData,safeColumns,filename,setProgress,toast,'User_Details')
+    }
+    catch(err){
+      console.log("Excel Export err",err)
+    }
 
-    const url = `/users/exportUsersNew/${encode(filters.userType)}/${encode(
-      filters.dept,
-    )}/${encode(filters.zone)}/${encode(filters.region)}/${encode(
-      filters.area,
-    )}/${encode(filters.territory)}/${encode(filters.channel)}`;
+    // const url = `/users/exportUsersNew/${encode(filters.userType)}/${encode(
+    //   filters.dept,
+    // )}/${encode(filters.zone)}/${encode(filters.region)}/${encode(
+    //   filters.area,
+    // )}/${encode(filters.territory)}/${encode(filters.channel)}`;
 
-    window.location.href = url;
+    // window.location.href = url;
   };
 
   return (
@@ -425,6 +593,7 @@ function UserList() {
                 value={filters.zone || 0}
                 label="Zone"
                 onChange={(e) => handleChange("zone", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value={0}>All</MenuItem>
                 {zoneList.map((z) => (
@@ -444,6 +613,7 @@ function UserList() {
                 value={filters.region || 0}
                 label="Region"
                 onChange={(e) => handleChange("region", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value={0}>All</MenuItem>
                 {regionList.map((r) => (
@@ -463,6 +633,7 @@ function UserList() {
                 value={filters.area || 0}
                 label="Area"
                 onChange={(e) => handleChange("area", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value={0}>All</MenuItem>
                 {areaList.map((a) => (
@@ -482,6 +653,7 @@ function UserList() {
                 value={filters.territory || 0}
                 label="Territory"
                 onChange={(e) => handleChange("territory", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value={0}>All</MenuItem>
                 {terList.map((t) => (
@@ -537,6 +709,17 @@ function UserList() {
             title="Users List"
           />
         </Box>
+           <ConfirmationDialog
+                  open={confirmationDialog.open}
+                  onClose={closeConfirmationDialog}
+                  onConfirm={confirmationDialog.onConfirm}
+                  title={confirmationDialog.title}
+                  message={confirmationDialog.message}
+                  confirmText={confirmationDialog.confirmText}
+                  cancelText={confirmationDialog.cancelText}
+                  loading={modifyLoading}
+                  confirmColor={confirmationDialog.confirmColor}
+                />
       </Box>
     </Layout>
   );

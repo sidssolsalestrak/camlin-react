@@ -15,7 +15,9 @@ import Layout from "../layout";
 import dayjs from "dayjs";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Download } from '../utils/downloadExcel/Download'
 import useToast from "../utils/useToast";
+import {DownloadNoCell} from ".././utils/xlsnoCellsDownload/DownloadNoCell";
 
 function UserLog() {
   const location = useLocation();
@@ -26,6 +28,7 @@ function UserLog() {
   const [userTypeList, setUserTypeList] = useState([]);
   const [userList, setUserList] = useState([]);
   const [tableData, setTableData] = useState([]);
+  const [progress, setProgress] = useState(null);
 
   const [filters, setFilters] = useState({
     module: "-1",
@@ -56,8 +59,13 @@ function UserLog() {
   }, []);
 
   const fetchUserTypes = async () => {
+    try{
     const res = await api.post("/getUsertypeList");
     setUserTypeList(res.data.userRes || []);
+    }
+    catch(err){
+      console.log("fetch user type Err",err)
+    }
   };
 
   useEffect(() => {
@@ -81,9 +89,13 @@ function UserLog() {
 
   const fetchUsersByType = async (userType) => {
     if (!userType) return;
-
+    try{
     const res = await api.post("/getUserByType", { userType });
     setUserList(res.data.data || []);
+    }
+    catch(err){
+      console.log("fetch userType err",err)
+    }
   };
 
   useEffect(() => {
@@ -95,6 +107,7 @@ function UserLog() {
   }, [filters.userType]);
 
   const fetchTable = async () => {
+    try{
     const res = await api.post("/getUserLog", {
       module: decodedParams.module,
       fromDt: decodedParams.fromDt,
@@ -109,6 +122,10 @@ function UserLog() {
         sl: i + 1,
       })),
     );
+  }
+  catch(err){
+    console.log("fetch table Error",err)
+  }
   };
 
   useEffect(() => {
@@ -190,6 +207,89 @@ function UserLog() {
     },
   ];
 
+  const ExcelColumn=[
+    {
+      field:"name",
+      headerName:"Name"
+    },
+    {
+      field:"user_desig",
+      headerName:"Designation"
+    },
+    {
+      field:"client_alias",
+      headerName:"User type"
+    },
+    {
+      field:"module",
+      headerName:"Module"
+    },
+    {
+      field:"log_type",
+      headerName:"Log Type"
+    },
+    {
+      field:"browser",
+      headerName:"Browser"
+    },
+    {
+      field:"browser_ver",
+      headerName:"Version"
+    },
+    {
+      field:"os",
+      headerName:"OS"
+    },
+    {
+      field:"device",
+      headerName:"Device"
+    },
+    {
+      field:"date",
+      headerName:"Date",
+    }
+
+  ]
+
+  const handleDownloadExcel=()=>{
+    try{
+       const safeColumns = ExcelColumn.map(
+       ({ renderCell, renderHeader, ...rest }) => rest,
+       );
+
+      let excelData = tableData.map((val) => ({
+                      ...val,
+                      name: val.first_name || val.last_name 
+                        ? `${val.first_name || ''} ${val.last_name || ''}`.trim() 
+                        : '-',
+                      user_desig: val.user_desig || '-',
+                      client_alias: val.client_alias || '-',
+                      module: val.module || '-',
+                      log_type: val.log_type || '-',
+                      browser: val.browser || '-',
+                      browser_ver: val.browser_ver || '-',
+                      os: val.os || '-',
+                      device: val.device || '-',
+                      date: val.date && dayjs(val.date).isValid() 
+                      ? dayjs(val.date).format(`DD-MMM-YYYY\nHH:mm:ss`) 
+                      : '-'
+                    }));
+      let filteredusrName=userTypeList.filter((val)=>Number(val.id)==Number(filters.userType))
+      console.log("filtered user types",filteredusrName)
+      let UserTypeName=filters.userType===2?"Super Admin":filteredusrName[0]?.client_alias
+      let dynamicTitle2=`User Type -${UserTypeName}`
+      let dynamicTitle3=`Date-${dayjs(filters.fromDt).format('DD MMM YYYY')} to ${dayjs(filters.toDt).format('DD MMM YYYY')}`
+      
+      DownloadNoCell(excelData,safeColumns,'User Logs',setProgress,toast,'User_Logs', {titleRow2: dynamicTitle2,titleRow3:dynamicTitle3})
+ 
+    }
+    catch(err){
+      console.log("Export excel Error",err)
+    }
+  }
+
+  console.log("User list",userTypeList)
+
   return (
     <Layout
       breadcrumb={[
@@ -220,6 +320,7 @@ function UserLog() {
                 value={filters.module}
                 label="Module"
                 onChange={(e) => handleChange("module", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value="-1">All</MenuItem>
                 <MenuItem value="1">Log In</MenuItem>
@@ -290,6 +391,7 @@ function UserLog() {
                 value={filters.user}
                 label="User"
                 onChange={(e) => handleChange("user", e.target.value)}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value={0}>All</MenuItem>
                 {userList.map((u) => (
@@ -308,7 +410,7 @@ function UserLog() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 1, lg: 1 }}>
-            <Button fullWidth variant="contained" color="warning">
+            <Button fullWidth variant="contained" onClick={()=>handleDownloadExcel()} color="warning">
               Excel
             </Button>
           </Grid>

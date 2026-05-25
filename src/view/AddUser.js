@@ -25,6 +25,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
+import {jwtDecode} from 'jwt-decode'
+import ConfirmationDialog from "../utils/confirmDialog";
 
 function AddUser() {
   const navigate = useNavigate();
@@ -140,6 +142,8 @@ function AddUser() {
   const [flag, setFlag] = useState(0)
   const [oldProfileImage,setOldProfileImage]=useState("")
   const [existingPass,setExistingPass]=useState(null)
+  const [sessionId,setSessionId]=useState(null)
+  const [modifyLoading, setModifyLoading] = useState(false);
 
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
@@ -316,7 +320,7 @@ function AddUser() {
         setAuthKey(d.auth_key || "");
         setOtp(d.otp || "");
 
-        setAppConfigStatus(d.app_config_stat || 0);
+        setAppConfigStatus(d.app_stat || 0);
         setDelFlag(d.del_flag || 0);
         setAccStatus(d.acc_stat || 0);
         setDeactivateType(String(d.deact_type || "0"));
@@ -341,10 +345,9 @@ function AddUser() {
         );
 
         if (d.zone_id) {
-          const zones = d.zone_id.split(",");
-          setSelectedZones(zones);
-
-          const regRes = await axios.post("/getRegion", { zone: zones });
+          const zoneIds = d.zone_id.split(",");
+          setSelectedZones(zoneIds);
+          const regRes = await axios.post("/getRegion", { zone: zoneIds });
           const regData = regRes.data.data || [];
           setRegions(regData);
 
@@ -413,6 +416,49 @@ function AddUser() {
     }
   }, [selectedReportType]);
 
+  useEffect(() => {
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token)
+                setSessionId(decoded.user_id)
+                console.log("decoded user id",decoded.user_id)
+            } catch (err) {
+                console.log(err)
+            }
+        }
+    }, [])
+
+
+    const [confirmationDialog, setConfirmationDialog] = useState({
+          open: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+          confirmText: "Confirm",
+          cancelText: "Cancel",
+          confirmColor: "primary",
+        });
+    
+        const showConfirmationDialog = (config) => {
+        setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+      };
+    
+      const closeConfirmationDialog = () => {
+        setConfirmationDialog((prev) => ({ ...prev, open: false }));
+      };
+    
+      const showLogoutConfirmation = (row) => {
+        showConfirmationDialog({
+          title: "Confirmation",
+          message: `Are you sure you want ${fullName} ${lastName} to LOGOUT from app?`,
+          confirmText: "OK",
+          cancelText: "Close",
+          confirmColor: "primary",
+          onConfirm: () => handleAppLogout(),
+        });
+      };
+
   const checkPasswordValidation = (value) => {
     const isWhitespace = /^(?=.*\s)/;
     if (isWhitespace.test(value)) {
@@ -455,6 +501,7 @@ function AddUser() {
     if (!selectedTitle) temp.selectedTitle = "Please select title";
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
+    if (!userId.trim()) temp.userId = "User ID is required";
     if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
     if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number"
     if (!email.trim()) temp.email = "Email is required";
@@ -479,55 +526,50 @@ function AddUser() {
     }
 
     if (Number(selectedType) > 4) {
-      if (mngType === 1 && selectedZones.length === 0) {
+      if (mngType === 1 && showZone && selectedZones.length === 0) {
         temp.zone = "Select Zone";
       }
 
       if (mngType === 2) {
-        if (selectedZones.length === 0) temp.zone = "Select Zone";
-        if (selectedRegions.length === 0) temp.region = "Select Region";
+        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
+        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
       }
 
       if (mngType === 3) {
-        if (selectedZones.length === 0) temp.zone = "Select Zone";
-        if (selectedRegions.length === 0) temp.region = "Select Region";
-        if (selectedAreas.length === 0) temp.area = "Select Area";
+        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
+        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
+        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
       }
 
       if (mngType === 4) {
-        if (selectedZones.length === 0) temp.zone = "Select Zone";
-        if (selectedRegions.length === 0) temp.region = "Select Region";
-        if (selectedAreas.length === 0) temp.area = "Select Area";
-        if (selectedTerritories.length === 0)
-          temp.territory = "Select Territory";
+        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
+        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
+        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
+        if (showTerritory && selectedTerritories.length === 0) temp.territory = "Select Territory";
       }
 
       if (mngType === 0) {
-        if (selectedZones.length === 0) temp.zone = "Select Zone";
-        if (selectedRegions.length === 0) temp.region = "Select Region";
-        if (selectedAreas.length === 0) temp.area = "Select Area";
-        if (selectedTerritories.length === 0)
-          temp.territory = "Select Territory";
-        if (selectedBeats.length === 0) temp.beat = "Select Beat";
+        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
+        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
+        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
+        if (showTerritory && selectedTerritories.length === 0) temp.territory = "Select Territory";
+        if (showBeat && selectedBeats.length === 0) temp.beat = "Select Beat";
       }
     }
 
-    // ===== PASSWORD VALIDATION =====
     if (!id) {
-      if (!password) temp.password = "Please Enter Password";
-      if (!confirmPassword)
-        temp.confirmPassword = "Please Enter Confirm Password";
-      if (password && confirmPassword && password !== confirmPassword) {
-        temp.confirmPassword = "Password & Confirm Password does not Match";
-      }
-      if (password) {
-        const pwdCheck = checkPasswordValidation(password);
-        if (pwdCheck !== 1) {
-          temp.password = pwdCheck;
+        if (!password.trim()) {
+          temp.password = "Password is required";
+        } else {
+          const pwdCheck = checkPasswordValidation(password);
+          if (pwdCheck !== 1) temp.password = pwdCheck;
+        }
+        if (!confirmPassword.trim()) {
+          temp.confirmPassword = "Confirm Password is required";
+        } else if (password !== confirmPassword) {
+          temp.confirmPassword = "Password & Confirm Password does not match";
         }
       }
-    }
-
     // UPDATE USER
     if (id && (password || confirmPassword)) {
       if (!password || !confirmPassword) {
@@ -542,8 +584,13 @@ function AddUser() {
       }
     }
     console.log("validation failures", temp)
-    setErrors(temp);
-    return Object.keys(temp).length === 0;
+    const mergedErrors = { ...errors, ...temp };
+    setErrors(mergedErrors);
+
+    const duplicateKeys = ['email', 'mobileNum', 'employeeCode'];
+    const hasDuplicateError = duplicateKeys.some(key => mergedErrors[key]);
+
+    return Object.keys(temp).length === 0 && !hasDuplicateError;
   };
 
   //   if (!useMobile && !useEmail) {
@@ -909,6 +956,56 @@ function AddUser() {
     }
   };
 
+  const checkEmailDuplicate = async (emailVal) => {
+  const trimmed = emailVal.trim();
+
+  // If empty or invalid format, let validate() handle it — don't clear
+  if (!trimmed) return;
+  if (!emailRegex.test(trimmed)) {
+    setErrors(prev => ({ ...prev, email: "Please Enter a valid Email" }));
+    return;
+  }
+
+  try {
+    const res = await axios.post("/checkEmailUser", { email: trimmed, id: id || null });
+    if (res.data.status === 400) {
+      setErrors(prev => ({ ...prev, email: res.data.message }));
+    } else {
+      setErrors(prev => { const e = { ...prev }; delete e.email; return e; });
+    }
+  } catch (err) {
+    console.error("Email check failed", err);
+  }
+};
+
+const checkMobileDuplicate = async (mobileVal) => {
+  if (!mobileVal || mobileVal.length < 10) return;
+  try {
+    const res = await axios.post("/checkMobileNumber", { mobile: mobileVal, id: id || null });
+    if (res.data.status === 400) {
+      setErrors(prev => ({ ...prev, mobileNum: res.data.message }));
+    } else {
+      setErrors(prev => { const e = { ...prev }; delete e.mobileNum; return e; });
+    }
+  } catch (err) {
+    console.error("Mobile check failed", err);
+  }
+};
+
+const checkEmpCodeDuplicate = async (codeVal) => {
+  if (!codeVal.trim()) return;
+  try {
+    const res = await axios.post("/checkEmpCode", { empCode: codeVal, id: id || null });
+    if (res.data.status === 400) {
+      setErrors(prev => ({ ...prev, employeeCode: res.data.message }));
+    } else {
+      setErrors(prev => { const e = { ...prev }; delete e.employeeCode; return e; });
+    }
+  } catch (err) {
+    console.error("Emp code check failed", err);
+  }
+};
+
   const handleAreaChange = async (value) => {
     const val = Array.isArray(value) ? value : [value];
     setSelectedAreas(val);
@@ -942,54 +1039,103 @@ function AddUser() {
     }
   };
 
-  const handleUserTypeChange = (e) => {
-    const selected = e.target.value;
-    const selectedObj = userTypes.find(
-      (u) => String(u.id) === String(selected),
-    );
-    const mng = selectedObj?.mng_type || 0;
-    setSelectedType(selected);
-    setMngType(mng);
-
-    // RESET ALL
-    setShowZone(false);
-    setShowRegion(false);
-    setShowArea(false);
-    setShowTerritory(false);
-    setShowBeat(false);
-
-    if (selected > 4) {
-      if (mng === 1) {
-        setShowZone(true);
-      }
-      if (mng === 2) {
-        setShowZone(true);
-        setShowRegion(true);
-      }
-      if (mng === 3) {
-        setShowZone(true);
-        setShowRegion(true);
-        setShowArea(true);
-      }
-      if (mng === 4) {
-        setShowZone(true);
-        setShowRegion(true);
-        setShowArea(true);
-        setShowTerritory(true);
-      }
-      if (mng === 0) {
-        if (Number(selected) === 12) {
-          return; // hide all
-        }
-        setShowZone(true);
-        setShowRegion(true);
-        setShowArea(true);
-        setShowTerritory(true);
-        setShowBeat(true);
-      }
+  const handleAppLogout = async () => {
+  try {
+    const res = await axios.post("/logoutApp", { user_id: id });
+    if (res.data.success) {
+      setToast({
+        open: true,
+        message: `${fullName} ${lastName} has been Logged Out!`,
+        severity: "success",
+      });
+      // Refresh user details to reflect updated app_stat
+      getUserDetails();
+    } else {
+      setToast({
+        open: true,
+        message: res.data.message || "Logout failed",
+        severity: "error",
+      });
     }
-  };
+  } catch (err) {
+    console.error("Logout error:", err);
+    setToast({
+      open: true,
+      message: "Server error during logout",
+      severity: "error",
+    });
+  }
+  finally{
+    closeConfirmationDialog()
+  }
+};
 
+  const handleUserTypeChange = (e) => {
+  const selected = e.target.value;
+  const selectedObj = userTypes.find(
+    (u) => String(u.id) === String(selected),
+  );
+  const mng = selectedObj?.mng_type || 0;
+  setSelectedType(selected);
+  setMngType(mng);
+
+  // RESET ALL VISIBILITY
+  setShowZone(false);
+  setShowRegion(false);
+  setShowArea(false);
+  setShowTerritory(false);
+  setShowBeat(false);
+
+  // ✅ CLEAR ERRORS for all territory fields when user type changes
+  setErrors((prev) => {
+    const updated = { ...prev };
+    delete updated.selectedType;
+    delete updated.zone;
+    delete updated.region;
+    delete updated.area;
+    delete updated.territory;
+    delete updated.beat;
+    return updated;
+  });
+
+  // RESET SELECTED VALUES too (so stale data doesn't linger)
+  setSelectedZones([]);
+  setSelectedRegions([]);
+  setSelectedAreas([]);
+  setSelectedTerritories([]);
+  setSelectedBeats([]);
+
+  if (selected > 4) {
+    if (mng === 1) {
+      setShowZone(true);
+    }
+    if (mng === 2) {
+      setShowZone(true);
+      setShowRegion(true);
+    }
+    if (mng === 3) {
+      setShowZone(true);
+      setShowRegion(true);
+      setShowArea(true);
+    }
+    if (mng === 4) {
+      setShowZone(true);
+      setShowRegion(true);
+      setShowArea(true);
+      setShowTerritory(true);
+    }
+    if (mng === 0) {
+      if (Number(selected) === 12) {
+        return;
+      }
+      setShowZone(true);
+      setShowRegion(true);
+      setShowArea(true);
+      setShowTerritory(true);
+      setShowBeat(true);
+    }
+  }
+};
   const formatDate = (val) => {
     if (!val) return "";
 
@@ -1002,7 +1148,8 @@ function AddUser() {
     return dayjs(val).format("DD-MMM-YYYY HH:mm:ss");
   };
 
-
+  console.log("app config status",appConfigStatus)
+  console.log("delflag status",delFlag)
   return (
     <Layout>
       <Grid container spacing={2} sx={{ padding: "8px" }}>
@@ -1099,6 +1246,7 @@ function AddUser() {
                   fullWidth
                   size="small"
                   value={employeeCode}
+                  onBlur={(e) => checkEmpCodeDuplicate(e.target.value)} 
                   onChange={(e) => setEmployeeCode(e.target.value)}
                   error={Boolean(errors.employeeCode)}
                   helperText={errors.employeeCode}
@@ -1112,7 +1260,6 @@ function AddUser() {
                   size="small"
                   value={fullName}
                   onChange={(e) => {
-                    setFullName(e.target.value);
                     handleFirstNameChange(e.target.value);
                   }}
                   error={Boolean(errors.fullName)}
@@ -1142,6 +1289,7 @@ function AddUser() {
                       setMobileNum(value);
                       if (useMobile) setUserId(value);
                     }}
+                    onBlur={(e) => checkMobileDuplicate(e.target.value)}
                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
                     fullWidth
                     error={Boolean(errors.mobileNum)}
@@ -1157,6 +1305,7 @@ function AddUser() {
                     size="small"
                     label="Email"
                     value={email}
+                    onBlur={(e) => checkEmailDuplicate(e.target.value)} 
                     onChange={(e) => {
                       setEmail(e.target.value);
                       if (useEmail) setUserId(e.target.value);
@@ -1440,7 +1589,7 @@ function AddUser() {
                 )}
               </Grid>
             </Grid>
-
+           {Number(flag)===0 &&
             <Button
               variant="contained"
               size="small"
@@ -1457,8 +1606,26 @@ function AddUser() {
                 setOpenSaveDialog(true);
               }}
             >
-              {id ? "Update User" : "Add User"}
+             Add User
+            </Button>}
+            {Number(flag)===1 &&  Number(accStatus)===0 &&  Number(sessionId)!==id &&
+            <Button  variant="contained"
+              size="small"
+              sx={{ mt: 2 }}
+              onClick={() => {
+                if (!validate()) {
+                  setToast({
+                    open: true,
+                    message: "Please fix all mandotory fields",
+                    severity: "error",
+                  });
+                  return
+                };
+                setOpenSaveDialog(true);
+              }}>
+              Update User
             </Button>
+}
           </Box>
         </Grid>
 
@@ -1626,13 +1793,13 @@ function AddUser() {
                 <Typography sx={{ mt: 1, mb: 1 }}>
                   {fileName || "No file chosen"}
                 </Typography>
-                {appConfigStatus === 1 && delFlag === 0 && (
+                {Number(appConfigStatus) === 1 && (
                   <Button
                     variant="contained"
                     color="error"
                     size="small"
                     sx={{ float: "right", mb: 3 }}
-                    onClick={() => console.log("Logout triggered")}
+                    onClick={() => showLogoutConfirmation()}
                   >
                     Logout from App
                   </Button>
@@ -1996,6 +2163,17 @@ function AddUser() {
           {toast.message}
         </Alert>
       </Snackbar>
+          <ConfirmationDialog
+                        open={confirmationDialog.open}
+                        onClose={closeConfirmationDialog}
+                        onConfirm={confirmationDialog.onConfirm}
+                        title={confirmationDialog.title}
+                        message={confirmationDialog.message}
+                        confirmText={confirmationDialog.confirmText}
+                        cancelText={confirmationDialog.cancelText}
+                        loading={modifyLoading}
+                        confirmColor={confirmationDialog.confirmColor}
+                      />
     </Layout>
   );
 }

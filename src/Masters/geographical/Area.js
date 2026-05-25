@@ -9,7 +9,6 @@ import DataTable from "../../utils/dataTable";
 import { LiaTrashAltSolid } from "react-icons/lia";
 import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
-import { jwtDecode } from "jwt-decode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 
@@ -28,7 +27,7 @@ export default function Area() {
     const [allRegion, setAllRegion] = useState([])
     const [allState, setAllState] = useState([])
     const [allArea, setAllArea] = useState([])
-    const [userType, setUserType] = useState(null)
+    const [accStat, setAccStat] = useState(null)
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [regionError, setRegionError] = useState(false)
@@ -46,17 +45,16 @@ export default function Area() {
         fetchState()
     }, [])
 
-    useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setUserType(decoded.user_type)
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    }, [])
+      useEffect(() => {
+         try {
+           const accStat = localStorage.getItem("acc_stat");
+           setAccStat(accStat);
+           console.log("Acc Stat",accStat)
+         } catch (err) {
+           console.log(err);
+         }
+   
+     }, []);
 
     useEffect(() => {
         if (!decodedAreaId) {
@@ -255,9 +253,11 @@ export default function Area() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
+                    { [0,2].includes(Number(accStat)) &&
                     <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
                         <DeleteIcon size={15} />
                     </IconButton>
+                    }
                 </>
             )
         }
@@ -345,10 +345,17 @@ export default function Area() {
                                 error={!!areaError}
                                 helperText={areaError ? "Area Name is required." : ""}
                             />
+                            {(!decodedAreaId && [0,1].includes(Number(accStat)))&&
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
                                 onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
                                 {decodedAreaId ? "Update" : "Create"}
+                            </Button>}
+                            {(decodedAreaId && [0,2].includes(Number(accStat))) &&
+                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
+                             Update
                             </Button>
+                            }
                         </Box>
                     )}
                     {tabValue === 1 && (

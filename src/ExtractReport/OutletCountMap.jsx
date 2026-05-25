@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mui/material";
+import { GoogleMapsOverlay } from "@deck.gl/google-maps";
+import { HeatmapLayer } from "@deck.gl/aggregation-layers";
 import api from "../services/api";
 
-const LIBRARIES = ["geometry", "visualization"];
+const LIBRARIES = [];
 
 const MAP_STYLES = [
     {
@@ -34,18 +36,17 @@ const createCustomGreenMarker = () => ({
     fillOpacity: 1,
     strokeColor: "#FFFFFF",
     strokeWeight: 2,
-    scale: 1.5,
-    anchor: new window.google.maps.Point(12, 24),
+    scale: 1.1,
+    anchor: new window.google.maps.Point(13, 21),
 });
 
 export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, selUser, userType, userId }) {
     const [showMarkers, setShowMarkers] = useState(false);
     const [mapInstance, setMapInstance] = useState(null);
-    const [heatmapInstance, setHeatmapInstance] = useState(null);
     const [activeInfo, setActiveInfo] = useState(null);
     const [markerIcon, setMarkerIcon] = useState(null);
     const [validCoords, setValidCoords] = useState([]);
-    const circlesRef = useRef([]);
+    const deckOverlayRef = useRef(null);
 
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: process.env.REACT_APP_API_KEY,
@@ -69,21 +70,22 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
         try {
             const res = await api.get('/get_loc_map');
             const data = await res.data.data;
-            console.log("outlet count map Data",data[0])
+            console.log("outlet count map Data", data[0]);
+
             let filtered = data[0].filter(item => {
-                if (Number(userType) === 8)  return String(item.user_id) === String(userId);
-                if (Number(userType) === 15) return String(item.am_id)   === String(userId);
-                if (Number(userType) === 14) return String(item.zbm_id)  === String(userId);
-                if (Number(userType) === 13) return String(item.rsm_id)  === String(userId);
-                if (Number(userType) === 16) return String(item.sh_id)   === String(userId);
-                if (Number(userType) < 5)    return true;
+                if (Number(userType) === 8) return String(item.user_id) === String(userId);
+                if (Number(userType) === 15) return String(item.am_id) === String(userId);
+                if (Number(userType) === 14) return String(item.zbm_id) === String(userId);
+                if (Number(userType) === 13) return String(item.rsm_id) === String(userId);
+                if (Number(userType) === 16) return String(item.sh_id) === String(userId);
+                if (Number(userType) < 5) return true;
                 return false;
             });
 
-            if (selUser > 0)        filtered = filtered.filter(i => String(i.user_id) === String(selUser));
-            else if (selArea > 0)   filtered = filtered.filter(i => String(i.area_id) === String(selArea));
-            else if (selRegion > 0) filtered = filtered.filter(i => String(i.reg_id)  === String(selRegion));
-            else if (selZone > 0)   filtered = filtered.filter(i => String(i.zone_id) === String(selZone));
+            if (selUser > 0) filtered = filtered.filter(i => String(i.user_id) === String(selUser));
+            else if (selArea > 0) filtered = filtered.filter(i => String(i.area_id) === String(selArea));
+            else if (selRegion > 0) filtered = filtered.filter(i => String(i.reg_id) === String(selRegion));
+            else if (selZone > 0) filtered = filtered.filter(i => String(i.zone_id) === String(selZone));
 
             const coords = filtered.filter(item => {
                 const lat = parseFloat(item.latitude);
@@ -97,66 +99,50 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
         }
     };
 
-    // Initialize heatmap/circles once BOTH mapInstance and validCoords are ready
+    // Build / rebuild deck.gl overlay whenever mapInstance or validCoords change
     useEffect(() => {
-        if (!mapInstance || !window.google || validCoords.length === 0) return;
+        if (!mapInstance || validCoords.length === 0) return;
 
-        // Clear previous circles
-        circlesRef.current.forEach(c => c.setMap(null));
-        circlesRef.current = [];
-
-        // Clear previous heatmap
-        if (heatmapInstance) {
-            heatmapInstance.setMap(null);
-            setHeatmapInstance(null);
+        // Tear down previous overlay
+        if (deckOverlayRef.current) {
+            deckOverlayRef.current.setMap(null);
+            deckOverlayRef.current = null;
         }
 
-        const heatmapData = validCoords.map(coord =>
-            new window.google.maps.LatLng(
-                parseFloat(coord.latitude),
-                parseFloat(coord.longitude),
-            )
-        );
+        const heatmapData = validCoords.map(coord => ({
+            position: [parseFloat(coord.longitude), parseFloat(coord.latitude)],
+            weight: 1,
+        }));
 
-        try {
-            if (window.google.maps.visualization?.HeatmapLayer) {
-                const heatmap = new window.google.maps.visualization.HeatmapLayer({
+        const overlay = new GoogleMapsOverlay({
+            layers: [
+                new HeatmapLayer({
+                    id: "heatmap-layer",
                     data: heatmapData,
-                    map: mapInstance,
-                    radius: 20,
-                });
-                setHeatmapInstance(heatmap);
-            } else {
-                throw new Error("HeatmapLayer unavailable");
-            }
-        } catch {
-            validCoords.forEach(coord => {
-                const lat = parseFloat(coord.latitude);
-                const lng = parseFloat(coord.longitude);
-                const circle = new window.google.maps.Circle({
-                    center: { lat, lng },
-                    radius: 20,
-                    map: mapInstance,
-                    fillColor: '#FF5733',
-                    fillOpacity: 0.35,
-                    strokeColor: '#FF5733',
-                    strokeOpacity: 0.6,
-                    strokeWeight: 1,
-                });
-                circlesRef.current.push(circle);
-            });
-        }
+                    getPosition: d => d.position,
+                    getWeight: d => d.weight,
+                    radiusPixels: 40,       // ✅ already set
+                    intensity: 6,
+                    threshold: 0.03,
+                    colorRange: [
+                        [0, 255, 0, 180],    // green  (low)
+                        [255, 255, 0, 210],  // yellow (mid)
+                        [255, 0, 0, 180],    // red    (high)
+                    ],
+                }),
+            ],
+        });
+
+        overlay.setMap(mapInstance);
+        deckOverlayRef.current = overlay;
     }, [mapInstance, validCoords]);
 
     // Cleanup everything when dialog closes
     useEffect(() => {
         if (!open) {
-            circlesRef.current.forEach(c => c.setMap(null));
-            circlesRef.current = [];
-
-            if (heatmapInstance) {
-                heatmapInstance.setMap(null);
-                setHeatmapInstance(null);
+            if (deckOverlayRef.current) {
+                deckOverlayRef.current.setMap(null);
+                deckOverlayRef.current = null;
             }
 
             setShowMarkers(false);
@@ -164,7 +150,7 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
             setActiveInfo(null);
             setValidCoords([]);
         }
-    }, [open, heatmapInstance]);
+    }, [open]);
 
     const handleMapLoad = (map) => {
         setMapInstance(map);
@@ -230,7 +216,10 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
                 </Box>
                 <Typography
                     onClick={onClose}
-                    sx={{ fontSize: "20px", cursor: "pointer", color: "#666", lineHeight: 1, px: 1, "&:hover": { color: "#000" } }}
+                    sx={{
+                        fontSize: "20px", cursor: "pointer", color: "#666",
+                        lineHeight: 1, px: 1, "&:hover": { color: "#000" },
+                    }}
                 >
                     ×
                 </Typography>
@@ -251,18 +240,18 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
                 {isLoaded && (
                     <GoogleMap
                         mapContainerStyle={{ width: "100%", height: "100%" }}
-                        zoom={5}
+                        zoom={4.7}
                         center={{ lat: 20.5937, lng: 78.9629 }}
                         options={{
                             mapTypeId: "roadmap",
                             styles: MAP_STYLES,
-                            mapTypeControl: false,
+                            mapTypeControl: true,
                             streetViewControl: false,
                             fullscreenControl: true,
                         }}
                         onLoad={handleMapLoad}
                     >
-                        {markerIcon && validCoords.map((coord, i) => {
+                        {showMarkers && markerIcon && validCoords.map((coord, i) => {
                             const lat = parseFloat(coord.latitude);
                             const lng = parseFloat(coord.longitude);
                             return (
@@ -270,7 +259,6 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
                                     key={i}
                                     position={{ lat, lng }}
                                     title={coord.loc_addr ?? ""}
-                                    visible={showMarkers}
                                     icon={markerIcon}
                                     onMouseOver={() => setActiveInfo({ lat, lng, addr: coord.loc_addr })}
                                     onMouseOut={() => setActiveInfo(null)}
