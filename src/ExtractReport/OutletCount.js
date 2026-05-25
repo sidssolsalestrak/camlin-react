@@ -43,6 +43,7 @@ export default function OutletCount() {
     const [userId, setUserId] = useState(null);
     const [progress, setProgress] = useState(null);
     const [allOutLets, setAlltotOutlets] = useState([]);
+    const [showTable, setShowTable] = useState(false)
 
     const toast = useToast();
 
@@ -311,6 +312,7 @@ export default function OutletCount() {
     const handleLoadWithValues = async (zoneId, regId, areaId, soId) => {
         try {
             setLoading(true);
+            setShowTable(true)
             const r = await api.post("/getOutletCount", {
                 zone_id: zoneId || null,
                 reg_id: regId || null,
@@ -415,15 +417,17 @@ export default function OutletCount() {
                     });
                     setAllSo(Array.isArray(r.data.data) ? r.data.data : []);
                 }
+                if(enzone || enRegion || enArea || enSo){
 
                 await handleLoadWithValues(decodeZone, decodeRegion, decodeArea, decodeSo);
+                }
             } catch (e) {
                 console.log("Param load error:", e);
             }
         };
 
         loadFromParams();
-    }, [decodeZone, decodeRegion, decodeArea, decodeSo]);
+    }, [enzone, enRegion, enArea, enSo]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
@@ -520,7 +524,7 @@ export default function OutletCount() {
                  </Grid>
                 </Box>
 
-                <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%',md:'100%' } }}>
+               {showTable && <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%',md:'100%' } }}>
                     <DataTable
                         data={tableData}
                         columns={COLUMNS}
@@ -541,7 +545,7 @@ export default function OutletCount() {
                             boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         }}
                     />
-                </Box>
+                </Box>}
             </Box>
 
             <OutletCountMap

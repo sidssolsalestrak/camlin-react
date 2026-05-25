@@ -21,6 +21,7 @@ export default function CommonAppSelect({
   multiple = false,
   error = false,
   sx = {},
+  required = false
 }) {
   return (
     <FormControl
@@ -39,6 +40,7 @@ export default function CommonAppSelect({
         },
         ...sx,
       }}
+      required={required}
     >
       <InputLabel>{label}</InputLabel>
 
@@ -71,7 +73,7 @@ export default function CommonAppSelect({
             </Box>
           ) : (
             options.find((o) => String(o[valueKey]) === String(value))?.[
-              labelKey
+            labelKey
             ] || ""
           )
         }

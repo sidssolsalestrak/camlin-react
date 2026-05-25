@@ -1,44 +1,70 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { Box, Typography, CircularProgress } from "@mui/material";
 
 const LIBRARIES = ["geometry", "visualization"];
-
-const DEFAULT_LAT = 19.076090;   // exact same as PHP hidden input
+const DEFAULT_LAT = 19.076090;
 const DEFAULT_LNG = 72.877426;
 
 export function LocationTaggingMap({ initialLat, initialLng, onLocationSelect }) {
   const [markerPos, setMarkerPos] = useState(null);
-  const [mapInstance, setMapInstance] = useState(null);
+  const [center, setCenter] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+  const mapRef = useRef(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_API_KEY,
     libraries: LIBRARIES,
   });
 
-  // PHP: var lat = $('#latitude').val(); if(lat==0){ lat=19.076090; long=72.877426; }
-  const lat = parseFloat(initialLat) || DEFAULT_LAT;
-  const lng = parseFloat(initialLng) || DEFAULT_LNG;
+  const parsedLat = parseFloat(initialLat);
+  const parsedLng = parseFloat(initialLng);
 
-  // PHP: places a green marker at the existing lat/lng on map load
+  const hasValidCoords =
+    !isNaN(parsedLat) && parsedLat !== 0 &&
+    !isNaN(parsedLng) && parsedLng !== 0;
+
+  // ── KEY FIX: watch initialLat/initialLng changes
+  // Dialog opens → props update from "0" to real coords → this fires
   useEffect(() => {
-    if (isLoaded) {
-      setMarkerPos({ lat, lng });
-    }
-  }, [isLoaded]);
+    if (!isLoaded) return;
 
-  useEffect(() => {
-    if (mapInstance) {
-      window.google.maps.event.trigger(mapInstance, "resize");
-      mapInstance.setCenter({ lat, lng });
-    }
-  }, [mapInstance]);
+    if (hasValidCoords) {
+      const pos = { lat: parsedLat, lng: parsedLng };
 
-  // PHP: map.addListener('click', function(event) { marker.setPosition(event.latLng); ... })
+      // update marker
+      setMarkerPos(pos);
+
+      // update center state
+      setCenter(pos);
+
+      // pan live map if already mounted
+      if (mapRef.current) {
+        mapRef.current.panTo(pos);
+        mapRef.current.setZoom(14);
+      }
+
+      // notify parent
+      if (onLocationSelect) {
+        onLocationSelect(String(parsedLat), String(parsedLng));
+      }
+    } else {
+      // no saved coords — default location, no marker
+      const defaultPos = { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+      setCenter(defaultPos);
+      setMarkerPos(null);
+
+      if (mapRef.current) {
+        mapRef.current.panTo(defaultPos);
+      }
+    }
+  }, [isLoaded, initialLat, initialLng]); // ← watches both isLoaded AND prop changes
+
   const handleMapClick = (e) => {
     const newLat = e.latLng.lat();
     const newLng = e.latLng.lng();
-    setMarkerPos({ lat: newLat, lng: newLng });   // moves marker to clicked point
+    const pos = { lat: newLat, lng: newLng };
+    setMarkerPos(pos);
+    setCenter(pos);
     if (onLocationSelect) onLocationSelect(String(newLat), String(newLng));
   };
 
@@ -62,7 +88,7 @@ export function LocationTaggingMap({ initialLat, initialLng, onLocationSelect })
       </Typography>
       <GoogleMap
         mapContainerStyle={{ width: "100%", height: "400px" }}
-        center={{ lat, lng }}
+        center={center}
         zoom={12}
         options={{
           mapTypeId: "roadmap",
@@ -70,16 +96,20 @@ export function LocationTaggingMap({ initialLat, initialLng, onLocationSelect })
           streetViewControl: true,
           fullscreenControl: true,
         }}
-        onLoad={(map) => setMapInstance(map)}
+        onLoad={(map) => {
+          mapRef.current = map;
+          // ── on load, immediately pan to correct coords
+          if (hasValidCoords) {
+            map.panTo({ lat: parsedLat, lng: parsedLng });
+            map.setZoom(14);
+          }
+        }}
         onClick={handleMapClick}
       >
-        {/* PHP: green marker at current/default position */}
         {markerPos && (
           <Marker
             position={markerPos}
-            icon={{
-              url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-            }}
+            icon={{ url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png" }}
             title="Selected Location"
           />
         )}
