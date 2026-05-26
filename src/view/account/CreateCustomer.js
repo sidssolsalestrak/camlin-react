@@ -60,7 +60,7 @@ function CreateCustomer() {
   let decodedReqType = reqType ? safeAtob(reqType) : "0";
   let decodedReq = req ? safeAtob(req) : "0";
   const isTemp = decodedReq !== "0";
-  
+
   const showAlert = useToast();
   // ---------------- STATE ---------------------------
   const [fieldConfig, setFieldConfig] = useState({});
@@ -101,6 +101,7 @@ function CreateCustomer() {
     gender: "1",
     retailerType: "1",
     practiseType: "",
+      pharmaType: "1",  
     marketingTools: [],
     agegroup: "1",
   });
@@ -264,13 +265,14 @@ function CreateCustomer() {
 
   useEffect(() => {
     loadDynamicForm(form.cusType);
+    fetchAccountOwner()
   }, []);
 
   const handleAccTypeChange = (e) => {
     const val = String(e.target.value);
     setForm((f) => ({
       ...f, cusType: val,
-      gender: "1", agegroup: "1", pharmaType: "", practiceType: "",
+      gender: "1", agegroup: "1", pharmaType: 1, practiceType: "",
       potentiality: "", loyalty: "", loyaltyType: "", frequency: "",
       retailerType: "1",
     }));
@@ -298,17 +300,19 @@ function CreateCustomer() {
       ]);
 
       setRepInchargeOptions((repRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
-      setRepPOSOptions((repPoso.data.data || []).map(i => ({ ...i, id: String(i.id) })));
+      setRepPOSOptions((repRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
       setDistributorOptions((distRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
-
-      // brands for CompetitorMappping
-      setBrandData((decodedID ? (brandsRes.data.data || []) : []).map(b => ({
+      const brandsRaw = brandsRes.data.data || [];
+      console.log("brands Raw in list",brandsRaw)
+      const mappedBrands = brandsRaw.map(b => ({
         subCatId: String(b.id),
-        name: b.sub_name,      // ← matches SQL: sc.sub_name
-        focus: b.focusChecked ? 1 : 0,   // backend already calculates this
-        reminder: b.remChecked ? 1 : 0,
+        name: b.sub_name,
+        focus: b.foc? 1 : 0,
+        reminder: b.rem ? 1 : 0,
         competition: 0,
-      })));
+        compCount: 0,
+    }));
+      setBrandData(mappedBrands);
 
     } catch (err) { console.error(err); }
   };
@@ -408,6 +412,18 @@ function CreateCustomer() {
     setClinics(updated);
   };
 
+  const fetchAccountOwner = async () => {
+    try {
+      let response = await api.post("/getRepInchargePos", { regId: 0 })
+      let saleresult = Array.isArray(response.data.data) ? response.data.data : []
+      setRepPOSOptions(saleresult)
+
+    }
+    catch (err) {
+      console.log("fetch sales o region error", err)
+    }
+  }
+
   const updateClinic = (idx, field, value) =>
     setClinics((prev) => prev.map((c, i) => (i === idx ? { ...c, [field]: value } : c)));
 
@@ -441,10 +457,15 @@ function CreateCustomer() {
 
   const checkPendingRequest = async () => {
     try {
-      const pendingRes = await api.post("/getPendingRequest", { cus_id: decodedID });
+      const pendingRes = await api.post("/getPendingRequest", {
+        cus_id: decodedID,
+        req_type: decodedReqType,   // ← segment(4) → "0" or non-zero
+        req_user: decodedReq,            // ← segment(5) → "0" or non-zero
+      });
+
       const pendingData = pendingRes.data.data;
       if (pendingData && pendingData.length > 0) {
-        setPendingRequest(pendingData[0]); // { request_type: 2 or 3, ... }
+        setPendingRequest(pendingData[0]);
       } else {
         setPendingRequest(null);
       }
@@ -452,7 +473,7 @@ function CreateCustomer() {
       console.error("pending request check failed", err);
       setPendingRequest(null);
     }
-  }
+  };
 
   const getPendingRequestName = (requestType) => {
     if (requestType === 2) return "Update";
@@ -487,7 +508,7 @@ function CreateCustomer() {
         setForm({
           cusType: String(d.cus_type_id || "2"),
           retailerType: String(d.retail_type || "1"),
-          pharmaType: String(d.pharmacy_type_id || "0"),
+          pharmaType: String(d.pharmacy_type_id || 1),
           practiseType: String(d.practice_id || "0"),
           gender: String(d.gender || "1"),
           firstName: d.first_name || "",
@@ -537,12 +558,14 @@ function CreateCustomer() {
             id: String(i.id),
             no_freq_visit: String(i.no_freq_visit),
           })));
+          let com_count=0
           setBrandData((brandsRes.data.data || []).map(b => ({
-            subCatId: String(b.id),
-            name: b.sub_name,
-            focus: b.focusChecked ? 1 : 0,
-            reminder: b.remChecked ? 1 : 0,
-            competition: 0,
+          subCatId: String(b.id),
+          name: b.sub_name,
+          focus: b.foc? 1 : 0,
+          reminder: b.rem ? 1 : 0,
+          competition: 0,
+          compCount:b.subcat_id>0?com_count+1:com_count,
           })));
         }
 
@@ -567,15 +590,16 @@ function CreateCustomer() {
             customerLongitude: String(long),
           }));
 
-          // ── update location tag icon
-          if (firstClinic.gps_tag_stat === 1) {
+          // Replace the existing if block with this:
+          const hasLocation = lat && long && String(lat) !== "0" && String(long) !== "0";
+
+          if (hasLocation) {
             setLocationTagged(true);
             setSelectedLocation({
               latitude: String(lat),
               longitude: String(long),
             });
           }
-
           // ── 8. Load beat options for each clinic row in parallel
           const clinicsWithBeats = await Promise.all(
             clinicRows.map(async (c) => {
@@ -644,6 +668,8 @@ function CreateCustomer() {
     setMapDialogOpen(true);
   };
 
+  console.log("pending request", pendingRequest)
+  console.log("competitor rows in create customer",competitorRows)
   // ---------------- UI ----------------
   return (
     <Layout
@@ -741,7 +767,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3, lg: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Retailer Type"]?.label}
-                value={form.pharmaType || "1"}
+                value={form.pharmaType || ""}
                 onChange={(e) =>
                   setForm({ ...form, pharmaType: String(e.target.value) })
                 }
@@ -1055,6 +1081,8 @@ function CreateCustomer() {
           <CompetitorMappping
             brandData={brandData}
             setBrandData={setBrandData}
+            cusId={decodedID || 0}   
+            tempId={0}              
             onOpenCompModal={(brand) => {
               setSelectedBrand(brand);   // track which brand was clicked
               setCompModalOpen(true);
@@ -1121,28 +1149,125 @@ function CreateCustomer() {
         </DialogActions>
       </Dialog>
       <AddCompetitor
-        selectedBrand={selectedBrand}
-        compModalOpen={compModalOpen}
-        setCompModalOpen={setCompModalOpen}
-        cusId={decodedID || 0}
-        tempId={0}
-        onSave={(saveData) => {
-          const editedRows = saveData.rows; // Extract rows array from saveData
-          const rowsWithSubcat = editedRows.map(r => ({
-            ...r,
-            subcat_id: selectedBrand?.subCatId || 0,
+  selectedBrand={selectedBrand}
+  compModalOpen={compModalOpen}
+  setCompModalOpen={setCompModalOpen}
+  cusId={decodedID || 0}
+  tempId={0}
+  onSave={async (saveData) => {
+    const editedRows = saveData.rows;
+    console.log("Edited rows from Add Competitor:", editedRows);
+    
+    try {
+      // ✅ Fetch data for ALL brands/subcategories
+      const allBrandRequests = brandData.map(brand => 
+        api.post("/getCompModal", {
+          subcat_id: brand.subCatId,
+          cus_id: decodedID || 0,
+          temp_id: 0,
+        })
+      );
+      
+      const allBrandResponses = await Promise.all(allBrandRequests);
+      
+      // ✅ Combine all existing data from all brands
+      let allExistingRows = [];
+      
+      allBrandResponses.forEach((res, index) => {
+        const brand = brandData[index];
+        const backendProducts = res.data.data?.products || [];
+        
+        const rowsForThisBrand = backendProducts
+          .filter(p => {
+            // Only keep rows that have data
+            return (
+              Number(p.prod_qty) > 0 ||
+              Number(p.comp_id_1) > 0 ||
+              Number(p.comp_id_2) > 0 ||
+              Number(p.comp_id_3) > 0 ||
+              Number(p.oth_qty) > 0 ||
+              (p.other_name && p.other_name.trim() !== '')
+            );
+          })
+          .map(p => ({
+            pid: p.pid,
+            subcat_id: brand.subCatId,
+            prod_qty: p.prod_qty || 0,
+            comp_id_1: p.comp_id_1 ? String(p.comp_id_1) : "0",
+            comp_id_1_qty: p.comp_id_1_qty || 0,
+            comp_id_2: p.comp_id_2 ? String(p.comp_id_2) : "0",
+            comp_id_2_qty: p.comp_id_2_qty || 0,
+            comp_id_3: p.comp_id_3 ? String(p.comp_id_3) : "0",
+            comp_id_3_qty: p.comp_id_3_qty || 0,
+            other_name: p.other_name || "",
+            oth_qty: p.oth_qty || 0,
           }));
-          setCompetitorRows(prev => {
-            const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
-            return [...filtered, ...rowsWithSubcat];
-          });
-          setBrandData(prev => prev.map(b =>
-            b.subCatId === selectedBrand?.subCatId
-              ? { ...b, compCount: editedRows.length }
-              : b
-          ));
-        }}
-      />
+        
+        allExistingRows = [...allExistingRows, ...rowsForThisBrand];
+      });
+      
+      console.log("All existing rows from all brands:", allExistingRows);
+      
+      // ✅ Get existing rows for the current brand only
+      const existingForThisBrand = allExistingRows.filter(
+        r => r.subcat_id === selectedBrand?.subCatId
+      );
+      
+      // ✅ Merge: update edited rows, keep untouched ones
+      const mergedRows = existingForThisBrand.map(existingRow => {
+        const editedRow = editedRows.find(e => e.pid === existingRow.pid);
+        if (editedRow) {
+          // This product was edited, use new data
+          return { ...editedRow, subcat_id: selectedBrand?.subCatId || 0 };
+        }
+        // This product wasn't touched, keep existing
+        return existingRow;
+      });
+      
+      // ✅ Add any completely new products (not in existing)
+      editedRows.forEach(editedRow => {
+        if (!existingForThisBrand.find(e => e.pid === editedRow.pid)) {
+          mergedRows.push({ ...editedRow, subcat_id: selectedBrand?.subCatId || 0 });
+        }
+      });
+      
+      console.log("Merged rows for current brand:", mergedRows);
+      
+      // ✅ Update state: keep other brands' data, update current brand
+      setCompetitorRows(prev => {
+        const otherBrands = allExistingRows.filter(
+          r => r.subcat_id !== selectedBrand?.subCatId
+        );
+        return [...otherBrands, ...mergedRows];
+      });
+      
+      setBrandData(prev => prev.map(b =>
+        b.subCatId === selectedBrand?.subCatId
+          ? { ...b, compCount: mergedRows.length }
+          : b
+      ));
+      
+    } catch (err) {
+      console.error("Error fetching existing competitor data:", err);
+      // Fallback: just use edited rows
+      const rowsWithSubcat = editedRows.map(r => ({
+        ...r,
+        subcat_id: selectedBrand?.subCatId || 0,
+      }));
+      
+      setCompetitorRows(prev => {
+        const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
+        return [...filtered, ...rowsWithSubcat];
+      });
+      
+      setBrandData(prev => prev.map(b =>
+        b.subCatId === selectedBrand?.subCatId
+          ? { ...b, compCount: editedRows.length }
+          : b
+      ));
+    }
+  }}
+/>
     </Layout>
   );
 }
