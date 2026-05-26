@@ -11,6 +11,7 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                         label="Competitor Preference"
                         fullWidth size="small"
                         value={form.competitorPref}
+                        InputLabelProps={{ shrink: true }} 
                         onChange={(e) =>
                             setForm({ ...form, competitorPref: String(e.target.value) })
                         }

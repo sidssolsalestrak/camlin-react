@@ -53,11 +53,11 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                             prod_name: p.prod_name,
                             code: p.code,
                             prod_qty: p.prod_qty || "",
-                            comp_id_1: p.comp_id_1 || "0",
+                            comp_id_1: p.comp_id_1 ? String(p.comp_id_1) : "0",   // ← force string
                             comp_id_1_qty: p.comp_id_1_qty || "",
-                            comp_id_2: p.comp_id_2 || "0",
+                            comp_id_2: p.comp_id_2 ? String(p.comp_id_2) : "0",   // ← force string
                             comp_id_2_qty: p.comp_id_2_qty || "",
-                            comp_id_3: p.comp_id_3 || "0",
+                            comp_id_3: p.comp_id_3 ? String(p.comp_id_3) : "0",   // ← force string
                             comp_id_3_qty: p.comp_id_3_qty || "",
                             other_name: p.other_name || "",
                             oth_qty: p.oth_qty || "",
@@ -82,13 +82,15 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
             prev.map((r) => {
                 if (r.pid !== pid) return r;
 
-                const updatedRow = { ...r, [field]: value };
+                const normalizedValue = (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3')
+                    ? String(value)   // ← always store as string
+                    : value;
 
-                // Handle competitor selection changes with mutual exclusion logic
+                const updatedRow = { ...r, [field]: normalizedValue };
+
                 if (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3') {
-                    // Clear quantity if competitor is deselected
                     const qtyField = field.replace('id', 'id_qty');
-                    if (value === "0" || value === 0) {
+                    if (normalizedValue === "0") {
                         updatedRow[qtyField] = "";
                     }
                 }
@@ -97,18 +99,13 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
             })
         );
     }, []);
-
     // Check if competitor is disabled in a specific select
     const isCompetitorDisabled = (row, compId, currentField) => {
         if (compId === "0" || compId === 0) return false;
-
         const compIdStr = String(compId);
-
-        // Check other competitor selects in the same row
         if (currentField !== 'comp_id_1' && String(row.comp_id_1) === compIdStr) return true;
         if (currentField !== 'comp_id_2' && String(row.comp_id_2) === compIdStr) return true;
         if (currentField !== 'comp_id_3' && String(row.comp_id_3) === compIdStr) return true;
-
         return false;
     };
 
@@ -123,13 +120,13 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
     // Check if quantity field should be disabled
     const isQtyDisabled = (row, field) => {
         const compField = field.replace('_qty', '');
-        const compValue = row[compField];
 
-        if (compField === 'oth_qty') {
+        if (field === 'oth_qty') {   // ← fix: check field, not compField
             return !row.other_name || row.other_name.trim() === '';
         }
 
-        return compValue === "0" || compValue === 0 || compValue === "";
+        const compValue = row[compField];
+        return !compValue || compValue === "0" || compValue === 0 || compValue === "";
     };
 
     // Compute row total
@@ -162,7 +159,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
         );
     };
 
-    // Competitor Select component with disabled logic
+    // Competitor Select component
     const compSelect = (pid, field, value) => {
         const row = rows.find(r => r.pid === pid);
         if (!row) return null;
@@ -191,7 +188,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
         );
     };
 
-    // Quantity input with disabled state
+    // Quantity input
     const qtyInput = (pid, field, value) => {
         const row = rows.find(r => r.pid === pid);
         if (!row) return null;
@@ -226,65 +223,75 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
         );
     };
 
-    // Validate before save (replicate PHP submit logic)
+    // ✅ Clean handleSave — no duplicate block
     const handleSave = () => {
-        // Check if any competitor is selected without quantity
-        for (const row of rows) {
-            if (row.comp_id_1 !== "0" && row.comp_id_1 !== 0 && (!row.comp_id_1_qty || row.comp_id_1_qty === "")) {
-                toast.error('Please Enter Qty for Competitor 1');
-                return;
-            }
-            if (row.comp_id_2 !== "0" && row.comp_id_2 !== 0 && (!row.comp_id_2_qty || row.comp_id_2_qty === "")) {
-                toast.error('Please Enter Qty for Competitor 2');
-                return;
-            }
-            if (row.comp_id_3 !== "0" && row.comp_id_3 !== 0 && (!row.comp_id_3_qty || row.comp_id_3_qty === "")) {
-                toast.error('Please Enter Qty for Competitor 3');
-                return;
-            }
-            if (row.other_name && row.other_name.trim() !== '' && (!row.oth_qty || row.oth_qty === "")) {
-                toast.error('Please Enter Qty for Others');
-                return;
-            }
-        }
-
-        // Check if grand total is 0
-        const grandTotalSum = rows.reduce((sum, r) => sum + getRowTotal(r), 0);
-        if (grandTotalSum === 0) {
-            toast.error('Total Qty Must be more than 0 to Proceed!!');
+    // Validate competitor qty
+    for (const row of rows) {
+        if (String(row.comp_id_1) !== "0" && (!row.comp_id_1_qty || row.comp_id_1_qty === "")) {
+            toast.error('Please Enter Qty for Competitor 1');
             return;
         }
+        if (String(row.comp_id_2) !== "0" && (!row.comp_id_2_qty || row.comp_id_2_qty === "")) {
+            toast.error('Please Enter Qty for Competitor 2');
+            return;
+        }
+        if (String(row.comp_id_3) !== "0" && (!row.comp_id_3_qty || row.comp_id_3_qty === "")) {
+            toast.error('Please Enter Qty for Competitor 3');
+            return;
+        }
+        if (row.other_name && row.other_name.trim() !== '' && (!row.oth_qty || row.oth_qty === "")) {
+            toast.error('Please Enter Qty for Others');
+            return;
+        }
+    }
 
-        // Prepare data for save (replicate PHP structure)
-        const saveData = {
-            subcat_id: selectedBrand?.subCatId,
-            rows: rows.map(row => ({
-                pid: row.pid,
-                prod_qty: row.prod_qty || 0,
-                comp_id_1: row.comp_id_1 || "0",
-                comp_id_1_qty: row.comp_id_1_qty || 0,
-                comp_id_2: row.comp_id_2 || "0",
-                comp_id_2_qty: row.comp_id_2_qty || 0,
-                comp_id_3: row.comp_id_3 || "0",
-                comp_id_3_qty: row.comp_id_3_qty || 0,
-                other_name: row.other_name || "",
-                oth_qty: row.oth_qty || 0,
-                total: getRowTotal(row)
-            })),
-            totals: {
-                prod_qty: grandTotal("prod_qty"),
-                comp_id_1_qty: grandTotal("comp_id_1_qty"),
-                comp_id_2_qty: grandTotal("comp_id_2_qty"),
-                comp_id_3_qty: grandTotal("comp_id_3_qty"),
-                oth_qty: grandTotal("oth_qty"),
-                grand_total: grandTotalSum
-            }
-        };
+    // ✅ ONLY include rows that have actual data
+    const rowsWithData = rows.filter(row => {
+        return (
+            Number(row.prod_qty) > 0 ||
+            Number(row.comp_id_1) > 0 ||
+            Number(row.comp_id_2) > 0 ||
+            Number(row.comp_id_3) > 0 ||
+            Number(row.oth_qty) > 0 ||
+            (row.other_name && row.other_name.trim() !== '')
+        );
+    });
 
-        if (onSave) onSave(saveData);
-        setCompModalOpen(false);
+    const grandTotalSum = rowsWithData.reduce((sum, r) => sum + getRowTotal(r), 0);
+
+    if (grandTotalSum === 0 && rowsWithData.length === 0) {
+        toast.error('Total Qty Must be more than 0 to Proceed!!');
+        return;
+    }
+
+    const saveData = {
+        subcat_id: selectedBrand?.subCatId,
+        rows: rowsWithData.map(row => ({
+            pid: row.pid,
+            prod_qty: row.prod_qty || 0,
+            comp_id_1: row.comp_id_1 || "0",
+            comp_id_1_qty: row.comp_id_1_qty || 0,
+            comp_id_2: row.comp_id_2 || "0",
+            comp_id_2_qty: row.comp_id_2_qty || 0,
+            comp_id_3: row.comp_id_3 || "0",
+            comp_id_3_qty: row.comp_id_3_qty || 0,
+            other_name: row.other_name || "",
+            oth_qty: row.oth_qty || 0,
+            total: getRowTotal(row)
+        })),
+        totals: {
+            prod_qty: rowsWithData.reduce((sum, r) => sum + (parseFloat(r.prod_qty) || 0), 0),
+            comp_id_1_qty: rowsWithData.reduce((sum, r) => sum + (parseFloat(r.comp_id_1_qty) || 0), 0),
+            comp_id_2_qty: rowsWithData.reduce((sum, r) => sum + (parseFloat(r.comp_id_2_qty) || 0), 0),
+            comp_id_3_qty: rowsWithData.reduce((sum, r) => sum + (parseFloat(r.comp_id_3_qty) || 0), 0),
+            oth_qty: rowsWithData.reduce((sum, r) => sum + (parseFloat(r.oth_qty) || 0), 0),
+            grand_total: grandTotalSum
+        }
     };
 
+    if (onSave) onSave(saveData);
+    setCompModalOpen(false);
+    };
     const headerCell = (label, width) => (
         <TableCell sx={{ bgcolor: "#2196f3", color: "#fff", fontSize: "11px", fontWeight: 600, p: 0.8, width }}>
             {label}
@@ -330,7 +337,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                                     {headerCell("pcs/mth", "7%")}
                                     {headerCell("Competitor 3", "13%")}
                                     {headerCell("pcs/mth", "7%")}
-                                    {headerCell("Any Other Brand", "12%")}
+                                    {headerCell("Any Other Brand", "10%")}
                                     {headerCell("pcs/mth", "7%")}
                                     {headerCell("Total", "5%")}
                                 </TableRow>
@@ -347,12 +354,9 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                                     <>
                                         {rows.map((row) => (
                                             <TableRow key={row.pid} sx={{ "&:hover": { bgcolor: "#f9f9f9" } }}>
-                                                {/* Product name */}
                                                 <TableCell sx={{ fontSize: "12px", p: 0.6 }}>
                                                     {row.code}-{row.prod_name}
                                                 </TableCell>
-
-                                                {/* Product qty */}
                                                 <TableCell sx={{ p: 0.6 }}>
                                                     <TextField
                                                         size="small"
@@ -361,42 +365,17 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                                                         onChange={(e) => updateRow(row.pid, "prod_qty", e.target.value)}
                                                         inputProps={{
                                                             min: 0,
-                                                            style: {
-                                                                fontSize: "11px",
-                                                                width: 55,
-                                                                padding: "4px 6px",
-                                                                textAlign: "center"
-                                                            }
+                                                            style: { fontSize: "11px", width: 55, padding: "4px 6px", textAlign: "center" }
                                                         }}
                                                         className="numbersonly"
                                                     />
                                                 </TableCell>
-
-                                                {/* Competitor 1 */}
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {compSelect(row.pid, "comp_id_1", row.comp_id_1)}
-                                                </TableCell>
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {qtyInput(row.pid, "comp_id_1_qty", row.comp_id_1_qty)}
-                                                </TableCell>
-
-                                                {/* Competitor 2 */}
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {compSelect(row.pid, "comp_id_2", row.comp_id_2)}
-                                                </TableCell>
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {qtyInput(row.pid, "comp_id_2_qty", row.comp_id_2_qty)}
-                                                </TableCell>
-
-                                                {/* Competitor 3 */}
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {compSelect(row.pid, "comp_id_3", row.comp_id_3)}
-                                                </TableCell>
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {qtyInput(row.pid, "comp_id_3_qty", row.comp_id_3_qty)}
-                                                </TableCell>
-
-                                                {/* Other brand */}
+                                                <TableCell sx={{ p: 0.6 }}>{compSelect(row.pid, "comp_id_1", row.comp_id_1)}</TableCell>
+                                                <TableCell sx={{ p: 0.6 }}>{qtyInput(row.pid, "comp_id_1_qty", row.comp_id_1_qty)}</TableCell>
+                                                <TableCell sx={{ p: 0.6 }}>{compSelect(row.pid, "comp_id_2", row.comp_id_2)}</TableCell>
+                                                <TableCell sx={{ p: 0.6 }}>{qtyInput(row.pid, "comp_id_2_qty", row.comp_id_2_qty)}</TableCell>
+                                                <TableCell sx={{ p: 0.6 }}>{compSelect(row.pid, "comp_id_3", row.comp_id_3)}</TableCell>
+                                                <TableCell sx={{ p: 0.6 }}>{qtyInput(row.pid, "comp_id_3_qty", row.comp_id_3_qty)}</TableCell>
                                                 <TableCell sx={{ p: 0.6 }}>
                                                     <TextField
                                                         size="small"
@@ -408,11 +387,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                                                         rows={1}
                                                     />
                                                 </TableCell>
-                                                <TableCell sx={{ p: 0.6 }}>
-                                                    {qtyInput(row.pid, "oth_qty", row.oth_qty)}
-                                                </TableCell>
-
-                                                {/* Row total */}
+                                                <TableCell sx={{ p: 0.6 }}>{qtyInput(row.pid, "oth_qty", row.oth_qty)}</TableCell>
                                                 <TableCell sx={{ fontSize: "12px", fontWeight: 600, p: 0.6, textAlign: "center" }}>
                                                     {getRowTotal(row) || 0}
                                                 </TableCell>
@@ -422,30 +397,17 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                                         {/* Grand total row */}
                                         <TableRow sx={{ bgcolor: "#dcdcdc" }}>
                                             <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6 }}>TOTAL RANGE</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>
-                                                {grandTotal("prod_qty") || 0}
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>{grandTotal("prod_qty") || 0}</TableCell>
                                             <TableCell />
-                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>
-                                                {grandTotal("comp_id_1_qty") || 0}
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>{grandTotal("comp_id_1_qty") || 0}</TableCell>
                                             <TableCell />
-                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>
-                                                {grandTotal("comp_id_2_qty") || 0}
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>{grandTotal("comp_id_2_qty") || 0}</TableCell>
                                             <TableCell />
-                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>
-                                                {grandTotal("comp_id_3_qty") || 0}
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>{grandTotal("comp_id_3_qty") || 0}</TableCell>
                                             <TableCell />
-                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>
-                                                {grandTotal("oth_qty") || 0}
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center" }}>{grandTotal("oth_qty") || 0}</TableCell>
                                             <TableCell sx={{
-                                                fontWeight: 700,
-                                                fontSize: "12px",
-                                                p: 0.6,
-                                                textAlign: "center",
+                                                fontWeight: 700, fontSize: "12px", p: 0.6, textAlign: "center",
                                                 color: grandTotalSum === 0 ? 'red' : 'inherit'
                                             }}>
                                                 {grandTotalSum || 0}
@@ -463,11 +425,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                 <Button variant="contained" color="error" onClick={() => setCompModalOpen(false)}>
                     Close
                 </Button>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSave}
-                >
+                <Button variant="contained" color="primary" onClick={handleSave}>
                     Update
                 </Button>
             </DialogActions>
