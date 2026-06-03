@@ -62,6 +62,9 @@ import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
 import PrimarySalesAnalze from "./DashBoardReports/PrimaryAnalysis/primarySalesAnalyse";
 import SalesAnalysisReport from "./DashBoardReports/PrimaryAnalysis/SalesAnalysisReport";
 import AreaWiseSalesAnalysis from "./dashboard/AreaWiseSalesAnalysis";
+import DataSubmissionStatus from "./view/Transactions/DataSubmissionStatus";
+import PreviewStkSales from "./view/Transactions/PreviewStkSales";
+import EmailProcessData from "./view/Transactions/EMailProcessData";
 
 function App() {
   const ProtectedRoute = () => {
@@ -257,7 +260,18 @@ function App() {
               path="/dashboard/salesanalysis/:encYear?/:enType?/:enSubCat?"
               element={<SalesAnalysisReport />}
             />
-
+            <Route  
+              path="/reports/sec_sales_data"
+              element={<DataSubmissionStatus />}
+            />
+            <Route 
+               path="/reports/preview_stk_sales/:closeDate?/:stkid?/:stkLabel?"
+               element={<PreviewStkSales/>}
+              />
+            <Route 
+              path="/reports/email_process_data"
+              element={<EmailProcessData />}
+            />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

@@ -97,6 +97,7 @@ const DataTable = ({
   tableTitle = "",
   showTableTitle = false,
   columnBgColors = {},
+  headerLegend = null,
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
@@ -490,6 +491,7 @@ const DataTable = ({
             {/* Right: search + optional headerActions slot */}
             <Box display="flex" alignItems="center" gap={1}>
               {headerActions}
+              {headerLegend}
               {searchable && (
                 <TextField
                   size="small"

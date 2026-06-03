@@ -314,7 +314,7 @@ function AccountExtract() {
         gap={2}
       >
         <Box>
-          <h2 className="mainTitle">Account Master Extract</h2>
+          <h2 >Account Master Extract</h2>
         </Box>
 
         <Box sx={{

@@ -242,8 +242,10 @@ const Layout = ({ children, breadcrumb = [] }) => {
 
   // Sync drawer with mobile breakpoint
   useEffect(() => {
-    setDrawerOpen(!isMobile);
-  }, [isMobile]);
+    let datasubmissionURL=location.pathname.startsWith('/reports/sec_sales_data') || location.pathname.startsWith('/reports/preview_stk_sales/')
+    let restrictDrawer=!isMobile && !datasubmissionURL
+    setDrawerOpen(restrictDrawer);
+  }, [isMobile,location.pathname]);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
