@@ -62,6 +62,7 @@ import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
 import PrimarySalesAnalze from "./DashBoardReports/PrimaryAnalysis/primarySalesAnalyse";
 import SalesAnalysisReport from "./DashBoardReports/PrimaryAnalysis/SalesAnalysisReport";
 import AreaWiseSalesAnalysis from "./dashboard/AreaWiseSalesAnalysis";
+import StockAndSalesUpload from "./view/trans/StockAndSalesUpload";
 import DataSubmissionStatus from "./view/Transactions/DataSubmissionStatus";
 import PreviewStkSales from "./view/Transactions/PreviewStkSales";
 import EmailProcessData from "./view/Transactions/EMailProcessData";
@@ -300,6 +301,8 @@ function App() {
           <Route path="/reports/performance_report" element={<SalesAnalysis />} />
           <Route path="/dashboard/districtsales" element={<AreaWiseSalesAnalysis />} />
 
+          {/* TRANSACTIONS */}
+          <Route path="/input/stock_sales" element={<StockAndSalesUpload />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}
