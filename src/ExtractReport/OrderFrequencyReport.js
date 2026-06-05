@@ -397,7 +397,7 @@ function OrderFrequencyReport() {
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
             { label: "Report", path: "/reports/day_wise_report" },
-            { label: "Outlet Count", path: "/reports/day_wise_report" },
+            { label: "Order Frequency Report", path: "/reports/day_wise_report" },
         ]}>
             <Box p={0.5}>
                 <Box p={2} display="flex" flexDirection="column" gap={2}>
