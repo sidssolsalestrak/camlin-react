@@ -66,6 +66,7 @@ import StockAndSalesUpload from "./view/trans/StockAndSalesUpload";
 import DataSubmissionStatus from "./view/Transactions/DataSubmissionStatus";
 import PreviewStkSales from "./view/Transactions/PreviewStkSales";
 import EmailProcessData from "./view/Transactions/EMailProcessData";
+import StockAndSalesUploadNew from "./view/trans/StockAndSalesUploadNew";
 
 function App() {
   const ProtectedRoute = () => {
@@ -302,7 +303,7 @@ function App() {
           <Route path="/dashboard/districtsales" element={<AreaWiseSalesAnalysis />} />
 
           {/* TRANSACTIONS */}
-          <Route path="/input/stock_sales" element={<StockAndSalesUpload />} />
+          <Route path="/input/stock_sales/:closeDate?/:stkid?/:stkLabel?" element={<StockAndSalesUploadNew  />} />
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}

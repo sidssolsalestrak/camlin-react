@@ -110,8 +110,8 @@ function CreateCustomer() {
   const isRetailerField = (form.cusType === "2"); // retailerDiv fields only show for Retailer
   const [brandData, setBrandData] = useState([]);
   const competitorBrands = brandData
-    .filter(b => b.competition === 1)
-    .map(b => b.subCatId);
+  .filter(b => b.focus === 1 || b.reminder === 1)
+  .map(b => b.subCatId);
   const [userType, setUserType] = useState(null)
   const [pendingRequest, setPendingRequest] = useState(null); // { request_type: 2 or 3 } or null
   const [delFlag, setDelFlag] = useState(0); // 0 = Active, 1 = Inactive
@@ -1157,6 +1157,24 @@ function CreateCustomer() {
   onSave={async (saveData) => {
     const editedRows = saveData.rows;
     console.log("Edited rows from Add Competitor:", editedRows);
+    if (!decodedID || decodedID === "0") {
+    const rowsWithSubcat = editedRows.map(r => ({
+      ...r,
+      subcat_id: selectedBrand?.subCatId || 0,
+    }));
+
+    setCompetitorRows(prev => {
+      const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
+      return [...filtered, ...rowsWithSubcat];
+    });
+
+    setBrandData(prev => prev.map(b =>
+      b.subCatId === selectedBrand?.subCatId
+        ? { ...b, compCount: rowsWithSubcat.length }
+        : b
+    ));
+    return;
+  }
     
     try {
       // ✅ Fetch data for ALL brands/subcategories

@@ -27,6 +27,7 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import { useLocation } from "react-router-dom";
 import dayjs from "dayjs";
 
 // ── ExpandedContent: handles both sync JSX and async functions ───────────────
@@ -109,6 +110,7 @@ const DataTable = ({
 
   // expandedRows: { [rowKey]: 'focus' | 'beat' | undefined }
   const [expandedRows, setExpandedRows] = useState({});
+  const location=useLocation()
 
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -139,7 +141,9 @@ const DataTable = ({
 
   // Reset to first page and clear expanded rows whenever data changes
   useEffect(() => {
+    if(!location.pathname.startsWith('/input/stock_sales/') && !location.pathname.startsWith('/reports/preview_stk_sales/')){
     setPage(0);
+    }
     setExpandedRows({});
   }, [data]);
 

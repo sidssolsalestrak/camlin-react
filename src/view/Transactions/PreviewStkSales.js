@@ -29,6 +29,7 @@ function PreviewStkSales() {
     let decodemonth = closeDate !== null && closeDate !== "undefined" ? dayjs(safeDecode(closeDate)) : dayjs();
     let decodedStkId = safeDecode(stkid);
     let decodedlabel = safeDecode(stkLabel);
+    const[masId,setMasId]=useState(0)
     let frmMonth = decodemonth ? dayjs(decodemonth).format("MMM YYYY") : null;
     const [modifyLoading, setModifyLoading] = useState(false)
     const toast = useToast()
@@ -83,6 +84,9 @@ function PreviewStkSales() {
                 sec_qty: row.sec_qty ?? 0,
                 physical_qty: row.physical_qty ?? 0,
             }));
+            if(response.data.mas_id){
+                setMasId(response.data.mas_id)
+            }
 
             setAllPreviewData(initialized);
         } catch (err) {
@@ -231,7 +235,7 @@ function PreviewStkSales() {
             headerName: "NAME",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <Typography sx={{ fontSize: "0.82rem", whiteSpace: "nowrap", color:'#212121' }}>{value}</Typography>
+                    <Typography sx={{ fontSize: "0.92rem", whiteSpace: "nowrap", color:'#212121' }}>{value}</Typography>
                 ),
         },
         {
@@ -243,6 +247,10 @@ function PreviewStkSales() {
                         size="small"
                         value={value ?? 0}
                         inputProps={{ style: { textAlign: "center" } }}
+                        sx={{
+                            '& .MuiInputBase-root': { height: 32 },
+                            '& .MuiInputBase-input': { padding: '4px 8px' },
+                        }}
                         onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, "");
                             handleInputChange(row.prod_id, "open_qty", val)
@@ -258,6 +266,10 @@ function PreviewStkSales() {
                     <TextField
                         size="small"
                         value={value ?? 0}
+                        sx={{
+                            '& .MuiInputBase-root': { height: 32 },
+                            '& .MuiInputBase-input': { padding: '4px 8px' },
+                        }}
                         inputProps={{ style: { textAlign: "center" } }}
                         onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, "");
@@ -274,8 +286,12 @@ function PreviewStkSales() {
                     <TextField
                         size="small"
                         value={value ?? 0}
+                        sx={{
+                            '& .MuiInputBase-root': { height: 32,backgroundColor:'#EEEEEE'},
+                            '& .MuiInputBase-input': { padding: '4px 8px' },
+                        }}
                         InputProps={{ readOnly: true }}
-                        inputProps={{ style: { textAlign: "center", color: "black",backgroundColor:'#EEEEEE'} }}
+                        inputProps={{ style: { textAlign: "center", color: "black"} }}
                     />
                 ),
         },
@@ -287,8 +303,12 @@ function PreviewStkSales() {
                     <TextField
                         size="small"
                         value={value ?? 0}
+                        sx={{
+                            '& .MuiInputBase-root': { height: 32,backgroundColor:'#EEEEEE'  },
+                            '& .MuiInputBase-input': { padding: '4px 8px' },
+                        }}
                         InputProps={{ readOnly: true }}
-                        inputProps={{ style: { textAlign: "center", color: "blue",backgroundColor:'#EEEEEE' } }}
+                        inputProps={{ style: { textAlign: "center", color: "blue"} }}
                     />
                 ),
         },
@@ -300,6 +320,10 @@ function PreviewStkSales() {
                     <TextField
                         size="small"
                         value={value ?? 0}
+                        sx={{
+                            '& .MuiInputBase-root': { height: 32 },
+                            '& .MuiInputBase-input': { padding: '4px 8px' },
+                        }}
                         inputProps={{ style: { textAlign: "center" } }}
                         onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, "");
@@ -349,7 +373,7 @@ function PreviewStkSales() {
                 />
 
 
-                {allPreviewData.length > 0 && (
+                {allPreviewData.length > 0 && Number(masId)===0 && (
                     <Box display="flex" pr={2} pb={2}>
                         <Button variant="contained" color="primary" onClick={showConfirmConfirmation}>
                             Confirm

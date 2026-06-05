@@ -160,8 +160,8 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
       let isBold = false;
 
       if (row._isGroupHeader) {
-        bgColor = "f59e0b";      // orange — matches UI
-        fontColor = "FFFFFF";
+        bgColor = row.bgcolor || "f59e0b";      // orange — matches UI
+        fontColor = row.color || "FFFFFF";
         isBold = true;
       }
       if (row._grandTotal) bgColor = "bdbdbd";
