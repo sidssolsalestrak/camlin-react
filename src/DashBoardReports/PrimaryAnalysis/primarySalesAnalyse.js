@@ -351,21 +351,21 @@ function PrimarySalesAnalze() {
             field: "cm_qty",
             headerName: `Current Month(${dayjs(selMonth).format('MMM YYYY')})`,
             renderCell: (params) => (
-                <Typography>{zeroToNull(Math.round(params.value, 2))}</Typography>
+                <Typography sx={{textAlign:'right'}}>{zeroToNull(Math.round(params.value, 2))}</Typography>
             )
         },
         {
             field: "lm_qty",
             headerName: `Last Month(${dayjs(selMonth).subtract(1, "month").format('MMM YYYY')})`,
             renderCell: (params) => (
-                <Typography>{zeroToNull(Math.round(params.value, 2))}</Typography>
+                <Typography sx={{textAlign:'right'}}>{zeroToNull(Math.round(params.value, 2))}</Typography>
             )
         },
         {
             field: "lym_qty",
             headerName: `Last Year(${dayjs(selMonth).subtract(1, "year").format('YYYY')})`,
             renderCell: (params) => (
-                <Typography>{zeroToNull(Math.round(params.value, 2))}</Typography>
+                <Typography sx={{textAlign:'right'}}>{zeroToNull(Math.round(params.value, 2))}</Typography>
             )
         },
     ]

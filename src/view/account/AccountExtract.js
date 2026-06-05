@@ -305,7 +305,13 @@ function AccountExtract() {
   ]
 
   return (
-    <Layout>
+    <Layout  
+       breadcrumb={ [
+          { label: "Home", path: "/" },
+          { label: "Account", path: location.pathname },
+          { label: "Account Master Extract",path: location.pathname },
+        ]}
+     >
       <Box
         p={2}
         sx={{ borderRadius: 1 }}

@@ -9,6 +9,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import DataTable from "../../utils/dataTable";
 import './AdminPanel.css'
 import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
 
 export default function ApiProcessing() {
     const [tabValue, setTabValue] = useState(0)
@@ -18,6 +19,7 @@ export default function ApiProcessing() {
     const [loading,setLoading]=useState(false)
     const [orderDataLoading,setOrderDataLoading]=useState(false)
     const toast = useToast()
+    const location=useLocation()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -240,7 +242,14 @@ export default function ApiProcessing() {
     ]
 
     return (
-        <Layout>
+        <Layout
+         breadcrumb={ [
+          { label: "Home", path: "/" },
+          { label: "Master", path: "/AdminPanel/ApiProcessing" },
+          { label: "Admin Panel", path:"/AdminPanel/ApiProcessing" },
+          { label: "Api Processing ", path:location.pathname}
+        ]}  
+        >
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
                     <Typography sx={{ fontWeight: 600, color: '#000000', fontSize: '1.5rem' }}>

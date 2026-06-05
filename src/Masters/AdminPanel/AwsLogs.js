@@ -209,7 +209,13 @@ export default function AwsLogs() {
 
 
     return (
-        <Layout>
+        <Layout        
+         breadcrumb={ [
+          { label: "Home", path: "/" },
+          { label: "Master", path: "/Processlist/planprocess" },
+          { label: "Admin Panel", path:"/Processlist/planprocess" },
+          { label: "AWS Log", path:location.pathname}
+        ]}>
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
                     <h1 className="mainTitle" >Process List</h1>
