@@ -197,7 +197,8 @@ function DataSubmissionStatus() {
 
     // ─── State ────────────────────────────────────────────────────────────────
     const [type, setType] = useState(1);
-    const [selMonth, setSelMonth] = useState(dayjs());
+    const [committedType, setCommittedType] = useState(1);
+    const [selMonth, setSelMonth] = useState(dayjs().subtract(1, 'month'));
     const [status, setStatus] = useState(1);
     const [previewFile, setPreviewFile] = useState(null);
     const [groupChecks, setGroupChecks] = useState({
@@ -263,14 +264,14 @@ function DataSubmissionStatus() {
     };
 
     // ─── Derived group flags ──────────────────────────────────────────────────
-    const zoneGroup = type === 1 && groupChecks.zone ? 1 : 0;
-    const regGroup = type === 1 && groupChecks.reg ? 1 : 0;
-    const areaGroup = type === 1 && groupChecks.area ? 1 : 0;
-    const terGroup = type === 1 && groupChecks.ter ? 1 : 0;
+    const zoneGroup = committedType === 1 && groupChecks.zone ? 1 : 0;
+    const regGroup =  committedType=== 1 && groupChecks.reg ? 1 : 0;
+    const areaGroup = committedType === 1 && groupChecks.area ? 1 : 0;
+    const terGroup =  committedType === 1 && groupChecks.ter ? 1 : 0;
     const stkGroup = groupChecks.stk ? 1 : 0;
 
-    const showZoneSub = zoneGroup === 1 && (regGroup || areaGroup || terGroup || stkGroup);
-    const showRegSub = regGroup === 1 && (areaGroup || terGroup || stkGroup);
+    const showZoneSub = true;
+    const showRegSub = true;
 
     // ─── Effects ──────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -399,7 +400,7 @@ function DataSubmissionStatus() {
 
     // ─── Validate at least one group is selected ──────────────────────────────
     const validateGroupBy = () => {
-        const anyChecked = type === 2
+        const anyChecked = committedType === 2
             ? groupChecks.stk
             : Object.values(groupChecks).some(Boolean);
         if (!anyChecked) {
@@ -449,19 +450,19 @@ function DataSubmissionStatus() {
 
                 // ─── For subtotal/total rows, use _label as stk_name ───
                 if (row._rowType !== "data") {
-                    newRow.stk_name = row._label;
+                    newRow.stk_name = "";
                     newRow._sl = "";
                     newRow.close_date = "";
                     newRow.stk_code = "";
                     newRow.reg_name = "";
                     newRow.area_name = "";
-                    newRow.rate_score = row._avg_rating ? `${row._avg_rating}` : "-";
+                    newRow.rate_score = row._avg_rating ? `${row._avg_rating}%` : "-";
                     newRow.tot_stk = row.tot_stk || "-";
                     newRow.tot_recv = row.tot_recv || "-";
                     newRow.process_stat_text = "";
                     newRow.err_desc = "";
                     newRow.pri_stat_text = "";
-                    newRow.upl_type_text = "";
+                    newRow.upl_type_text = row._label;
                     newRow.create_dt = "";
                     return newRow;
                 }
@@ -521,7 +522,7 @@ function DataSubmissionStatus() {
         await excelWithFilters(
             exportData,
             excelColumns,
-            `Stock_Sales_Status_${dayjs(selMonth).format("MMM_YYYY")}`,
+            `Stock_Sales_Data_Status_${dayjs(selMonth).format("YYYY_MM")}`,
             filters,
             setProgress,
             0
@@ -535,6 +536,7 @@ function DataSubmissionStatus() {
             setLoading(true);
             setCheckedRows({});
             setCheckAll(false);
+            setCommittedType(type)
             const payload = {
                 month: dayjs(selMonth).format("YYYY-MM-01"),
                 type_id: type,
@@ -610,9 +612,11 @@ function DataSubmissionStatus() {
                 try {
                     setModifyLoading(true);
                     await api.post("/deleteStkSales", { month, ids: row.stk_id });
+                    toast.success("Deleted Succesfully")
                     handleLoad();
                 } catch (e) {
                     console.error(e);
+                    toast.error("Unable to Delete")
                 } finally {
                     setModifyLoading(false);
                     closeConfirmationDialog();
@@ -664,13 +668,20 @@ function DataSubmissionStatus() {
             onConfirm: async () => {
                 try {
                     setModifyLoading(true);
-                    await api.post("/renderStkSales", {
+                    let response = await api.post("/renderStkSales", {
                         month: dayjs(selMonth).format("YYYY-MM-01"),
                         ids: selectedIds.join(","),
                     });
+                    if (response.data.status === 200) {
+                        toast.success(response.data.msg)
+                    }
+                    else {
+                        toast.error("Unable to Update Stock & Sales")
+                    }
                     handleLoad();
                 } catch (e) {
                     console.error(e);
+                    toast.error("Unable to Update Stock & Sales")
                 } finally {
                     setModifyLoading(false);
                     closeConfirmationDialog();
@@ -898,7 +909,7 @@ function DataSubmissionStatus() {
         });
 
         return rows;
-    }, [rawData, showZoneSub, showRegSub]);
+    }, [rawData]);
 
     // ─── Rows eligible for "Process" checkbox ─────────────────────────────────
     const processableRows = useMemo(
@@ -1167,7 +1178,7 @@ function DataSubmissionStatus() {
             field: "_checkbox",
             headerAlign: "center",
             align: "center",
-            headerName: (
+            headerName:committedType === 1? (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
                     <Checkbox
                         sx={{ p: 0 }}
@@ -1177,11 +1188,11 @@ function DataSubmissionStatus() {
                     />
                     <Typography sx={{ fontSize: 12 }}>Check All</Typography>
                 </Box>
-            ),
+            ):<Typography>Stock & Sales</Typography>,
             renderCell: ({ row }) => {
                 if (row._rowType !== "data") return null;
 
-                if (Number(row.cl_stat) === 0 && Number(row.process_stat) === 3) {
+                if (Number(row.cl_stat) === 0 && Number(row.process_stat) === 3 && Number(stkGroup)===1 )  {
                     const closeDate = row.close_date
                         ? dayjs(row.close_date).format("MMM YYYY")
                         : dayjs(selMonth).format("MMM YYYY");
@@ -1209,7 +1220,7 @@ function DataSubmissionStatus() {
                                 </Box>
                             </Tooltip>
 
-                            {type === 1 && (
+                            {committedType === 1 && (
                                 <Checkbox
                                     sx={{ p: 0, m: 0 }}
                                     size="small"
@@ -1226,7 +1237,7 @@ function DataSubmissionStatus() {
                         : dayjs(selMonth).format("MMM YYYY");
                     return (
                         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", justifyContent: "center" }}>
-                            {type === 1 && (
+                            {committedType === 1 && (
                                 <Tooltip title="Delete Stock & Sales">
                                     <span style={{ cursor: "pointer" }}>
                                         <IoTrashSharp
@@ -1279,7 +1290,7 @@ function DataSubmissionStatus() {
     ];
 
     // ─── Show "Process" button only when eligible rows exist ──────────────────
-    const showProcessButton = processableRows.length > 0 && stkGroup === 1 && type === 1;
+    const showProcessButton = processableRows.length > 0 && stkGroup === 1 && committedType === 1;
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -1324,6 +1335,13 @@ function DataSubmissionStatus() {
                                                 reg: false,
                                                 area: false,
                                                 ter: false,
+                                            }));
+                                        }
+                                        else if (newType === 1) {   // ← add this block
+                                            setGroupChecks((prev) => ({
+                                                ...prev,
+                                                zone: true,
+                                                reg: true,
                                             }));
                                         }
                                     }}
@@ -1413,9 +1431,9 @@ function DataSubmissionStatus() {
                             </Button>
                         </Grid>
                         <Grid size={{ xs: 12, md: 2, lg: 1.8 }}>
-                        <Button sx={{ textTransform: 'none'}} onClick={() => navigate('/reports/email_process_data')} variant="contained">
-                            Email Unprocess Data
-                        </Button>
+                            <Button sx={{ textTransform: 'none' }} onClick={() => navigate('/reports/email_process_data')} variant="contained">
+                                Email Unprocess Data
+                            </Button>
                         </Grid>
 
 
@@ -1569,24 +1587,24 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="rsm">RSM</InputLabel>
-                                <Select labelId="rsm" label="RSM" size="small" value={selRSM}
-                                    onChange={(e) => setSelRSM(e.target.value)}
-                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
-                                    <MenuItem value={0}>All</MenuItem>
-                                    {allRSM.map((v) => <MenuItem key={v.id} value={v.id}>{v.user_name}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        <Grid size={{ md: 4, lg: 3, xs: 12 }}>
-                            <FormControl sx={{ width: "100%" }}>
                                 <InputLabel id="zbm">ZBM</InputLabel>
                                 <Select labelId="zbm" label="ZBM" size="small" value={selZBM}
                                     onChange={(e) => setSelZBM(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
                                     {allZBM.map((v) => <MenuItem key={v.id} value={v.id}>{v.user_name}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid size={{ md: 4, lg: 3, xs: 12 }}>
+                            <FormControl sx={{ width: "100%" }}>
+                                <InputLabel id="rsm">RSM</InputLabel>
+                                <Select labelId="rsm" label="RSM" size="small" value={selRSM}
+                                    onChange={(e) => setSelRSM(e.target.value)}
+                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
+                                    <MenuItem value={0}>All</MenuItem>
+                                    {allRSM.map((v) => <MenuItem key={v.id} value={v.id}>{v.user_name}</MenuItem>)}
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -1639,7 +1657,8 @@ function DataSubmissionStatus() {
                         variant="contained"
                         sx={{ textTransform: "none" }}
                         color="success"
-                        onClick={() => {
+                        onClick={async () => {
+                            // Reset state
                             setSelZone(0);
                             setSelZBM(0);
                             setSelRegion(0);
@@ -1657,6 +1676,34 @@ function DataSubmissionStatus() {
                             setAllTerritory([]);
                             setAllSRUser([]);
                             setAllDistributor([]);
+                            setFiltersOpen(false);
+
+                            // Load with all filter IDs explicitly as 0
+                            setLoading(true);
+                            setCheckedRows({});
+                            setCheckAll(false);
+                            try {
+                                const res = await api.post("/getsec_sales_data", {
+                                    month: dayjs(selMonth).format("YYYY-MM-01"),
+                                    type_id: type,
+                                    stat: status,
+                                    zoneGroup, regGroup, areaGroup, terGroup, stkGroup,
+                                    log_zone_id: 0,
+                                    log_zm_id: 0,
+                                    log_reg_id: 0,
+                                    log_rm_id: 0,
+                                    log_area_id: 0,
+                                    log_asm_id: 0,
+                                    log_ter_id: 0,
+                                    log_user_id: 0,
+                                    log_stk_id: 0,
+                                });
+                                setRawData(Array.isArray(res.data.data) ? res.data.data : []);
+                            } catch (err) {
+                                console.log("Load error", err);
+                            } finally {
+                                setLoading(false);
+                            }
                         }}
                     >
                         Reset

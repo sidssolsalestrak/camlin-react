@@ -147,8 +147,6 @@ const FilePreviewModal = ({ file, onClose }) => {
                                 maxHeight: 700,
                                 padding: 0,
                                 display: "block",
-                                transform: "scale(1.05)",        // ← slight zoom
-                                transformOrigin: "top center",   // ← anchor from top
                             }}
                         />
                     </Box>
