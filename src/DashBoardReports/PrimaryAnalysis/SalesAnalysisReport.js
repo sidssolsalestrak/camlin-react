@@ -29,7 +29,9 @@ function SalesAnalysisReport() {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [showTable, setShowTable] = useState(false)
-    const toast=useToast()
+    const [tableTitle, setTableTitle] = useState("PRODUCT CATEGORY WISE PRIMARY SALES ANALYSIS");
+    const [nameHeader, setNameHeader] = useState("Brand");
+    const toast = useToast()
 
     useEffect(() => { fetchSubCats(); }, []);
 
@@ -86,14 +88,14 @@ function SalesAnalysisReport() {
                 allRegions_fy1 += Number(match?.fy1) ?? 0;
                 allRegions_fy2 += Number(match?.fy2) ?? 0;
                 allRegions_fy3 += Number(match?.fy3) ?? 0;
-                allRegions_growth += Number(match?.growth ?? 0)
+                allRegions_growth += Number(match?.growth ?? 0);
             }
 
 
             flatRow.all_fy1 = allRegions_fy1;
             flatRow.all_fy2 = allRegions_fy2;
             flatRow.all_fy3 = allRegions_fy3;
-            flatRow.all_growth = allRegions_growth
+            flatRow.all_growth = +allRegions_growth.toFixed(2);
 
             return flatRow;
         });
@@ -103,6 +105,7 @@ function SalesAnalysisReport() {
         let grandTotal_fy1 = 0;
         let grandTotal_fy2 = 0;
         let grandTotal_fy3 = 0;
+        let grandTotal_growth = 0;
 
         for (const region of processed) {
             const key = `r${region.reg_id}`;
@@ -115,23 +118,21 @@ function SalesAnalysisReport() {
             grandTotal_fy1 += region.total.fy1;
             grandTotal_fy2 += region.total.fy2;
             grandTotal_fy3 += region.total.fy3;
+            grandTotal_growth += Number(region.total.growth);
         }
-
-        // Calculate all regions total growth
-        const grandTotal_growth = grandTotal_fy2 > 0 && grandTotal_fy3 > 0
-            ? +(((grandTotal_fy3 / grandTotal_fy2) * 100) - 100).toFixed(2)
-            : 0;
 
         totalRow.all_fy1 = grandTotal_fy1;
         totalRow.all_fy2 = grandTotal_fy2;
         totalRow.all_fy3 = grandTotal_fy3;
-        totalRow.all_growth = grandTotal_growth;
+        totalRow.all_growth = +grandTotal_growth.toFixed(2);
 
         return [...pivoted, totalRow];
     };
 
     const handleLoad = async () => {
         setShowTable(true)
+        setTableTitle(`${selType == 3 ? "SKU WISE" : "PRODUCT CATEGORY WISE"} PRIMARY SALES ANALYSIS`);
+        setNameHeader(selType == 3 ? "SKU" : "Brand");
         try {
             setLoading(true);
             setTableData([]);
@@ -214,7 +215,6 @@ function SalesAnalysisReport() {
         }
     };
 
-    const nameHeader = selType == 3 ? "SKU" : "Brand";
 
     // ── Build columns dynamically: first col = Brand, then one group per region, then All Regions ──
     const columns = useMemo(() => {
@@ -317,40 +317,40 @@ function SalesAnalysisReport() {
         ];
     }, [regions, years, nameHeader]);
 
-   const excelColumns = useMemo(() => {
-    const fyLabel1 = `FY${String(years.secondLastYear).slice(2)}-${String(years.lastYear).slice(2)}`;
-    const fyLabel2 = `FY${String(years.lastYear).slice(2)}-${String(years.currentYear).slice(2)}`;
-    const fyLabel3 = `FY${String(years.currentYear).slice(2)}-${String(years.nextYear).slice(2)}`;
+    const excelColumns = useMemo(() => {
+        const fyLabel1 = `FY${String(years.secondLastYear).slice(2)}-${String(years.lastYear).slice(2)}`;
+        const fyLabel2 = `FY${String(years.lastYear).slice(2)}-${String(years.currentYear).slice(2)}`;
+        const fyLabel3 = `FY${String(years.currentYear).slice(2)}-${String(years.nextYear).slice(2)}`;
 
-    return [
-        { field: "label", headerName: nameHeader },
+        return [
+            { field: "label", headerName: nameHeader },
 
-        ...regions.map((region) => {
-            const key = `r${region.reg_id}`;
-            return {
+            ...regions.map((region) => {
+                const key = `r${region.reg_id}`;
+                return {
+                    field: "",
+                    headerName: region.regName,
+                    subColumns: [
+                        { field: `${key}_fy1`, headerName: fyLabel1 },
+                        { field: `${key}_fy2`, headerName: fyLabel2 },
+                        { field: `${key}_fy3`, headerName: fyLabel3 },
+                        { field: `${key}_growth`, headerName: "Growth" },
+                    ],
+                };
+            }),
+
+            {
                 field: "",
-                headerName: region.regName,
+                headerName: "Total",
                 subColumns: [
-                    { field: `${key}_fy1`, headerName: fyLabel1 },
-                    { field: `${key}_fy2`, headerName: fyLabel2 },
-                    { field: `${key}_fy3`, headerName: fyLabel3 },
-                    { field: `${key}_growth`, headerName: "Growth" },
+                    { field: "all_fy1", headerName: fyLabel1 },
+                    { field: "all_fy2", headerName: fyLabel2 },
+                    { field: "all_fy3", headerName: fyLabel3 },
+                    { field: "all_growth", headerName: "Growth" },
                 ],
-            };
-        }),
-
-        {
-            field: "",
-            headerName: "Total",
-            subColumns: [
-                { field: "all_fy1", headerName: fyLabel1 },
-                { field: "all_fy2", headerName: fyLabel2 },
-                { field: "all_fy3", headerName: fyLabel3 },
-                { field: "all_growth", headerName: "Growth" },
-            ],
-        },
-    ];
-}, [regions, years, nameHeader]);
+            },
+        ];
+    }, [regions, years, nameHeader]);
 
     const columnBgColors = useMemo(() => {
         const colors = {};
@@ -362,10 +362,26 @@ function SalesAnalysisReport() {
         return colors;
     }, [regions]);
 
-    const handleDownLoadExcel=async()=>{
-        const safeColumns = excelColumns.map(({ renderCell, renderHeader, ...rest }) => rest); 
-        const dynamicTitle = `${Number(selType===2)?"PRODUCT CATEGORY WISE":Number(selType===3)?"SKU WISE":"MONTH WISE"}PRIMARY SALES ANALYSIS`;
-         Download(tableData,safeColumns, 'Sales_Analysis',setProgress,toast, 'Sales_Analysis',{titleRow1:dynamicTitle, highlightHeaders:[],})
+    const handleDownLoadExcel = async () => {
+        const safeColumns = excelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
+        const dynamicTitle = `${Number(selType === 2) ? "PRODUCT CATEGORY WISE" : Number(selType === 3) ? "SKU WISE" : "MONTH WISE"}PRIMARY SALES ANALYSIS`;
+
+        const excelData = tableData.map((row) => {
+            const newRow = {};
+            for (const key in row) {
+                if (key === "label" || key === "isTotal") {
+                    newRow[key] = row[key];
+                } else {
+                    const val = row[key];
+                    newRow[key] = (val === 0 || val === "0" || val === null || val === undefined || val === "")
+                        ? "-"
+                        : val;
+                }
+            }
+            return newRow;
+        });
+
+        Download(excelData, safeColumns, 'Sales_Analysis', setProgress, toast, 'Sales Analysis', { titleRow1: dynamicTitle, highlightHeaders: [] })
     }
 
     return (
@@ -440,7 +456,7 @@ function SalesAnalysisReport() {
                                 {progress ? (
                                     <CircularProgress progress={progress} />
                                 ) : (
-                                    <span style={{ cursor: "pointer" }} onClick={()=>handleDownLoadExcel()}>
+                                    <span style={{ cursor: "pointer" }} onClick={() => handleDownLoadExcel()}>
                                         <AiOutlineFileExcel
                                             style={{ color: "green", height: "30px", width: "30px" }}
                                         />
@@ -457,7 +473,7 @@ function SalesAnalysisReport() {
                             columns={columns}
                             data={tableData}
                             getRowClassName={(row) => row.isTotal ? "total-row" : ""}
-                            tableTitle="PRODUCT CATEGORY WISE PRIMARY SALES ANALYSIS"
+                            tableTitle={tableTitle}
                             showTableTitle={true}
                             showHeader={false}
                             sx={{

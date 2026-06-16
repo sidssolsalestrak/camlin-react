@@ -55,6 +55,9 @@ const SalesAnalysisBody = ({ formData, month }) => {
         fetchGraph4Data();
     }, [month, formData.zone, formData.region, formData.area, formData.State])
 
+    const zeroToNull = (val) =>
+        Number(val) === 0 || val === null || val === undefined ? "-" : val;
+
     const columns = [
         {
             field: "sale_month",
@@ -64,19 +67,31 @@ const SalesAnalysisBody = ({ formData, month }) => {
             field: "pur_val",
             headerName: "Primary",
             showTotal: true,
-            type: "number"
+            type: "number",
+            renderCell: (params) => {
+                const row = params?.row ?? params;
+                return zeroToNull(row.pur_val);
+            },
         },
         {
             field: "sec_val",
             headerName: "Secondary",
             showTotal: true,
-            type: "number"
+            type: "number",
+            renderCell: (params) => {
+                const row = params?.row ?? params;
+                return zeroToNull(row.sec_val);
+            },
         },
         {
             field: "cls_val",
             headerName: "Closing",
             showTotal: true,
-            type: "number"
+            type: "number",
+            renderCell: (params) => {
+                const row = params?.row ?? params;
+                return zeroToNull(row.cls_val);
+            },
         }
     ]
     return (
