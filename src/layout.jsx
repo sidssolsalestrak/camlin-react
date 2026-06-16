@@ -306,11 +306,16 @@ const Layout = ({ children, breadcrumb = [] }) => {
 
   const handleLogout = () => {
     try {
+      localStorage.removeItem("session-token");
+
       console.log("Logout Successfully");
       enqueueSnackbar("Logout Successfully", {
         variant: "success",
         anchorOrigin: { vertical: "top", horizontal: "center" },
       });
+
+     
+      navigate("/login");
     } catch (err) {
       console.log(err);
       enqueueSnackbar("Something went wrong Try again!!", {
