@@ -381,7 +381,7 @@ function SalesAnalysisReport() {
             return newRow;
         });
 
-        Download(excelData, safeColumns, 'Sales_Analysis', setProgress, toast, 'Sales Analysis', { titleRow1: dynamicTitle, highlightHeaders: [] })
+        Download(excelData, safeColumns, 'Sales_Analysis', setProgress, toast, 'Sales_Analysis', { titleRow1: dynamicTitle, highlightHeaders: [] })
     }
 
     return (
