@@ -3,21 +3,31 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Box, CircularProgress } from '@mui/material';
 
 const TrendAnalysis = ({ tableData, loading }) => {
-    const data = (tableData || []).map(d => ({
-        name: d.sale_month,
-        primary: Number(d.pur_val) || 0,
-        secondary: Number(d.sec_val) || 0,
-        closing: Number(d.cls_val) || 0,
-    }));
-    // Compute max and generate ticks every 10
-    const maxVal = Math.ceil(Math.max(...data.map(d => Math.max(d.primary, d.secondary, d.closing))) / 10) * 10;
-    const ticks = Array.from({ length: (maxVal / 10) + 1 }, (_, i) => i * 10);
+    const currentYearMonth = new Date().toISOString().slice(0, 7);
+
+    const data = (tableData || []).map(d => {
+        const isCurrentMonth = d.sale_month?.slice(0, 7) === currentYearMonth;
+        return {
+            name: d.sale_month,
+            primary: Number(d.pur_val) || 0,
+            secondary: isCurrentMonth ? 0 : (Number(d.sec_val) || 0),
+            closing: isCurrentMonth ? 0 : (Number(d.cls_val) || 0),
+        };
+    });
+
+    const allVals = data.flatMap(d => [d.primary, d.secondary, d.closing]);
+    const minVal = allVals.length ? Math.min(...allVals) : 0;
+    const maxVal = allVals.length ? Math.max(...allVals) : 1;
+    const padding = (maxVal - minVal) * 0.15 || 0.05;
+    const yMin = parseFloat((Math.min(minVal, 0) - padding).toFixed(2));
+    const yMax = parseFloat((maxVal + padding).toFixed(2));
 
     const [hoveredBar, setHoveredBar] = useState(null);
     const [hiddenBars, setHiddenBars] = useState(new Set());
+
     const getOpacity = (key) => {
-        if (hiddenBars.has(key)) return 0;           // hidden → invisible
-        if (hoveredBar && hoveredBar !== key) return 0.2; // hover dims others
+        if (hiddenBars.has(key)) return 0;
+        if (hoveredBar && hoveredBar !== key) return 0.2;
         return 1;
     };
 
@@ -33,9 +43,7 @@ const TrendAnalysis = ({ tableData, loading }) => {
         if (!hiddenBars.has(entry.dataKey)) setHoveredBar(entry.dataKey);
     };
 
-    const handleLegendMouseLeave = () => {
-        setHoveredBar(null);
-    };
+    const handleLegendMouseLeave = () => setHoveredBar(null);
 
     return (
         <Box sx={{ width: '100%', height: 220 }}>
@@ -47,23 +55,26 @@ const TrendAnalysis = ({ tableData, loading }) => {
                 data.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: -5 }}>
-                            <CartesianGrid
-                                vertical={false}
-                                strokeDasharray=""
-                                stroke="#e0e0e0"
-                            />
+                            <CartesianGrid vertical={false} strokeDasharray="" stroke="#e0e0e0" />
                             <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                            <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} ticks={ticks} interval={0} />
+                            <YAxis
+                                tick={{ fontSize: 10 }}
+                                axisLine={false}
+                                tickLine={false}
+                                domain={[yMin, yMax]}
+                                tickFormatter={(v) => v.toFixed(2)}
+                            />
                             <Tooltip />
                             <Legend
                                 iconType="circle"
                                 onClick={handleLegendClick}
                                 onMouseEnter={handleLegendMouseEnter}
                                 onMouseLeave={handleLegendMouseLeave}
-                                wrapperStyle={{ cursor: 'pointer' }} />
-                            <Area type="monotone" dataKey="primary" name="Primary" stackId="stack" stroke="#8B8B8B" fill="#8B8B8B" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('primary')} />
-                            <Area type="monotone" dataKey="secondary" name="Secondary" stackId="stack" stroke="#E8824A" fill="#E8824A" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('secondary')} />
-                            <Area type="monotone" dataKey="closing" name="Closing" stackId="stack" stroke="#1565C0" fill="#1565C0" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('closing')} />
+                                wrapperStyle={{ cursor: 'pointer' }}
+                            />
+                            <Area type="monotone" dataKey="primary" name="Primary" stackId="stack" baseValue={0} stroke="#8B8B8B" fill="#8B8B8B" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('primary')} />
+                            <Area type="monotone" dataKey="secondary" name="Secondary" stackId="stack" baseValue={0} stroke="#E8824A" fill="#E8824A" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('secondary')} />
+                            <Area type="monotone" dataKey="closing" name="Closing" stackId="stack" baseValue={0} stroke="#1565C0" fill="#1565C0" fillOpacity={0.5} strokeWidth={3.5} opacity={getOpacity('closing')} />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
@@ -73,4 +84,5 @@ const TrendAnalysis = ({ tableData, loading }) => {
         </Box>
     );
 };
+
 export default TrendAnalysis;
