@@ -101,7 +101,8 @@ const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, ma
 const setColumnWidths = (ws, headers, maxContentLengths) => {
   ws["!cols"] = headers.map((header, index) => {
     const maxLength = Math.max(header.length, maxContentLengths[index] || 0);
-    return { wch: Math.min(Math.max(maxLength + 4, 12), 30) };
+    const cap = header === "PRODUCT NAME" ? 50 : 30; 
+    return { wch: Math.min(Math.max(maxLength + 4, 12), cap) };
   });
 };
 

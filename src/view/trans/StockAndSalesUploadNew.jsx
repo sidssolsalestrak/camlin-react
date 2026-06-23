@@ -506,7 +506,7 @@ const StockAndSalesUploadNew = () => {
                             String(option.id) === String(value.id)
                         }
                         renderInput={(params) => (
-                            <TextField {...params} label="Distributor" required />
+                            <TextField {...params} label="Distributor" placeholder='select Distributor' required />
                         )}
                         ListboxProps={{ style: { maxHeight: 200 } }}
                     />
