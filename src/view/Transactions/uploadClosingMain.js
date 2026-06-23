@@ -1250,7 +1250,7 @@ function UploadClosing() {
                             </Box>
                         </Grid>
 
-                        {Number(checking) !== 2 && !hasExistingData && (
+                        {Number(checking) !== 2 && !hasExistingData && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Box display="flex" flexDirection="column" gap={0.5}>
                                     <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
@@ -1294,7 +1294,7 @@ function UploadClosing() {
                             </Grid>
                         )}
 
-                        {Number(checking) !== 2 && !hasExistingData && (
+                        {Number(checking) !== 2 && !hasExistingData && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Button
                                     variant="contained"
@@ -1326,7 +1326,7 @@ function UploadClosing() {
                             </Grid>
                         )}
 
-                        {Number(checking) !== 2 && !hasExistingData && !rawMode && (
+                        {Number(checking) !== 2 && !hasExistingData && !rawMode && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Button
                                     variant="contained"
