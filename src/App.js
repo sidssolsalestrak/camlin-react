@@ -68,6 +68,7 @@ import PreviewStkSales from "./view/Transactions/PreviewStkSales";
 import EmailProcessData from "./view/Transactions/EMailProcessData";
 import StockAndSalesUploadNew from "./view/trans/StockAndSalesUploadNew";
 import PrimarySalesTransact from "./view/Transactions/PrimarySales";
+import UploadClosing from "./view/Transactions/uploadClosingMain";
 
 function App() {
   const ProtectedRoute = () => {
@@ -276,6 +277,11 @@ function App() {
               element={<EmailProcessData />}
             />
             <Route path="/reports/primary_sale_report/:decMonth?/:decStkId?/:decValue?" element={<PrimarySalesTransact />}  />
+            <Route 
+             path="/upload_closing/index/:defEncode/:enMonth/:endistributor/:enProcessStat/:enProcessDataStat" 
+             element={<UploadClosing />} 
+             />
+             <Route path="/upload_closing" element={<UploadClosing />}  />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

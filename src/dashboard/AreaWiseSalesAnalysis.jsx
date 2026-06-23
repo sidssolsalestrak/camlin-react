@@ -40,14 +40,30 @@ const AreaWiseSalesAnalysis = () => {
         }
         try {
             const excelColumns = columns
-                .filter((col) => !col.renderCell || col.field)  // keep all columns
+                .filter((col) => !col.renderCell || col.field)
                 .map((col) => ({ label: col.headerName, id: col.field }));
+
+            const monthFields = [
+                "m1_sale", "m2_sale", "m3_sale", "m4_sale", "m5_sale", "m6_sale",
+                "m7_sale", "m8_sale", "m9_sale", "m10_sale", "m11_sale", "m12_sale", "total"
+            ];
+
+            const excelData = tableData.map((row) => {
+                if (row._isGroupHeader) return row; // only skip group headers
+                const transformed = { ...row };
+                monthFields.forEach((field) => {
+                    if (Number(transformed[field]) === 0) {
+                        transformed[field] = "-";
+                    }
+                });
+                return transformed;
+            });
 
             const filters = [
                 { label: `Area Wise Primary Sales Review`, bold: false, sz: 11 },
             ];
-            let type = 1
-            await excelWithFilters(tableData, excelColumns, `Area Wise`, filters, setProgress, type);
+            let type = 1;
+            await excelWithFilters(excelData, excelColumns, `Area Wise`, filters, setProgress, type);
         } catch (err) {
             console.log(err);
             showAlert.error("failed to download");
