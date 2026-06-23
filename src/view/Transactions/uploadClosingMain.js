@@ -145,7 +145,6 @@ function UploadClosing() {
     };
 
     const MapDot = ({ row }) => {
-        console.log("map Dot Row", row)
         const color =
             row.prod_map_stat === 1
                 ? (row.pn ? MAP_COLORS.semi : MAP_COLORS.unmapped)
@@ -171,6 +170,14 @@ function UploadClosing() {
         });
         return { mapped, semi, unmapped, invalid, total: tableData.length, totalQty };
     }, [tableData]);
+
+    const availableCategories = useMemo(() => {
+        const cats = new Set();
+        tableData.forEach((r) => { if (r.cat_name) cats.add(r.cat_name); });
+        return Array.from(cats).sort();
+    }, [tableData]);
+
+    const [selCategory, setSelCategory] = useState("all");
 
     const canConfirm =
         counts.unmapped === 0 && counts.semi === 0 && counts.invalid === 0 && tableData.length > 0;
@@ -234,6 +241,7 @@ function UploadClosing() {
         setPreviewFile(null);
         setDltChecked({});
         setSelectAll(false);
+        setSelCategory("all")
 
         if (data.result) {
             setTableData([]);
@@ -867,6 +875,7 @@ function UploadClosing() {
         if (activeFilter === "semi") rows = rows.filter((r) => r.prod_map_stat === 1 && r.pn);
         if (activeFilter === "unmapped") rows = rows.filter((r) => r.prod_map_stat === 1 && !r.pn);
         if (activeFilter === "invalid") rows = rows.filter((r) => r.qty_map_stat === 1);
+        if (selCategory !== "all") rows = rows.filter((r) => r.cat_name === selCategory);
 
         const numbered = rows.map((r, i) => ({ ...r, _sl: i + 1 }));
 
@@ -884,7 +893,7 @@ function UploadClosing() {
         }
 
         return numbered;
-    }, [tableData, activeFilter, isApproved]);
+    }, [tableData, activeFilter, isApproved, selCategory]);
 
     // ─── NEW: groupedRows — injects cat_name header rows when approved ────────
     const groupedRows = useMemo(() => {
@@ -914,7 +923,7 @@ function UploadClosing() {
         });
 
         return rows;
-    }, [filteredRows, isApproved, manualMode]); 
+    }, [filteredRows, isApproved, manualMode]);
 
     // ─── NEW: rowStyle — grey background for category header rows ────────────
     const rowStyle = (row) => {
@@ -1133,7 +1142,7 @@ function UploadClosing() {
                         sx={{ "& .MuiOutlinedInput-root": { fontSize: 13 } }}
                     />
                 ) : (
-                    <TextField value={row.prod_qty} size="small" />
+                    <TextField value={row.prod_qty} size="small"    inputProps={{ style: { textAlign: "center", fontSize: 13, width: 64 } }} />
                 );
             },
         },
@@ -1189,6 +1198,8 @@ function UploadClosing() {
         { key: "unmapped", color: MAP_COLORS.unmapped, label: "Un-Mapped", cnt: counts.unmapped },
         { key: "invalid", color: MAP_COLORS.invalid, label: "Invalid Qty", cnt: counts.invalid },
     ];
+
+    console.log("available category",availableCategories)
 
     return (
         <Layout
@@ -1499,6 +1510,21 @@ function UploadClosing() {
                                 <Button size="small" variant="outlined" sx={{ backgroundColor: "#F39C12", color: "white" }} onClick={handleAbort}>
                                     Abort
                                 </Button>
+                            )}
+                             {availableCategories.length > 0 && isApproved  && (
+                                <FormControl size="small" sx={{ minWidth: 100 }}>
+                                    <Select
+                                        value={selCategory}
+                                        onChange={(e) => setSelCategory(e.target.value)}
+                                        sx={{ fontSize: 12 }}
+                                        MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                    >
+                                        <MenuItem value="all" sx={{ fontSize: 12 }}>All</MenuItem>
+                                        {availableCategories.map((cat) => (
+                                            <MenuItem key={cat} value={cat} sx={{ fontSize: 12 }}>{cat}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             )}
                         </Box>
 
