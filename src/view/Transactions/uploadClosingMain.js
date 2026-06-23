@@ -1462,7 +1462,7 @@ function UploadClosing() {
                             {!isApproved && !isRejected && (
                                 manualMode ? (
                                     <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={handleManualInsert} disabled={loading}>
-                                        Update
+                                        Save
                                     </Button>
                                 ) : (
                                     <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={handleSave} disabled={loading}>
