@@ -948,6 +948,26 @@ function UploadClosing() {
         {
             field: "prod_name",
             headerName: "Product Name",
+            renderHeader: () => (
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <Typography variant="body2" fontWeight={600}>Product Name</Typography>
+                    {
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}>
+                            <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
+                                All Products
+                            </Typography>
+                            <Switch
+                                size="small"
+                                checked={tglVal === 1}
+                                onChange={handleToggleAllProducts}
+                            />
+                            <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
+                                with values
+                            </Typography>
+                        </Box>
+                    }
+                </Box>
+            ),
             renderCell: ({ row }) => {
                 if (row._isGrandTotal) {
                     return (
@@ -957,9 +977,12 @@ function UploadClosing() {
                     );
                 }
                 return (
+                    <Box sx={{display:'flex',alignItems:'center',gap:1}}>
+                    <MapDot row={row} />
                     <Typography variant="body2" sx={{ fontSize: 12 }}>
                         {row.cat_code_1} {row.prod_code ? `| ${row.prod_code}` : ""} | {row.prod_name}
                     </Typography>
+                    </Box>
                 );
             },
         },
@@ -1009,7 +1032,7 @@ function UploadClosing() {
             renderHeader: () => (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                     <Typography variant="body2" fontWeight={600}>Product Name</Typography>
-                    {(isApproved || manualMode) && (
+                    {(isApproved ) && (
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}>
                             <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
                                 All Products
