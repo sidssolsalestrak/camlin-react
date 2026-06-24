@@ -518,6 +518,7 @@ function AddUser() {
     if (!selectedReportTo) temp.reportTo = "Please Select Reporting To User";
     if (!employeeType) temp.employeeType = "Select Employee Type";
     if (!employeeStatus) temp.employeeStatus = "Select Employee Status";
+     if(!selectedBU || selectedBU.length===0) temp.selectBUnit = "Please select Business Unit"
     if (!grossSalary) {
       temp.grossSalary = "Enter Gross Salary";
     }
@@ -1148,8 +1149,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
     return dayjs(val).format("DD-MMM-YYYY HH:mm:ss");
   };
 
-  console.log("app config status",appConfigStatus)
-  console.log("delflag status",delFlag)
+ console.log("Selected buieness unit",selectedBU)
   return (
     <Layout>
       <Grid container spacing={2} sx={{ padding: "8px" }}>
@@ -1168,7 +1168,14 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   multiple
                   valueKey="id"
                   labelKey="brand_name"
+                  required={true}
+                  error={Boolean(errors.selectBUnit)}
                 />
+                {errors.selectBUnit && (
+                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    {errors.selectBUnit}
+                  </Typography>
+                )}
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -1181,6 +1188,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="client_alias"
                   error={Boolean(errors.selectedType)}
+                  required={true}
                 />
                 {errors.selectedType && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1198,6 +1206,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="dept_name"
                   error={Boolean(errors.selectedDept)}
+                  required={true}
                 />
                 {errors.selectedDept && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1215,6 +1224,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="desig_name"
                   error={Boolean(errors.selectedDesig)}
+                  required={true}
                 />
                 {errors.selectedDesig && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1232,6 +1242,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="title_name"
                   error={Boolean(errors.selectedTitle)}
+                  required={true}
                 />
                 {errors.selectedTitle && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1264,6 +1275,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   }}
                   error={Boolean(errors.fullName)}
                   helperText={errors.fullName}
+                  required
                 />
               </Grid>
 
@@ -1294,6 +1306,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     fullWidth
                     error={Boolean(errors.mobileNum)}
                     helperText={errors.mobileNum}
+                    required={true}
                   />
                 </Box>
               </Grid>
@@ -1313,6 +1326,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     fullWidth
                     error={Boolean(errors.email)}
                     helperText={errors.email}
+                    required={true}
                   />
                 </Box>
               </Grid>
@@ -1333,6 +1347,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                       textField: {
                         fullWidth: true,
                         size: "small",
+                        required:true
                       },
                     }}
                   />
@@ -1352,7 +1367,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    label="Date of Join"
+                    label="Date of Joining"
                     format="DD MMM YYYY"
                     maxDate={dayjs()}
                     value={dateOfJoin ? dayjs(dateOfJoin) : null}
@@ -1365,6 +1380,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                       textField: {
                         fullWidth: true,
                         size: "small",
+                        required: true,
                       },
                     }}
                   />
@@ -1380,6 +1396,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="type"
                   error={Boolean(errors.employeeType)}
+                  required={true}
                 />
                 {errors.employeeType && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1397,6 +1414,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   valueKey="id"
                   labelKey="emp_stat"
                   error={Boolean(errors.employeeStatus)}
+                  required={true}
                 />
                 {errors.employeeStatus && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1453,6 +1471,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   onChange={(e) => setHQ(e.target.value)}
                   error={Boolean(errors.hq)}
                   helperText={errors.hq}
+                  required
                 />
               </Grid>
 
@@ -1467,6 +1486,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     valueKey="id"
                     labelKey="zone_name"
                     error={Boolean(errors.zone)}
+                    required={true}
                   />
                   {errors.zone && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1487,6 +1507,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     valueKey="id"
                     labelKey="reg_name"
                     error={Boolean(errors.region)}
+                    required={true}
                   />
                   {errors.region && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1507,6 +1528,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     valueKey="id"
                     labelKey="area_name"
                     error={Boolean(errors.area)}
+                    required={true}
                   />
                   {errors.area && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1527,6 +1549,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     valueKey="id"
                     labelKey="ter_name"
                     error={Boolean(errors.territory)}
+                    required={true}
                   />
                   {errors.territory && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1546,6 +1569,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                     valueKey="id"
                     labelKey="beat_name"
                     error={Boolean(errors.beat)}
+                    required={true}
                   />
                   {errors.beat && (
                     <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1557,13 +1581,14 @@ const checkEmpCodeDuplicate = async (codeVal) => {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="Report Type"
+                  label="Report To Type"
                   value={selectedReportType}
                   onChange={(e) => setSelectedReportType(e.target.value)}
                   options={userTypes.filter(type => type.id !== 2)}
                   valueKey="id"
                   labelKey="client_alias"
                   error={Boolean(errors.reportType)}
+                  required={true}
                 />
                 {errors.reportType && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1574,13 +1599,14 @@ const checkEmpCodeDuplicate = async (codeVal) => {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="Report To"
+                  label="Reporting To"
                   value={selectedReportTo}
                   onChange={(e) => setSelectedReportTo(e.target.value)}
                   options={reportToUsers}
                   valueKey="id"
                   labelKey="full_name"
                   disabled={!selectedReportType}
+                  required={true}
                 />
                 {errors.reportTo && (
                   <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
@@ -1592,7 +1618,6 @@ const checkEmpCodeDuplicate = async (codeVal) => {
            {Number(flag)===0 &&
             <Button
               variant="contained"
-              size="small"
               sx={{ mt: 2 }}
               onClick={() => {
                 if (!validate()) {
@@ -1610,7 +1635,6 @@ const checkEmpCodeDuplicate = async (codeVal) => {
             </Button>}
             {Number(flag)===1 &&  Number(accStatus)===0 &&  Number(sessionId)!==id &&
             <Button  variant="contained"
-              size="small"
               sx={{ mt: 2 }}
               onClick={() => {
                 if (!validate()) {
@@ -1652,6 +1676,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   error={Boolean(errors.userId)}
                   helperText={errors.userId}
                   InputProps={{ readOnly: true }}
+                  required
                 />
 
                 <TextField
@@ -1918,6 +1943,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   ]}
                   valueKey="id"
                   labelKey="name"
+                  required={true}
                 />
               </Grid>
               {showPlanDay && (
@@ -1967,6 +1993,7 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                   ]}
                   valueKey="id"
                   labelKey="name"
+                  required={true}
                 />
               </Grid>
               {showWeekend && (

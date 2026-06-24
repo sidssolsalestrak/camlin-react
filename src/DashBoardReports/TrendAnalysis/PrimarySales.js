@@ -15,6 +15,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import useToast from "../../utils/useToast";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
+import { FaRegFileExcel } from "react-icons/fa";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -72,6 +73,7 @@ function PrimarySales({ enType }) {
     const [allProduct, setAllProduct] = useState([]);
     const [rawData, setRawData] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [initialLoad,setinitialLoad] =useState(false)
 
     // ✅ FIX: useRef instead of useState — no re-render on progress update
     const progressRef = useRef(null);
@@ -179,6 +181,7 @@ function PrimarySales({ enType }) {
         setAllSubCategory([]);
         setAllProduct([]);
         setRawData([]);
+        setinitialLoad(false)
         navigate(`/reports/trendanalysis/${enType}`);
     };
 
@@ -257,6 +260,7 @@ function PrimarySales({ enType }) {
             };
             const response = await api.post('/getAnalysisReport', payload);
             setRawData(Array.isArray(response.data.data) ? response.data.data : []);
+            setinitialLoad(true)
         } catch (err) {
             console.log("fetching primary sale Data error", err);
         } finally {
@@ -457,7 +461,7 @@ function PrimarySales({ enType }) {
         return (!val || num === 0) ? "-" : num;
     };
 
-    const fmtSaliency = (val) => (!val || Number(val) === 0 || val === "0.00") ? "-" : val;
+    const fmtSaliency = (val) => (!val || Number(val) === 0 || val === "0.00") ? "-" : Number(val);
 
     const rowStyle = (row) => {
         if (row._rowType === "grand_total")   return { "& td": { backgroundColor: "#d8dee3 !important" } };
@@ -477,14 +481,31 @@ function PrimarySales({ enType }) {
     const handleDownLoadExcel = async () => {
         try {
          
-            const excelTableData = tableData.map(row => ({
-                ...row,
-                saliency_val: (!row.saliency_val || Number(row.saliency_val) === 0 || row.saliency_val === "0.00") ? "-" : row.saliency_val,
-                saliency_qty: (!row.saliency_qty || Number(row.saliency_qty) === 0 || row.saliency_qty === "0.00") ? "-" : row.saliency_qty,
-                _grandTotal: row._rowType === "grand_total",
-                _zoneTotal: row._rowType === "zone_subtotal",
-                _isSubtotal: row._rowType === "reg_subtotal",
-            }));
+    const excelTableData = tableData.map(row => {
+    const updated = { ...row };
+
+    // Replace 0 with "-" for monthly columns
+    MONTHS.forEach((_, i) => {
+        const valKey = `m_val_${i}`;
+        const qtyKey = `m_qty_${i}`;
+        updated[valKey] = (!updated[valKey] || Number(updated[valKey]) === 0) ? "-" : updated[valKey];
+        updated[qtyKey] = (!updated[qtyKey] || Number(updated[qtyKey]) === 0) ? "-" : updated[qtyKey];
+    });
+
+    // Replace 0 with "-" for total columns
+    updated.total_val = (!updated.total_val || Number(updated.total_val) === 0) ? "-" : updated.total_val;
+    updated.total_qty = (!updated.total_qty || Number(updated.total_qty) === 0) ? "-" : updated.total_qty;
+
+    // Existing saliency formatting
+    updated.saliency_val = (!updated.saliency_val || Number(updated.saliency_val) === 0 || updated.saliency_val === "0.00") ? "-" : Number(updated.saliency_val);
+    updated.saliency_qty = (!updated.saliency_qty || Number(updated.saliency_qty) === 0 || updated.saliency_qty === "0.00") ? "-" : Number(updated.saliency_qty);
+
+    updated._grandTotal = row._rowType === "grand_total";
+    updated._zoneTotal = row._rowType === "zone_subtotal";
+    updated._isSubtotal = row._rowType === "reg_subtotal";
+
+    return updated;
+    });
 
             const filters = [
                 { label: `Trend Analysis Data FY-${dayjs(selYear).format('YYYY')}`, bold: true, sz: 13 },
@@ -492,7 +513,7 @@ function PrimarySales({ enType }) {
                 { label: `Region : ${getLabel(allRegion, selRegion, "reg_name", "")}`, bold: false, sz: 10 },
                 { label: `Area : ${getLabel(allArea, selArea, 'area_name', "")}`, bold: false, sz: 10 },
                 { label: `Territory : ${getLabel(allTerritory, selTerritory, 'ter_name', "")}`, bold: false, sz: 10 },
-                { label: `Distributor : ${getLabel(allDistributor, selDistributor, 'stk_name', "")}`, bold: false, sz: 10 },
+                { label: `Distributor : ${getLabel(allDistributor, selDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`, bold: false, sz: 10 },
                 { label: `Category : ${getLabel(allCatData, selCategory, 'cat_name', "")}`, bold: false, sz: 10 },
                 { label: `Sub Category : ${getLabel(allSubCategory, selSubCategory, 'sub_name', "")}`, bold: false, sz: 10 },
                 { label: `Product : ${getLabel(allProduct, selProduct, 'prod_name', "")}`, bold: false, sz: 10 },
@@ -641,39 +662,40 @@ function PrimarySales({ enType }) {
                             </Button>
                             </Grid>
                             <Grid size={{ md:1.5, lg:1, xs: 4,sm:2 }}>
-                            <Button onClick={() => handleDownLoadExcel()} color="warning" variant="contained">Excel</Button>
+                            <Button startIcon={<FaRegFileExcel size={15}/>} onClick={() => handleDownLoadExcel()} color="warning" variant="contained">Excel</Button>
                             </Grid>
                             </Grid>
                           
                            
                         </Box>
                     </Box>
+                    {initialLoad &&
                     <Box sx={{display:'flex',gap:2,ml:2,flexWrap:'wrap'}}>
                         <Typography sx={{fontWeight:600}}>Zone:<span style={{fontWeight:500}}> {`${getLabel(allZone, decodeZone, "zone_name", "")}`}</span></Typography>
                         <Typography sx={{fontWeight:600}}>Region:<span  style={{fontWeight:500}}>{`${getLabel(allRegion, decodeRegion, "reg_name", "")}`}</span></Typography>
                            <Typography sx={{fontWeight:600}}>Area:<span  style={{fontWeight:500}}>{`${getLabel(allArea, decodeArea, 'area_name', "")}`}</span></Typography>
                         <Typography sx={{fontWeight:600}}>Territory:<span  style={{fontWeight:500}}>{`${getLabel(allTerritory, decodeTerritory, 'ter_name', "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Distributor:<span  style={{fontWeight:500}}>{`${getLabel(allDistributor, decodeDistributor, 'stk_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>Distributor:<span style={{fontWeight:500}}>{`${getLabel(allDistributor, decodeDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`}</span></Typography>
                         <Typography sx={{fontWeight:600}}>Category:<span  style={{fontWeight:500}}>{`${getLabel(allCatData, decodeCategory, 'cat_name', "")}`}</span></Typography>
                         <Typography sx={{fontWeight:600}}>Sub Category:<span  style={{fontWeight:500}}>{` ${getLabel(allSubCategory, decodeSubCategory, 'sub_name', "")}`}</span></Typography>
                         <Typography sx={{fontWeight:600}}>Product:<span  style={{fontWeight:500}}>{` ${getLabel(allProduct, decodeProduct, 'prod_name', "")}`}</span></Typography>
 
                     </Box>
+                     }
 
-                    <Box sx={{ p: 0 }}>
+                   {initialLoad && <Box sx={{ p: 0, backgroundColor: "#fff",
+                                borderRadius: "10px",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)", }}>
+                        <Typography sx={{px:2.3,pt:1,pb:-1,fontFamily:'giespira',fontSize:'18.6px',color:'#121212'}}>Trend Analysis Data-{selYear.format('YYYY')}</Typography>
                         <DataTable
                             data={tableData}
                             columns={COLUMNS}
-                            showHeader={true}
+                            showHeader={false}
                             hideSubHeader
                             rowStyle={rowStyle}
-                            sx={{
-                                backgroundColor: "#fff",
-                                borderRadius: "10px",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                            }}
                         />
                     </Box>
+                  }
                 </Box>
 
                 <Dialog open={filtersOpen} aria-labelledby="filters-dialog"

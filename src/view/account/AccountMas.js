@@ -775,40 +775,58 @@ function AccountMas() {
     toast.warning("Please select User to Approve All");
     return;
   }
-  const updates = {};
-  tableData.forEach((row) => {
-    const isAllowed =
+
+  const eligibleRows = tableData.filter(
+    (row) =>
       row.mgr_approved_stat == 0 &&
       (row.am_user_id == loggedInUserId ||
         row.zbm_user_id == loggedInUserId ||
         row.rsm_user_id == loggedInUserId ||
         row.sh_user_id == loggedInUserId ||
         loggedInUserType == 2 ||
-        loggedInUserType == 3);
-    if (isAllowed) updates[row.id] = 1;
+        loggedInUserType == 3),
+  );
+
+  const allApproved = eligibleRows.every(
+    (row) => approvalState[row.id] === 1,
+  );
+
+  const updates = {};
+  eligibleRows.forEach((row) => {
+    updates[row.id] = allApproved ? 0 : 1; // if all approved → deselect, else → approve
   });
+
   setApprovalState((prev) => ({ ...prev, ...updates }));
 };
 
-  const handleRejectAll = () => {
-    if (!selectedUser || selectedUser == 0) {
-      toast.warning("Please select User to Reject All");
-      return;
-    }
-    const updates = {};
-    tableData.forEach((row) => {
-      const isAllowed =
-        row.mgr_approved_stat == 0 &&
-        (row.am_user_id == loggedInUserId ||
-          row.zbm_user_id == loggedInUserId ||
-          row.rsm_user_id == loggedInUserId ||
-          row.sh_user_id == loggedInUserId ||
-          loggedInUserType == 2 ||
-          loggedInUserType == 3);
-      if (isAllowed) updates[row.id] = 2;
-    });
-    setApprovalState((prev) => ({ ...prev, ...updates }));
-  };
+const handleRejectAll = () => {
+  if (!selectedUser || selectedUser == 0) {
+    toast.warning("Please select User to Reject All");
+    return;
+  }
+
+  const eligibleRows = tableData.filter(
+    (row) =>
+      row.mgr_approved_stat == 0 &&
+      (row.am_user_id == loggedInUserId ||
+        row.zbm_user_id == loggedInUserId ||
+        row.rsm_user_id == loggedInUserId ||
+        row.sh_user_id == loggedInUserId ||
+        loggedInUserType == 2 ||
+        loggedInUserType == 3),
+  );
+
+  const allRejected = eligibleRows.every(
+    (row) => approvalState[row.id] === 2,
+  );
+
+  const updates = {};
+  eligibleRows.forEach((row) => {
+    updates[row.id] = allRejected ? 0 : 2; // if all rejected → deselect, else → reject
+  });
+
+  setApprovalState((prev) => ({ ...prev, ...updates }));
+};
   const buildPayload = (rows) => {
     return {
       val: reqType, // req type (Add/Update/Delete)

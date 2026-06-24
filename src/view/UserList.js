@@ -277,12 +277,14 @@ function UserList() {
       field: "sl",
       headerName: "#",
       width: 10,
+      sortable:true,
       renderCell: ({ value }) => <span className="sl-cell">{value}</span>,
     },
     {
       field: "name",
       headerName: "Name",
       width: 200,
+      sortable:true,
       renderCell: ({ row }) => {
         const isAppActive = row.app_stat === 1;
 
@@ -313,16 +315,19 @@ function UserList() {
     {
       field: "dept_name",
       headerName: "Department",
+      sortable:true,
       width: 70,
     },
 
     {
       field: "ter_name",
       headerName: "Territory Details",
+      sortable:true,
     },
     {
       field: "reporting",
       headerName: "Reporting To",
+      sortable:true,
       renderCell: ({ row }) =>
         `${row.repto_fname || ""} ${row.repto_lname || ""}`,
     },
@@ -331,6 +336,7 @@ function UserList() {
       field: "email_id",
       headerName: "Email ID",
       width: 100,
+      sortable:true,
       renderCell: ({ row }) => row.email_id || "-",
     },
 
@@ -338,11 +344,13 @@ function UserList() {
       field: "mob_no",
       headerName: "Mobile No.",
       width: 100,
+      sortable:true,
       renderCell: ({ row }) => row.mob_no || "-",
     },
     {
       field: "emp_dob",
       headerName: "Date of Birth",
+      sortable:true,
       width: 100,
       renderCell: ({ row }) => formatDate(row.emp_dob),
     },
@@ -350,12 +358,14 @@ function UserList() {
       field: "emp_doj",
       headerName: "Date of Joining",
       width: 100,
+      sortable:true,
       renderCell: ({ row }) => formatDate(row.emp_doj),
     },
     {
       field: "status",
       headerName: "Status",
       width: 100,
+      sortable:true,
       renderCell: ({ row }) => {
         const isInactive = row.acc_stat === 1;
 

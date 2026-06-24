@@ -161,6 +161,7 @@ function UserLog() {
       field: "name",
       headerName: "Name",
       width: 220,
+      sortable:true,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span className="marker-link">
@@ -179,11 +180,12 @@ function UserLog() {
         </div>
       ),
     },
-    { field: "client_alias", headerName: "User Type", width: 150 },
-    { field: "module", headerName: "Module", width: 120 },
+    { field: "client_alias", headerName: "User Type", sortable:true, width: 150 },
+    { field: "module", headerName: "Module", sortable:true, width: 120 },
     {
       field: "log_type",
       headerName: "Log Type",
+      sortable:true,
       width: 150,
       renderCell: ({ value }) => {
         if (value == 1) return "System Login";
@@ -194,13 +196,14 @@ function UserLog() {
         return "-";
       },
     },
-    { field: "browser", headerName: "Browser" },
-    { field: "browser_ver", headerName: "Version" },
-    { field: "os", headerName: "OS" },
-    { field: "device", headerName: "Device" },
+    { field: "browser", headerName: "Browser" ,sortable:true, },
+    { field: "browser_ver", headerName: "Version" ,sortable:true, },
+    { field: "os", headerName: "OS", sortable:true, },
+    { field: "device", headerName: "Device", sortable:true, },
     {
       field: "date",
       headerName: "Date",
+      sortable:true,
       width: 180,
       renderCell: ({ value }) =>
         value ? dayjs(value).format("DD MMM YYYY HH:mm:ss") : "-",
