@@ -145,7 +145,7 @@ function UploadClosing() {
     };
 
     const MapDot = ({ row }) => {
-        console.log("map Dot Row",row)
+        console.log("map Dot Row", row)
         const color =
             row.prod_map_stat === 1
                 ? (row.pn ? MAP_COLORS.semi : MAP_COLORS.unmapped)
@@ -888,13 +888,12 @@ function UploadClosing() {
 
     // ─── NEW: groupedRows — injects cat_name header rows when approved ────────
     const groupedRows = useMemo(() => {
-        if (!isApproved) return filteredRows;
+        if (!isApproved && !manualMode) return filteredRows; // ✅ also group when manualMode
 
         const rows = [];
         let prevCat = null;
 
         filteredRows.forEach((row, idx) => {
-            // Always push grand total at the end as-is
             if (row._isGrandTotal) {
                 rows.push(row);
                 return;
@@ -915,7 +914,7 @@ function UploadClosing() {
         });
 
         return rows;
-    }, [filteredRows, isApproved]);
+    }, [filteredRows, isApproved, manualMode]); 
 
     // ─── NEW: rowStyle — grey background for category header rows ────────────
     const rowStyle = (row) => {
@@ -941,9 +940,10 @@ function UploadClosing() {
             width: 40,
             align: "center",
             sortable: false,
-            renderCell: ({ row }) => (
-                <Typography variant="caption" color="text.secondary">{row._sl}</Typography>
-            ),
+            renderCell: ({ row }) => {
+                if (row._rowType === "cat_header") return null; // ✅ hide for headers
+                return <Typography variant="caption" color="text.secondary">{row._sl}</Typography>;
+            },
         },
         {
             field: "prod_name",
@@ -951,24 +951,25 @@ function UploadClosing() {
             renderHeader: () => (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                     <Typography variant="body2" fontWeight={600}>Product Name</Typography>
-                    {
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}>
-                            <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
-                                All Products
-                            </Typography>
-                            <Switch
-                                size="small"
-                                checked={tglVal === 1}
-                                onChange={handleToggleAllProducts}
-                            />
-                            <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
-                                with values
-                            </Typography>
-                        </Box>
-                    }
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}>
+                        <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
+                            All Products
+                        </Typography>
+                        <Switch
+                            size="small"
+                            checked={tglVal === 1}
+                            onChange={handleToggleAllProducts}
+                        />
+                        <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
+                            with values
+                        </Typography>
+                    </Box>
                 </Box>
             ),
             renderCell: ({ row }) => {
+                if (row._rowType === "cat_header") {          // ✅ category header row
+                    return <strong>{row.cat_name}</strong>;
+                }
                 if (row._isGrandTotal) {
                     return (
                         <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600, color: "text.primary" }}>
@@ -977,11 +978,11 @@ function UploadClosing() {
                     );
                 }
                 return (
-                    <Box sx={{display:'flex',alignItems:'center',gap:1}}>
-                    <MapDot row={row} />
-                    <Typography variant="body2" sx={{ fontSize: 12 }}>
-                        {row.cat_code_1} {row.prod_code ? `| ${row.prod_code}` : ""} | {row.prod_name}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MapDot row={row} />
+                        <Typography variant="body2" sx={{ fontSize: 12 }}>
+                            {row.cat_code_1} {row.prod_code ? `| ${row.prod_code}` : ""} | {row.prod_name}
+                        </Typography>
                     </Box>
                 );
             },
@@ -992,9 +993,10 @@ function UploadClosing() {
             width: 140,
             align: "center",
             renderCell: ({ row }) => {
+                if (row._rowType === "cat_header") return null; // ✅ hide for headers
                 if (row._isGrandTotal) {
                     return (
-                        <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600, color: "text.primary", textAlign: "center", width: "100%" ,ml:-2}}>
+                        <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600, color: "text.primary", textAlign: "center", width: "100%", ml: -2 }}>
                             {row.prod_qty}
                         </Typography>
                     );
@@ -1012,7 +1014,6 @@ function UploadClosing() {
             },
         },
     ];
-
     const dtColumns = [
         {
             field: "_sl",
@@ -1032,7 +1033,7 @@ function UploadClosing() {
             renderHeader: () => (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                     <Typography variant="body2" fontWeight={600}>Product Name</Typography>
-                    {(isApproved ) && (
+                    {(isApproved) && (
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}>
                             <Typography variant="caption" fontWeight={500} sx={{ whiteSpace: "nowrap" }}>
                                 All Products
@@ -1116,7 +1117,7 @@ function UploadClosing() {
 
                 if (row._isGrandTotal) {
                     return (
-                        <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600, color: "text.primary", ml:'30%' }}>
+                        <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600, color: "text.primary", ml: '30%' }}>
                             {row.prod_qty}
                         </Typography>
                     );
@@ -1249,7 +1250,7 @@ function UploadClosing() {
                             </Box>
                         </Grid>
 
-                        {Number(checking) !== 2 && !hasExistingData && (
+                        {Number(checking) !== 2 && !hasExistingData && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Box display="flex" flexDirection="column" gap={0.5}>
                                     <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
@@ -1293,7 +1294,7 @@ function UploadClosing() {
                             </Grid>
                         )}
 
-                        {Number(checking) !== 2 && !hasExistingData && (
+                        {Number(checking) !== 2 && !hasExistingData && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Button
                                     variant="contained"
@@ -1325,7 +1326,7 @@ function UploadClosing() {
                             </Grid>
                         )}
 
-                        {Number(checking) !== 2 && !hasExistingData && !rawMode && (
+                        {Number(checking) !== 2 && !hasExistingData && !rawMode && !manualMode && (
                             <Grid size={{ xs: 12, sm: "auto" }}>
                                 <Button
                                     variant="contained"
@@ -1462,7 +1463,7 @@ function UploadClosing() {
                             {!isApproved && !isRejected && (
                                 manualMode ? (
                                     <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={handleManualInsert} disabled={loading}>
-                                        Update
+                                        Save
                                     </Button>
                                 ) : (
                                     <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={handleSave} disabled={loading}>
