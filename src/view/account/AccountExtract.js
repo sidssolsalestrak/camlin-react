@@ -238,55 +238,59 @@ function AccountExtract() {
 
   // ---------------- TABLE COLUMNS ----------------
   const columns = [
-    { field: "sl", headerName: "SL", width: 80 },
+    { field: "sl", headerName: "SL", sortable:true, width: 80 },
 
-    { field: "reg_name", headerName: "Region", width: 120 },
+    { field: "reg_name", headerName: "Region", sortable:true, width: 120 },
 
-    { field: "emp_code", headerName: "SO Code", width: 120 },
+    { field: "emp_code", headerName: "SO/User Code", sortable:true, width: 120 },
 
     {
       field: "user_name",
-      headerName: "SO Name",
+      headerName: "SO/User Name",
+      sortable:true,
       width: 150,
       renderCell: ({ row }) => `${row.u_fname || ""} ${row.u_lname || ""}`,
     },
 
-    { field: "so_hq_name", headerName: "HQ", width: 120 },
+    { field: "so_hq_name", headerName: "SO/HQ", sortable:true, width: 120 },
 
     {
       field: "id",
       headerName: "ID",
+      sortable:true,
       width: 140,
       renderCell: ({ row }) => `${row.main_id}_${row.sub_id}`,
     },
 
-    { field: "stk_name", headerName: "Stockist", width: 150 },
+    { field: "stk_name", headerName: "Distributor", sortable:true, width: 150 },
 
-    { field: "sup_name", headerName: "WD Name", width: 150 },
+    { field: "sup_name", headerName: "WD Name", sortable:true, width: 150 },
 
-    { field: "clinic_name", headerName: "Store Name", width: 150 },
+    { field: "clinic_name", headerName: "Store Name", sortable:true, width: 150 },
 
     {
       field: "P_class",
       headerName: "Potential Class",
+       sortable:true,
       width: 120,
     },
 
     {
       field: "cus_visit_freq",
-      headerName: "Frequency",
+      headerName: "Frequency Class",
+      sortable:true,
       width: 120,
     },
 
-    { field: "area_name", headerName: "Area", width: 150 },
+    { field: "area_name", headerName: "Area", sortable:true, width: 150 },
 
-    { field: "beat_name", headerName: "Beat", width: 150 },
+    { field: "beat_name", headerName: "Beat/Territory", sortable:true, width: 150 },
 
-    { field: "mobile", headerName: "Mobile", width: 150 },
+    { field: "mobile", headerName: "Mobile No", sortable:true, width: 150 },
   ];
 
   const ExcelColumns = [
-    {field:"sl_no",headerName:"SL NO"},
+    {field:"sl",headerName:"SL NO"},
     { field: "reg_name", headerName: "Region" },
     { field: "emp_code", headerName: "SO/User Code" },
     { field: "user_name", headerName: "SO/User Name" },

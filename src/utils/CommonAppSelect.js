@@ -38,6 +38,9 @@ export default function CommonAppSelect({
         "& .MuiInputLabel-root.Mui-error": {
           color: "red !important",
         },
+        "& .MuiFormLabel-asterisk": {
+        color: Boolean(error) ? "red !important" : "inherit",
+        },
         ...sx,
       }}
       required={required}

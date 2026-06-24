@@ -292,12 +292,14 @@ export default function Zone() {
 
           {tabValue === 0 && (
             <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-              <TextField
+             <TextField
                 label="Zone Name"
                 value={zoneName}
                 required
+                type="text"
                 onChange={(e) => {
-                  setZoneName(e.target.value);
+                  const onlyText = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                  setZoneName(onlyText);
                   if (zoneError) setZoneError(false);
                 }}
                 size="small"

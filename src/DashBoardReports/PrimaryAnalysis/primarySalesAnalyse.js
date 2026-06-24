@@ -160,7 +160,7 @@ function PrimarySalesAnalze() {
                 isTotal: true,
             };
 
-            setAllPrimaryData([...mapped, grandRow]);
+        setAllPrimaryData(mapped.length > 0 ? [...mapped, grandRow] : []);
 
         } catch (err) {
             console.log("sales Analysis Err", err);
@@ -236,7 +236,7 @@ function PrimarySalesAnalze() {
             subColumns: [
                 {
                     field: nameField,
-                    headerName: `${selTypeName} Name`,
+                    headerName: `${selTypeName?.split(' ')[0]} Name`,
                     renderCell: (params) => {
                         const row = params?.row ?? params;
                         return (
@@ -495,6 +495,7 @@ function PrimarySalesAnalze() {
                                     columns={column}
                                     data={allPrimaryData}
                                     showHeader={false}
+                                    noDataMessage={`No Data Available for ${selectedMonth.format('MMM YYYY')}`}
                                     getRowClassName={(row) => row.isTotal ? "total-row" : ""}
                                 />
                             </Box>
