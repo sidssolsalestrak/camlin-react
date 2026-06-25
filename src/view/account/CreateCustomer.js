@@ -717,7 +717,7 @@ function CreateCustomer() {
           <Button
             variant="contained"
             sx={{ bgcolor: "#2196f3", color: "white" }}
-            href="/customers/AllDoctors"
+            href="/customers/AllDoctors/NA==/MA==/MA==/MA==/MQ=="
           >
             HCP / Retailer List
           </Button>

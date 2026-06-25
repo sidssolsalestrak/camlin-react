@@ -27,7 +27,6 @@ function PrimarySalesAnalze() {
     const decodeCatType = enCatType !== 'undefined' && enCatType ? atob(enCatType) : 4
     const [selMonth, setSelMonth] = useState(decodeEnMonth);
     const [selType, setSelType] = useState(decodeCatType);
-    const [selTypeName, setSelTypeName] = useState("Category Wise");
     const [progress, setProgress] = useState(null);
     const [allPrimaryData, setAllPrimaryData] = useState([]);
     const [graphdataDialog, setGraphDialog] = useState(false)
@@ -51,6 +50,10 @@ function PrimarySalesAnalze() {
         { value: 3, label: "SKU Wise" },
     ];
 
+    const [selTypeName, setSelTypeName] = useState(
+    allTypeNames.find(t => t.value == decodeCatType)?.label ?? "Category Wise"
+    );
+
     const zeroToNull = (val) =>
         val === 0 || val === null || val === undefined ? "-" : val;
 
@@ -68,7 +71,7 @@ function PrimarySalesAnalze() {
             : decodeCatType == 2 ? "channel_name"
                 : decodeCatType == 3 ? "prod_name"
                     : "cat_name"
-    ), [decodeCatType]);
+    ), [selType,decodeCatType]);
 
     const showConfirmationDialog = (config) => {
         setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
@@ -363,7 +366,7 @@ function PrimarySalesAnalze() {
         },
         {
             field: "lym_qty",
-            headerName: `Last Year(${dayjs(selMonth).subtract(1, "year").format('YYYY')})`,
+            headerName: `Last Year(${dayjs(selMonth).subtract(1, "year").format('MMM YYYY')})`,
             renderCell: (params) => (
                 <Typography sx={{textAlign:'right'}}>{zeroToNull(Math.round(params.value, 2))}</Typography>
             )

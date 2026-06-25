@@ -97,7 +97,7 @@ function DataSubmissionLog() {
                     stk_name: row.stk_name,
                 };
             }
-            map[key][`month_${row.mth_no}`] = row.log_dt || "-";
+            map[key][`month_${row.mth_no}`] = row.log_dt ? dayjs(row.log_dt).format("DD-MMM-YYYY") : "-";
         });
 
         return Object.values(map).map((row) => {
@@ -149,7 +149,7 @@ function DataSubmissionLog() {
         return {
             field: `month_${i + 1}`,
             headerName: monthName,
-            type: 'date'
+            width:90
         };
     });
 

@@ -62,6 +62,7 @@ import { useLocation } from "react-router-dom";
 import { FaFile } from "react-icons/fa";
 import FilePreviewModal from "./FilePreviewModal";
 import useToast from "../../utils/useToast";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 function UploadClosing() {
   const {
@@ -105,7 +106,6 @@ function UploadClosing() {
     return "0";
   });
 
-  const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(false);
@@ -131,6 +131,10 @@ function UploadClosing() {
   const [manualMode, setManualMode] = useState(false);
   const mapDebounce = useRef(null);
   const location = useLocation();
+  const [files, setFiles] = useState([]);
+  const [inputCount, setInputCount] = useState(1);
+  const inputRefs = useRef([]);
+  const MAX_FILE_INPUTS = 9;
 
   const rowKeyCounter = useRef(0);
   const tagWithRowKeys = useCallback((rows) => {
@@ -372,18 +376,47 @@ function UploadClosing() {
     if (selDesName && selDesName !== "0") loadDesListData();
   }, [selDesName, selMonth, tglVal]);
 
-  const handleFileChange = (e) => {
-    if (!selDesName || selDesName === "0") {
-      toast.error("Please select a Distributor first.");
-      e.target.value = "";
+  const handleFileChange = (e, slotIndex) => {
+  if (!selDesName || selDesName === "0") {
+    toast.error("Please select a Distributor first.");
+    e.target.value = "";
+    return;
+  }
+  const incoming = e.target.files?.[0];
+  if (!incoming) return;
+  const isDuplicate = files.some((f, i) => i !== slotIndex && f?.name === incoming.name);
+  if (isDuplicate) {
+    toast.error(`File "${incoming.name}" is already added.`);
+    e.target.value = "";
+    return;
+  }
+  setFiles((prev) => {
+    const next = [...prev];
+    next[slotIndex] = incoming;
+    return next;
+  });
+};
+
+const handleRemoveFile = (slotIndex) => {
+  setFiles((prev) => prev.filter((_, i) => i !== slotIndex));
+  const ref = inputRefs.current[slotIndex];
+  if (ref) ref.value = "";
+};
+
+const handleAddMore = () => {
+  for (let i = 1; i < inputCount; i++) {
+    const ref = inputRefs.current[i];
+    if (ref && ref.files.length === 0) {
+      toast.error("Please select a file for all previous inputs before adding more.");
       return;
     }
-    const incoming = Array.from(e.target.files || []);
-    setFiles((prev) => {
-      const names = new Set(prev.map((f) => f.name));
-      return [...prev, ...incoming.filter((f) => !names.has(f.name))];
-    });
-  };
+  }
+  if (inputCount >= MAX_FILE_INPUTS) {
+    toast.error("Maximum file input count reached (9).");
+    return;
+  }
+  setInputCount((c) => c + 1);
+};
 
   const handleImport = async () => {
     if (!selDesName || selDesName === "0") {
@@ -1631,58 +1664,176 @@ function UploadClosing() {
                 )}
               </Box>
             </Grid>
-
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
-              <Grid size={{ xs: 12, sm: "auto" }}>
-                <Box display="flex" flexDirection="column" gap={0.5}>
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    flexWrap="wrap"
-                  >
+              <>
+                <Grid size={{ xs: 12, sm: "auto" }}>
+                  <Box sx={{ display: "flex", flexDirection: "column" }}>
+                    <Typography sx={{ fontWeight: 600 }}>Upload File</Typography>
+
                     <Button
-                      variant="outlined"
                       component="label"
-                      startIcon={<UploadIcon />}
-                      sx={{ whiteSpace: "nowrap" }}
+                      role={undefined}
+                      variant="outlined"
+                      tabIndex={-1}
+                      startIcon={<CloudUploadIcon />}
+                      sx={{
+                        width: 220,
+                        justifyContent: "flex-start",
+                        textTransform: "none",
+                        position: "relative",
+                        pr: files[0] ? 4 : 2,
+                      }}
                     >
-                      Choose file
+                      <Box
+                        component="span"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          display: "block",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        {files[0]?.name || "Choose File"}
+                      </Box>
                       <input
-                        ref={fileInputRef}
+                        ref={(el) => (inputRefs.current[0] = el)}
                         type="file"
-                        multiple
                         accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls"
-                        onChange={handleFileChange}
-                        hidden
+                        onChange={(e) => handleFileChange(e, 0)}
+                        style={{
+                          clip: "rect(0 0 0 0)",
+                          clipPath: "inset(50%)",
+                          height: 1,
+                          overflow: "hidden",
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          whiteSpace: "nowrap",
+                          width: 1,
+                        }}
                       />
+                      {files[0] && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRemoveFile(0);
+                          }}
+                          sx={{
+                            position: "absolute",
+                            right: 4,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            p: "2px",
+                            color: "grey",
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
                     </Button>
-                    {files.length > 0 && (
-                      <Typography variant="caption" color="text.secondary">
-                        {files.length} file{files.length > 1 ? "s" : ""}{" "}
-                        selected
+
+                    {files.length > 0 && inputCount < MAX_FILE_INPUTS && (
+                      <Typography
+                        variant="caption"
+                        onClick={handleAddMore}
+                        sx={{
+                          color: "primary.main",
+                          cursor: "pointer",
+                          userSelect: "none",
+                          fontSize: "1rem",
+                          width: "fit-content",
+                          whiteSpace: "nowrap",
+                          position: "absolute",
+                          mt: 6,
+                        }}
+                      >
+                        + ADD MORE
                       </Typography>
                     )}
                   </Box>
-                  {files.length > 0 && (
-                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                      {files.map((f) => (
-                        <Chip
-                          key={f.name}
-                          label={f.name}
-                          size="small"
-                          onDelete={() =>
-                            setFiles((p) => p.filter((x) => x.name !== f.name))
-                          }
-                          sx={{ fontSize: 11 }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Grid>
-            )}
+                </Grid>
 
+                {Array.from({ length: inputCount - 1 }).map((_, idx) => (
+                  <Grid key={idx + 1} size={{ xs: 12, sm: "auto" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        mt: "20px",
+                      }}
+                    >
+                      <Button
+                        component="label"
+                        role={undefined}
+                        variant="outlined"
+                        tabIndex={-1}
+                        startIcon={<CloudUploadIcon />}
+                        sx={{
+                          width: 220,
+                          justifyContent: "flex-start",
+                          textTransform: "none",
+                          position: "relative",
+                          pr: files[idx + 1] ? 4 : 2,
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "block",
+                            maxWidth: "100%",
+                          }}
+                        >
+                          {files[idx + 1]?.name || "Choose File"}
+                        </Box>
+                        <input
+                          ref={(el) => (inputRefs.current[idx + 1] = el)}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls"
+                          onChange={(e) => handleFileChange(e, idx + 1)}
+                          style={{
+                            clip: "rect(0 0 0 0)",
+                            clipPath: "inset(50%)",
+                            height: 1,
+                            overflow: "hidden",
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            whiteSpace: "nowrap",
+                            width: 1,
+                          }}
+                        />
+                        {files[idx + 1] && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRemoveFile(idx + 1);
+                            }}
+                            sx={{
+                              position: "absolute",
+                              right: 4,
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              p: "2px",
+                              color: "grey",
+                            }}
+                          >
+                            <CloseIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                      </Button>
+                    </Box>
+                  </Grid>
+                ))}
+              </>
+            )}
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
               <Grid size={{ xs: 12, sm: "auto" }}>
                 <Button
@@ -1726,7 +1877,7 @@ function UploadClosing() {
             {Number(checking) !== 2 &&
               !hasExistingData &&
               !rawMode &&
-              !manualMode && (
+              !manualMode && !files.length>0 && (
                 <Grid size={{ xs: 12, sm: "auto" }}>
                   <Button
                     variant="contained"

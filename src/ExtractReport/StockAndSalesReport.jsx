@@ -370,11 +370,11 @@ const StockAndSalesReport = () => {
         }
         try {
             const getLabel = (list, selectedId, labelKey, prefix, idKey = "id") => {
-                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix}- All`;
+                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
                 const match = list.find((item) => String(item[idKey]) === String(selectedId));
-                if (!match) return `${prefix}- All`;
+                if (!match) return `${prefix} All`;
                 const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
-                return `${prefix}- ${label}`;
+                return `${prefix} ${label}`;
             };
             const excelColumns = columns
                 .filter((col) => !col.renderCell || col.field)  // keep all columns
