@@ -290,13 +290,11 @@ function AccountTransfer() {
             field: "beat_name",
             headerName: "Beat",
             filterable: true,
-            sortable: true
         },
         {
             field: "req_first_name",
             headerName: "User",
             filterable: true,
-            sortable: true,
             renderCell: (params) => (
                 <Box>
                     <Typography sx={{ color: '#666666', fontSize: '12px',textWrap:'nowrap' }}>
@@ -313,7 +311,6 @@ function AccountTransfer() {
             field: "first_name",
             headerName: "Account Details",
             filterable: true,
-            sortable: true,
             renderCell: (params) => (
                 <Box>
                     <Box
@@ -349,7 +346,6 @@ function AccountTransfer() {
             field: "del_flag",
             headerName: "Status",
             filterable: true,
-            sortable: true,
             renderCell: (params) => (
                 <Box>
                     <Typography

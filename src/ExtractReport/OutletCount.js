@@ -371,13 +371,32 @@ export default function OutletCount() {
         }
     };
 
-    const handleDownloadExcel = () => {
-        try {
-            const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
-            Download(allOutLets, safeColumns, 'Total_Outlets', setProgress, toast, 'Total_Outlets', {}, true);
-        } catch (err) {
-            console.log("Export Excel Err", err);
-        }
+   const handleDownloadExcel = () => {
+    try {
+        const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
+        
+        // Calculate grand total
+        const totalOutlets = allOutLets.reduce((sum, row) => sum + (Number(row.tot_cus) || 0), 0);
+        
+        // Append grand total row
+        const exportData = [
+            ...allOutLets,
+            {
+                emp_code: 'Grand Total',
+                uname: '',
+                zone_name: '',
+                reg_name: '',
+                area_name: '',
+                ter_name: '',
+                beat_name: '',
+                tot_cus: totalOutlets,
+            }
+        ];
+        
+        Download(exportData, safeColumns, 'Total_Outlets', setProgress, toast, 'Total_Outlets', {}, true);
+    } catch (err) {
+        console.log("Export Excel Err", err);
+    }
     };
 
     // ── Effects ────────────────────────────────────────────────────────────────
@@ -506,7 +525,7 @@ export default function OutletCount() {
                     <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
                     </Grid>
                     {Number(userType) < 4 && (
-                        <Grid size={{ md:3, lg: 1.7, xs:8,sm:3.3 }}>
+                        <Grid size={{ md:3, lg: 1.9, xs:8,sm:3.3 }}>
                         <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
                             Render Location
                         </Button>

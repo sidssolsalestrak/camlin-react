@@ -134,8 +134,11 @@ function OrderFrequencyReport() {
     }, [decodeMonth, decodeRegId, decodeType, decodeUserId, decodeZoneId]);
 
     useEffect(() => {
+        if(!selZone){
         setSelRegion(0);
         setAllRegion([]);
+        return
+        }
         if (selZone) fetchRegionList(selZone);
     }, [selZone]);
 
