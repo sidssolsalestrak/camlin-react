@@ -8,7 +8,7 @@ const sumRows = (rows) =>
         return acc;
     }, {});
 
-export const addSubtotalsPrimary = (data) => {
+export const addSubtotalsPrimary = (data,isTable=true) => {
     if (!data.length) return data;
 
     const result = [];
@@ -35,18 +35,18 @@ export const addSubtotalsPrimary = (data) => {
                 _isSubtotal: true,
                 index: "", ord_id: "", ord_date: "",
                 stk_code: "", stk_name: "", distributor: "",
-                user_name: `Total ${regionName}`,
+                user_name: isTable?`Total ${regionName}`:`${regionName}`,
             });
         });
 
         // ── Zone subtotal ──
-        result.push({
+        !isTable && result.push({
             ...sumRows(allZoneRows),
             _isSubtotal: true,
             _zoneTotal: true,
             index: "", ord_id: "", ord_date: "",
             stk_code: "", stk_name: "", distributor: "",
-            user_name: `Total ${zoneName}`,
+            user_name: isTable?`Total ${zoneName}`:`${zoneName}`,
         });
     });
 

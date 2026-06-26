@@ -266,7 +266,7 @@ function PrimarySalesTransact() {
                 };
             });
 
-            const fileName = `Primary_Sales_${dayjs(dateselect).format("MMM_YYYY")}`;
+            const fileName = `Primary_Sales_${dayjs(dateselect).format("YYYY-MM-DD")}`;
             await excelWithFilters(exportData, exportColumns, fileName, filters, setProgress, 0, { headerFontSize: 11, cellFontSize: 11 });
 
         } catch (err) {
@@ -328,7 +328,7 @@ function PrimarySalesTransact() {
                             </FormControl>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 3 }}>
+                        <Grid size={{ xs: 12, md: 3, lg:2 }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel id="category-label">Category</InputLabel>
                                 <Select
