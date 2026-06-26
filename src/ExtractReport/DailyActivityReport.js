@@ -407,21 +407,54 @@ export default function DailyActivityReport() {
         { field: "prod_call_new", headerName: "Prod.Calls", type: 'number', showTotal: true },
     ];
 
-    const handleDownloadExcel = async () => {
-        try {
-            const freshData = await fetchReportData();
-            const safeColumns = columns.map(
-                ({ renderCell, renderHeader, ...rest }) => rest,
-            );
-            const meta = {
-                FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
-                ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
-                Type: `Type-${typeLabel}`,
-            };
-            DownloadCSV(freshData, safeColumns, "Daily Activity Report", setProgress,toast, meta);
-        } catch (err) {
-            console.log("excelDownload error", err);
-        }
+   const handleDownloadExcel = async () => {
+    try {
+        const freshData = await fetchReportData();
+        const dashIfEmptyFields = [
+            "tot_cus",
+            "tot_call",
+            "prod_call",
+            "sec_tgt_val",
+            "sec_ach_val",
+        ];
+
+        const exportData = freshData.map((row) => {
+            const updatedRow = { ...row };
+            dashIfEmptyFields.forEach((field) => {
+                const val = updatedRow[field];
+                if (!val || Number(val) === 0) {
+                    updatedRow[field] = "-";
+                }
+            });
+            return updatedRow;
+        });
+
+        const safeColumns = columns.map(
+            ({ renderCell, renderHeader, ...rest }) => rest,
+        );
+
+        const meta = {
+            FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
+            ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
+            Type: `Type-${typeLabel}`,
+        };
+
+        console.log("safe columns in excel", safeColumns);
+
+        let grandTotal = {
+            label: "Total",
+            beat_work: "label",
+            tot_cus: "sum",
+            tot_call: "sum",
+            prod_call: "sum",
+            sec_tgt_val: "sum",
+            sec_ach_val: "sum",
+        };
+
+        DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
+    } catch (err) {
+        console.log("excelDownload error", err);
+    }
     };
     console.log("selected rows", selectedRows)
 

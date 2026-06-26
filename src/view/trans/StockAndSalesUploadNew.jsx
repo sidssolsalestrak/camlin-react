@@ -246,7 +246,7 @@ const StockAndSalesUploadNew = () => {
         if (row._rowType === "cat_header") {
             return {
                 "& td": {
-                    backgroundColor: "skyblue !important",
+                    backgroundColor: "#c0c0c0 !important",
                     color: "#000",
                     fontWeight: 700,
                     pointerEvents: "none",
@@ -397,70 +397,95 @@ const StockAndSalesUploadNew = () => {
     };
 
     const handleExcelExport = async () => {
-        try {
-            // ── 1. Build filters (matches excelWithFilters signature) ──────────
-            const selectedDist = distribute.find(
-                d => String(d.id) === String(formData.Distributor)
-            );
-            const distLabel = selectedDist
-                ? `${selectedDist.stk_code} - ${selectedDist.stk_name}`
-                : String(formData.Distributor);
+    if (!formData.Distributor || formData.Distributor === "0") {
+        showAlert.warning('Please Select Distributor');
+        return;
+    }
+    try {
+        // ── 0. Always fetch the FULL ("Show All") data set for export,
+        //       regardless of current toggle state ───────────────────────
+        const res = await axios.post('/stock_sales', {
+            month: dayjs(month).format("YYYY-MM-DD"),
+            stk_id: formData.Distributor,
+            value: 0, // 0 = show all products, ignoring current withValues toggle
+        });
+        const resData = res.data?.data || {};
+        const fullRows = Array.isArray(resData.salesdata) ? resData.salesdata : [];
 
-            const filters = [
-                { label: `Month - ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
-                { label: `Distributor : ${distLabel}`, bold: false, sz: 10 },
-            ];
+        const fullSalesData = fullRows.map(row => ({
+            ...row,
+            open_qty: row.open_qty ?? 0,
+            pur_qty: row.pur_qty ?? 0,
+            tot_qty: row.tot_qty ?? 0,
+            sec_qty: row.sec_qty ?? 0,
+            physical_qty: row.physical_qty ?? 0,
+        }));
 
-            // ── 2. Map your columns → { id, label } (skip cat_header rows) ────
-            const exportColumns = [
-                { id: "prod_code", label: "PRODUCT CODE" },
-                { id: "prod_name", label: "NAME" },
-                { id: "prod_uom", label: "UOM" },
-                { id: "stk_price", label: "MRP" },
-                { id: "open_qty", label: "OPENING STOCK (O)" },
-                { id: "pur_qty", label: "PRIMARY QTY (P)" },
-                { id: "tot_qty", label: "TOTAL STOCK (T=O+P)" },
-                { id: "sec_qty", label: "SEC. SALES (S=T-C)" },
-                { id: "physical_qty", label: "CLOSING QTY (C)" },
-            ];
+        // ── 1. Build filters (matches excelWithFilters signature) ──────────
+        const selectedDist = distribute.find(
+            d => String(d.id) === String(formData.Distributor)
+        );
+        const distLabel = selectedDist
+            ? `${selectedDist.stk_code} - ${selectedDist.stk_name}`
+            : String(formData.Distributor);
 
-            // ── 3. Flatten tableData: convert cat_header rows → styled data rows
-            //       excelWithFilters colours rows that have _isGroupHeader = true
-            const exportData = tableData.map(row => {
-                if (row._rowType === "cat_header") {
-                    // Spread cat_name into prod_code column, mark as group header
-                    return {
-                        prod_code: row.cat_name,
-                        prod_name: "",
-                        prod_uom: "",
-                        stk_price: "",
-                        open_qty: "",
-                        pur_qty: "",
-                        tot_qty: "",
-                        sec_qty: "",
-                        physical_qty: "",
-                        _isGroupHeader: true,   // triggers skyblue-ish styling in excelWithFilters
-                        bgcolor:"87CEEB",
-                        color:"000000"
-                    };
-                }
-                return row;
-            });
+        const filters = [
+            { label: `Month - ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
+            { label: `Distributor : ${distLabel}`, bold: false, sz: 10 },
+        ];
 
-            // ── 4. Fire export ─────────────────────────────────────────────────
-            const fileName = `stock_sale_${dayjs(month).format("MMM_YYYY")}`;
+        // ── 2. Map your columns → { id, label } ─────────────────────────────
+        const exportColumns = [
+            { id: "prod_code", label: "PRODUCT CODE" },
+            { id: "prod_name", label: "NAME" },
+            { id: "prod_uom", label: "UOM" },
+            { id: "stk_price", label: "MRP" },
+            { id: "open_qty", label: "OPENING STOCK (O)" },
+            { id: "pur_qty", label: "PRIMARY QTY (P)" },
+            { id: "tot_qty", label: "TOTAL STOCK (T=O+P)" },
+            { id: "sec_qty", label: "SEC. SALES (S=T-C)" },
+            { id: "physical_qty", label: "CLOSING QTY (C)" },
+        ];
 
-            await excelWithFilters(
-                exportData,
-                exportColumns,
-                fileName,
-                filters,
-                setProgress,                    
-            );
-        } catch (err) {
-            console.error("Excel export error:", err);
-            showAlert.error("Failed to export Excel");
-        }
+        // ── 3. Build category-grouped rows from the FULL data set ───────────
+        const groupedForExport = [];
+        let prevCat = null;
+        fullSalesData.forEach((row, idx) => {
+            const cat = row.cat_name || "Uncategorized";
+            if (cat !== prevCat) {
+                groupedForExport.push({
+                    prod_code: cat,
+                    prod_name: "",
+                    prod_uom: "",
+                    stk_price: "",
+                    open_qty: "",
+                    pur_qty: "",
+                    tot_qty: "",
+                    sec_qty: "",
+                    physical_qty: "",
+                    _isGroupHeader: true,
+                    bgcolor: "87CEEB",
+                    color: "000000",
+                });
+                prevCat = cat;
+            }
+            groupedForExport.push(row);
+        });
+
+        // ── 4. Fire export ─────────────────────────────────────────────────
+        const fileName = `stock_sale_${dayjs(month).format("MMM_YYYY")}`;
+
+        await excelWithFilters(
+            groupedForExport,
+            exportColumns,
+            fileName,
+            filters,
+            setProgress,
+        );
+    } catch (err) {
+        console.error("Excel export error:", err);
+        showAlert.error("Failed to export Excel");
+    }
     };
     return (
         <Layout breadcrumb={[

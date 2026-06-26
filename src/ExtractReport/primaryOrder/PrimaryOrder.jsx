@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import dayjs from "dayjs";
 import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -73,13 +73,14 @@ const PrimaryOrder = () => {
     const [progress, setProgress] = useState(null);
     const showAlert = useToast();
     const [formData, setformData] = useState({
-        zone: "",
-        region: "",
-        area: "",
-        distributor: "",
+        zone:"0",
+        region: "0",
+        area: "0",
+        distributor: "0",
     })
     const [open, setOpen] = useState(false);
     const [rowData, setRowData] = useState(null);
+    const isInitializing = useRef(true);
 
     //handle change
     const handleChange = (name, value) => {
@@ -185,14 +186,15 @@ const PrimaryOrder = () => {
 
     /*----------initialize states from decoded---------*/
     useEffect(() => {
-        setMonth(decodedMonth ? dayjs(decodedMonth) : dayjs().startOf("month"));
-        setformData({
-            zone: decodedZone || "",
-            region: decodedRegion || "",
-            area: decodedArea || "",
-            distributor: decodedDistribute || ""
-        })
-    }, [decodedMonth, decodedZone, decodedRegion, decodedArea, decodedDistribute])
+    setMonth(decodedMonth ? dayjs(decodedMonth) : dayjs().startOf("month"));
+    setformData({
+        zone: decodedZone || "0",
+        region: decodedRegion || "0",
+        area: decodedArea || "0",
+        distributor: decodedDistribute || "0"
+    });
+    }, [decodedMonth, decodedZone, decodedRegion, decodedArea, decodedDistribute]);
+
 
     //fetch table data 
     useEffect(() => {
@@ -217,47 +219,40 @@ const PrimaryOrder = () => {
 
     // Zone changes
     useEffect(() => {
-        if (formData?.zone > 0) {
-            fetchRegion();
-        } else {
-            setarea([])
-            setregionData([])
-            setAllDistributor([])
-            setformData((prev) => ({
-                ...prev,
-                region: "",
-                area: "",
-                distributor: ""
-            }))
-        }
-    }, [formData?.zone]);
+    if (Number(formData?.zone) > 0) {
+        fetchRegion();
+    } else if (!isInitializing.current) {
+        setarea([]);
+        setregionData([]);
+        setAllDistributor([]);
+        setformData((prev) => ({ ...prev, region: "0", area: "0", distributor: "0" }));
+    }
+     }, [formData?.zone]);
 
     // Region changes
     useEffect(() => {
-        if (formData?.region > 0) {
-            fetchArea();
-        } else {
-            setarea([])
-            setAllDistributor([])
-            setformData((prev) => ({
-                ...prev,
-                area: "",
-                distributor: ""
-            }))
-        }
+    if (formData?.region > 0) {
+        fetchArea();
+    } else if (!isInitializing.current) {
+        setarea([]);
+        setAllDistributor([]);
+        setformData((prev) => ({ ...prev, area: "0", distributor: "0" }));
+    }
     }, [formData?.region]);
 
     // area changes
     useEffect(() => {
-        if (formData?.area > 0) {
-            fetchDistributor();
-        } else {
-            setAllDistributor([])
-            setformData((prev) => ({
-                ...prev,
-                distributor: ""
-            }))
-        }
+    if (formData?.area > 0) {
+        fetchDistributor();
+    } else if (!isInitializing.current) {
+        setAllDistributor([]);
+        setformData((prev) => ({ ...prev, distributor: "0" }));
+    }
+    // flip after the URL-restore has had a chance to flow through all three cascades
+    if (isInitializing.current) {
+        const t = setTimeout(() => { isInitializing.current = false; }, 0);
+        return () => clearTimeout(t);
+    }
     }, [formData?.area]);
 
     const columns = [
@@ -350,19 +345,19 @@ const PrimaryOrder = () => {
     const handleDownloadExcel = async () => {
         try {
             const getLabel = (list, selectedId, labelKey, prefix) => {
-                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix}- All`;
+                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
                 const match = list.find((item) => String(item.id) === String(selectedId));
-                if (!match) return `${prefix}- All`;
+                if (!match) return `${prefix} All`;
                 const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
-                return `${prefix}- ${label}`;
+                return `${prefix} ${label}`;
             };
 
             const meta = {
                 Month: `- ${dayjs(month).format("MMM YYYY")}`,
-                zone: getLabel(zoneData, formData.zone, "zone_name", ""),
-                region: getLabel(regionData, formData.region, "reg_name", ""),
-                area: getLabel(area, formData.area, "area_name", ""),
-                distributor: getLabel(allDistributor, formData.distributor, (item) => `${item.stk_code} - ${item.stk_name}`, ""),
+                Zone: getLabel(zoneData, formData.zone, "zone_name", ""),
+                Region: getLabel(regionData, formData.region, "reg_name", ""),
+                Area: getLabel(area, formData.area, "area_name", ""),
+                Distributor: getLabel(allDistributor, formData.distributor, (item) => `${item.stk_code} - ${item.stk_name}`, ""),
             };
 
             // ── Fetch fresh data for extractPath, use state for report path ────────
@@ -375,7 +370,7 @@ const PrimaryOrder = () => {
                 sourceData = newData ?? [];
             }
 
-            DownloadCSV(addSubtotalsPrimary(sourceData), columnsExcel, `Primary_Order`, setProgress, enqueueSnackbar, meta, false);
+            DownloadCSV(addSubtotalsPrimary(sourceData,false), columnsExcel, `Primary_Order`, setProgress, enqueueSnackbar, meta, false);
         } catch (err) {
             if (err?.response?.status === 404) {
                 showAlert.error("No Data Available To Export Excel")
@@ -385,6 +380,8 @@ const PrimaryOrder = () => {
             }
         }
     };
+
+    console.log("form Data in primary order",formData)
 
     return (
         <Layout breadcrumb={[
@@ -416,7 +413,7 @@ const PrimaryOrder = () => {
                             <InputLabel id="zone">Zone</InputLabel>
                             <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label="Zone" MenuProps={menuStyle}
                                 labelId="zone" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
                                 ))}
@@ -429,7 +426,7 @@ const PrimaryOrder = () => {
                             <Select id='Region' label="Region" MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
                                 labelId="Region" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {regionData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.reg_name}</MenuItem>
                                 ))}
@@ -442,7 +439,7 @@ const PrimaryOrder = () => {
                             <Select id='Area' label="Area" MenuProps={menuStyle}
                                 value={formData.area} onChange={(e) => handleChange("area", e.target.value)}
                                 labelId="Area" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {area?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.area_name}</MenuItem>
                                 ))}
@@ -455,7 +452,7 @@ const PrimaryOrder = () => {
                             <Select id='Distributor' label="Distributor" MenuProps={menuStyle}
                                 value={formData.distributor} onChange={(e) => handleChange("distributor", e.target.value)}
                                 labelId="Distributor" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {allDistributor.map((val) => (
                                     <MenuItem sx={{ textWrap: 'wrap' }} key={val.id} value={val.id}>{val.stk_code}-{val.stk_name}</MenuItem>
                                 ))}

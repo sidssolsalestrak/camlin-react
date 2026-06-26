@@ -207,7 +207,7 @@ const OrderReport = () => {
 
     const columns = [
         {
-            field: "index",
+            field: "si_no",
             headerName: "SI",
             filterable: true,
         },
@@ -567,7 +567,7 @@ const OrderReport = () => {
             const res = await axios.post("/getPcmKam", payload);
             let data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row, index) => ({
                 ...row,
-                index: index + 1,
+                si_no: index + 1,
                 psm_kam: (row?.emp_code && row.emp_code !== "undefined")
                     ? `${row.emp_code} - ${row.sr_name}`
                     : (row?.sr_name || ""),
@@ -650,7 +650,7 @@ const OrderReport = () => {
             let sourceData = Array.isArray(res?.data?.data)
                 ? res?.data?.data?.map((row, index) => ({
                     ...row,
-                    index: index + 1,
+                    si_no: index + 1,
                     psm_kam: (row?.emp_code && row.emp_code !== "undefined")
                         ? `${row.emp_code} - ${row.sr_name}`
                         : (row?.sr_name || ""), cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
@@ -668,10 +668,12 @@ const OrderReport = () => {
                 ] : []),
             ]
             const exportColumns = [...addColumn, ...columns.map(({ renderCell, ...col }) => col)];
-
+            console.log("export columns in order report",exportColumns)
+            console.log("source data in excel",sourceData)
             DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, {
                 label: "Total",
-                prod_name: "label",
+                reg_name:"label",
+                sub_name:"label",
                 disc_value: "sum",
                 ord_value: "sum",
                 retail_price: "sum",
