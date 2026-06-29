@@ -96,8 +96,8 @@ const StockAndSalesUploadNew = () => {
         showConfirmationDialog({
             title: "Confirmation",
             message: `Are you sure want to ${masId > 0 ? "Update" : "Submit"} Stock & Sales for ${month ? dayjs(month).format("MMM YYYY") : null}`,
-            confirmText: "OK",
-            cancelText: "Close",
+            confirmText: "Yes",
+            cancelText: "Cancel",
             confirmColor: "primary",
             onConfirm: () => handleSubmit(),
         });

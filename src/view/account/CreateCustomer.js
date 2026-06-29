@@ -1077,7 +1077,7 @@ function CreateCustomer() {
         {/*------------  Competitor Mapping ------------------------ */}
         <Typography variant="h6" color="initial" sx={subHeaderStyle}>Competitor Mapping</Typography>
         <Divider />
-        <Box sx={{ width: "50%" }}>
+        <Box sx={{ width: {lg:"50%",md:'50%',sm:'80%',xs:'90%'} }}>
           <CompetitorMappping
             brandData={brandData}
             setBrandData={setBrandData}

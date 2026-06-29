@@ -456,7 +456,7 @@ function DataSubmissionStatus() {
                     newRow.stk_code = "";
                     newRow.reg_name = "";
                     newRow.area_name = "";
-                    newRow.rate_score = row._avg_rating ? `${row._avg_rating}%` : "-";
+                    newRow.rate_score = row._avg_rating ? `${row._avg_rating}%` : "0%";
                     newRow.tot_stk = row.tot_stk || "-";
                     newRow.tot_recv = row.tot_recv || "-";
                     newRow.process_stat_text = "";
@@ -604,9 +604,9 @@ function DataSubmissionStatus() {
         const monthLabel = dayjs(selMonth).format("MMM YYYY");
         showConfirmationDialog({
             title: "Confirmation",
-            message: `Delete ${row.stk_name} stock & sales for ${monthLabel}?`,
-            confirmText: "OK",
-            cancelText: "Close",
+            message: `Are you sure want Delete Selected Distributor stock & sales for ${monthLabel}?`,
+            confirmText: "Yes! Delete",
+            cancelText: "Cancel",
             confirmColor: "primary",
             onConfirm: async () => {
                 try {
@@ -628,7 +628,7 @@ function DataSubmissionStatus() {
     const handleDeleteAll = (row) => {
         showConfirmationDialog({
             title: "Confirmation",
-            message: "Are you sure you want to delete this record?",
+            message: "Are you sure you want to delete this Product?",
             confirmText: "OK",
             cancelText: "Close",
             confirmColor: "primary",
@@ -662,8 +662,8 @@ function DataSubmissionStatus() {
         showConfirmationDialog({
             title: "Confirmation",
             message: "Are you sure you want to Update Stock & Sales for Selected Distributor?",
-            confirmText: "OK",
-            cancelText: "Close",
+            confirmText: "Yes",
+            cancelText: "Cancel",
             confirmColor: "primary",
             onConfirm: async () => {
                 try {

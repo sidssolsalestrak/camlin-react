@@ -54,7 +54,7 @@ function AccountTransfer() {
         showConfirmationDialog({
             title: `Account Transfer`,
             message: `Are you sure want to Transfer ${selectedRows.length} Accounts from ${selFromUser.user_name} 
-            to ${selToUser.user_name} for Selected Beat??`,
+            to ${selToUser.user_name} for Selected Accounts??`,
             confirmText: `Yes`,
             confirmColor: "primary",
             onConfirm: () => handleTransferCustomer()
