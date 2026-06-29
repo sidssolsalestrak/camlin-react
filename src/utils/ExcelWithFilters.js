@@ -114,6 +114,12 @@ const setRowHeights = (ws, mergedTitleRows, formattedData) => {
   ];
 };
 
+const sanitizeSheetName = (name) => {
+  return String(name)
+    .replace(/[\\/?*[\]]/g, "")  // strip invalid characters
+    .slice(0, 31);                 // enforce max length
+};
+
 export const excelWithFilters = async (tableData, tableColumns, fileName, filters, setProgress, type = 0, { headerFontSize = 9, cellFontSize = 9 } = {}) => {
   try {
     setProgress("0%");
@@ -189,7 +195,7 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
     await new Promise((r) => setTimeout(r, 200));
     setProgress("100%");
 
-    XLSX.utils.book_append_sheet(wb, ws, "gate");
+    XLSX.utils.book_append_sheet(wb, ws,sanitizeSheetName(fileName));
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   } catch (error) {
     console.error("Failed to download!", error);

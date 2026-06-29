@@ -8,6 +8,9 @@ import {
   Select,
   MenuItem,
   Button,
+  Dialog,DialogContent,DialogContentText,DialogActions,DialogTitle,
+  IconButton,
+  Typography
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -20,6 +23,9 @@ import dayjs from "dayjs";
 import useToast from "../utils/useToast";
 import {DownloadNoCell} from ".././utils/xlsnoCellsDownload/DownloadNoCell";
 import ConfirmationDialog from "../utils/confirmDialog";
+import CloseIcon from "@mui/icons-material/Close";
+import profile from "../assets/images/profile.jpg";
+import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 
 function UserList() {
   const location = useLocation();
@@ -33,7 +39,9 @@ function UserList() {
   const [regionList, setRegionList] = useState([]);
   const [areaList, setAreaList] = useState([]);
   const [terList, setTerList] = useState([]);
-
+  const [userDialog,setUserDialog]=useState(false)
+  const [previewImage, setPreviewImage] = useState(profile);
+  const [dialogData,setDialogData]=useState([])
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
   const toast=useToast()
@@ -462,9 +470,23 @@ function UserList() {
     }
   ]
 
-  const handleUserClick = (row) => {
-    console.log("Open modal (same as PHP)", row);
-  };
+  const handleUserClick = async (row) => {
+  try {
+    setUserDialog(true);
+    let response = await api.post('/getUserData', { id: row.user_id });
+    let resUserData = Array.isArray(response.data.data) ? response.data.data : [];
+    setDialogData(resUserData);
+
+    const imageUpl = resUserData[0]?.image_upl;
+    setPreviewImage(
+      imageUpl
+        ? `${process.env.REACT_APP_PROFILE_URL}/${imageUpl}`
+        : profile
+    );
+  } catch (err) {
+    console.log("fetch user DialogData err", err);
+  }
+};
 
   const handleEdit = (row) => {
     const id = btoa(row.user_id);
@@ -527,6 +549,7 @@ function UserList() {
     // window.location.href = url;
   };
 
+  console.log("user Dialog Data",dialogData)
   return (
     <Layout
       breadcrumb={[
@@ -719,6 +742,191 @@ function UserList() {
             title="Users List"
           />
         </Box>
+        <Dialog
+              open={userDialog}
+              maxWidth={false}
+              PaperProps={{
+                sx: {
+                  width: { lg: '1200px', md: '1200px', sm: '80%', xs: '95%' },
+                  position:'absolute',
+                  top:5,
+                  // '& *': {
+                  //  outline: '1px solid red',           // Remove outline from all children
+                  // },
+                },
+              }}
+            >
+
+              <DialogContent >
+                 <Box sx={{position:'absolute',top:0,right:0}}>
+                 <IconButton onClick={() => setUserDialog(false)}>
+                  <CloseIcon />
+                </IconButton>
+                </Box>
+                <Grid container >
+                  <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <img
+                      src={previewImage}
+                      alt="profile"
+                      style={{
+                        width: '200px',
+                        height: '200px',
+                        borderRadius: '5px',
+                        objectFit: 'cover',
+                        marginBottom: '10px',
+                        border: '1px solid #026cb6',
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '24px' }}>
+                        {dialogData[0]?.first_name ? dialogData[0].first_name : ''}
+                      </Typography>
+
+                      <Typography sx={{ fontSize: '16px' }}>
+                        {dialogData[0]?.user_desig ? `${dialogData[0]?.user_desig} | ` : ''}
+                        {`Emp Code: ${dialogData[0]?.emp_code ? dialogData[0]?.emp_code : ''} | `}
+                        {dialogData[0]?.emp_stat_id === 1
+                          ? 'Trainee'
+                          : dialogData[0]?.emp_stat_id === 2
+                          ? 'Probation'
+                          : dialogData[0]?.emp_stat_id === 3
+                          ? 'Confirmed'
+                          : ''}
+                      </Typography>
+
+                      <Typography sx={{ fontSize: '16px' }}>
+                        DOJ: {dialogData[0]?.emp_doj ? dayjs(dialogData[0]?.emp_doj).format('DD-MMM-YYYY') : ''} |
+                        {dialogData[0]?.emp_type_id === 3
+                          ? ` Franchisee`
+                          : dialogData[0]?.emp_type_id === 1
+                          ? ` On Roll`
+                          : dialogData[0]?.emp_type_id === 2
+                          ? ' Outsourced'
+                          : ''}
+                      </Typography>
+
+                      <Typography sx={{ fontSize: '16px' }}>
+                        Mobile: {dialogData[0]?.mob_no ? dialogData[0].mob_no : ''}  Email:{' '}
+                        {dialogData[0]?.email_id ? dialogData[0]?.email_id : ''}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Box sx={{ mt: 3 }}>
+                  <Grid container >
+                   <Grid size={{ xs: 12, lg: 6 }}>
+                        <table width="100%" style={{ borderCollapse: 'collapse' }}>
+                          <tbody>
+                            <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>App Login</span>
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <label>Yes:</label>{' '}
+                                <input
+                                  type="radio"
+                                  value="0"
+                                  checked={dialogData[0]?.app_stat === 1}
+                                  readOnly
+                                />
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <label style={{ paddingLeft: '20px' }}>No:</label>{' '}
+                                <input
+                                  type="radio"
+                                  value="1"
+                                  checked={dialogData[0]?.app_stat === 0}
+                                  readOnly
+                                />
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}></td>
+                            </tr>
+
+                            <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                              <td className="tdstyle" style={{ padding: '8px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>App Configured</span>
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                {dialogData[0]?.app_config_stat === 1 ? (
+                                  <FaThumbsUp size={25} color="#3c8dbc" />
+                                ) : (
+                                  <FaThumbsDown size={25} color="#3c8dbc" />
+                                )}
+                              </td>
+                              <td colSpan={2} className="tdstyle" style={{ padding: '7px 8px' }}>
+                                {dialogData[0]?.app_ver}
+                              </td>
+                            </tr>
+
+                            <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>OTP:</span>
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>{dialogData[0]?.app_otp}</td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>Auth Key:</span>
+                              </td>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>{dialogData[0]?.auth_key}</td>
+                            </tr>
+
+                            <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>Last App Login:</span>
+                              </td>
+                              <td colSpan={3} className="tdstyle" style={{ padding: '7px 8px' }}>
+                                {dialogData[0]?.last_app_login
+                                  ? dayjs(dialogData[0]?.last_app_login).format('DD MMM YYYY')
+                                  : ''}
+                              </td>
+                            </tr>
+
+                            <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                              <td className="tdstyle" style={{ padding: '7px 8px' }}>
+                                <span style={{ fontWeight: 600 }}>Last Web Login:</span>
+                              </td>
+                              <td colSpan={3} className="tdstyle" style={{ padding: '7px 8px' }}>
+                                {dialogData[0]?.last_web_login
+                                  ? dayjs(dialogData[0]?.last_web_login).format('DD MMM YYYY')
+                                  : ''}
+                              </td>
+                            </tr>
+
+                            {dialogData[0]?.app_stat === 1 && (
+                              <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
+                                <td colSpan={4} align="center" className="tdstyle" style={{ padding: '7px 8px' }}>
+                                  <Button variant="contained" color="error" sx={{ mt: 1 }} id="logout_user">
+                                    Logout from the App
+                                  </Button>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                    </Grid>
+                    <Grid size={{ xs: 12, lg: 6 }} >
+                    <FormControl  sx={{ml:{md:10,xs:0},mt:{xs:3}}}>
+                    <InputLabel id="status">Status</InputLabel>
+                    <Select sx={{width:200}} size="small" labelId="status" label="status" value={dialogData[0]?.acc_stat}>
+                      <MenuItem value={0}>Active</MenuItem>
+                      <MenuItem value={1}>In Active</MenuItem>
+                     
+                    </Select>  
+                    </FormControl>
+
+                    </Grid>
+                  </Grid>
+                </Box>
+              </DialogContent>
+              <DialogActions>
+              <Button variant="contained" onClick={()=>setUserDialog(false)} color="warning">
+               Close 
+              </Button>
+              </DialogActions>
+            </Dialog>
            <ConfirmationDialog
                   open={confirmationDialog.open}
                   onClose={closeConfirmationDialog}
