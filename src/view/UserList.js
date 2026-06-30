@@ -10,7 +10,8 @@ import {
   Button,
   Dialog,DialogContent,DialogContentText,DialogActions,DialogTitle,
   IconButton,
-  Typography
+  Typography,
+  TextField
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -26,6 +27,10 @@ import ConfirmationDialog from "../utils/confirmDialog";
 import CloseIcon from "@mui/icons-material/Close";
 import profile from "../assets/images/profile.jpg";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
 
 function UserList() {
   const location = useLocation();
@@ -42,6 +47,7 @@ function UserList() {
   const [userDialog,setUserDialog]=useState(false)
   const [previewImage, setPreviewImage] = useState(profile);
   const [dialogData,setDialogData]=useState([])
+  const [dialogActiveStat,setDialogActiveStat]=useState(0)
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
   const toast=useToast()
@@ -475,6 +481,7 @@ function UserList() {
     setDialogData([]);         
     setPreviewImage(profile);
     setUserDialog(true);
+    setDialogActiveStat(0)
     let response = await api.post('/getUserData', { id: row.user_id });
     let resUserData = Array.isArray(response.data.data) ? response.data.data : [];
     setDialogData(resUserData);
@@ -551,7 +558,17 @@ function UserList() {
     // window.location.href = url;
   };
 
-  console.log("user Dialog Data",dialogData)
+  const formatDatenew = (val) => {
+    if (!val) return "";
+    // if number (timestamp in seconds)
+    if (!isNaN(val)) {
+      return dayjs(val * 1000).format("DD-MMM-YYYY hh:mm a");
+    }
+    // if ISO string
+    return dayjs(val).format("DD-MMM-YYYY hh:mm a");
+    };
+
+  console.log("dialog data in usr",dialogData[0]?.deact_type)
   return (
     <Layout
       breadcrumb={[
@@ -760,7 +777,7 @@ function UserList() {
             >
 
               <DialogContent >
-                 <Box sx={{position:'absolute',top:0,right:0}}>
+                 <Box sx={{position:'absolute',top:0,right:5}}>
                  <IconButton onClick={() => setUserDialog(false)}>
                   <CloseIcon />
                 </IconButton>
@@ -783,9 +800,9 @@ function UserList() {
 
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography sx={{ fontWeight: 600, fontSize: '24px' }}>
-                        {dialogData[0]?.first_name ? dialogData[0].first_name : ''}
-                      </Typography>
+                     <Typography sx={{ fontWeight: 600, fontSize: '24px', textTransform: 'uppercase' }}>
+                        {`${dialogData[0]?.first_name || ""} ${dialogData[0]?.last_name || ""}`.trim()}
+                     </Typography>
 
                       <Typography sx={{ fontSize: '16px' }}>
                         {dialogData[0]?.user_desig ? `${dialogData[0]?.user_desig} | ` : ''}
@@ -853,14 +870,14 @@ function UserList() {
                                 <span style={{ fontWeight: 600 }}>App Configured</span>
                               </td>
                               <td className="tdstyle" style={{ padding: '7px 8px' }}>
-                                {dialogData[0]?.app_config_stat === 1 ? (
+                                {dialogData[0]?.app_stat === 1 ? (
                                   <FaThumbsUp size={25} color="#3c8dbc" />
                                 ) : (
                                   <FaThumbsDown size={25} color="#3c8dbc" />
                                 )}
                               </td>
                               <td colSpan={2} className="tdstyle" style={{ padding: '7px 8px' }}>
-                                {dialogData[0]?.app_ver}
+                                {dialogData[0]?.app_version}
                               </td>
                             </tr>
 
@@ -880,8 +897,9 @@ function UserList() {
                                 <span style={{ fontWeight: 600 }}>Last App Login:</span>
                               </td>
                               <td colSpan={3} className="tdstyle" style={{ padding: '7px 8px' }}>
-                                {dialogData[0]?.last_app_login
-                                  ? dayjs(dialogData[0]?.last_app_login).format('DD MMM YYYY')
+                                {dialogData[0]?.last_app_login &&
+                                !dayjs(dialogData[0]?.last_app_login).isSame('1900-01-01', 'day')
+                                  ? dayjs(dialogData[0]?.last_app_login).format('DD MMM YYYY hh:mm a')
                                   : ''}
                               </td>
                             </tr>
@@ -891,8 +909,9 @@ function UserList() {
                                 <span style={{ fontWeight: 600 }}>Last Web Login:</span>
                               </td>
                               <td colSpan={3} className="tdstyle" style={{ padding: '7px 8px' }}>
-                                {dialogData[0]?.last_web_login
-                                  ? dayjs(dialogData[0]?.last_web_login).format('DD MMM YYYY')
+                                {dialogData[0]?.last_login &&
+                                !dayjs(dialogData[0]?.last_login * 1000).isSame('1900-01-01', 'day')
+                                  ? formatDatenew(dialogData[0]?.last_login)
                                   : ''}
                               </td>
                             </tr>
@@ -910,14 +929,72 @@ function UserList() {
                         </table>
                     </Grid>
                     <Grid size={{ xs: 12, lg: 6 }} >
-                    <FormControl  sx={{ml:{md:10,xs:0},mt:{xs:3}}}>
+                    <FormControl  sx={{ml:{md:10,xs:0},mt:{xs:3,md:0}}}>
                     <InputLabel id="status">Status</InputLabel>
-                    <Select sx={{width:200}} size="small" labelId="status" label="status" value={dialogData[0]?.acc_stat ?? ""}>
+                    <Select sx={{width:200}} size="small" labelId="status" label="status" onChange={(e)=>setDialogActiveStat(e.target.value)} value={dialogActiveStat}>
                       <MenuItem value={0}>Active</MenuItem>
                       <MenuItem value={1}>In Active</MenuItem>
                      
                     </Select>  
                     </FormControl>
+                    {Number(dialogActiveStat)===1 && (
+                      <Box sx={{display:'flex',flexDirection:'column'}}>
+                      <FormControl  sx={{ml:{md:10,xs:0},mt:{xs:3,md:2}}}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                           <DatePicker
+                          label="Date Of Relieving"
+                          format="DD MMM YYYY"
+                          maxDate={dayjs()}
+                          value={
+                            dialogData[0]?.emp_reliev_dt &&
+                            !dayjs(dialogData[0]?.emp_reliev_dt).isSame('1900-01-01', 'day')
+                              ? dayjs(dialogData[0]?.emp_reliev_dt)
+                              : null
+                          }
+                          defaultCalendarMonth={dayjs()}
+                          placeholder="Select Date of Relieving"
+                          slotProps={{
+                            textField: {
+                              size: 'small',
+                              sx: { width: 200 }
+                            }
+                          }}
+                      />
+                      </LocalizationProvider>
+
+                      </FormControl>
+                      <FormControl sx={{ml:{md:10,xs:0},mt:{xs:3,md:2}}}>
+                        <InputLabel id="deact">Deactivation Type</InputLabel>
+                        <Select label="Deactivation Type" labelId="deact" size="small" sx={{width:200}}  value={Number(dialogData[0]?.deact_type)}>
+                        <MenuItem value={1}>Resigned</MenuItem>
+                        <MenuItem value={2}>Terminated</MenuItem>
+                        <MenuItem value={3}>Absconded</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl sx={{ml:{md:10,xs:0},mt:{xs:3,md:2}}}>
+                      <TextField
+                        multiline
+                        placeholder="Enter Remarks"
+                        size="small"
+                        value={dialogData[0]?.deact_rem}
+                        sx={{
+                          width: 200,
+                          '& .MuiInputBase-root': {
+                           
+                          },
+                          '& textarea': {
+                            resize: 'both',
+                            overflow: 'auto',
+                          },
+                        }}
+                      />
+                      </FormControl>
+                      <Box sx={{ml:{md:10,xs:0},mt:{xs:3,md:2}}}>
+                      <Button sx={{width:'15rem'}} variant="contained" color="error">Deactivate User</Button>
+                      </Box>
+                      </Box>
+                    )
+                    }
 
                     </Grid>
                   </Grid>

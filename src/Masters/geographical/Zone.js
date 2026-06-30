@@ -25,7 +25,7 @@ export default function Zone() {
   const [hdnZoneName, setHdnZoneName] = useState("");
   const [zoneError, setZoneError] = useState(false);
   const [accStat, setAccStat] = useState(null);
-  const [zoneErrorMsg, setZoneErrorMsg] = useState("Zone Name is Required");
+  const [zoneErrorMsg, setZoneErrorMsg] = useState("The Zone Name field is Required");
   const [zoneList, setZoneList] = useState([]);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ export default function Zone() {
   const validateZone = () => {
     if (!zoneName || zoneName.trim() === "") {
       setZoneError(true);
-      setZoneErrorMsg("Zone Name is Required");
+      setZoneErrorMsg("The Zone Name field is Required");
       return false;
     }
     if (zoneName.trim().length < 3) {
