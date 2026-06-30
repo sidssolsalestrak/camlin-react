@@ -334,7 +334,7 @@ export default function Beat() {
                                 disableClearable={!!decodedEditBeatId}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Area Name" size="small" />
+                                    <TextField required {...params} label="Area Name" size="small" />
                                 )}
                             />
                             <Autocomplete
@@ -352,7 +352,8 @@ export default function Beat() {
                                         label="Territory Name"
                                         size="small"
                                         error={territoryError}
-                                        helperText={territoryError ? "Territory Name is required." : ""}
+                                        required
+                                        helperText={territoryError ? "The Territory Name field is required." : ""}
                                     />
                                 )}
                             />
@@ -365,7 +366,8 @@ export default function Beat() {
                                     if (beatError) setBeatError(false)
                                 }}
                                 error={!!beatError}
-                                helperText={beatError ? "Beat Name is required." : ""}
+                                required
+                                helperText={beatError ? "The Beat Name field is required." : ""}
                             />
                             {!decodedEditBeatId && [0,1].includes(Number(accStat)) &&
                                 <Button

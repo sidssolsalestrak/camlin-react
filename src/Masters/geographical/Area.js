@@ -311,7 +311,8 @@ export default function Area() {
                                         label="Region Name"
                                         size="small"
                                         error={regionError}
-                                        helperText={regionError ? "Region Name is required." : ""}
+                                        required
+                                        helperText={regionError ? "The Region Name field is required." : ""}
                                     />
                                 )}
                             />
@@ -332,7 +333,8 @@ export default function Area() {
                                         label="State Name"
                                         size="small"
                                         error={stateError}
-                                        helperText={stateError ? "State Name is required." : ""}
+                                        required
+                                        helperText={stateError ? "The State Name field is required." : ""}
                                     />
                                 )}
                             />
@@ -343,7 +345,8 @@ export default function Area() {
                                     if (areaError) setAreaError(false)
                                 }}
                                 error={!!areaError}
-                                helperText={areaError ? "Area Name is required." : ""}
+                                required
+                                helperText={areaError ? "The Area Name field is required." : ""}
                             />
                             {(!decodedAreaId && [0,1].includes(Number(accStat)))&&
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}

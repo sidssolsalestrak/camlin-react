@@ -173,11 +173,9 @@ function PrimarySalesAnalze() {
     const selectedMonth = dayjs(decodeEnMonth);
 
     if (now.format('MM-YYYY') === selectedMonth.format('MM-YYYY')) {
-           
-         dateLabel = ' /  as of ' + selectedMonth.format('DD MMM YYYY hh:mm a');
-    }
-     else {
-        dateLabel = ' /  as of ' + selectedMonth.endOf('month').format('DD MMM YYYY 00:00:a');
+        dateLabel = ' /  as of ' + selectedMonth.format('DD MMM YYYY HH:mm a');
+    } else {
+        dateLabel = ' /  as of ' + selectedMonth.startOf('month').format('DD MMM YYYY HH:mm a');
     }
 
     const renderPrimarySalesAnalyse = async () => {

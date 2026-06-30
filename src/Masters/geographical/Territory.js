@@ -283,7 +283,8 @@ export default function Territory() {
                                         label="Area Name"
                                         size="small"
                                         error={areaError}
-                                        helperText={areaError ? "Area Name is required." : ""}
+                                        required
+                                        helperText={areaError ? "The Area Name field is required." : ""}
                                     />
                                 )}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
@@ -294,7 +295,8 @@ export default function Territory() {
                                     if (terError) setTerError(false)
                                 }}
                                 error={!!terError}
-                                helperText={terError ? "Territory Name is required." : ""}
+                                required
+                                helperText={terError ? "The Territory Name field is required." : ""}
                             />
                             {!decodedEditTerritoryId && [0,1].includes(Number(accStat)) &&
                              <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}

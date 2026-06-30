@@ -121,7 +121,7 @@ export default function Region() {
         if (!regionName || regionName.trim().length < 3) {
             setRegionError(true)
             setRegionErrMsg(!regionName || regionName.trim() === ""
-                ? "Region Name is required"
+                ? "The Region Name field is required"
                 : "Region Name must be at least 3 characters")
             if (!isValid) {
                 toast.error("Please fix all mandatory fields")
@@ -271,12 +271,12 @@ export default function Region() {
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                             <FormControl sx={{ width: '100%' }}>
-                                <InputLabel id="zone_name">Zone Name</InputLabel>
+                                <InputLabel id="zone_name">Zone Name*</InputLabel>
                                 <Select
                                     value={selectedZone}
                                     onChange={(e) => setSelectedZone(e.target.value)}
                                     labelId="zone_name"
-                                    label="Zone Name"
+                                    label="Zone Name*"
                                     size="small"
                                     error={zoneError}
                                     MenuProps={{
@@ -302,6 +302,7 @@ export default function Region() {
                                 value={regionName}
                                 error={!!regionError}
                                 helperText={regionErrMsg || ""}
+                                required
                                 onChange={(e) => {
                                     setRegionName(e.target.value)
                                     if (regionError) setRegionError(false)
