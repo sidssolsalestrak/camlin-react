@@ -381,16 +381,6 @@ function PrimarySalesTransact() {
                     searchPlaceholder="Type ProdName to Search"
                 />
 
-                {salesData.length === 0 && Number(stockist) !== 0 && (
-                    <Box sx={{
-                        backgroundColor: "#fff",
-                        padding: "20px",
-                        borderRadius: "10px",
-                        textAlign: "center",
-                    }}>
-                        <Typography>No Data Available</Typography>
-                    </Box>
-                )}
 
             </Box>
         </Layout>
