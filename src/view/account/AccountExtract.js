@@ -153,7 +153,8 @@ function AccountExtract() {
   const handleDownloadCSV = async () => {
     let FormattedData = tableData.map((val) => ({
       ...val, id: `${val.main_id}_${val.sub_id}`,
-      user_name: `${val.u_fname || ""} ${val.u_lname || ""}`
+      user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
+      create_dt: val?.create_dt? dayjs( val?.create_dt).format("DD-MM-YYYY HH:mm"):''
     }))
 
     let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
@@ -191,7 +192,7 @@ function AccountExtract() {
       let extData = Array.isArray(response.data.data) ? response.data.data : []
       let FormattedData = extData.map((val,index) => ({
         ...val, id: `${val.main_id}_${val.sub_id}`,
-        sl_no:index+1,
+        sl:index+1,
         user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
         create_dt:val.create_dt?dayjs(val.create_dt).format('DD-MM-YYYY HH:mm'):''
         }))

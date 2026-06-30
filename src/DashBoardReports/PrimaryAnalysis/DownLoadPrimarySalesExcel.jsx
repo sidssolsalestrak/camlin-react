@@ -232,36 +232,6 @@ async function buildGraphSheetWithChart(worksheet, graphData, selectedMonthStr, 
   worksheet.getColumn(2).width = 15;
   worksheet.getColumn(3).width = 15;
   worksheet.getColumn(4).width = 15;
-
-  const totalRow = worksheet.getRow(rowNum);
-  totalRow.getCell(1).value = 'Total';
-  totalRow.getCell(1).font = { bold: true };
-
-  const cmTotal = graphData.reduce((sum, row) => {
-    let val = Number(row.cm_qty) || 0;
-    if (isCurrent && row.sale_day > todayDay) val = 0;
-    return sum + val;
-  }, 0);
-
-  const lmTotal = graphData.reduce((sum, row) => sum + (Number(row.lm_qty) || 0), 0);
-  const lyTotal = graphData.reduce((sum, row) => sum + (Number(row.lym_qty) || 0), 0);
-
-  totalRow.getCell(2).value = cmTotal || '-';
-  totalRow.getCell(3).value = lmTotal || '-';
-  totalRow.getCell(4).value = lyTotal || '-';
-
-  [2, 3, 4].forEach(col => {
-    const cell = totalRow.getCell(col);
-    if (cell.value !== '-') {
-      cell.numFmt = '#,##0';
-    }
-    cell.font = { bold: true };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFF0F0F0' }
-    };
-  });
 }
 
 // ── Sheet 2: Primary Sales Data Table ────────────────────────────────────────

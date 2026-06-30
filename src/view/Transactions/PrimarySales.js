@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../../layout";
 import {
-    Box, Grid, Typography, MenuItem, Select, InputLabel, FormControl
+    Box, Grid, Typography, MenuItem, Select, InputLabel, FormControl,
+    Autocomplete, TextField
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -105,13 +106,12 @@ function PrimarySalesTransact() {
         setDateselect(newVal);
     };
 
-    const handleStockistChange = (e) => {
-        const val = e.target.value;
-        if (Number(val) === 0) {
-            toast.error("Please Select Distributor");
+    const handleStockistChange = (event, selectedOption) => {
+        if (!selectedOption) {
+            setStockist(0);
             return;
         }
-        setStockist(val);
+        setStockist(selectedOption.id);
     };
 
     const { tableData, totQty, totVal } = React.useMemo(() => {
@@ -309,23 +309,19 @@ function PrimarySalesTransact() {
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel id="distributor-label">Distributor</InputLabel>
-                                <Select
-                                    labelId="distributor-label"
-                                    value={stockist}
-                                    onChange={handleStockistChange}
-                                    label="Distributor"
-                                    MenuProps={menuProps}
-                                >
-                                    <MenuItem value={0}>SELECT DISTRIBUTOR</MenuItem>
-                                    {stkList.map((stk) => (
-                                        <MenuItem key={stk.id} value={stk.id}>
-                                            {stk.stk_code} {stk.stk_name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <Autocomplete
+                                size="small"
+                                fullWidth
+                                options={stkList}
+                                value={stkList.find((s) => String(s.id) === String(stockist)) || null}
+                                onChange={handleStockistChange}
+                                getOptionLabel={(option) => `${option.stk_code} ${option.stk_name}`}
+                                isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
+                                ListboxProps={{ style: { maxHeight: 250 } }}
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Distributor" placeholder="Select Distributor" />
+                                )}
+                            />
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 3, lg:2 }}>

@@ -186,6 +186,59 @@ const ViewProduct = () => {
         },
     ]
 
+    const excelColumns=[
+        {
+            field: "index",
+            headerName: "#",
+            filterable: true,
+        },
+        {
+            field: "prodid",
+            headerName: "ID",
+            filterable: true,
+        },
+        {
+            field: "sub_name",
+            headerName: "Subcategory Name",
+            filterable: true,
+        },
+        {
+            field: "code",
+            headerName: "Code",
+            filterable: true,
+        },
+        {
+            field: "prod_type",
+            headerName: "Product Type",
+            filterable: true,
+        },
+        {
+            field: "prod_name",
+            headerName: "Product Name",
+            filterable: true,
+        },
+        {
+            field: "fac_price",
+            headerName: "Ex Factory (ASP)",
+            filterable: true,
+        },
+        {
+            field: "wd_price",
+            headerName: "Stockist Price (PTS)",
+            filterable: true,
+        },
+        {
+            field: "stk_price",
+            headerName: "Retail Price (PTR)",
+            filterable: true,
+        },
+        {
+            field: "mrp_price",
+            headerName: "MRP",
+            filterable: true,
+        }, 
+    ]
+
     /* ---------- table data & sub cat data---------- */
     const fetchData = async ({ name, cat }) => {
         try {
@@ -265,7 +318,7 @@ const ViewProduct = () => {
     const download = async () => {
         Download(
             tableData,
-            columns,
+            excelColumns,
             "ProductMaster",
             setProgress,
             showAlert,
@@ -286,7 +339,7 @@ const ViewProduct = () => {
                     <Box>
                         <h1 className="mainTitle">Product View</h1>
                     </Box>
-                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add Product</Button>
+                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add New Product</Button>
                 </Box>
                 <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap" }}>
                     <TextField value={formData.productName} sx={{ width: "200px" }} size='small' variant='outlined'

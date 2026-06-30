@@ -7,7 +7,7 @@ export const excelStyles = {
     titleFontColor: "000000",
     titleFontSize: 11,
     titleBold: true,
-    headerColor: "",
+    headerColor: "ffffff",
     headerFontColor: "000000",
     headerFontSize: 10,
     headerBold: true,

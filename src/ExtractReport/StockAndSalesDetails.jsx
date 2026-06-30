@@ -56,11 +56,11 @@ const StockAndSalesDetails = () => {
       const meta = {
         centered: true,
         title: "DISTRIBUTOR STOCK AND SALES DETAIL EXTRACT",
-        dateRange: `(${fromDate.format("DD MMM YYYY")} - ${toDate.format("DD MMM YYYY")})`,
+        dateRange: `(${fromDate.format("MMM YYYY")} - ${toDate.format("MMM YYYY")})`,
       };
 
       const columns = [
-        { field: "sale_month", headerName: "Month", type: "date" },
+        { field: "sale_month1", headerName: "Month",},
         { field: "zone_name", headerName: "Zone" },
         { field: "reg_name", headerName: "Region" },
         { field: "stk_code", headerName: "Distributor Code" },
@@ -83,10 +83,12 @@ const StockAndSalesDetails = () => {
         { field: "cls_val", headerName: "Closing Stock Value" },
       ]
 
+      let formattedData=tableData.map((val)=>({...val,sale_month1:val.sale_month?dayjs(val.sale_month).format('DD-MMM-YYYY'):''}))
+
       DownloadCSV(
-        tableData,
+        formattedData,
         columns,
-        `Stock_Sales_Details ${fromDate.format("DD MMM YYYY")}-${toDate.format("DD MMM YYYY")}`,
+        `Stock_Sales_Details ${fromDate.format("MMM YYYY")}-${toDate.format("MMM YYYY")}`,
         setProgress,
         enqueueSnackbar,
         meta,

@@ -16,6 +16,8 @@ self.onmessage = function (e) {
       titleRow1, titleRow2, titleRow3, // Added titleRow2 and titleRow3
       titleColor, titleFontColor, titleFontSize, titleBold,
       sheetName, dataFontSize, dataFontColor,
+      highlightHeaders,   // ✅ NEW — array of headerName strings to tint
+      zoneRowColor,       // ✅ NEW — hex (no '#') fill for zone/total rows
     } = mergedConfig;
 
     // ── Check if any column has subColumns ────────────────────────────────
@@ -51,6 +53,17 @@ self.onmessage = function (e) {
     });
 
     const totalCols = leafColumns.length;
+
+    // ── Resolve highlightHeaders -> leaf column indexes ─────────────────────
+    // ✅ NEW — build once, outside the data loop, for O(1) lookups per cell
+    const highlightHeaderSet = new Set(highlightHeaders || []);
+    const highlightColIndexes = new Set(
+      leafColumns
+        .map((col, idx) => (highlightHeaderSet.has(col.headerName) ? idx : -1))
+        .filter((idx) => idx !== -1)
+    );
+    const HIGHLIGHT_FILL_RGB = "D0E8F5"; // matches the d0e8f5 used elsewhere in the app
+
     const worksheet = XLSX.utils.json_to_sheet([], { cellDates: true });
     const workbook  = XLSX.utils.book_new();
     worksheet["!merges"] = [];
@@ -64,7 +77,7 @@ self.onmessage = function (e) {
       const rowIdx = idx;
       XLSX.utils.sheet_add_aoa(worksheet, [[titleText]], { origin: `A${rowIdx + 1}` });
       worksheet["!merges"].push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: totalCols - 1 } });
-      
+
       const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: 0 });
       const cell = worksheet[cellRef] || (worksheet[cellRef] = { v: titleText, t: "s" });
       cell.s = {
@@ -73,13 +86,13 @@ self.onmessage = function (e) {
         alignment: { horizontal: "left", vertical: "center" },
         border:    borderStyle,
       };
-      
+
       // Fill remaining cells in the title row with borders
       for (let c = 1; c < totalCols; c++) {
         const ref = XLSX.utils.encode_cell({ r: rowIdx, c });
         worksheet[ref] = { v: "", t: "s", s: { border: borderStyle } };
       }
-      
+
       currentRow++;
     });
 
@@ -150,6 +163,13 @@ self.onmessage = function (e) {
 
     data.forEach((row, rowOffset) => {
       const r = dataStartRow + rowOffset;
+
+      // ✅ NEW — a row counts as a "zone" row if either flag is present.
+      // Your handleDownloadExcel() in KPIReport.jsx sets `_iszone`; some
+      // other modules in the app may already use `isZone`/`zone` — covering
+      // a couple of common aliases here so this is robust either way.
+      const isZoneRow = Boolean(row._iszone || row.isZone || row._rowType === "zone");
+
       leafColumns.forEach((col, c) => {
         const cellRef = XLSX.utils.encode_cell({ r, c });
         let value     = row[col.field] ?? "";
@@ -161,6 +181,19 @@ self.onmessage = function (e) {
           border:    borderStyle,
         };
 
+        // ✅ NEW — column-level tint for headers listed in highlightHeaders
+        const highlightStyle = highlightColIndexes.has(c)
+          ? { fill: { patternType: "solid", fgColor: { rgb: HIGHLIGHT_FILL_RGB } } }
+          : {};
+
+        // ✅ NEW — whole-row tint + bold for zone/summary rows
+        const zoneStyle = isZoneRow && zoneRowColor
+          ? {
+              font: { bold: true, sz: dataFontSize, color: { rgb: dataFontColor }, name: "Calibri" },
+              fill: { patternType: "solid", fgColor: { rgb: zoneRowColor } },
+            }
+          : {};
+
         const totalStyle = row.isTotal
           ? {
               font: { bold: true, sz: dataFontSize, color: { rgb: headerFontColor }, name: "Calibri" },
@@ -168,10 +201,13 @@ self.onmessage = function (e) {
             }
           : {};
 
+        // Precedence (left → right, later wins): base < column highlight
+        // < zone row < grand total row. Total rows stay visually dominant
+        // even if they also happen to be a "zone" row.
         worksheet[cellRef] = {
           v: isNumeric ? Number(value) : (value === "-" ? "-" : value),
           t: isNumeric ? "n" : "s",
-          s: { ...baseStyle, ...totalStyle },
+          s: { ...baseStyle, ...highlightStyle, ...zoneStyle, ...totalStyle },
         };
       });
     });
@@ -183,12 +219,12 @@ self.onmessage = function (e) {
 
     // ── Row heights ────────────────────────────────────────────────────────
     worksheet["!rows"] = [];
-    
+
     // Set height for all title rows
     titleRows.forEach((_, idx) => {
       worksheet["!rows"][idx] = { hpt: 22 };
     });
-    
+
     // Set height for header rows
     worksheet["!rows"][groupRowIdx] = { hpt: 13 };
     if (subRowIdx !== null) worksheet["!rows"][subRowIdx] = { hpt: 13 };

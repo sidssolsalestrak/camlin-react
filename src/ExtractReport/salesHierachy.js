@@ -65,7 +65,7 @@ export default function SalesHierachy() {
           return
         }
         fetchSSUserList()
-    }, [selUserType])
+    }, [selUserType,selZone,selRegion])
 
     useEffect(() => {
         if (!decodedDistributorId) {

@@ -178,13 +178,13 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
-        if (formData.userType > 0) {
+        if (formData.userType > 0 && (formData.zone>0 || formData.region>0)) {
             fetchSSUserList();
         } else {
             setuser([])
             handleChange("User", { id: 0, u_name: "All" })
         }
-    }, [formData.userType]);
+    }, [formData.userType,formData.zone,formData.region]);
 
     // Region or User changes → fetch distributors
     useEffect(() => {
@@ -430,7 +430,10 @@ const StockAndSalesReport = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
                             <InputLabel id="zone">Zone</InputLabel>
-                            <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)}
+                            <Select value={formData.zone} onChange={(e) =>{ 
+                                handleChange("region", "0")
+                                handleChange("zone", e.target.value)
+                                }}
                                 id='zone' label="Zone" MenuProps={menuStyle} labelId="zone" variant="outlined" error={!!zoneerror}>
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
