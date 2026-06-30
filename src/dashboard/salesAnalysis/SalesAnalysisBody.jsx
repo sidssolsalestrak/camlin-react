@@ -1,4 +1,4 @@
-import { Box, Grid } from '@mui/material'
+import { Box, Grid, Typography } from '@mui/material'
 import React, { useEffect, useState } from 'react'
 import DataTable from "../../utils/dataTable";
 import DailyReportSub from '../../components/graph/DailyReportSub';

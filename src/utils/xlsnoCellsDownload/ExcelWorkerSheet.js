@@ -13,7 +13,7 @@ self.onmessage = function (e) {
 
         const {
             headerColor, headerFontColor, headerFontSize, headerBold,
-            titleRow1, titleRow2, titleRow3,
+            titleRow1, titleRow2, titleRow3,titleRow4,
             titleColor, titleFontColor, titleFontSize, titleBold,
             sheetName, dataFontSize, dataFontColor,
         } = mergedConfig;
@@ -78,7 +78,7 @@ self.onmessage = function (e) {
         let currentRow = 0;
 
         // ── Title Rows (up to 3) ───────────────────────────────────────────────
-        const titleRows = [titleRow1, titleRow2, titleRow3].filter(Boolean);
+        const titleRows = [titleRow1, titleRow2, titleRow3, titleRow4].filter(Boolean);
         const totalTitleRows = titleRows.length;
 
         titleRows.forEach((titleText, idx) => {

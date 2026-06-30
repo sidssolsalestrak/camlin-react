@@ -231,9 +231,9 @@ function PrimarySalesAnalze() {
             renderCell: (params) => {
                 const row = params?.row ?? params;
                 return (
-                    <span style={{ fontWeight: row.isTotal ? 600 : "normal" }}>
+                    <Typography sx={{ fontWeight: row.isTotal ? 600 : "normal" }}>
                         {row[nameField]}
-                    </span>
+                    </Typography>
                 );
             },
             subColumns: [
@@ -243,9 +243,11 @@ function PrimarySalesAnalze() {
                     renderCell: (params) => {
                         const row = params?.row ?? params;
                         return (
-                            <span style={{ fontWeight: row.isTotal ? 600 : "normal" }}>
+                            <Typography sx={{ fontWeight: row.isTotal ? 600 : "normal",cursor:'pointer', "&:hover": {
+                                textDecoration: row.isTotal?"":"underline",
+                            }}}>
                                 {row[nameField]}
-                            </span>
+                            </Typography>
                         );
                     },
                 }

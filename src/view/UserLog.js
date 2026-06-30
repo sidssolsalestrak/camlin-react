@@ -254,43 +254,54 @@ function UserLog() {
 
   ]
 
-  const handleDownloadExcel=()=>{
-    try{
-       const safeColumns = ExcelColumn.map(
-       ({ renderCell, renderHeader, ...rest }) => rest,
-       );
+  const handleDownloadExcel = () => {
+  try {
+    const safeColumns = ExcelColumn.map(
+      ({ renderCell, renderHeader, ...rest }) => rest,
+    );
 
-      let excelData = tableData.map((val) => ({
-                      ...val,
-                      name: val.first_name || val.last_name 
-                        ? `${val.first_name || ''} ${val.last_name || ''}`.trim() 
-                        : '-',
-                      user_desig: val.user_desig || '-',
-                      client_alias: val.client_alias || '-',
-                      module: val.module || '-',
-                      log_type: val.log_type || '-',
-                      browser: val.browser || '-',
-                      browser_ver: val.browser_ver || '-',
-                      os: val.os || '-',
-                      device: val.device || '-',
-                      date: val.date && dayjs(val.date).isValid() 
-                      ? dayjs(val.date).format(`DD-MMM-YYYY\nHH:mm:ss`) 
-                      : '-'
-                    }));
-      let filteredusrName=userTypeList.filter((val)=>Number(val.id)==Number(filters.userType))
-      console.log("filtered user types",filteredusrName)
-      let UserTypeName=filters.userType===2?"Super Admin":filteredusrName[0]?.client_alias
-      let dynamicTitle2=`User Type -${UserTypeName}`
-      let dynamicTitle3=`Date-${dayjs(filters.fromDt).format('DD MMM YYYY')} to ${dayjs(filters.toDt).format('DD MMM YYYY')}`
-      
-      DownloadNoCell(excelData,safeColumns,'User Logs',setProgress,toast,'User_Logs', {titleRow2: dynamicTitle2,titleRow3:dynamicTitle3})
- 
-    }
-    catch(err){
-      console.log("Export excel Error",err)
-    }
+    let excelData = tableData.map((val) => ({
+      ...val,
+      name: val.first_name || val.last_name
+        ? `${val.first_name || ''} ${val.last_name || ''}`.trim()
+        : '-',
+      user_desig: val.user_desig || '-',
+      client_alias: val.client_alias || '-',
+      module: val.module || '-',
+      log_type: val.log_type || '-',
+      browser: val.browser || '-',
+      browser_ver: val.browser_ver || '-',
+      os: val.os || '-',
+      device: val.device || '-',
+      date: val.date && dayjs(val.date).isValid()
+        ? dayjs(val.date).format(`DD-MMM-YYYY\nHH:mm:ss`)
+        : '-'
+    }));
+
+    let filteredusrName = userTypeList.filter((val) => Number(val.id) == Number(filters.userType));
+    console.log("filtered user types", filteredusrName);
+    let UserTypeName = filters.userType === 2 ? "Super Admin" : filteredusrName[0]?.client_alias;
+    let dynamicTitle3 = `User Type -${UserTypeName}`;
+
+    const moduleLabelMap = {
+      "0": "Log In",
+      "2": "App Log In",
+      "3": "App Sync",
+    };
+
+    let dynamicTitle2 =
+      filters.module !== "-1"
+        ? `Module - ${moduleLabelMap[filters.module] || "-"}`
+        :false;
+
+      let dynamicTitle4=`Date-${dayjs(filters.fromDt).format('DD MMM YYYY')} to ${dayjs(filters.toDt).format('DD MMM YYYY')}` 
+
+    DownloadNoCell(excelData, safeColumns, 'User Logs', setProgress, toast, 'User_Logs', { titleRow2: dynamicTitle2, titleRow3: dynamicTitle3, titleRow4: dynamicTitle4 });
+
+  } catch (err) {
+    console.log("Export excel Error", err);
   }
-
+};
   console.log("User list",userTypeList)
 
   return (
@@ -303,7 +314,7 @@ function UserLog() {
       ]}
     >
       <Box p={2} display="flex" flexDirection="column" gap={2}>
-        <h2>User Log</h2>
+        <h2>User Log Details</h2>
 
         <Grid
           container
@@ -326,7 +337,7 @@ function UserLog() {
                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
                 <MenuItem value="-1">All</MenuItem>
-                <MenuItem value="1">Log In</MenuItem>
+                <MenuItem value="0">Log In</MenuItem>
                 <MenuItem value="2">App Log In</MenuItem>
                 <MenuItem value="3">App Sync</MenuItem>
               </Select>

@@ -15,7 +15,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { LocationTaggingMap } from "./LocationTaggingMap";
 import { useSubmitCustomer } from "./useSubmitCustomer";
-import { useParams } from "react-router-dom";
+import { useParams,useLocation } from "react-router-dom";
 import AddCompetitor from "./AddCompetitor";
 import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
@@ -109,6 +109,7 @@ function CreateCustomer() {
   const isHcpField = (form.cusType === "1"); // hcpDiv2 fields only show for HCP
   const isRetailerField = (form.cusType === "2"); // retailerDiv fields only show for Retailer
   const [brandData, setBrandData] = useState([]);
+  const location=useLocation()
   const competitorBrands = brandData
   .filter(b => b.focus === 1 || b.reminder === 1)
   .map(b => b.subCatId);
@@ -673,7 +674,10 @@ function CreateCustomer() {
   // ---------------- UI ----------------
   return (
     <Layout
-      breadcrumb={[{ label: "Home", path: "/" }, { label: "Account Master" }]}
+      breadcrumb={[{ label: "Home", path: "/" }, 
+        { label: "Account Master", path:location.pathname },
+        {label: "Add New Request", path:location.pathname}
+      ]}
     >
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <Box sx={{ ml: 1.5, mt: 1.5 }}>

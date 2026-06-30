@@ -225,6 +225,7 @@ const OrderReport = () => {
                 field: "psm_kam",
                 headerName: "PSM/KAM",
                 filterable: true,
+                width:100,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -233,6 +234,7 @@ const OrderReport = () => {
                 field: "stk_name",
                 headerName: "STOCKIEST",
                 filterable: true,
+                width:100,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -265,6 +267,7 @@ const OrderReport = () => {
                 field: "cus_name",
                 headerName: "CUSTOMER",
                 filterable: true,
+                width:100,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -306,6 +309,7 @@ const OrderReport = () => {
                 field: "create_dt",
                 headerName: "Ord. Time",
                 filterable: true,
+                width:100,
                 renderCell: (params) => (
                     <span>
                         {params?.row?.__isFirstOrder ? dayjs(params.value).format("DD MMM YYYY HH:mm a") : ""}

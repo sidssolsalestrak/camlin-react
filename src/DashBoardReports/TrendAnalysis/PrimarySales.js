@@ -578,7 +578,7 @@ function PrimarySales({ enType }) {
             { label: "Home", path: "/" },
             { label: "DashBoard", path: "/reports/trendanalysis/MQ==" },
             { label: "Trend Analysis", path: "/reports/trendanalysis/MQ==" },
-            { label: "Primary Sales", path: "/reports/trendanalysis/MQ==" },
+            { label: Number(analyseType)===1?"Primary Sales": Number(analyseType)===2?"Secondary Sales": Number(analyseType)===3?"Closing":'', path:location.pathname },
         ]}>
             <Box p={0.5}>
                 <Box p={2} sx={{ borderRadius: 1 }} display="flex" flexDirection="column" gap={2}>

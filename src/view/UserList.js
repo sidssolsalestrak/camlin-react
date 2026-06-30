@@ -472,6 +472,8 @@ function UserList() {
 
   const handleUserClick = async (row) => {
   try {
+    setDialogData([]);         
+    setPreviewImage(profile);
     setUserDialog(true);
     let response = await api.post('/getUserData', { id: row.user_id });
     let resUserData = Array.isArray(response.data.data) ? response.data.data : [];
@@ -910,7 +912,7 @@ function UserList() {
                     <Grid size={{ xs: 12, lg: 6 }} >
                     <FormControl  sx={{ml:{md:10,xs:0},mt:{xs:3}}}>
                     <InputLabel id="status">Status</InputLabel>
-                    <Select sx={{width:200}} size="small" labelId="status" label="status" value={dialogData[0]?.acc_stat}>
+                    <Select sx={{width:200}} size="small" labelId="status" label="status" value={dialogData[0]?.acc_stat ?? ""}>
                       <MenuItem value={0}>Active</MenuItem>
                       <MenuItem value={1}>In Active</MenuItem>
                      
