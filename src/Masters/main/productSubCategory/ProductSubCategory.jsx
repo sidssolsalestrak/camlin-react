@@ -275,25 +275,30 @@ const ProductSubCategory = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true,
         },
         {
             field: "cat_name",
             headerName: "Category Name",
             filterable: true,
+            sortable: true,
         },
         {
             field: "sub_code",
             headerName: "Sub Category Code",
             filterable: true,
+            sortable: true,
         },
         {
             field: "sub_name",
             headerName: "Sub Category Name",
             filterable: true,
+            sortable: true,
         }, {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
@@ -420,7 +425,7 @@ const ProductSubCategory = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2" sx={{padding:0}}>
+                        <TabPanel value="2" sx={{ padding: 0 }}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

@@ -273,27 +273,32 @@ const ProductCategory = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true
         },
         {
             field: "brand_name",
             headerName: "Brand",
             filterable: true,
+            sortable: true
         },
         {
             field: "cat_code",
             headerName: "Category Code",
             filterable: true,
+            sortable: true
         },
         {
             field: "cat_name",
             headerName: "Category",
             filterable: true,
+            sortable: true
         }, {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
-                 <>
+                <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
@@ -414,7 +419,7 @@ const ProductCategory = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2" sx={{padding:0}}>
+                        <TabPanel value="2" sx={{ padding: 0 }}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

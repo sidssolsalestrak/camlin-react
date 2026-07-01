@@ -164,7 +164,7 @@ const Designation = () => {
                 hdndesignationabb: original.abbreviation
             }
             const res = await axios.post("/UpdateDesignation", payload)
-           // console.log("updating category:", res);
+            // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Designation")
                 setFormData({ abbreviation: "", designation: "" });
@@ -196,7 +196,7 @@ const Designation = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDesignation/${id}`);
-           // console.log("delete res:", res);
+            // console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Designation")
                 fetchTableData();
@@ -228,21 +228,25 @@ const Designation = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true,
         },
         {
             field: "desig_name",
             headerName: "Designation",
             filterable: true,
+            sortable: true,
         },
         {
             field: "desig_abbr_name",
             headerName: "Abbreviation",
             filterable: true,
+            sortable: true,
         },
         {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
@@ -265,7 +269,7 @@ const Designation = () => {
                 ...row,
                 index: index + 1
             })) : [];
-           // console.log("table data", data);
+            // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);
@@ -365,7 +369,7 @@ const Designation = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2" sx={{padding:0}}>
+                        <TabPanel value="2" sx={{ padding: 0 }}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}
