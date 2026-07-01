@@ -180,37 +180,37 @@ const AddStockist = () => {
         };
 
         // StockDetails validation
-        if (!formData.type) newErrors.type = "Type is required";
-        if (!formData.name) newErrors.name = "Name is required";
+        if (!formData.type) newErrors.type = "The Type field is required.";
+        if (!formData.name) newErrors.name = "The Stockist Name field is required.";
 
-        if (!formData.email) newErrors.email = "Email is required";
+        if (!formData.email) newErrors.email = "The Email field is required.";
         else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
 
-        if (!formData.mobile) newErrors.mobile = "Mobile No is required";
+        if (!formData.mobile) newErrors.mobile = "The Mobile No field is required.";
         else if (formData.mobile.length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
 
         // SalestrakCredential validation
-        if (!formData.userID) newErrors.userID = "User ID is required";
+        if (!formData.userID) newErrors.userID = "The Username Name field is required.";
         else if (!validateUser(formData.userID)) newErrors.userID = "Invalid User Name";
 
         if (!original.password) {
-            if (!formData.password) newErrors.password = "Password is required";
+            if (!formData.password) newErrors.password = "The Password field is required.";
             else if (!validatePassword(formData.password)) newErrors.password = "Should be Min 8 Characters";
 
-            if (!formData.confirmPassword) newErrors.confirmPassword = "Confirm Password is required";
+            if (!formData.confirmPassword) newErrors.confirmPassword = "The Confirm Password field is required.";
             else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Password didn't Match";
         }
 
         // OtherDetails validation
-        if (!formData.zone) newErrors.zone = "Zone is required";
-        if (!formData.region) newErrors.region = "Region is required";
-        if (!formData.area) newErrors.area = "Area is required";
-        if (!formData.teritory) newErrors.teritory = "Territory is required";
-        if (!formData.user.length > 0) newErrors.user = "User is required";
-        if (!formData.supplied_Type) newErrors.supplied_Type = "Supplied Type is required";
-        if (!formData.supplied_By) newErrors.supplied_By = "Supplied By is required";
-        if (!formData.state) newErrors.state = "State is required";
-        if (!formData.city) newErrors.city = "City is required";
+        if (!formData.zone) newErrors.zone = "The Zone field is required.";
+        if (!formData.region) newErrors.region = "The Region field is required.";
+        if (!formData.area) newErrors.area = "The Area field is required.";
+        if (!formData.teritory) newErrors.teritory = "The Territory field is required.";
+        if (!formData.user.length > 0) newErrors.user = "The Users field is required.";
+        if (!formData.supplied_Type) newErrors.supplied_Type = "The Supplied Type field is required.";
+        if (!formData.supplied_By) newErrors.supplied_By = "The Supplied By field is required.";
+        if (!formData.state) newErrors.state = "The State field is required.";
+        if (!formData.city) newErrors.city = "The City field is required.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;

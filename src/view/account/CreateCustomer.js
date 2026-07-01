@@ -669,8 +669,6 @@ function CreateCustomer() {
     setMapDialogOpen(true);
   };
 
-  console.log("pending request", pendingRequest)
-  console.log("competitor rows in create customer",competitorRows)
   // ---------------- UI ----------------
   return (
     <Layout
@@ -832,10 +830,13 @@ function CreateCustomer() {
                 label={fieldConfig["First Name"]?.label || "First Name"}
                 fullWidth required
                 size="small"
+                sx={{height:'3rem'}}
                 value={form.firstName || ""}
                 onChange={(e) =>
                   setForm({ ...form, firstName: e.target.value })
                 }
+                error={!!fieldErrors.firstName}
+                helperText={fieldErrors.firstName}
               />
             </Grid>
           )}
@@ -878,7 +879,8 @@ function CreateCustomer() {
                 size="small"
                 value={form.mobile || ""}
                 onChange={handleMobileChange}          // ← updated
-                inputProps={{ maxLength: 10 }}          // ← limit to 10 digits
+                inputProps={{ maxLength: 10 }} 
+                sx={{height:'3rem'}}         // ← limit to 10 digits
                 error={!!fieldErrors.mobile}
                 helperText={fieldErrors.mobile}         // ← shows error below field
               />
@@ -912,6 +914,7 @@ function CreateCustomer() {
                 fullWidth
                 size="small"
                 value={form.email || ""}
+                sx={{height:'3rem'}}
                 onChange={handleEmailChange}            // ← updated
                 error={!!fieldErrors.email}
                 helperText={fieldErrors.email}          // ← shows error below field
@@ -1049,6 +1052,8 @@ function CreateCustomer() {
                 valueKey="id"
                 labelKey="reg_name"
                 required={true}
+                error={!!fieldErrors.region}
+                helperText={fieldErrors.region}
               />
             </Grid>
           )}

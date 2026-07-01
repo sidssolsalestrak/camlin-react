@@ -19,10 +19,24 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
   const validateAndBuild = () => {
 
     // ── 1. LOCATION VALIDATION ───────────────────────────────────────────────
-    if (!form.customerLatitude || form.customerLatitude == 0) {
-      toast.error("Please Add Location By Clicking Location Icon!");
+    if (!form.firstName || !form.firstName.trim()) {
+      setFieldErrors(prev => ({ ...prev, firstName: "Store Name is required" }));
+      toast.error("Store Name is required");
       return null;
     }
+
+    if (!form.region || form.region === "0" || form.region === "") {
+      setFieldErrors(prev => ({ ...prev, region: "Region is required" }));
+      toast.error("Region is required");
+      return null;
+    }
+
+     // ── 6. DISTRIBUTOR VALIDATION ────────────────────────────────────────────
+    if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
+      toast.error("Please Select Distributor");
+      return null;
+    }
+
 
     if (!validateMobile(form.mobile)) {
       setFieldErrors((prev) => ({
@@ -99,12 +113,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     }
     setFieldErrors((prev) => ({ ...prev, contactNum: "" }));
 
-    // ── 6. DISTRIBUTOR VALIDATION ────────────────────────────────────────────
-    if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
-      toast.error("Please Select Distributor");
-      return null;
-    }
-
+   
     // ── 7. BRANDS ────────────────────────────────────────────────────────────
     const brandSubCatID = brandData.map(b => b.subCatId);
     const brandFocus = brandData.map(b => Number(b.focus) || 0);
@@ -233,7 +242,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
     } catch (err) {
       console.error("Submit error:", err);
-      toast.error(err?.response?.data?.message || err.message || "An error occurred during submission.");
+      toast.error("An error occurred during submission.");
     }
   }, [form, clinics, brandData, competitorBrands, competitorRows]);
 

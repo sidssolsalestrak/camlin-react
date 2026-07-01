@@ -83,7 +83,7 @@ export default function AppWidgetMaster() {
         let isValid = true
         setMenuCheckErr(false)
         setUserTypeErr(false)
-        if (!selUserInput || Number(selUserInput) === 0) {                                         // ← check null
+        if (!selUserInput || Number(selUserInput?.id) === 0) {                                         // ← check null
             setUserTypeErr(true)
             isValid = false
         }
@@ -228,6 +228,8 @@ export default function AppWidgetMaster() {
             setModifyLoading(false)
         }
     }
+
+    console.log("selected user Input",selUserInput)
 
     return (
         <Layout
