@@ -234,25 +234,29 @@ const ProductCategory = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true,
         },
         {
             field: "state_name",
             headerName: "State Name",
             filterable: true,
+            sortable: true,
         },
         {
             field: "city_name",
             headerName: "City Name",
             filterable: true,
+            sortable: true,
         },
         {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                        <MdOutlineEdit size={15}/>
+                        <MdOutlineEdit size={15} />
                     </IconButton>
                     <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
                         <DeleteIcon size={15} />
@@ -390,7 +394,7 @@ const ProductCategory = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2" sx={{padding:0}}>
+                        <TabPanel value="2" sx={{ padding: 0 }}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}

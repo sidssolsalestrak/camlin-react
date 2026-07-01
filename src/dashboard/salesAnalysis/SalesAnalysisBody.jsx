@@ -56,7 +56,7 @@ const SalesAnalysisBody = ({ formData, month }) => {
     }, [month, formData.zone, formData.region, formData.area, formData.State])
 
     const zeroToNull = (val) =>
-        Number(val) === 0 || val === null || val === undefined ? "-" : val;
+        Number(val) === 0 || val === null || val === undefined ? "-" : val?.toFixed(2);
 
     const columns = [
         {

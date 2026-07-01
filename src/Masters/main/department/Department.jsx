@@ -214,16 +214,19 @@ const Department = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true,
         },
         {
             field: "dept_name",
             headerName: "Department Name",
             filterable: true,
+            sortable: true,
         },
         {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
@@ -332,7 +335,7 @@ const Department = () => {
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
                         {/*---------------- View section--------------- */}
-                        <TabPanel value="2" sx={{padding:0}}>
+                        <TabPanel value="2" sx={{ padding: 0 }}>
                             <DataTable
                                 columns={columns}
                                 data={tableData}
