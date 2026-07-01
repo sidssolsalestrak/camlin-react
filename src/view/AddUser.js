@@ -501,13 +501,15 @@ function AddUser() {
     if (!selectedTitle) temp.selectedTitle = "Please select title";
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
-    if (!userId.trim()) temp.userId = "User ID is required";
+    if (!userId.trim()) temp.userId = "Please Select Mobile No. OR Email ID for username!";
     if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
     if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number"
     if (!email.trim()) temp.email = "Email is required";
     if (email.trim() !== "" && !emailRegex.test(email.trim())) temp.email = "Please Enter a valid Email"
     if (!address.trim()) temp.address = "Address is required";
     if (!hq.trim()) temp.hq = "Please Enter HQ";
+    if (!dateOfBirth) temp.dateOfBirth = "Date of Birth is required";
+    if (!dateOfJoin) temp.dateOfJoin = "Date of Joining is required";
     if (
       ["13", "14", "15", "16"].includes(String(selectedType)) &&
       selectedRegions.length === 0
@@ -1137,17 +1139,23 @@ const checkEmpCodeDuplicate = async (codeVal) => {
     }
   }
 };
-  const formatDate = (val) => {
-    if (!val) return "";
 
-    // if number (timestamp in seconds)
-    if (!isNaN(val)) {
-      return dayjs(val * 1000).format("DD-MMM-YYYY HH:mm:ss");
-    }
+const formatDate = (val) => {
+  if (!val) return "";
 
-    // if ISO string
-    return dayjs(val).format("DD-MMM-YYYY HH:mm:ss");
-  };
+  let d;
+  if (!isNaN(val)) {
+    // number (timestamp in seconds)
+    d = dayjs(val * 1000);
+  } else {
+    // ISO string
+    d = dayjs(val);
+  }
+
+  if (d.year() === 1900) return "";
+
+  return d.format("DD-MMM-YYYY HH:mm:ss");
+};
 
  console.log("Selected buieness unit",selectedBU)
   return (
@@ -1347,7 +1355,9 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                       textField: {
                         fullWidth: true,
                         size: "small",
-                        required:true
+                        required:true,
+                        error: Boolean(errors.dateOfBirth),
+                        helperText: errors.dateOfBirth,
                       },
                     }}
                   />
@@ -1381,6 +1391,8 @@ const checkEmpCodeDuplicate = async (codeVal) => {
                         fullWidth: true,
                         size: "small",
                         required: true,
+                        error: Boolean(errors.dateOfJoin),
+                        helperText: errors.dateOfJoin,
                       },
                     }}
                   />

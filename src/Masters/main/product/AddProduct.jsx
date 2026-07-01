@@ -373,7 +373,7 @@ const AddProduct = () => {
                                     <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.sub_name}</MenuItem>
                                 ))}
                             </Select>
-                            {validation.subCatName && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.subCatName}</span>}
+                            {validation.subCatName && <span style={{ color: "#d32f2f", fontSize: "9px", padding: "5px 0px 0px 12px" }}>{validation.subCatName}</span>}
                         </FormControl>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
