@@ -90,7 +90,7 @@ const ProductCategory = () => {
         if (!validations()) return;
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} City`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this City?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -100,7 +100,7 @@ const ProductCategory = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete City`,
-            message: `Are you sure you want to delete this City?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -136,7 +136,7 @@ const ProductCategory = () => {
             const res = await axios.post("/addCity", payload)
             // console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added City")
+                showAlert.success("City added successfully")
                 setFormData({ stateName: "", cityName: "" });
                 fetchTableData();
                 resetValidations();
@@ -172,7 +172,7 @@ const ProductCategory = () => {
             const res = await axios.post("/updateCity", payload)
             // console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated City")
+                showAlert.success("City Updated successfully")
                 setFormData({ stateName: "", cityName: "" });
                 setValue('1')
                 navigate(`/masters/city_mas`)
