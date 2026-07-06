@@ -73,7 +73,7 @@ const Department = () => {
         if (!validations()) return;
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} Department`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Department?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -83,7 +83,7 @@ const Department = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete Department`,
-            message: `Are you sure you want to delete this Department?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -119,7 +119,7 @@ const Department = () => {
             const res = await axios.post("/addDept", payload)
             // console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Department")
+                showAlert.success("Department Added Successfully")
                 setFormData({ departmentName: "" });
                 fetchTableData();
                 resetValidations();
@@ -150,7 +150,7 @@ const Department = () => {
             const res = await axios.post("/updateDept", payload)
             // console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Department")
+                showAlert.success("Department Updated Successfully")
                 setFormData({ departmentName: "" });
                 setValue('1')
                 navigate(`/masters/dept`)
@@ -178,7 +178,7 @@ const Department = () => {
             const res = await axios.post(`/deleteDept/${id}`);
             //console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Department")
                 fetchTableData();
             }
         } catch (error) {

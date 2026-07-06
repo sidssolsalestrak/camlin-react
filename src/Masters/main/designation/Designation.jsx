@@ -83,7 +83,7 @@ const Designation = () => {
         if (!validations()) return;
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} Designation`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Designation?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -93,7 +93,7 @@ const Designation = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete Designation`,
-            message: `Are you sure you want to delete this Designation?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -129,7 +129,7 @@ const Designation = () => {
             const res = await axios.post("/addDesignation", payload)
             //console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Designation")
+                showAlert.success("Designation Added Successfully")
                 setFormData({ abbreviation: "", designation: "" });
                 fetchTableData();
                 resetValidations();
@@ -166,7 +166,7 @@ const Designation = () => {
             const res = await axios.post("/UpdateDesignation", payload)
             // console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Designation")
+                showAlert.success("Designation Updated Successfully")
                 setFormData({ abbreviation: "", designation: "" });
                 setValue('1')
                 navigate(`/masters/designation`)

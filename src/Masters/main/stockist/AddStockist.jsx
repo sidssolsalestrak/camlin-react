@@ -101,7 +101,7 @@ const AddStockist = () => {
         }
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} Stockist`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Stockist?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? handleFormSubmit() : onEdit(),
@@ -254,7 +254,7 @@ const AddStockist = () => {
             const res = await axios.post("/create_stockist", payload)
             //console.log("insert res", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Created Stockist")
+                showAlert.success("Stockist added successfully")
                 setFormData(INITIAL_FORM_STATE)
             }
         } catch (error) {
@@ -263,7 +263,7 @@ const AddStockist = () => {
                 showAlert.error(val?.message || "");
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update")
+                showAlert.error("Failed to add")
             }
         } finally {
             setloading(false);
@@ -284,7 +284,7 @@ const AddStockist = () => {
             const res = await axios.post("/update_stockist", payload)
             //console.log("insert res", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Updated Stockist")
+                showAlert.success("Stockist Updated successfully")
                 navigate(`/masters/stockist`)
             }
         } catch (error) {
