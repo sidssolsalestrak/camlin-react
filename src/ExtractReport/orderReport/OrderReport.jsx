@@ -676,8 +676,9 @@ const OrderReport = () => {
             console.log("source data in excel",sourceData)
             DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, {
                 label: "Total",
-                reg_name:"label",
+                reg_name:formData?.groupBy !=="1"?"label":'',
                 sub_name:"label",
+                prod_name:"label",
                 disc_value: "sum",
                 ord_value: "sum",
                 retail_price: "sum",
