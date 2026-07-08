@@ -165,15 +165,23 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
       let bgColor = null;
       let fontColor = "000000";
       let isBold = false;
+      let isTotalRow = false; 
 
       if (row._isGroupHeader) {
         bgColor = row.bgcolor || "f59e0b";      // orange — matches UI
         fontColor = row.color || "FFFFFF";
         isBold = true;
       }
-      if (row._grandTotal) bgColor = "bdbdbd";
-      else if (row._zoneTotal) bgColor = "e0e0e0";
-      else if (row._isSubtotal || row._subtotal) bgColor = "eeeeee";
+      if (row._grandTotal) {
+      bgColor = "bdbdbd";
+      isTotalRow = true;
+    } else if (row._zoneTotal) {
+      bgColor = "e0e0e0";
+      isTotalRow = true;
+    } else if (row._isSubtotal || row._subtotal) {
+      bgColor = "eeeeee";
+      isTotalRow = true;
+    }
       if (!bgColor) return;
 
       for (let c = 0; c < totalCols; c++) {
@@ -185,6 +193,10 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
           font: {
             ...ws[cellRef].s?.font, bold: isBold, sz: cellFontSize, name: "Calibri",
             color: { rgb: fontColor },
+          },
+          alignment: {
+            ...ws[cellRef].s?.alignment,
+            horizontal: isTotalRow ? "right" : ws[cellRef].s?.alignment?.horizontal,
           },
         };
       }

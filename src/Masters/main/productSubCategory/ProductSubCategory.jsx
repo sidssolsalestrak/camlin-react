@@ -96,7 +96,7 @@ const ProductSubCategory = () => {
         if (!validations()) return;
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} Category`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Sub Product Category?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -106,7 +106,7 @@ const ProductSubCategory = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete Category`,
-            message: `Are you sure you want to delete this Sub Product Category?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -129,7 +129,7 @@ const ProductSubCategory = () => {
             isValid = false;
         }
         if (!formData.categoryName) {
-            newValidations.categoryName = "The Sub Category Name field is required.";
+            newValidations.categoryName = "The Sub Category field is required.";
             isValid = false;
         }
         setValidations(newValidations)
@@ -166,7 +166,7 @@ const ProductSubCategory = () => {
             const res = await axios.post("/addCatSub", payload)
             //console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Sub Product Category")
+                showAlert.success("Sub Category Added Successfully")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
@@ -183,7 +183,7 @@ const ProductSubCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Sub Product Category")
+                showAlert.error("Failed to ADD Sub Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -204,7 +204,7 @@ const ProductSubCategory = () => {
             const res = await axios.post("/subCatEdit", payload)
             //console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Sub Product Category")
+                showAlert.success("Sub Category Updated Successfully")
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/catSub`)
@@ -221,7 +221,7 @@ const ProductSubCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Sub Product Category")
+                showAlert.error("Failed to Update Sub Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -258,7 +258,7 @@ const ProductSubCategory = () => {
             const res = await axios.post(`/deleteCatSub/${id}`);
             //console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Sub Category")
                 fetchTableData();
             }
         } catch (error) {

@@ -93,7 +93,7 @@ const ProductCategory = () => {
         if (!validations()) return;
         showConfirmationDialog({
             title: `${decodedId ? "Edit" : "Add"} Category`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Product Category?`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -103,7 +103,7 @@ const ProductCategory = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete Category`,
-            message: `Are you sure you want to delete this Product Category?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -145,7 +145,7 @@ const ProductCategory = () => {
             const res = await axios.post("/addCat", payload)
             //console.log("adding category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Product Category")
+                showAlert.success("Category Added Successfully")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
@@ -162,7 +162,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Product Category")
+                showAlert.error("Failed to ADD Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -183,7 +183,7 @@ const ProductCategory = () => {
             const res = await axios.post("/editCat", payload)
             //console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Product Category")
+                showAlert.success("Category Updated Successfully")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/cat`)
@@ -200,7 +200,7 @@ const ProductCategory = () => {
                 }
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Product Category")
+                showAlert.error("Failed to Update Category")
             }
         } finally {
             closeConfirmationDialog();
@@ -256,7 +256,7 @@ const ProductCategory = () => {
             const res = await axios.post(`/deleteCat/${id}`);
             //console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product Category")
+                showAlert.success("Successfully Deleted Category")
                 fetchTableData();
             }
         } catch (error) {
