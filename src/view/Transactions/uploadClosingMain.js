@@ -377,46 +377,50 @@ function UploadClosing() {
   }, [selDesName, selMonth, tglVal]);
 
   const handleFileChange = (e, slotIndex) => {
-  if (!selDesName || selDesName === "0") {
-    toast.error("Please select a Distributor first.");
-    e.target.value = "";
-    return;
-  }
-  const incoming = e.target.files?.[0];
-  if (!incoming) return;
-  const isDuplicate = files.some((f, i) => i !== slotIndex && f?.name === incoming.name);
-  if (isDuplicate) {
-    toast.error(`File "${incoming.name}" is already added.`);
-    e.target.value = "";
-    return;
-  }
-  setFiles((prev) => {
-    const next = [...prev];
-    next[slotIndex] = incoming;
-    return next;
-  });
-};
-
-const handleRemoveFile = (slotIndex) => {
-  setFiles((prev) => prev.filter((_, i) => i !== slotIndex));
-  const ref = inputRefs.current[slotIndex];
-  if (ref) ref.value = "";
-};
-
-const handleAddMore = () => {
-  for (let i = 1; i < inputCount; i++) {
-    const ref = inputRefs.current[i];
-    if (ref && ref.files.length === 0) {
-      toast.error("Please select a file for all previous inputs before adding more.");
+    if (!selDesName || selDesName === "0") {
+      toast.error("Please select a Distributor first.");
+      e.target.value = "";
       return;
     }
-  }
-  if (inputCount >= MAX_FILE_INPUTS) {
-    toast.error("Maximum file input count reached (9).");
-    return;
-  }
-  setInputCount((c) => c + 1);
-};
+    const incoming = e.target.files?.[0];
+    if (!incoming) return;
+    const isDuplicate = files.some(
+      (f, i) => i !== slotIndex && f?.name === incoming.name,
+    );
+    if (isDuplicate) {
+      toast.error(`File "${incoming.name}" is already added.`);
+      e.target.value = "";
+      return;
+    }
+    setFiles((prev) => {
+      const next = [...prev];
+      next[slotIndex] = incoming;
+      return next;
+    });
+  };
+
+  const handleRemoveFile = (slotIndex) => {
+    setFiles((prev) => prev.filter((_, i) => i !== slotIndex));
+    const ref = inputRefs.current[slotIndex];
+    if (ref) ref.value = "";
+  };
+
+  const handleAddMore = () => {
+    for (let i = 1; i < inputCount; i++) {
+      const ref = inputRefs.current[i];
+      if (ref && ref.files.length === 0) {
+        toast.error(
+          "Please select a file for all previous inputs before adding more.",
+        );
+        return;
+      }
+    }
+    if (inputCount >= MAX_FILE_INPUTS) {
+      toast.error("Maximum file input count reached (9).");
+      return;
+    }
+    setInputCount((c) => c + 1);
+  };
 
   const handleImport = async () => {
     if (!selDesName || selDesName === "0") {
@@ -442,7 +446,7 @@ const handleAddMore = () => {
     form.append("selected_mnt", parseMonth(selMonth));
     setLoading(true);
     try {
-      const res = await api.post(" ", form);
+      const res = await api.post("/upload_to_s3", form);
       setManualMode(false);
       handleApiResponse(res.data);
       setFiles([]);
@@ -460,6 +464,8 @@ const handleAddMore = () => {
       return;
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
+    alert("inside handleAddManual");
+    alert(tglToSend);
     setLoading(true);
     if (overrideTglVal === undefined) setTglVal(0);
     try {
@@ -1668,7 +1674,9 @@ const handleAddMore = () => {
               <>
                 <Grid size={{ xs: 12, sm: "auto" }}>
                   <Box sx={{ display: "flex", flexDirection: "column" }}>
-                    <Typography sx={{ fontWeight: 600 }}>Upload File</Typography>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      Upload File
+                    </Typography>
 
                     <Button
                       component="label"
@@ -1877,7 +1885,8 @@ const handleAddMore = () => {
             {Number(checking) !== 2 &&
               !hasExistingData &&
               !rawMode &&
-              !manualMode && !files.length>0 && (
+              !manualMode &&
+              !files.length > 0 && (
                 <Grid size={{ xs: 12, sm: "auto" }}>
                   <Button
                     variant="contained"
