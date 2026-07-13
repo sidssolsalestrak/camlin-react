@@ -892,7 +892,7 @@ const handleRejectAll = () => {
                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 onChange={(e) => {
                   setSelectedRegion(e.target.value);
-
+                  setSelectedUser(0)
                   // fetchUsers({
                   //   trigger_type: 1,
                   // });

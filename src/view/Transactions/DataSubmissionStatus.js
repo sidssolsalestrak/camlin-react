@@ -442,6 +442,19 @@ function DataSubmissionStatus() {
         { label: `Distributor : ${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code} - ${v.stk_name}`)}`, bold: false, sz: 10 },
     ];
 
+    const lastGroupColId = (() => {
+        if (stkGroup === 1) {
+            if (terGroup  === 1) return "ter_name";
+            if (areaGroup === 1) return "area_name";
+            return null;
+        }
+        if (terGroup  === 1) return "ter_name";
+        if (areaGroup === 1) return "area_name";
+        if (regGroup  === 1 && areaGroup === 0 && terGroup === 0) return "reg_name";
+        if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0) return "zone_name";
+        return null;
+    })();
+
     const exportData = tableData.map((row) => {
         const newRow = { ...row };
 
@@ -459,23 +472,32 @@ function DataSubmissionStatus() {
             newRow.zone_name         = "";
             newRow.ter_name          = "";
             newRow.rate_score        = row._avg_rating ? `${row._avg_rating}%` : "0%";
-            newRow.tot_stk           = row.tot_stk || "-";
-            newRow.tot_recv          = row.tot_recv || "-";
+
+            // Apply zeroToNull to ALL total fields, not just tot_stk/tot_recv
+            newRow.tot_stk           = zeroToNull(row.tot_stk);
+            newRow.tot_recv          = zeroToNull(row.tot_recv);
+            newRow.tot_proc          = zeroToNull(row.tot_proc);
+            newRow.tot_unproc        = zeroToNull(row.tot_unproc);
+            newRow.tot_rej           = zeroToNull(row.tot_rej);
+            newRow.tot_pend          = zeroToNull(row.tot_pend);
+
             newRow.process_stat_text = "";
             newRow.err_desc          = "";
             newRow.pri_stat_text     = "";
-            newRow.upl_type_text     = row._label;
+            newRow.upl_type_text     = "";
             newRow.create_dt         = "";
-            // Dedicated label field so "Total West" / "Total North" /
-            // "Grand Total" always show up, regardless of which
-            // grouping columns (Zone/Region/Area/Territory) are active.
-            newRow._groupLabel       = row._label || "";
+
+            if (stkGroup === 1) {
+                newRow.stk_name = row._label || "";
+            } else if (lastGroupColId) {
+                newRow[lastGroupColId] = row._label || "";
+            } else {
+                newRow.stk_name = row._label || "";
+            }
             return newRow;
         }
 
-        // Data rows: no subtotal label
-        newRow._groupLabel = "";
-
+        // Data rows
         if (newRow.close_date)
             newRow.close_date = dayjs(newRow.close_date).format("MMM-YYYY");
 
@@ -503,8 +525,15 @@ function DataSubmissionStatus() {
         else newRow.create_dt = "";
 
         newRow.rate_score          = newRow.rate_score ? `${newRow.rate_score}` : "-";
+
+        // Apply zeroToNull to ALL total fields for data rows too
         newRow.tot_stk             = zeroToNull(newRow.tot_stk);
         newRow.tot_recv            = zeroToNull(newRow.tot_recv);
+        newRow.tot_proc            = zeroToNull(newRow.tot_proc);
+        newRow.tot_unproc          = zeroToNull(newRow.tot_unproc);
+        newRow.tot_rej             = zeroToNull(newRow.tot_rej);
+        newRow.tot_pend            = zeroToNull(newRow.tot_pend);
+
         newRow.stk_sales_stat_text = Number(newRow.cl_stat) === 1 ? "Yes" : "No";
 
         return newRow;
@@ -533,19 +562,11 @@ function DataSubmissionStatus() {
                 { label: "Month",            id: "close_date" },
                 { label: "Code",              id: "stk_code"   },
                 { label: "Distributor Name",  id: "stk_name"    },
-                // Skip Region/Area here if they're already present as a group column above
-                ...(regGroup === 0  ? [{ label: "Region", id: "reg_name"  }] : []),
+                { label: "Region", id: "reg_name" },
                 ...(areaGroup === 0 ? [{ label: "Area",   id: "area_name" }] : []),
                 { label: "Submit Mode",       id: "upl_type_text" },
             ]
-            : [
-                // Dedicated subtotal/grand-total label column for the
-                // non-stock-grouped view, placed right before Total —
-                // ensures "Total West", "Total North", "Grand Total"
-                // always appear, regardless of which group-by levels
-                // (Zone/Region/Area/Territory) are checked.
-                { label: "", id: "_groupLabel" },
-            ]
+            : []
         ),
         { label: "Total",                       id: "tot_stk"              },
         { label: "Received",                    id: "tot_recv"             },
@@ -579,7 +600,7 @@ function DataSubmissionStatus() {
         setProgress,
         0
     );
-    };
+};
     // ─── Load table data ──────────────────────────────────────────────────────
     const handleLoad = async () => {
         if (!validateGroupBy()) return;
