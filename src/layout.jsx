@@ -68,7 +68,7 @@ const Layout = ({ children, breadcrumb = [] }) => {
   // Fetch menu on mount
   useEffect(() => {
     fetchMenu();
-    loadChatbot();
+    // loadChatbot();
   }, []);
 
   const fetchMenu = async () => {
@@ -235,17 +235,19 @@ const Layout = ({ children, breadcrumb = [] }) => {
   useEffect(() => {
     window.acc_stat_view = (acc_stat, num, url) => {
       console.log("Clicked:", acc_stat, num, url);
-      localStorage.setItem("acc_stat",acc_stat)
+      localStorage.setItem("acc_stat", acc_stat);
       navigate(`/${url}`);
     };
   }, []);
 
   // Sync drawer with mobile breakpoint
   useEffect(() => {
-    let datasubmissionURL=location.pathname.startsWith('/reports/sec_sales_data') || location.pathname.startsWith('/reports/preview_stk_sales/')
-    let restrictDrawer=!isMobile && !datasubmissionURL
+    let datasubmissionURL =
+      location.pathname.startsWith("/reports/sec_sales_data") ||
+      location.pathname.startsWith("/reports/preview_stk_sales/");
+    let restrictDrawer = !isMobile && !datasubmissionURL;
     setDrawerOpen(restrictDrawer);
-  }, [isMobile,location.pathname]);
+  }, [isMobile, location.pathname]);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -314,7 +316,6 @@ const Layout = ({ children, breadcrumb = [] }) => {
         anchorOrigin: { vertical: "top", horizontal: "center" },
       });
 
-     
       navigate("/login");
     } catch (err) {
       console.log(err);
