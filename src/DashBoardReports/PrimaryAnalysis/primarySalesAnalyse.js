@@ -175,7 +175,7 @@ function PrimarySalesAnalze() {
     if (now.format('MM-YYYY') === selectedMonth.format('MM-YYYY')) {
         dateLabel = ' /  as of ' + selectedMonth.format('DD MMM YYYY HH:mm a');
     } else {
-        dateLabel = ' /  as of ' + selectedMonth.startOf('month').format('DD MMM YYYY HH:mm a');
+        dateLabel = ' /  as of ' + selectedMonth.endOf('month').format('DD MMM YYYY HH:mm a');
     }
 
     const renderPrimarySalesAnalyse = async () => {

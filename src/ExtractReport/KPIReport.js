@@ -22,6 +22,7 @@ function KPIReport() {
     const [allKpiReportData, setAllKpiReportData] = useState([])
     const [progress, setProgress] = useState(null);
     const [modifyLoading, setModifyLoading] = useState(false)
+    const [reportMonth, setReportMonth] = useState(dayjs());
     const toast = useToast()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -48,6 +49,7 @@ function KPIReport() {
             setZoneData(buildZoneData(raw));
             setExpanded(new Set());
             setAllKpiReportData(raw)
+            setReportMonth(selMonth)
         } catch (err) {
             console.error(err);
         }
@@ -198,7 +200,7 @@ function KPIReport() {
             },],
 
         },
-        { field: "sale_tgt", headerName: `${dayjs(selMonth).format('MMM YYYY')}-Tgt`, renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
+        { field: "sale_tgt", headerName: `${dayjs(reportMonth).format('MMM YYYY')}-Tgt`, renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "tot_cus", headerName: "Total Outlets", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "tot_call", headerName: "Total Calls", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "eco_no", headerName: "Total Outlets Visited", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
@@ -267,7 +269,7 @@ function KPIReport() {
         { field: 'full_name', headerName: 'Sales Rep' },
         { field: 'hq_name', headerName: 'HQ' },
         { field: 'area_name', headerName: 'Area' },
-        { field: 'sale_tgt', headerName: `${dayjs(selMonth).format('MMM YYYY')}-TGT` },
+        { field: 'sale_tgt', headerName: `${dayjs(reportMonth).format('MMM YYYY')}-TGT` },
         { field: "tot_cus", headerName: "Total Outlets" },
         { field: "tot_call", headerName: "Total Calls" },
         { field: "eco_no", headerName: "Total Outlets Visited" },

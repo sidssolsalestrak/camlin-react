@@ -342,7 +342,10 @@ function AccountExtract() {
                 <Select
                   value={selectedRegion}
                   label="Zone"
-                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  onChange={(e) =>{ 
+                    setSelectedRegion(e.target.value)
+                    setSelectedUser(0);
+                  }}
                   MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>Select</MenuItem>
