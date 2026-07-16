@@ -135,6 +135,10 @@ function UploadClosing() {
   const [inputCount, setInputCount] = useState(1);
   const inputRefs = useRef([]);
   const MAX_FILE_INPUTS = 9;
+  const [mapModalLoading, setMapModalLoading] = useState(false);
+  const [mapConfirmOpen, setMapConfirmOpen] = useState(false);
+  const [pendingMapRow, setPendingMapRow] = useState(null);
+  const [mapActionRowKey, setMapActionRowKey] = useState(null);
 
   const rowKeyCounter = useRef(0);
   const tagWithRowKeys = useCallback((rows) => {
@@ -706,15 +710,35 @@ function UploadClosing() {
 
   const handleOpenMapModal = async (row) => {
     const words = row.prod_name?.split(" ") || [];
-    let suggestions = [];
-    try {
-      const r = await api.post("/related_val", { words });
-      suggestions = r.data.data || [];
-    } catch {}
-    setMapModal({ open: true, row, suggestions });
+
+    setMapModal({
+      open: true,
+      row,
+      suggestions: [],
+    });
+
+    setMapModalLoading(true);
     setMapRadio(null);
     setMapAutoResults([]);
     setMapAutoSelected(null);
+
+    try {
+      const r = await api.post("/related_val", { words });
+      const suggestions = Array.isArray(r.data.data) ? r.data.data : [];
+
+      setMapModal((prev) => ({
+        ...prev,
+        suggestions,
+      }));
+    } catch (err) {
+      console.error("related_val error:", err);
+      setMapModal((prev) => ({
+        ...prev,
+        suggestions: [],
+      }));
+    } finally {
+      setMapModalLoading(false);
+    }
   };
 
   const handleMapInputChange = (val) => {
@@ -734,7 +758,7 @@ function UploadClosing() {
     }, 300);
   };
 
-  const handleDoMap = async () => {
+  const handleDoMap_old = async () => {
     const selected = mapRadio || mapAutoSelected;
     if (!selected) {
       toast.error("Please select at least one option.");
@@ -742,7 +766,6 @@ function UploadClosing() {
     }
     const { row } = mapModal;
     setMapModal((m) => ({ ...m, open: false }));
-    setLoading(true);
     try {
       const payload = {
         id: row.id,
@@ -766,10 +789,140 @@ function UploadClosing() {
     } catch (err) {
       console.error("doMap:", err);
       toast.error("something went wrong,Try again!");
-    } finally {
-      setLoading(false);
     }
   };
+
+  const handleDoMap = async () => {
+    const selected = mapRadio || mapAutoSelected;
+    if (!selected || !pendingMapRow) return;
+
+    const row = pendingMapRow;
+
+    setMapActionRowKey(row._rowKey);
+
+    try {
+      const payload = {
+        id: row.id,
+        mas_id: row.mas_id,
+        ...(mapRadio && {
+          selected_id: mapRadio.id,
+          selected_code: mapRadio.code,
+          selected_name: mapRadio.name,
+        }),
+        ...(mapAutoSelected && {
+          prodId: mapAutoSelected.id,
+          selectedCode: mapAutoSelected.code,
+          selectedName: mapAutoSelected.name,
+        }),
+      };
+
+      const res = await api.post("/map_prod", payload);
+      setTableData(tagWithRowKeys(res.data.pre_data || []));
+
+      if (res.data.status === 200) {
+        toast.success(res.data.message);
+      }
+    } catch (err) {
+      console.error("doMap:", err);
+      toast.error("something went wrong,Try again!");
+    } finally {
+      setMapActionRowKey(null);
+      setPendingMapRow(null);
+      setMapRadio(null);
+      setMapAutoResults([]);
+      setMapAutoSelected(null);
+    }
+  };
+
+  const handleAskMapConfirm = () => {
+    const selected = mapRadio || mapAutoSelected;
+    if (!selected) {
+      toast.error("Please select at least one option.");
+      return;
+    }
+
+    const row = mapModal.row;
+
+    setConfirm({
+      open: true,
+      title: "Confirmation",
+      message: "Are you sure you want to map this product?",
+      confirmText: "OK",
+      cancelText: "Cancel",
+      confirmColor: "primary",
+      onConfirm: async () => {
+        closeConfirm();
+        if (!row) return;
+
+        setMapActionRowKey(row._rowKey);
+
+        try {
+          const payload = {
+            id: row.id,
+            mas_id: row.mas_id,
+            ...(mapRadio && {
+              selected_id: mapRadio.id,
+              selected_code: mapRadio.code,
+              selected_name: mapRadio.name,
+            }),
+            ...(mapAutoSelected && {
+              prodId: mapAutoSelected.id,
+              selectedCode: mapAutoSelected.code,
+              selectedName: mapAutoSelected.name,
+            }),
+          };
+
+          const res = await api.post("/map_prod", payload);
+          setTableData(tagWithRowKeys(res.data.pre_data || []));
+
+          if (res.data.status === 200) {
+            toast.success(res.data.message);
+          }
+
+          handleCloseMapModal();
+        } catch (err) {
+          console.error("doMap:", err);
+          toast.error("something went wrong,Try again!");
+        } finally {
+          setMapActionRowKey(null);
+        }
+      },
+    });
+  };
+
+  const renderRowSkeleton = (row) => (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0.75,
+        width: "100%",
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{ width: 9, height: 9, borderRadius: "2px", bgcolor: "grey.300" }}
+        />
+        <Box
+          sx={{
+            height: 12,
+            width: "70%",
+            borderRadius: 1,
+            bgcolor: "grey.300",
+          }}
+        />
+      </Box>
+      <Box
+        sx={{
+          ml: 1.5,
+          height: 10,
+          width: "50%",
+          borderRadius: 1,
+          bgcolor: "grey.200",
+        }}
+      />
+    </Box>
+  );
 
   const handleDeleteRow = (row) => {
     setConfirm({
@@ -882,6 +1035,7 @@ function UploadClosing() {
       cancelText: "Close",
       confirmColor: "primary",
       onConfirm: async () => {
+        closeConfirm();
         const allData = tableData.map((r) => ({
           product_id: r.id,
           prod_id: r.prod_id,
@@ -913,7 +1067,7 @@ function UploadClosing() {
           console.error(err);
           toast.error("Somthing went wrong,Try again!");
         } finally {
-          closeConfirm();
+          setLoading(false);
         }
       },
     });
@@ -975,7 +1129,6 @@ function UploadClosing() {
       prod_code: r.prod_code,
       prod_qty: r.prod_qty,
     }));
-    setLoading(true);
     (async () => {
       try {
         const validRes = await api.post("/final_submit_validation", {
@@ -1069,6 +1222,14 @@ function UploadClosing() {
         }
       },
     });
+  };
+
+  const handleCloseMapModal = () => {
+    setMapModal({ open: false, row: null, suggestions: [] });
+    setMapModalLoading(false);
+    setMapRadio(null);
+    setMapAutoResults([]);
+    setMapAutoSelected(null);
   };
 
   const isApproved = Number(processStat) === 3 || Number(docType) === 2;
@@ -1253,7 +1414,8 @@ function UploadClosing() {
     {
       field: "prod_qty",
       headerName: "Closing Qty",
-      width: 140,
+      width: 180,
+      headerAlign: "center",
       align: "center",
       renderCell: ({ row }) => {
         if (row._rowType === "cat_header") return null; // ✅ hide for headers
@@ -1281,9 +1443,15 @@ function UploadClosing() {
             value={row.prod_qty === 0 ? "" : (row.prod_qty ?? "")}
             onChange={(e) => handleManualQtyChange(row._rowKey, e.target.value)}
             inputProps={{
-              style: { textAlign: "center", fontSize: 13, width: 64 },
+              style: { textAlign: "center", fontSize: 13 },
             }}
-            sx={{ "& .MuiOutlinedInput-root": { fontSize: 13 } }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: 13,
+                width: 110,
+                mx: "auto",
+              },
+            }}
           />
         );
       },
@@ -1364,6 +1532,9 @@ function UploadClosing() {
             </Typography>
           );
         }
+        if (row._rowKey === mapActionRowKey) {
+          return renderRowSkeleton(row);
+        }
         return (
           <Box sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             <Box
@@ -1439,9 +1610,25 @@ function UploadClosing() {
     {
       field: "prod_qty",
       headerName: "Closing Qty",
-      width: 140,
+      width: 200,
       align: "center",
       renderCell: ({ row }) => {
+        if (row._rowKey === mapActionRowKey) {
+          return (
+            <Box
+              sx={{ width: "100%", display: "flex", justifyContent: "center" }}
+            >
+              <Box
+                sx={{
+                  height: 34,
+                  width: 110,
+                  borderRadius: 1,
+                  bgcolor: "grey.300",
+                }}
+              />
+            </Box>
+          );
+        }
         // ✅ No qty cell for category headers
         if (row._rowType === "cat_header") return null;
 
@@ -1467,17 +1654,29 @@ function UploadClosing() {
             value={row.prod_qty ?? ""}
             onChange={(e) => handleQtyChange(row._rowKey, e.target.value)}
             inputProps={{
-              style: { textAlign: "center", fontSize: 13, width: 64 },
+              style: { textAlign: "center", fontSize: 13 },
             }}
             error={row.qty_map_stat === 1}
-            sx={{ "& .MuiOutlinedInput-root": { fontSize: 13 } }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: 13,
+                mx: "auto",
+              },
+            }}
           />
         ) : (
           <TextField
             value={row.prod_qty}
             size="small"
             inputProps={{
-              style: { textAlign: "center", fontSize: 13, width: 64 },
+              style: { textAlign: "center", fontSize: 13 },
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontSize: 13,
+                width: 110,
+                mx: "auto",
+              },
             }}
           />
         );
@@ -1488,11 +1687,19 @@ function UploadClosing() {
           {
             field: "_actions",
             headerName: " ",
-            width: 90,
+            width: 110,
             align: "center",
+            headerAlign: "center",
             sortable: false,
             renderHeader: () => (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  width: "100%",
+                }}
+              >
                 <Tooltip title="Delete selected">
                   <IconButton
                     size="small"
@@ -1514,6 +1721,26 @@ function UploadClosing() {
               </Box>
             ),
             renderCell: ({ row }) => {
+              if (row._rowKey === mapActionRowKey) {
+                return (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        height: 24,
+                        width: 60,
+                        borderRadius: 1,
+                        bgcolor: "grey.300",
+                      }}
+                    />
+                  </Box>
+                );
+              }
               // ✅ No actions for category headers
               if (row._rowType === "cat_header") return null;
               if (row._isGrandTotal) return null;
@@ -2264,6 +2491,8 @@ function UploadClosing() {
               data={groupedRows}
               loading={loading}
               pageSize={10}
+              pagination={true}
+              defaultPageSize={500}
               externalSearch={search}
               onSearchChange={setSearch}
               getRowId={(row) => row._rowKey}
@@ -2325,7 +2554,7 @@ function UploadClosing() {
 
       <Dialog
         open={mapModal.open}
-        onClose={() => setMapModal((m) => ({ ...m, open: false }))}
+        onClose={handleCloseMapModal}
         maxWidth="xs"
         fullWidth
       >
@@ -2337,91 +2566,165 @@ function UploadClosing() {
             {mapModal.row?.prod_name}
           </Typography>
           <IconButton
-            onClick={() => setMapModal((m) => ({ ...m, open: false }))}
+            onClick={handleCloseMapModal}
             sx={{ position: "absolute", right: 12, top: 12 }}
             size="small"
           >
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
+
         <Divider />
+
         <DialogContent sx={{ pt: 1.5 }}>
-          {mapModal.suggestions.length > 0 && (
-            <Box mb={1.5}>
+          {mapModalLoading ? (
+            <Box>
               <Typography
                 variant="caption"
                 color="text.secondary"
                 fontWeight={500}
-                sx={{ mb: 0.5, display: "block" }}
+                sx={{ mb: 0.75, display: "block" }}
               >
                 Suggestions
               </Typography>
-              <RadioGroup value={mapRadio?.id ?? ""}>
-                {mapModal.suggestions.map((s) => (
-                  <FormControlLabel
-                    key={s.prod_id}
-                    value={s.prod_id}
-                    control={
-                      <Radio
-                        size="small"
-                        onChange={() => {
-                          setMapRadio({
-                            id: s.prod_id,
-                            code: s.prod_code,
-                            name: s.prod_name,
-                          });
-                          setMapAutoSelected(null);
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography fontSize={13}>
-                        {s.prod_code} – {s.prod_name}
-                      </Typography>
-                    }
-                    sx={{ my: 0 }}
+
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 1.2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      bgcolor: "grey.300",
+                      flexShrink: 0,
+                    }}
                   />
-                ))}
-              </RadioGroup>
-              <Divider sx={{ mt: 1 }} />
-            </Box>
-          )}
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            fontWeight={500}
-            sx={{ mb: 0.75, display: "block" }}
-          >
-            Others
-          </Typography>
-          <Autocomplete
-            freeSolo
-            options={mapAutoResults}
-            getOptionLabel={(o) =>
-              typeof o === "string" ? o : `${o.prod_code} – ${o.prod_name}`
-            }
-            onInputChange={(_, val) => handleMapInputChange(val)}
-            onChange={(_, val) => {
-              if (val && typeof val === "object") {
-                setMapAutoSelected({
-                  id: val.prod_id,
-                  code: val.prod_code,
-                  name: val.prod_name,
-                });
-                setMapRadio(null);
-              }
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                size="small"
-                placeholder="Search product…"
-                fullWidth
+                  <Box sx={{ flex: 1 }}>
+                    <Box
+                      sx={{
+                        height: 14,
+                        width: `${70 - idx * 8}%`,
+                        borderRadius: 1,
+                        bgcolor: "grey.300",
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ))}
+
+              <Divider sx={{ my: 1.5 }} />
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={500}
+                sx={{ mb: 0.75, display: "block" }}
+              >
+                Others
+              </Typography>
+
+              <Box
+                sx={{
+                  height: 40,
+                  borderRadius: 1,
+                  bgcolor: "grey.200",
+                }}
               />
-            )}
-          />
+            </Box>
+          ) : (
+            <>
+              {mapModal.suggestions.length > 0 && (
+                <Box mb={1.5}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight={500}
+                    sx={{ mb: 0.5, display: "block" }}
+                  >
+                    Suggestions
+                  </Typography>
+
+                  <RadioGroup value={mapRadio?.id ?? ""}>
+                    {mapModal.suggestions.map((s) => (
+                      <FormControlLabel
+                        key={s.prod_id}
+                        value={s.prod_id}
+                        control={
+                          <Radio
+                            size="small"
+                            onChange={() => {
+                              setMapRadio({
+                                id: s.prod_id,
+                                code: s.prod_code,
+                                name: s.prod_name,
+                              });
+                              setMapAutoSelected(null);
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography fontSize={13}>
+                            {s.prod_code} – {s.prod_name}
+                          </Typography>
+                        }
+                        sx={{ my: 0 }}
+                      />
+                    ))}
+                  </RadioGroup>
+
+                  <Divider sx={{ mt: 1 }} />
+                </Box>
+              )}
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={500}
+                sx={{ mb: 0.75, display: "block" }}
+              >
+                Others
+              </Typography>
+
+              <Autocomplete
+                freeSolo
+                options={mapAutoResults}
+                getOptionLabel={(o) =>
+                  typeof o === "string" ? o : `${o.prod_code} – ${o.prod_name}`
+                }
+                onInputChange={(_, val) => handleMapInputChange(val)}
+                onChange={(_, val) => {
+                  if (val && typeof val === "object") {
+                    setMapAutoSelected({
+                      id: val.prod_id,
+                      code: val.prod_code,
+                      name: val.prod_name,
+                    });
+                    setMapRadio(null);
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    placeholder="Search product…"
+                    fullWidth
+                  />
+                )}
+              />
+            </>
+          )}
         </DialogContent>
+
         <Divider />
+
         <DialogActions sx={{ px: 3, py: 1.5 }}>
           <Button
             variant="outlined"
@@ -2432,7 +2735,8 @@ function UploadClosing() {
           <Button
             variant="contained"
             startIcon={<LinkIcon />}
-            onClick={handleDoMap}
+            onClick={handleAskMapConfirm}
+            disabled={mapModalLoading}
           >
             Map
           </Button>
