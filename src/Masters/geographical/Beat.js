@@ -38,6 +38,7 @@ export default function Beat() {
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
     const [beatError, setBeatError] = useState(false)
+    const [beatErrorMsg, setBeatErrorMsg] = useState("")
     const [accStat, setAccStat] = useState(null)
     const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -93,6 +94,7 @@ export default function Beat() {
         setIsAreaChanged(false)
         setTerritoryError(false)
         setBeatError(false)
+        setBeatErrorMsg("")
     }
 
     const fetchAllBeat = async () => {
@@ -148,6 +150,7 @@ export default function Beat() {
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
             setBeatError(false)
+            setBeatErrorMsg("")
             setTabValue(0)
             await fetchTerritoriesForEdit(data.area_id)
             setSelTerritory(data.ter_id)
@@ -161,11 +164,22 @@ export default function Beat() {
         let isValid = true
         setTerritoryError(false)
         setBeatError(false)
+        setBeatErrorMsg("")
+
         if (Number(selTerritory) === 0) { setTerritoryError(true); isValid = false }
-        if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
+
+        if (!beatName || beatName.trim() === "") {
+            setBeatError(true)
+            setBeatErrorMsg("The Beat Name field is required.")
+            isValid = false
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(beatName)) {
+            setBeatError(true)
+            setBeatErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
+            isValid = false
+        }
+
         if (!isValid) {
             enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-
         }
         return isValid
     }
@@ -362,12 +376,13 @@ export default function Beat() {
                                 size="small"
                                 value={beatName}
                                 onChange={(e) => {
-                                    setBeatName(e.target.value)
-                                    if (beatError) setBeatError(false)
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                    setBeatName(onlyText)
+                                    if (beatError) { setBeatError(false); setBeatErrorMsg("") }
                                 }}
                                 error={!!beatError}
                                 required
-                                helperText={beatError ? "The Beat Name field is required." : ""}
+                                helperText={beatError ? beatErrorMsg : ""}
                             />
                             {!decodedEditBeatId && [0,1].includes(Number(accStat)) &&
                                 <Button

@@ -70,6 +70,7 @@ const AddProduct = () => {
     /*---------- original departmentName name for edit---------*/
     const [original, setoriginal] = useState({
         prod_name: "",
+        code: "",
     })
     /*----------form validations ---------*/
     const [validation, setValidations] = useState(validationFields)
@@ -131,35 +132,35 @@ const AddProduct = () => {
             newValidations.productType = "The Product Type field is required";
             isValid = false;
         }
-        if (!formData.productName) {
+        if (!formData.productName || formData.productName.trim()==="") {
             newValidations.productName = "The Product Name field is required";
             isValid = false;
         }
-        if (!formData.subCatName) {
+        if (formData.subCatName === "" || formData.subCatName === null || formData.subCatName === undefined) {
             newValidations.subCatName = "The Sub-Category Name field is required";
             isValid = false;
         }
-        if (!formData.shortName) {
+        if (!formData.shortName || formData.shortName.trim()==="") {
             newValidations.shortName = "The Short Name field is required";
             isValid = false;
         }
-        if (!formData.code) {
+        if (!formData.code || formData.code.trim()==="") {
             newValidations.code = "The Code field is required";
             isValid = false;
         }
-        if (!formData.asp) {
+        if (formData.asp === "" || formData.asp === null || formData.asp === undefined) {
             newValidations.asp = "The Ex Factory Price field is required";
             isValid = false;
         }
-        if (!formData.pts) {
+        if (formData.pts === "" || formData.pts === null || formData.pts === undefined) {
             newValidations.pts = "The Stockist Price field is required";
             isValid = false;
         }
-        if (!formData.ptr) {
+        if (formData.ptr === "" || formData.ptr === null || formData.ptr === undefined) {
             newValidations.ptr = "The Retail Price field is required";
             isValid = false;
         }
-        if (!formData.mrp) {
+        if (formData.mrp === "" || formData.mrp === null || formData.mrp === undefined) {
             newValidations.mrp = "The MRP Price field is required";
             isValid = false;
         }
@@ -180,13 +181,6 @@ const AddProduct = () => {
         setValidations(validationFields);
     }
 
-    /*---------- set error ---------*/
-    const setError = (fieldName, message) => {
-        setValidations({
-            ...validationFields,
-            [fieldName]: message
-        })
-    }
     /*---------- payload from submit or edit ---------*/
     let payload = {
         prod_type: formData.productType,
@@ -209,7 +203,6 @@ const AddProduct = () => {
     const onSubmit = async () => {
         try {
             const res = await axios.post("/prodmas_create", payload)
-           // console.log("adding product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product")
                 resetForm();
@@ -219,7 +212,7 @@ const AddProduct = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setError("productName", val?.message || "")
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to ADD Product")
@@ -236,24 +229,25 @@ const AddProduct = () => {
             const data = res?.data?.data || [];
             if (data && data.length > 0) {
                 setFormData({
-                    productType: data[0]?.prod_type || "0",
+                    productType: data[0]?.prod_type ?? "0",
                     productName: data[0]?.prod_name || "",
-                    subCatName: data[0]?.subcat_id || "",
+                    subCatName: data[0]?.subcat_id ?? "",
                     shortName: data[0]?.prod_code || "",
                     code: data[0]?.code || "",
-                    sortingOrder: data[0]?.ord_id || "",
-                    asp: data[0]?.fac_price || "",
-                    cfa: data[0]?.wd_price || "",
-                    pts: data[0]?.stk_price || "",
-                    ptr: data[0]?.retail_price || "",
-                    mrp: data[0]?.mrp_price || "",
-                    pcsPerPack: data[0]?.pack_pcs || "",
-                    pcsPerCarton: data[0]?.cart_pcs || "",
+                    sortingOrder: data[0]?.ord_id ?? "",
+                    asp: data[0]?.fac_price ?? "",
+                    cfa: data[0]?.wd_price ?? "",
+                    pts: data[0]?.stk_price ?? "",
+                    ptr: data[0]?.retail_price ?? "",
+                    mrp: data[0]?.mrp_price ?? "",
+                    pcsPerPack: data[0]?.pack_pcs ?? "",
+                    pcsPerCarton: data[0]?.cart_pcs ?? "",
                     uom: data[0]?.prod_uom || "",
-                    unitConvertion: data[0]?.unit_conv || "",
+                    unitConvertion: data[0]?.unit_conv ?? "",
                 });
                 setoriginal({
                     prod_name: data[0]?.prod_name || "",
+                    code: data[0]?.code || "",
                 })
             }
         } catch (error) {
@@ -268,9 +262,9 @@ const AddProduct = () => {
             if (decodedId) {
                 payload.id = decodedId
                 payload.prodNameNew = original.prod_name.trim()
+                payload.codeOld = original.code
             }
             const res = await axios.post("/prodmas_update", payload)
-           // console.log("updating product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Product")
                 resetForm();
@@ -281,7 +275,7 @@ const AddProduct = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setError("productName", val?.message || "")
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update Product")
@@ -319,7 +313,6 @@ const AddProduct = () => {
         ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    {/* <Typography sx={style}>Product Details</Typography> */}
                     <Box>
                         <h1 className="mainTitle">Product Details</h1>
                     </Box>
@@ -364,8 +357,8 @@ const AddProduct = () => {
                     {/* row 3 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" >
-                            <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                            <Select id='SubCategoryName' label="SubCategory Name" value={formData.subCatName} MenuProps={menuStyle}
+                            <InputLabel id="SubCategoryName">SubCategory Name*</InputLabel>
+                            <Select id='SubCategoryName' label="SubCategory Name*" value={formData.subCatName} MenuProps={menuStyle}
                                 onChange={(e) => handleChange("subCatName", e.target.value)} error={!!validation.subCatName}
                                 labelId="SubCategoryName" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>

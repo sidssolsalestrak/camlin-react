@@ -102,8 +102,11 @@ const Department = () => {
         const newValidations = {
             departmentName: "",
         }
-        if (!formData.departmentName) {
+        if (!formData.departmentName || formData.departmentName.trim() === "") {
             newValidations.departmentName = "The Department Name field is required";
+            isValid = false;
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.departmentName)) {
+            newValidations.departmentName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
         setValidations(newValidations)
@@ -117,7 +120,6 @@ const Department = () => {
                 dept_name: formData.departmentName
             }
             const res = await axios.post("/addDept", payload)
-            // console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Department Added Successfully")
                 setFormData({ departmentName: "" });
@@ -129,7 +131,7 @@ const Department = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setValidations({ departmentName: val?.message || "" });
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to ADD Department")
@@ -148,7 +150,6 @@ const Department = () => {
                 hdndeptName: original.deptName,
             }
             const res = await axios.post("/updateDept", payload)
-            // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Department Updated Successfully")
                 setFormData({ departmentName: "" });
@@ -160,7 +161,7 @@ const Department = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setValidations({ departmentName: val?.message || "" });
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update Department")
@@ -176,7 +177,6 @@ const Department = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDept/${id}`);
-            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Department")
                 fetchTableData();
@@ -249,7 +249,6 @@ const Department = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);
@@ -326,11 +325,14 @@ const Department = () => {
                         {/*---------------- Add section--------------- */}
                         <TabPanel value="1">
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                <TextField value={formData.departmentName}
-                                    onChange={(e) => formDataChange("departmentName", e.target.value)}
+                               <TextField value={formData.departmentName}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("departmentName", onlyText)
+                                    }}
                                     required size='small'
                                     variant='outlined' label="Department Name" error={!!validation.departmentName}
-                                    helperText={validation.departmentName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.departmentName}</span>} />
+                                    helperText={validation.departmentName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.departmentName}</span>} />
                             </Box>
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
