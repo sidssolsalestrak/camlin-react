@@ -140,6 +140,23 @@ function UploadClosing() {
   const [pendingMapRow, setPendingMapRow] = useState(null);
   const [mapActionRowKey, setMapActionRowKey] = useState(null);
 
+  const [mapConfirm, setMapConfirm] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "OK",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+  });
+
+  const closeMapConfirm = () =>
+    setMapConfirm((c) => ({
+      ...c,
+      open: false,
+      onConfirm: null,
+    }));
+
   const rowKeyCounter = useRef(0);
   const tagWithRowKeys = useCallback((rows) => {
     return (rows || []).map((r) => ({
@@ -158,7 +175,12 @@ function UploadClosing() {
     confirmColor: "primary",
   });
 
-  const closeConfirm = () => setConfirm((c) => ({ ...c, open: false }));
+  const closeConfirm = () =>
+    setConfirm((c) => ({
+      ...c,
+      open: false,
+      onConfirm: null,
+    }));
 
   const [tglVal, setTglVal] = useState(1);
 
@@ -468,8 +490,6 @@ function UploadClosing() {
       return;
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
-    alert("inside handleAddManual");
-    alert(tglToSend);
     setLoading(true);
     if (overrideTglVal === undefined) setTglVal(0);
     try {
@@ -758,40 +778,6 @@ function UploadClosing() {
     }, 300);
   };
 
-  const handleDoMap_old = async () => {
-    const selected = mapRadio || mapAutoSelected;
-    if (!selected) {
-      toast.error("Please select at least one option.");
-      return;
-    }
-    const { row } = mapModal;
-    setMapModal((m) => ({ ...m, open: false }));
-    try {
-      const payload = {
-        id: row.id,
-        mas_id: row.mas_id,
-        ...(mapRadio && {
-          selected_id: mapRadio.id,
-          selected_code: mapRadio.code,
-          selected_name: mapRadio.name,
-        }),
-        ...(mapAutoSelected && {
-          prodId: mapAutoSelected.id,
-          selectedCode: mapAutoSelected.code,
-          selectedName: mapAutoSelected.name,
-        }),
-      };
-      const res = await api.post("/map_prod", payload);
-      setTableData(tagWithRowKeys(res.data.pre_data || []));
-      if (res.data.status === 200) {
-        toast.success(res.data.message);
-      }
-    } catch (err) {
-      console.error("doMap:", err);
-      toast.error("something went wrong,Try again!");
-    }
-  };
-
   const handleDoMap = async () => {
     const selected = mapRadio || mapAutoSelected;
     if (!selected || !pendingMapRow) return;
@@ -842,8 +828,23 @@ function UploadClosing() {
     }
 
     const row = mapModal.row;
+    if (!row) return;
 
-    setConfirm({
+    const selectedData = mapRadio
+      ? {
+          type: "radio",
+          id: mapRadio.id,
+          code: mapRadio.code,
+          name: mapRadio.name,
+        }
+      : {
+          type: "auto",
+          id: mapAutoSelected.id,
+          code: mapAutoSelected.code,
+          name: mapAutoSelected.name,
+        };
+
+    setMapConfirm({
       open: true,
       title: "Confirmation",
       message: "Are you sure you want to map this product?",
@@ -851,43 +852,44 @@ function UploadClosing() {
       cancelText: "Cancel",
       confirmColor: "primary",
       onConfirm: async () => {
-        closeConfirm();
-        if (!row) return;
-
-        setMapActionRowKey(row._rowKey);
-
-        try {
-          const payload = {
-            id: row.id,
-            mas_id: row.mas_id,
-            ...(mapRadio && {
-              selected_id: mapRadio.id,
-              selected_code: mapRadio.code,
-              selected_name: mapRadio.name,
-            }),
-            ...(mapAutoSelected && {
-              prodId: mapAutoSelected.id,
-              selectedCode: mapAutoSelected.code,
-              selectedName: mapAutoSelected.name,
-            }),
-          };
-
-          const res = await api.post("/map_prod", payload);
-          setTableData(tagWithRowKeys(res.data.pre_data || []));
-
-          if (res.data.status === 200) {
-            toast.success(res.data.message);
-          }
-
-          handleCloseMapModal();
-        } catch (err) {
-          console.error("doMap:", err);
-          toast.error("something went wrong,Try again!");
-        } finally {
-          setMapActionRowKey(null);
-        }
+        closeMapConfirm();
+        await executeMapProduct(row, selectedData);
       },
     });
+  };
+
+  const executeMapProduct = async (row, selectedData) => {
+    handleCloseMapModal();
+    setMapActionRowKey(row._rowKey);
+
+    try {
+      const payload = {
+        id: row.id,
+        mas_id: row.mas_id,
+        ...(selectedData.type === "radio" && {
+          selected_id: selectedData.id,
+          selected_code: selectedData.code,
+          selected_name: selectedData.name,
+        }),
+        ...(selectedData.type === "auto" && {
+          prodId: selectedData.id,
+          selectedCode: selectedData.code,
+          selectedName: selectedData.name,
+        }),
+      };
+
+      const res = await api.post("/map_prod", payload);
+      setTableData(tagWithRowKeys(res.data.pre_data || []));
+
+      if (res.data.status === 200) {
+        toast.success(res.data.message);
+      }
+    } catch (err) {
+      console.error("doMap:", err);
+      toast.error("something went wrong,Try again!");
+    } finally {
+      setMapActionRowKey(null);
+    }
   };
 
   const renderRowSkeleton = (row) => (
@@ -2753,6 +2755,18 @@ function UploadClosing() {
         cancelText={confirm.cancelText}
         loading={loading}
         confirmColor={confirm.confirmColor}
+      />
+
+      <ConfirmationDialog
+        open={mapConfirm.open}
+        onClose={closeMapConfirm}
+        onConfirm={mapConfirm.onConfirm}
+        title={mapConfirm.title}
+        message={mapConfirm.message}
+        confirmText={mapConfirm.confirmText}
+        cancelText={mapConfirm.cancelText}
+        loading={false}
+        confirmColor={mapConfirm.confirmColor}
       />
 
       <FilePreviewModal
