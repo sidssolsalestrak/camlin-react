@@ -118,20 +118,27 @@ export default function Region() {
             setZoneErrMsg("Zone name is required")
             isValid = false
         }
-        if (!regionName || regionName.trim().length < 3) {
-            setRegionError(true)
-            setRegionErrMsg(!regionName || regionName.trim() === ""
-                ? "The Region Name field is required"
-                : "Region Name must be at least 3 characters")
-            if (!isValid) {
-                toast.error("Please fix all mandatory fields")
 
-            }
+        if (!regionName || regionName.trim() === "") {
+            setRegionError(true)
+            setRegionErrMsg("The Region Name field is required")
+            isValid = false
+        } else if (regionName.trim().length < 3) {
+            setRegionError(true)
+            setRegionErrMsg("Region Name must be at least 3 characters")
+            isValid = false
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(regionName)) {
+            setRegionError(true)
+            setRegionErrMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
             isValid = false
         }
+
+        if (!isValid) {
+            toast.error("Please fix all mandatory fields")
+        }
+
         return isValid
     }
-
     const handleSubmit = async () => {
         try {
             setModifyLoading(true)
@@ -304,8 +311,9 @@ export default function Region() {
                                 helperText={regionErrMsg || ""}
                                 required
                                 onChange={(e) => {
-                                    setRegionName(e.target.value)
-                                    if (regionError) setRegionError(false)
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                    setRegionName(onlyText)
+                                    if (regionError) { setRegionError(false); setRegionErrMsg("") }
                                 }}
                             />
 

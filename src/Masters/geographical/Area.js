@@ -20,8 +20,8 @@ export default function Area() {
     const navigate = useNavigate()
 
     const [tabValue, setTabValue] = useState(1)
-    const [selRegion, setSelRegion] = useState(null)        // ← null for Autocomplete
-    const [selState, setSelState] = useState(null)          // ← null for Autocomplete
+    const [selRegion, setSelRegion] = useState(null)
+    const [selState, setSelState] = useState(null)
     const [areaName, setAreaName] = useState("")
     const [hdnAreaName, setHdnAreaName] = useState("")
     const [allRegion, setAllRegion] = useState([])
@@ -33,6 +33,7 @@ export default function Area() {
     const [regionError, setRegionError] = useState(false)
     const [stateError, setStateError] = useState(false)
     const [areaError, setAreaError] = useState(false)
+    const [areaErrorMsg, setAreaErrorMsg] = useState("")
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -68,13 +69,14 @@ export default function Area() {
     }, [decodedAreaId, allRegion, allState])
 
     const resetFields = () => {
-        setSelRegion(null)          // ← null
-        setSelState(null)           // ← null
+        setSelRegion(null)
+        setSelState(null)
         setAreaName("")
         setHdnAreaName("")
         setRegionError(false)
         setStateError(false)
         setAreaError(false)
+        setAreaErrorMsg("")
     }
 
     const fetchArea = async () => {
@@ -112,7 +114,6 @@ export default function Area() {
             let response = await api.post("/read_area", { areaId: id })
             let data = response.data.data[0]
 
-            // ← find matching objects for Autocomplete
             const matchedRegion = allRegion.find(r => r.id === data.reg_id) || null
             const matchedState = allState.find(s => s.id === data.state_id) || null
             setSelRegion(matchedRegion)
@@ -123,6 +124,7 @@ export default function Area() {
             setRegionError(false)
             setStateError(false)
             setAreaError(false)
+            setAreaErrorMsg("")
             setTabValue(0)
         } catch (err) {
             console.log("collectEditData error", err)
@@ -134,10 +136,20 @@ export default function Area() {
         setRegionError(false)
         setStateError(false)
         setAreaError(false)
+        setAreaErrorMsg("")
 
-        if (!selRegion || Number(selRegion.id) === 0) { setRegionError(true); isValid = false }        // ← null check
-        if (!selState || Number(selState.id) === 0) { setStateError(true); isValid = false }          // ← null check
-        if (!areaName || areaName.trim() === "") { setAreaError(true); isValid = false }
+        if (!selRegion || Number(selRegion.id) === 0) { setRegionError(true); isValid = false }
+        if (!selState || Number(selState.id) === 0) { setStateError(true); isValid = false }
+
+        if (!areaName || areaName.trim() === "") {
+            setAreaError(true)
+            setAreaErrorMsg("The Area Name field is required.")
+            isValid = false
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(areaName)) {
+            setAreaError(true)
+            setAreaErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
+            isValid = false
+        }
 
         if (!isValid) {
             toast.error("Please fix all mandatory fields")
@@ -153,8 +165,8 @@ export default function Area() {
                 if (hdnAreaName.toLowerCase().trim() === areaName.toLowerCase().trim()) check = 0
                 let response = await api.post("/areaUpdate", {
                     updId: decodedAreaId,
-                    reg_name: selRegion?.id,        // ← extract id
-                    state_name: selState?.id,       // ← extract id
+                    reg_name: selRegion?.id,
+                    state_name: selState?.id,
                     area_name: areaName.trim(),
                     check: check
                 })
@@ -167,8 +179,8 @@ export default function Area() {
                 }
             } else {
                 let response = await api.post("/areaCreate", {
-                    reg_name: selRegion?.id,        // ← extract id
-                    state_name: selState?.id,       // ← extract id
+                    reg_name: selRegion?.id,
+                    state_name: selState?.id,
                     area_name: areaName.trim()
                 })
                 if (response.data.success) {
@@ -295,7 +307,6 @@ export default function Area() {
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
-                            {/* ✅ Region — Autocomplete */}
                             <Autocomplete
                                 options={[{ id: "0", reg_name: "Select Region" }, ...allRegion]}
                                 getOptionLabel={(option) => option.reg_name || ""}
@@ -317,7 +328,6 @@ export default function Area() {
                                 )}
                             />
 
-                            {/* ✅ State — Autocomplete */}
                             <Autocomplete
                                 options={[{ id: "0", state_name: "Select State" }, ...allState]}
                                 getOptionLabel={(option) => option.state_name || ""}
@@ -341,12 +351,13 @@ export default function Area() {
 
                             <TextField label="Area Name" size="small" value={areaName}
                                 onChange={(e) => {
-                                    setAreaName(e.target.value)
-                                    if (areaError) setAreaError(false)
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                    setAreaName(onlyText)
+                                    if (areaError) { setAreaError(false); setAreaErrorMsg("") }
                                 }}
                                 error={!!areaError}
                                 required
-                                helperText={areaError ? "The Area Name field is required." : ""}
+                                helperText={areaError ? areaErrorMsg : ""}
                             />
                             {(!decodedAreaId && [0,1].includes(Number(accStat)))&&
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}

@@ -103,10 +103,10 @@ export default function Zone() {
       setZoneErrorMsg("Zone Name must be at least 3 characters");
       return false;
     }
-    const specialChar = /[^a-zA-Z0-9 ]/;
+    const specialChar = /[^a-zA-Z0-9_\-\/ ]/;
     if (specialChar.test(zoneName)) {
       setZoneError(true);
-      setZoneErrorMsg("Special Characters Not Allowed");
+      setZoneErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed");
       return false;
     }
     return true;
@@ -298,7 +298,7 @@ export default function Zone() {
                 required
                 type="text"
                 onChange={(e) => {
-                  const onlyText = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                  const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                   setZoneName(onlyText);
                   if (zoneError) setZoneError(false);
                 }}

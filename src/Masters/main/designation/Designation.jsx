@@ -107,12 +107,19 @@ const Designation = () => {
             abbreviation: "",
             designation: ""
         }
-        if (!formData.abbreviation) {
-            newValidations.abbreviation = "The Abbreviation field is required";
+        if (!formData.designation || formData.designation.trim() === "") {
+            newValidations.designation = "The Designation field is required.";
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ()]/.test(formData.designation)) {
+            newValidations.designation = "Only letters, numbers, underscore, hyphen, forward slash, brackets and spaces are allowed";
             isValid = false;
         }
-        if (!formData.designation) {
-            newValidations.designation = "The Designation field is required.";
+
+        if (!formData.abbreviation || formData.abbreviation.trim() === "") {
+            newValidations.abbreviation = "The Abbreviation field is required";
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ()]/.test(formData.abbreviation)) {
+            newValidations.abbreviation = "Only letters, numbers, underscore, hyphen, forward slash, brackets and spaces are allowed";
             isValid = false;
         }
         setValidations(newValidations)
@@ -127,7 +134,6 @@ const Designation = () => {
                 desig_abbr_name: formData.abbreviation
             }
             const res = await axios.post("/addDesignation", payload)
-            //console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("Designation Added Successfully")
                 setFormData({ abbreviation: "", designation: "" });
@@ -139,11 +145,7 @@ const Designation = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ designation: val?.message || "", abbreviation: "" });
-                } else {
-                    setValidations({ designation: "", abbreviation: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Add Designation")
@@ -164,7 +166,6 @@ const Designation = () => {
                 hdndesignationabb: original.abbreviation
             }
             const res = await axios.post("/UpdateDesignation", payload)
-            // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Designation Updated Successfully")
                 setFormData({ abbreviation: "", designation: "" });
@@ -176,11 +177,7 @@ const Designation = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ designation: val?.message || "", abbreviation: "" });
-                } else {
-                    setValidations({ designation: "", abbreviation: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update Designation")
@@ -196,7 +193,6 @@ const Designation = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteDesignation/${id}`);
-            // console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Designation")
                 fetchTableData();
@@ -269,7 +265,6 @@ const Designation = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            // console.log("table data", data);
             settableData(data);
         } catch (error) {
             console.error(error);
@@ -355,16 +350,22 @@ const Designation = () => {
                         <TabPanel value="1">
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 <TextField value={formData.designation}
-                                    onChange={(e) => formDataChange("designation", e.target.value)}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
+                                        formDataChange("designation", onlyText)
+                                    }}
                                     required size='small' placeholder="Enter Designation"
                                     variant='outlined' label="Designation" error={!!validation.designation}
-                                    helperText={validation.designation && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.designation}</span>} />
+                                    helperText={validation.designation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.designation}</span>} />
                                 <TextField
                                     value={formData.abbreviation}
-                                    onChange={(e) => formDataChange("abbreviation", e.target.value)}
+                                    onChange={(e) => {
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
+                                    formDataChange("abbreviation", onlyText)
+                                     }}
                                     required size='small' placeholder="Enter Abbreviation"
                                     variant='outlined' label="Abbreviation" error={!!validation.abbreviation}
-                                    helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.abbreviation}</span>} />
+                                    helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.abbreviation}</span>} />
                             </Box>
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>
