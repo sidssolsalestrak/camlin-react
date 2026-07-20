@@ -181,16 +181,16 @@ const AddStockist = () => {
 
         // StockDetails validation
         if (!formData.type) newErrors.type = "The Type field is required.";
-        if (!formData.name) newErrors.name = "The Stockist Name field is required.";
+        if (!formData.name || formData.name.trim()==="") newErrors.name = "The Stockist Name field is required.";
 
-        if (!formData.email) newErrors.email = "The Email field is required.";
+        if (!formData.email || formData.email.trim()==="") newErrors.email = "The Email field is required.";
         else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
 
         if (!formData.mobile) newErrors.mobile = "The Mobile No field is required.";
         else if (formData.mobile.length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
 
         // SalestrakCredential validation
-        if (!formData.userID) newErrors.userID = "The Username Name field is required.";
+        if (!formData.userID || formData.userID.trim()==="") newErrors.userID = "The Username Name field is required.";
         else if (!validateUser(formData.userID)) newErrors.userID = "Invalid User Name";
 
         if (!original.password) {

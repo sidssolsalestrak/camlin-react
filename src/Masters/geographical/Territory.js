@@ -32,6 +32,7 @@ export default function Territory() {
     const [modifyLoading, setModifyLoading] = useState(false)
     const [areaError, setAreaError] = useState(false)
     const [terError, setTerError] = useState(false)
+    const [terErrorMsg, setTerErrorMsg] = useState("")
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -71,6 +72,7 @@ export default function Territory() {
         setHdnTerName("")
         setAreaError(false)
         setTerError(false)
+        setTerErrorMsg("")
     }
 
     const fetchAllTerritory = async () => {
@@ -105,6 +107,7 @@ export default function Territory() {
             setHdnTerName(data.ter_name)
             setAreaError(false)
             setTerError(false)
+            setTerErrorMsg("")
             setTabValue(0)
         } catch (err) {
             console.log("collectEditData error", err)
@@ -115,16 +118,26 @@ export default function Territory() {
         let isValid = true
         setAreaError(false)
         setTerError(false)
+        setTerErrorMsg("")
 
         if (!selArea || Number(selArea.id) === 0) { setAreaError(true); isValid = false }
-        if (!terName || terName.trim() === "") { setTerError(true); isValid = false }
+
+        if (!terName || terName.trim() === "") {
+            setTerError(true)
+            setTerErrorMsg("The Territory Name field is required.")
+            isValid = false
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(terName)) {
+            setTerError(true)
+            setTerErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
+            isValid = false
+        }
+
         if (!isValid) {
             toast.error("Please fix all mandatory fields")
         }
 
         return isValid
     }
-
     const handleSubmit = async () => {
         try {
             setModifyLoading(true)
@@ -291,12 +304,13 @@ export default function Territory() {
                             />
                             <TextField label="Territory Name" size="small" value={terName}
                                 onChange={(e) => {
-                                    setTerName(e.target.value)
-                                    if (terError) setTerError(false)
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                    setTerName(onlyText)
+                                    if (terError) { setTerError(false); setTerErrorMsg("") }
                                 }}
                                 error={!!terError}
                                 required
-                                helperText={terError ? "The Territory Name field is required." : ""}
+                                helperText={terError ? terErrorMsg : ""}
                             />
                             {!decodedEditTerritoryId && [0,1].includes(Number(accStat)) &&
                              <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}

@@ -334,7 +334,7 @@ function AccountMas() {
       ]
       : []),
 
-    ...(cusReq == 2
+    ...(decodedParams.cusReq == 2
       ? [
         {
           field: "manager_status",
@@ -361,7 +361,7 @@ function AccountMas() {
       ]
       : []),
 
-    ...(cusReq == 2
+    ...(decodedParams.cusReq == 2
       ? [
         {
           field: "approve",
@@ -397,7 +397,7 @@ function AccountMas() {
       ]
       : []),
 
-    ...(cusReq == 2
+    ...(decodedParams.cusReq == 2
       ? [
         {
           field: "reject",
@@ -1048,8 +1048,7 @@ const handleRejectAll = () => {
             boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
           }}
         >
-          {/* Approve All / Reject All header — only shown in requests mode for eligible users */}
-         {cusReq == 2 &&
+         {decodedParams.cusReq == 2 &&
   tableData.some(
     (row) =>
       row.mgr_approved_stat == 0 &&
@@ -1126,7 +1125,7 @@ const handleRejectAll = () => {
         </Box>
         </Box>
 
-        {cusReq == 2 &&
+        {decodedParams.cusReq == 2 &&
           tableData.some(
             (row) =>
               row.mgr_approved_stat == 0 &&

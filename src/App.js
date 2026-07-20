@@ -174,7 +174,7 @@ function App() {
               element={<WebMenuMaster />}
             />
             <Route
-              path="/reports/extract/:country?/:accType?/:userType?/:user?"
+              path="/reports/extract/:country?/:accType?/:userType?/:user?/:type?"
               element={<AccountExtract />}
             />
             <Route

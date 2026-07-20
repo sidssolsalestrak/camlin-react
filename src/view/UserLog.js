@@ -137,6 +137,15 @@ function UserLog() {
   }, [params]);
 
   const handleChange = (key, value) => {
+    if (key === "userType") {
+      setFilters((prev) => ({
+        ...prev,
+        userType: value,
+        user: 0,
+      }));
+      return;
+    }
+
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 

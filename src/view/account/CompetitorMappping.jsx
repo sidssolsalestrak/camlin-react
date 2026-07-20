@@ -1,8 +1,10 @@
 import {
     Checkbox, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Button
+    TableHead, TableRow, Button, Box, Accordion, AccordionSummary,
+    AccordionDetails, Typography, Divider
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import React, { useEffect } from 'react';
 import api from '../../services/api';
 
@@ -12,6 +14,13 @@ const tableHeader = [
     { id: 3, name: "Reminder" },
     { id: 4, name: "Competition" },
 ];
+
+const headContainer = {
+    display: "flex", flexDirection: 'column', gap: 2, m: 1.5,
+    width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
+}
+
+const subHeaderStyle = { textDecoration: "underline", textUnderlineOffset: "5px", textDecorationColor: "#ccc" };
 
 const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cusId = 0, tempId = 0 }) => {
 
@@ -113,68 +122,84 @@ const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cus
     const showCompButton = (brand) => brand.focus === 1 || brand.reminder === 1;
 
     return (
-        <div>
-            <TableContainer>
-                <Table>
-                    <TableHead>
-                        <TableRow sx={{ border: "2px solid #ccc", bgcolor: "#2196f3", p: 0.6 }}>
-                            {tableHeader.map((item) => (
-                                <TableCell key={item.id} sx={{
-                                    color: "white", p: 0.6,
-                                    borderRight: "2px solid #ccc", fontSize: "12px", fontWeight: 600
-                                }}>
-                                    {item.name}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
+        <div style={{ marginBottom: "3%" }}>
+            <Box sx={headContainer}>
+                <Box sx={{ p: 0, overflow: "hidden" }}>
+                    <Accordion sx={{ boxShadow: "none" }}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ borderTop: "4px solid #2196f3" }}>
+                            <Typography variant="h6" color="initial" sx={subHeaderStyle}>
+                                Competitor Mapping
+                            </Typography>
+                        </AccordionSummary>
+                        <Divider />
+                        <AccordionDetails sx={{ pt: 2 }}>
+                            <Box sx={{ width: { lg: "50%", md: '50%', sm: '80%', xs: '90%' } }}>
+                                <TableContainer>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow sx={{ border: "2px solid #ccc", bgcolor: "#2196f3", p: 0.6 }}>
+                                                {tableHeader.map((item) => (
+                                                    <TableCell key={item.id} sx={{
+                                                        color: "white", p: 0.6,
+                                                        borderRight: "2px solid #ccc", fontSize: "12px", fontWeight: 600
+                                                    }}>
+                                                        {item.name}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        </TableHead>
 
-                    <TableBody>
-                        {brandData.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} sx={{ textAlign: "center", fontSize: "12px", color: "#999", py: 2 }}>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            brandData.map((brand) => (
-                                <TableRow key={brand.subCatId} sx={{ borderBottom: "1px solid #eee" }}>
-                                    <TableCell sx={{ p: 0.6, fontSize: "12px" }}>
-                                        {brand.name}
-                                    </TableCell>
-                                    <TableCell sx={{ p: 0.6 }}>
-                                        <Checkbox
-                                            size="small"
-                                            checked={brand.focus === 1}
-                                            onChange={(e) => updateBrand(brand.subCatId, "focus", e.target.checked ? 1 : 0)}
-                                        />
-                                    </TableCell>
-                                    <TableCell sx={{ p: 0.6 }}>
-                                        <Checkbox
-                                            size="small"
-                                            checked={brand.reminder === 1}
-                                            onChange={(e) => updateBrand(brand.subCatId, "reminder", e.target.checked ? 1 : 0)}
-                                        />
-                                    </TableCell>
-                                    <TableCell sx={{ p: 0.6, textAlign: "center" }}>
-                                        {showCompButton(brand) && (
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                color="info"
-                                                startIcon={brand.compCount > 0 ? null : <AddIcon />}
-                                                onClick={() => handleCompClick(brand)}
-                                                sx={{ fontSize: "11px", py: 0.3, px: 1, minWidth: "70px" }}
-                                            >
-                                                {brand.compCount > 0 ? `${brand.compCount} Nos` : "Add"}
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                                        <TableBody>
+                                            {brandData.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} sx={{ textAlign: "center", fontSize: "12px", color: "#999", py: 2 }}>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                brandData.map((brand) => (
+                                                    <TableRow key={brand.subCatId} sx={{ borderBottom: "1px solid #eee" }}>
+                                                        <TableCell sx={{ p: 0.6, fontSize: "12px" }}>
+                                                            {brand.name}
+                                                        </TableCell>
+                                                        <TableCell sx={{ p: 0.6 }}>
+                                                            <Checkbox
+                                                                size="small"
+                                                                checked={brand.focus === 1}
+                                                                onChange={(e) => updateBrand(brand.subCatId, "focus", e.target.checked ? 1 : 0)}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ p: 0.6 }}>
+                                                            <Checkbox
+                                                                size="small"
+                                                                checked={brand.reminder === 1}
+                                                                onChange={(e) => updateBrand(brand.subCatId, "reminder", e.target.checked ? 1 : 0)}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ p: 0.6, textAlign: "center" }}>
+                                                            {showCompButton(brand) && (
+                                                                <Button
+                                                                    size="small"
+                                                                    variant="contained"
+                                                                    color="info"
+                                                                    startIcon={brand.compCount > 0 ? null : <AddIcon />}
+                                                                    onClick={() => handleCompClick(brand)}
+                                                                    sx={{ fontSize: "11px", py: 0.3, px: 1, minWidth: "70px" }}
+                                                                >
+                                                                    {brand.compCount > 0 ? `${brand.compCount} Nos` : "Add"}
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
+                        </AccordionDetails>
+                    </Accordion>
+                </Box>
+            </Box>
         </div>
     );
 };

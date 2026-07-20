@@ -37,7 +37,9 @@ export default function Beat() {
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
+    const [areaError, setAreaError] = useState(false)
     const [beatError, setBeatError] = useState(false)
+    const [beatErrorMsg, setBeatErrorMsg] = useState("")
     const [accStat, setAccStat] = useState(null)
     const [isAreaChanged, setIsAreaChanged] = useState(false)
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -92,7 +94,9 @@ export default function Beat() {
         setAllTerritory([])
         setIsAreaChanged(false)
         setTerritoryError(false)
+        setAreaError(false)
         setBeatError(false)
+        setBeatErrorMsg("")
     }
 
     const fetchAllBeat = async () => {
@@ -147,7 +151,9 @@ export default function Beat() {
             setBeatName(data.beat_name)
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
+            setAreaError(false)
             setBeatError(false)
+            setBeatErrorMsg("")
             setTabValue(0)
             await fetchTerritoriesForEdit(data.area_id)
             setSelTerritory(data.ter_id)
@@ -160,12 +166,26 @@ export default function Beat() {
     const validateBeatFields = () => {
         let isValid = true
         setTerritoryError(false)
+        setAreaError(false)
         setBeatError(false)
+        setBeatErrorMsg("")
+
+        if (Number(selArea) === 0 || !selArea) { setAreaError(true); isValid = false }
+
         if (Number(selTerritory) === 0) { setTerritoryError(true); isValid = false }
-        if (!beatName || beatName.trim() === "") { setBeatError(true); isValid = false }
+
+        if (!beatName || beatName.trim() === "") {
+            setBeatError(true)
+            setBeatErrorMsg("The Beat Name field is required.")
+            isValid = false
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(beatName)) {
+            setBeatError(true)
+            setBeatErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
+            isValid = false
+        }
+
         if (!isValid) {
             enqueueSnackbar("Please fix all mandatory fields", { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center' } })
-
         }
         return isValid
     }
@@ -330,11 +350,19 @@ export default function Beat() {
                                     const id = newVal ? newVal.id : ""
                                     setSelArea(id)
                                     setIsAreaChanged(true)
+                                    if (areaError) setAreaError(false)
                                 }}
                                 disableClearable={!!decodedEditBeatId}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                                 renderInput={(params) => (
-                                    <TextField required {...params} label="Area Name" size="small" />
+                                    <TextField
+                                        required
+                                        {...params}
+                                        label="Area Name"
+                                        size="small"
+                                        error={areaError}
+                                        helperText={areaError ? "The Area Name field is required." : ""}
+                                    />
                                 )}
                             />
                             <Autocomplete
@@ -362,12 +390,13 @@ export default function Beat() {
                                 size="small"
                                 value={beatName}
                                 onChange={(e) => {
-                                    setBeatName(e.target.value)
-                                    if (beatError) setBeatError(false)
+                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                    setBeatName(onlyText)
+                                    if (beatError) { setBeatError(false); setBeatErrorMsg("") }
                                 }}
                                 error={!!beatError}
                                 required
-                                helperText={beatError ? "The Beat Name field is required." : ""}
+                                helperText={beatError ? beatErrorMsg : ""}
                             />
                             {!decodedEditBeatId && [0,1].includes(Number(accStat)) &&
                                 <Button

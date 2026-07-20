@@ -118,14 +118,16 @@ const ProductCategory = () => {
             newValidations.stateName = "The State Name field is required";
             isValid = false;
         }
-        if (!formData.cityName) {
-            newValidations.cityName = "The  City Name field is required.";
+        if (!formData.cityName || formData.cityName.trim() === "") {
+            newValidations.cityName = "The City Name field is required.";
+            isValid = false;
+        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.cityName)) {
+            newValidations.cityName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
         setValidations(newValidations)
         return isValid;
     }
-
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
@@ -134,7 +136,6 @@ const ProductCategory = () => {
                 city_name: formData.cityName,
             }
             const res = await axios.post("/addCity", payload)
-            // console.log("adding sub category:", res);
             if (res?.data?.success) {
                 showAlert.success("City added successfully")
                 setFormData({ stateName: "", cityName: "" });
@@ -146,11 +147,7 @@ const ProductCategory = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ cityName: "", stateName: val?.message || "" });
-                } else {
-                    setValidations({ cityName: val?.message || "", stateName: "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to ADD City")
@@ -170,7 +167,6 @@ const ProductCategory = () => {
                 city_new: original.cityName,
             }
             const res = await axios.post("/updateCity", payload)
-            // console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("City Updated successfully")
                 setFormData({ stateName: "", cityName: "" });
@@ -182,11 +178,7 @@ const ProductCategory = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ cityName: "", stateName: val?.message || "" });
-                } else {
-                    setValidations({ cityName: val?.message || "", stateName: "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update City")
@@ -202,7 +194,6 @@ const ProductCategory = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteCity/${id}`);
-            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted City")
                 fetchTableData();
@@ -383,13 +374,16 @@ const ProductCategory = () => {
                                             <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.state_name}</MenuItem>
                                         ))}
                                     </Select>
-                                    {validation.stateName && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.stateName}</span>}
+                                    {validation.stateName && <span style={{ color: "#d32f2f", fontSize: "9px", padding: "5px 0px 0px 12px" }}>{validation.stateName}</span>}
                                 </FormControl>
-                                <TextField value={formData.cityName}
-                                    onChange={(e) => formDataChange("cityName", e.target.value)}
+                               <TextField value={formData.cityName}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("cityName", onlyText)
+                                    }}
                                     required size='small'
                                     variant='outlined' label="City Name" error={!!validation.cityName}
-                                    helperText={validation.cityName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.cityName}</span>} />
+                                    helperText={validation.cityName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.cityName}</span>} />
                             </Box>
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>

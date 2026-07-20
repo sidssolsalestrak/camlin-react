@@ -122,14 +122,26 @@ const ProductCategory = () => {
             newValidations.brand = "The Brand field is required";
             isValid = false;
         }
-        if (!formData.categoryCode) {
+
+        if (!formData.categoryCode || formData.categoryCode.trim() === "") {
             newValidations.categoryCode = "The Category Code field is required";
             isValid = false;
-        }
-        if (!formData.categoryName) {
-            newValidations.categoryName = "The Category Name field is required";
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryCode)) {
+            newValidations.categoryCode = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
+
+        if (!formData.categoryName || formData.categoryName.trim() === "") {
+            newValidations.categoryName = "The Category Name field is required";
+            isValid = false;
+        } else if (formData.categoryName.trim().length < 3) {
+            newValidations.categoryName = "Category Name must be at least 3 characters";
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
+            newValidations.categoryName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
+            isValid = false;
+        }
+
         setValidations(newValidations)
         return isValid;
     }
@@ -143,7 +155,6 @@ const ProductCategory = () => {
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/addCat", payload)
-            //console.log("adding category:", res);
             if (res?.data?.success) {
                 showAlert.success("Category Added Successfully")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
@@ -155,11 +166,7 @@ const ProductCategory = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ brand: "", categoryCode: val?.message || "", categoryName: "" });
-                } else {
-                    setValidations({ brand: "", categoryCode: "", categoryName: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to ADD Category")
@@ -181,7 +188,6 @@ const ProductCategory = () => {
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/editCat", payload)
-            //console.log("updating category:", res);
             if (res?.data?.success) {
                 showAlert.success("Category Updated Successfully")
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
@@ -193,11 +199,7 @@ const ProductCategory = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ brand: "", categoryCode: val?.message || "", categoryName: "" });
-                } else {
-                    setValidations({ brand: "", categoryCode: "", categoryName: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update Category")
@@ -254,7 +256,6 @@ const ProductCategory = () => {
         let id = row?.row?.id
         try {
             const res = await axios.post(`/deleteCat/${id}`);
-            //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Category")
                 fetchTableData();
@@ -400,21 +401,27 @@ const ProductCategory = () => {
                                             <MenuItem key={index || item.id} style={{ fontSize: "11px" }} value={item.id}>{item?.brand_name}</MenuItem>
                                         ))}
                                     </Select>
-                                    {validation.brand && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.brand}</span>}
+                                    {validation.brand && <span style={{ color: "#d32f2f", fontSize: "9.1px", padding: "5px 0px 0px 12px" }}>{validation.brand}</span>}
                                 </FormControl>
                                 <TextField value={formData.categoryCode}
-                                    onChange={(e) => formDataChange("categoryCode", e.target.value)}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("categoryCode", onlyText)
+                                    }}
                                     required size='small'
                                     variant='outlined' label="Product Category Code"
                                     error={!!validation.categoryCode}
-                                    helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryCode}</span>} />
+                                    helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryCode}</span>} />
                                 <TextField
                                     value={formData.categoryName}
-                                    onChange={(e) => formDataChange("categoryName", e.target.value)}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("categoryName", onlyText)
+                                    }}
                                     required size='small'
                                     variant='outlined' label="Product Category Name"
                                     error={!!validation.categoryName}
-                                    helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryName}</span>} />
+                                    helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
                             </Box>
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
                         </TabPanel>

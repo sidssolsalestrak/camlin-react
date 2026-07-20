@@ -198,7 +198,14 @@ const Layout = ({ children, breadcrumb = [] }) => {
         );
         const url = urlMatch ? urlMatch[1] : href.replace(/^\//, "");
 
-        if (url && location.pathname.startsWith(`/${url}`)) {
+        const cleanUrl = url ? url.replace(/^\/|\/$/g, "") : "";
+        const cleanPathname = location.pathname.replace(/^\/|\/$/g, "");
+        const isMatch =
+          cleanUrl &&
+          (cleanPathname === cleanUrl ||
+            cleanPathname.startsWith(`${cleanUrl}/`));
+
+        if (isMatch) {
           // ✅ Highlight the active child link
           link.classList.add("menu-active");
 

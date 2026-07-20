@@ -70,6 +70,7 @@ const AddProduct = () => {
     /*---------- original departmentName name for edit---------*/
     const [original, setoriginal] = useState({
         prod_name: "",
+        code: "",
     })
     /*----------form validations ---------*/
     const [validation, setValidations] = useState(validationFields)
@@ -131,35 +132,35 @@ const AddProduct = () => {
             newValidations.productType = "The Product Type field is required";
             isValid = false;
         }
-        if (!formData.productName) {
+        if (!formData.productName || formData.productName.trim()==="") {
             newValidations.productName = "The Product Name field is required";
             isValid = false;
         }
-        if (!formData.subCatName) {
+        if (formData.subCatName === "" || formData.subCatName === null || formData.subCatName === undefined) {
             newValidations.subCatName = "The Sub-Category Name field is required";
             isValid = false;
         }
-        if (!formData.shortName) {
+        if (!formData.shortName || formData.shortName.trim()==="") {
             newValidations.shortName = "The Short Name field is required";
             isValid = false;
         }
-        if (!formData.code) {
+        if (!formData.code || formData.code.trim()==="") {
             newValidations.code = "The Code field is required";
             isValid = false;
         }
-        if (!formData.asp) {
+        if (formData.asp === "" || formData.asp === null || formData.asp === undefined) {
             newValidations.asp = "The Ex Factory Price field is required";
             isValid = false;
         }
-        if (!formData.pts) {
+        if (formData.pts === "" || formData.pts === null || formData.pts === undefined) {
             newValidations.pts = "The Stockist Price field is required";
             isValid = false;
         }
-        if (!formData.ptr) {
+        if (formData.ptr === "" || formData.ptr === null || formData.ptr === undefined) {
             newValidations.ptr = "The Retail Price field is required";
             isValid = false;
         }
-        if (!formData.mrp) {
+        if (formData.mrp === "" || formData.mrp === null || formData.mrp === undefined) {
             newValidations.mrp = "The MRP Price field is required";
             isValid = false;
         }
@@ -180,13 +181,6 @@ const AddProduct = () => {
         setValidations(validationFields);
     }
 
-    /*---------- set error ---------*/
-    const setError = (fieldName, message) => {
-        setValidations({
-            ...validationFields,
-            [fieldName]: message
-        })
-    }
     /*---------- payload from submit or edit ---------*/
     let payload = {
         prod_type: formData.productType,
@@ -209,7 +203,6 @@ const AddProduct = () => {
     const onSubmit = async () => {
         try {
             const res = await axios.post("/prodmas_create", payload)
-           // console.log("adding product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product")
                 resetForm();
@@ -219,7 +212,7 @@ const AddProduct = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setError("productName", val?.message || "")
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to ADD Product")
@@ -236,24 +229,25 @@ const AddProduct = () => {
             const data = res?.data?.data || [];
             if (data && data.length > 0) {
                 setFormData({
-                    productType: data[0]?.prod_type || "0",
+                    productType: data[0]?.prod_type ?? "0",
                     productName: data[0]?.prod_name || "",
-                    subCatName: data[0]?.subcat_id || "",
+                    subCatName: data[0]?.subcat_id ?? "",
                     shortName: data[0]?.prod_code || "",
                     code: data[0]?.code || "",
-                    sortingOrder: data[0]?.ord_id || "",
-                    asp: data[0]?.fac_price || "",
-                    cfa: data[0]?.wd_price || "",
-                    pts: data[0]?.stk_price || "",
-                    ptr: data[0]?.retail_price || "",
-                    mrp: data[0]?.mrp_price || "",
-                    pcsPerPack: data[0]?.pack_pcs || "",
-                    pcsPerCarton: data[0]?.cart_pcs || "",
+                    sortingOrder: data[0]?.ord_id ?? "",
+                    asp: data[0]?.fac_price ?? "",
+                    cfa: data[0]?.wd_price ?? "",
+                    pts: data[0]?.stk_price ?? "",
+                    ptr: data[0]?.retail_price ?? "",
+                    mrp: data[0]?.mrp_price ?? "",
+                    pcsPerPack: data[0]?.pack_pcs ?? "",
+                    pcsPerCarton: data[0]?.cart_pcs ?? "",
                     uom: data[0]?.prod_uom || "",
-                    unitConvertion: data[0]?.unit_conv || "",
+                    unitConvertion: data[0]?.unit_conv ?? "",
                 });
                 setoriginal({
                     prod_name: data[0]?.prod_name || "",
+                    code: data[0]?.code || "",
                 })
             }
         } catch (error) {
@@ -268,9 +262,9 @@ const AddProduct = () => {
             if (decodedId) {
                 payload.id = decodedId
                 payload.prodNameNew = original.prod_name.trim()
+                payload.codeOld = original.code
             }
             const res = await axios.post("/prodmas_update", payload)
-           // console.log("updating product:", res);
             if (res?.data?.success) {
                 showAlert.success("Successfully updated Product")
                 resetForm();
@@ -281,7 +275,7 @@ const AddProduct = () => {
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                setError("productName", val?.message || "")
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
                 showAlert.error("Failed to Update Product")
@@ -319,7 +313,6 @@ const AddProduct = () => {
         ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    {/* <Typography sx={style}>Product Details</Typography> */}
                     <Box>
                         <h1 className="mainTitle">Product Details</h1>
                     </Box>
@@ -339,33 +332,21 @@ const AddProduct = () => {
                             {validation.productType && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.productType}</span>}
                         </FormControl>
                     </Grid>
+                  
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                        <TextField value={formData.mrp} onChange={(e) => handleChange("mrp", e.target.value)} error={!!validation.mrp} helperText={validation.mrp ? validation.mrp : null}
+                            type='number' required fullWidth size='small' variant='outlined' label="MRP" placeholder='Enter MRP Price' />
+                    </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField fullWidth type='number' size='small' value={formData.sortingOrder}
                             onChange={(e) => handleChange("sortingOrder", e.target.value)}
                             variant='outlined' label="Sorting Order" placeholder='Enter Sorting Order' />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField value={formData.mrp} onChange={(e) => handleChange("mrp", e.target.value)} error={!!validation.mrp} helperText={validation.mrp ? validation.mrp : null}
-                            type='number' required fullWidth size='small' variant='outlined' label="MRP" placeholder='Enter MRP Price' />
-                    </Grid>
                     {/* row 2 */}
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField required fullWidth size='small' value={formData.productName} error={!!validation.productName} helperText={validation.productName ? validation.productName : null}
-                            onChange={(e) => handleChange("productName", e.target.value)} variant='outlined' label="Product Name" placeholder='Enter Product Name' />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField type='number' required fullWidth size='small' value={formData.asp} error={!!validation.asp} helperText={validation.asp ? validation.asp : null}
-                            onChange={(e) => handleChange("asp", e.target.value)} variant='outlined' label="Ex Factory (ASP)" placeholder='Enter Factory Price' />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField type='number' fullWidth size='small' variant='outlined' value={formData.pcsPerPack}
-                            onChange={(e) => handleChange("pcsPerPack", e.target.value)} label="Pcs Per Pack" placeholder='Enter Pack Value' />
-                    </Grid>
-                    {/* row 3 */}
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" >
-                            <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                            <Select id='SubCategoryName' label="SubCategory Name" value={formData.subCatName} MenuProps={menuStyle}
+                            <InputLabel id="SubCategoryName">SubCategory Name*</InputLabel>
+                            <Select id='SubCategoryName' label="SubCategory Name*" value={formData.subCatName} MenuProps={menuStyle}
                                 onChange={(e) => handleChange("subCatName", e.target.value)} error={!!validation.subCatName}
                                 labelId="SubCategoryName" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
@@ -377,6 +358,20 @@ const AddProduct = () => {
                         </FormControl>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                        <TextField type='number' required fullWidth size='small' value={formData.asp} error={!!validation.asp} helperText={validation.asp ? validation.asp : null}
+                            onChange={(e) => handleChange("asp", e.target.value)} variant='outlined' label="Ex Factory (ASP)" placeholder='Enter Factory Price' />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                        <TextField type='number' fullWidth size='small' variant='outlined' value={formData.pcsPerPack}
+                            onChange={(e) => handleChange("pcsPerPack", e.target.value)} label="Pcs Per Pack" placeholder='Enter Pack Value' />
+                    </Grid>
+                    {/* row 3 */}
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                        <TextField required fullWidth size='small' variant='outlined' label="Code" error={!!validation.code} helperText={validation.code ? validation.code : null}
+                            value={formData.code} onChange={(e) => handleChange("code", e.target.value)} placeholder='Enter Code' />
+                    </Grid>
+                   
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.cfa}
                             onChange={(e) => handleChange("cfa", e.target.value)} label="CFA/ Superstockist" placeholder='Enter Super Stock-list' />
                     </Grid>
@@ -386,9 +381,9 @@ const AddProduct = () => {
                     </Grid>
                     {/* row 4 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField required fullWidth size='small' variant='outlined' value={formData.shortName} error={!!validation.shortName} helperText={validation.shortName ? validation.shortName : null}
-                            onChange={(e) => handleChange("shortName", e.target.value)} label="Short Name" placeholder='Enter Short Name' />
-                    </Grid>
+                        <TextField required fullWidth size='small' value={formData.productName} error={!!validation.productName} helperText={validation.productName ? validation.productName : null}
+                            onChange={(e) => handleChange("productName", e.target.value)} variant='outlined' label="Product Name" placeholder='Enter Product Name' />
+                    </Grid>    
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.pts} error={!!validation.pts} helperText={validation.pts ? validation.pts : null}
                             onChange={(e) => handleChange("pts", e.target.value)} label="Stockist Price (PTS)" placeholder='Enter Stock Price   ' />
@@ -398,10 +393,10 @@ const AddProduct = () => {
                             onChange={(e) => handleChange("uom", e.target.value)} placeholder='Enter UOM' />
                     </Grid>
                     {/* row 5 */}
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                        <TextField required fullWidth size='small' variant='outlined' label="Code" error={!!validation.code} helperText={validation.code ? validation.code : null}
-                            value={formData.code} onChange={(e) => handleChange("code", e.target.value)} placeholder='Enter Code' />
-                    </Grid>
+                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                        <TextField required fullWidth size='small' variant='outlined' value={formData.shortName} error={!!validation.shortName} helperText={validation.shortName ? validation.shortName : null}
+                            onChange={(e) => handleChange("shortName", e.target.value)} label="Short Name" placeholder='Enter Short Name' />
+                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.ptr} error={!!validation.ptr} helperText={validation.ptr ? validation.ptr : null}
                             onChange={(e) => handleChange("ptr", e.target.value)} label="Retail Price (PTR)" placeholder='Enter Retail Price   ' />

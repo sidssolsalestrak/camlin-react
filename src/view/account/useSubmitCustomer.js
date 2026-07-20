@@ -14,112 +14,139 @@ const validateMobile = (mobile) => {
 
 export function useSubmitCustomer({ form, clinics, brandData = [], competitorBrands = [], competitorRows = [], setFieldErrors, setForm }) {
   const toast = useToast();
-
+  console.log("form which is Passes to submit",form)
+  console.log("clinics which is pass to submit",clinics)
+  console.log("potentiality which is pass to submit",brandData)
+  console.log("competitor brands passing",competitorBrands)
   // ── Shared validation & payload builder ──────────────────────────────────
   const validateAndBuild = () => {
+    const newErrors = {};
+    const toastMessages = [];
+    let hasError = false;
 
-    // ── 1. LOCATION VALIDATION ───────────────────────────────────────────────
+    if(!form.cusType){
+      newErrors.cusType = "Account Type is Required";
+      hasError=true
+    }
+    if(!form.retailerType){
+     newErrors.retailerType = "Type is Required";
+     hasError=true
+    }
+    if(!form.potentiality){
+      newErrors.potentiality ="Potentiality Class is Required";
+      hasError=true
+    }
+
+
+    // ── 1. FIRST NAME ─────────────────────────────────────────────────────
     if (!form.firstName || !form.firstName.trim()) {
-      setFieldErrors(prev => ({ ...prev, firstName: "Store Name is required" }));
-      toast.error("Store Name is required");
-      return null;
+      newErrors.firstName = "Store Name is required";
+      hasError = true;
     }
 
+    // ── 2. REGION ─────────────────────────────────────────────────────────
     if (!form.region || form.region === "0" || form.region === "") {
-      setFieldErrors(prev => ({ ...prev, region: "Region is required" }));
-      toast.error("Region is required");
-      return null;
+      newErrors.region = "Region is required";
+      hasError = true;
     }
 
-     // ── 6. DISTRIBUTOR VALIDATION ────────────────────────────────────────────
+    // ── 3. DISTRIBUTOR ────────────────────────────────────────────────────
     if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
-      toast.error("Please Select Distributor");
-      return null;
+      toastMessages.push("Please Select Distributor");
+      hasError = true;
     }
 
-
+    // ── 4. MOBILE ─────────────────────────────────────────────────────────
     if (!validateMobile(form.mobile)) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        mobile: "Please enter valid Mobile No",
-      }));
-      setForm((f) => ({ ...f, sendSms: "0" }));
-      return;
+      newErrors.mobile = "Please enter valid Mobile No";
+      hasError = true;
+    } else {
+      newErrors.mobile = "";
     }
-    setFieldErrors((prev) => ({ ...prev, mobile: "" }));
 
+    // ── 5. EMAIL ──────────────────────────────────────────────────────────
     if (!validateEmail(form.email)) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        email: "Please enter valid Email address",
-      }));
-      setForm((f) => ({ ...f, sendEmail: "0" }));
-      return;
+      newErrors.email = "Please enter valid Email address";
+      hasError = true;
+    } else {
+      newErrors.email = "";
     }
-    setFieldErrors((prev) => ({ ...prev, email: "" }));
 
-    // ── 2. DUPLICATE REP VALIDATION ──────────────────────────────────────────
+    // ── 6. DUPLICATE REP VALIDATION ───────────────────────────────────────
     if (form.cusType === "1") {
       const repIds = clinics.map(c => c.repIncharge).filter(id => id && id !== "0");
       if (repIds.length !== new Set(repIds).size) {
-        toast.error("Rep Incharge in multiple Contact Info can't be same.. Please compare Contact Info details!");
-        return null;
+        toastMessages.push("Rep Incharge in multiple Contact Info can't be same.. Please compare Contact Info details!");
+        hasError = true;
       }
     }
 
     if (form.cusType === "2") {
       const posIds = clinics.map(c => c.repInchargePOS).filter(id => id && id !== "0");
       if (posIds.length !== new Set(posIds).size) {
-        toast.error("Account Owner (KAM) in multiple Contact Info can't be same.. Please compare Contact Info details!");
-        return null;
+        toastMessages.push("Account Owner (KAM) in multiple Contact Info can't be same.. Please compare Contact Info details!");
+        hasError = true;
       }
     }
 
-    // ── 3. FILTER CLINICS ────────────────────────────────────────────────────
+    // ── 7. FILTER CLINICS ─────────────────────────────────────────────────
     const filteredClinics = clinics.filter(c =>
       form.cusType === "1"
         ? c.repIncharge && c.repIncharge !== "0"
         : c.repInchargePOS && c.repInchargePOS !== "0"
     );
 
-    // ── 4. CLINIC COUNT VALIDATION ───────────────────────────────────────────
-    if (filteredClinics.length === 0) {
-      toast.error(
-        form.cusType === "2"
-          ? "Please select Branch Details"
-          : "Please select atleast one clinical details"
-      );
-      return null;
-    }
+    // ── 8. CLINIC COUNT VALIDATION ────────────────────────────────────────
+    // if (filteredClinics.length === 0) {
+    //   toastMessages.push(
+    //     form.cusType === "2"
+    //       ? "Please select Branch Details"
+    //       : "Please select atleast one clinical details"
+    //   );
+    //   hasError = true;
+    // }
 
-    // ── 5. BEAT VALIDATION ───────────────────────────────────────────────────
+    // ── 9. BEAT VALIDATION ────────────────────────────────────────────────
     const noBeat = filteredClinics.some(c => !c.beat || c.beat === "0");
     if (noBeat) {
-      toast.error("Please add Beat to the Clinical");
-      return null;
+      newErrors.beat="Please add Beat to the Clinical";
+      hasError = true;
+    }
+    const noBranch= filteredClinics.some(c=> !c.clinicName || c.clinicName.trim()==="");
+    if(noBranch){
+      newErrors.clinicName="Branch Name is Required";
     }
 
-    // ── CLINIC CONTACT NO VALIDATION ─────────────────────────────────────
+    // ── 10. CLINIC CONTACT NO VALIDATION ──────────────────────────────────
+    let contactNumError = "";
     for (let i = 0; i < clinics.length; i++) {
       const no = clinics[i].contactNo;
       if (no && no.length !== 10) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          contactNum: `Contact No in Contact Info ${i + 1} must be 10 digits`,
-        }));
-        toast.error(`Contact No in Contact Info ${i + 1} must be 10 digits`);
-        return null;
+        contactNumError = `Contact No in Contact Info ${i + 1} must be 10 digits`;
+        toastMessages.push(contactNumError);
+        hasError = true;
+        break;
       }
     }
-    setFieldErrors((prev) => ({ ...prev, contactNum: "" }));
+    newErrors.contactNum = contactNumError;
 
-   
-    // ── 7. BRANDS ────────────────────────────────────────────────────────────
+    // ── SET ALL ERRORS + SHOW ALL MESSAGES, THEN RETURN ONCE ─────────────
+    setFieldErrors((prev) => ({ ...prev, ...newErrors }));
+
+    if (newErrors.mobile) setForm((f) => ({ ...f, sendSms: "0" }));
+    if (newErrors.email) setForm((f) => ({ ...f, sendEmail: "0" }));
+
+    if (hasError) {
+      toastMessages.forEach((msg) => toast.error(msg));
+      return null;
+    }
+
+    // ── 11. BRANDS ─────────────────────────────────────────────────────────
     const brandSubCatID = brandData.map(b => b.subCatId);
     const brandFocus = brandData.map(b => Number(b.focus) || 0);
     const brandRemainder = brandData.map(b => Number(b.reminder) || 0);
 
-    // ── 8. COMPETITOR PRODUCT ARRAYS (matches doctorUpdate backend fields) ───
+    // ── 12. COMPETITOR PRODUCT ARRAYS ─────────────────────────────────────
     const competitor_subcat_id = competitorRows.map(r => r.subcat_id || 0);
     const competitor_prod_id = competitorRows.map(r => r.pid || 0);
     const competitor_prod_qty = competitorRows.map(r => r.prod_qty || 0);
@@ -132,13 +159,13 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     const competitor_oth = competitorRows.map(r => r.other_name || "");
     const competitor_othqty = competitorRows.map(r => r.oth_qty || 0);
 
-    // ── 9. CLINICS PAYLOAD ───────────────────────────────────────────────────
+    // ── 13. CLINICS PAYLOAD ────────────────────────────────────────────────
     const customerClinic = filteredClinics.map(c => ({
-      customeClinicId: c.clinicId || 0,   // ← ADD THIS
+      customeClinicId: c.clinicId || 0,
       customeClinicName: c.clinicName || "",
       customeClinicAddress: c.address || "",
       customeClinicCity: c.city || "",
-      customeClinicZipCode: c.zipCode || "",
+      customeClinicZipCode: c.zipCode || 0,
       customeClinicContactName: c.contactName || "",
       customeClinicContactNo: c.contactNo || "",
       customeClinicHospitalAttched: c.hospitalAttached || "0",
@@ -153,7 +180,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
       phChain: c.phChain || "0",
     }));
 
-    // ── 10. SHARED DOCTOR DETAILS ────────────────────────────────────────────
+    // ── 14. SHARED DOCTOR DETAILS ──────────────────────────────────────────
     const doctorDetails = {
       cusType: form.cusType || "2",
       customerRetType: form.retailerType || "1",
@@ -198,7 +225,6 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
       brandRemainder,
       competitorBrands,
 
-      // Competitor product arrays
       competitor_subcat_id,
       competitor_prod_id,
       competitor_prod_qty,
@@ -215,7 +241,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     };
 
     return doctorDetails;
-  };
+};
 
   // ── ADD ──────────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
