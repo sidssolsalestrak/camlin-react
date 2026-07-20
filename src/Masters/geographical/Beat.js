@@ -37,6 +37,7 @@ export default function Beat() {
     const [loading, setLoading] = useState(true)
     const [modifyLoading, setModifyLoading] = useState(false)
     const [territoryError, setTerritoryError] = useState(false)
+    const [areaError, setAreaError] = useState(false)
     const [beatError, setBeatError] = useState(false)
     const [beatErrorMsg, setBeatErrorMsg] = useState("")
     const [accStat, setAccStat] = useState(null)
@@ -93,6 +94,7 @@ export default function Beat() {
         setAllTerritory([])
         setIsAreaChanged(false)
         setTerritoryError(false)
+        setAreaError(false)
         setBeatError(false)
         setBeatErrorMsg("")
     }
@@ -149,6 +151,7 @@ export default function Beat() {
             setBeatName(data.beat_name)
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
+            setAreaError(false)
             setBeatError(false)
             setBeatErrorMsg("")
             setTabValue(0)
@@ -163,8 +166,11 @@ export default function Beat() {
     const validateBeatFields = () => {
         let isValid = true
         setTerritoryError(false)
+        setAreaError(false)
         setBeatError(false)
         setBeatErrorMsg("")
+
+        if (Number(selArea) === 0 || !selArea) { setAreaError(true); isValid = false }
 
         if (Number(selTerritory) === 0) { setTerritoryError(true); isValid = false }
 
@@ -344,11 +350,19 @@ export default function Beat() {
                                     const id = newVal ? newVal.id : ""
                                     setSelArea(id)
                                     setIsAreaChanged(true)
+                                    if (areaError) setAreaError(false)
                                 }}
                                 disableClearable={!!decodedEditBeatId}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                                 renderInput={(params) => (
-                                    <TextField required {...params} label="Area Name" size="small" />
+                                    <TextField
+                                        required
+                                        {...params}
+                                        label="Area Name"
+                                        size="small"
+                                        error={areaError}
+                                        helperText={areaError ? "The Area Name field is required." : ""}
+                                    />
                                 )}
                             />
                             <Autocomplete

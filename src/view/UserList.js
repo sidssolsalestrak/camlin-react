@@ -205,26 +205,54 @@ function UserList() {
   }, [decodedParams.area]);
 
   // ---------------- HANDLE CHANGE ----------------
-  const handleChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-
+    const handleChange = (key, value) => {
     if (key === "zone") {
+      setFilters((prev) => ({
+        ...prev,
+        zone: value,
+        region: 0,
+        area: 0,
+        territory: 0,
+      }));
+      if(value>0){
       fetchRegions(value);
+      }
       setRegionList([]);
       setAreaList([]);
       setTerList([]);
+      return;
     }
 
     if (key === "region") {
+      setFilters((prev) => ({
+        ...prev,
+        region: value,
+        area: 0,
+        territory: 0,
+      }));
+      if(value>0){
       fetchAreas(value);
+      }
       setAreaList([]);
       setTerList([]);
+      return;
     }
 
     if (key === "area") {
+      setFilters((prev) => ({
+        ...prev,
+        area: value,
+        territory: 0,
+      }));
+      if(value>0){
       fetchTerritory(value);
+      }
       setTerList([]);
+      return;
     }
+
+    // userType, dept, channel etc — no cascade
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   // ---------------- LOAD ----------------

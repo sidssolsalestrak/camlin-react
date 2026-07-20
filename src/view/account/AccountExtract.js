@@ -39,6 +39,7 @@ function AccountExtract() {
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selactiveStat,setActiveStat]=useState("1")
 
   const toast = useToast();
   const location = useLocation()
@@ -59,6 +60,7 @@ function AccountExtract() {
     accType: decode(params.accType),
     userType: decode(params.userType),
     user: decode(params.user),
+    type:decode(params.type)
   };
 
   // ---------------- FETCH FILTER DATA ----------------
@@ -105,7 +107,7 @@ function AccountExtract() {
   const fetchExtractData = async (payload) => {
     try {
       setLoading(true);
-
+      console.log("deocded value payload",payload)
       const res = await api.post("/getAccountExtract", payload);
 
       setTableData(
@@ -139,12 +141,14 @@ function AccountExtract() {
     if (decodedParams.accType) setSelectedAccType(decodedParams.accType);
     if (decodedParams.userType) setSelectedUserType(decodedParams.userType);
     if (decodedParams.user) setSelectedUser(decodedParams.user);
+    if (decodedParams.type) setActiveStat(decodedParams.type)
 
     if (
       decodedParams.country ||
       decodedParams.accType ||
       decodedParams.userType ||
-      decodedParams.user
+      decodedParams.user ||
+      decodedParams.type
     ) {
       fetchExtractData(decodedParams);
     }
@@ -185,7 +189,8 @@ function AccountExtract() {
         country: selectedRegion,
         accType: selectedAccType,
         user: selectedUser,
-        userType: selectedUserType
+        userType: selectedUserType,
+        type:selactiveStat
 
       }
       let response = await api.post('/getAccountExtract', payload)
@@ -233,7 +238,7 @@ function AccountExtract() {
     navigate(
       `/reports/extract/${encode(selectedRegion)}/${encode(
         selectedAccType,
-      )}/${encode(selectedUserType)}/${encode(selectedUser)}`,
+      )}/${encode(selectedUserType)}/${encode(selectedUser)}/${encode(selactiveStat)}`,
     );
   };
 
@@ -384,7 +389,10 @@ function AccountExtract() {
                 <Select
                   value={selectedUserType}
                   label="User Type"
-                  onChange={(e) => setSelectedUserType(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedUserType(e.target.value);
+                    setSelectedUser(0);
+                  }}
                   MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>All</MenuItem>
@@ -400,7 +408,7 @@ function AccountExtract() {
             </Grid>
 
             {/* USER */}
-            <Grid size={{ xs: 12, md: 2, lg: 3 }}>
+            <Grid size={{ xs: 12, md: 2, lg: 2.8 }}>
               <Autocomplete
                 options={userData}
                 getOptionLabel={(option) =>
@@ -412,6 +420,15 @@ function AccountExtract() {
                   <TextField {...params} label="User" size="small" />
                 )}
               />
+            </Grid>
+            <Grid size={{ xs: 12, md: 2, lg: 1.5 }}>
+             <FormControl fullWidth>
+              <InputLabel id="type">Type</InputLabel>
+              <Select labelId="type" label="type" size="small" value={selactiveStat} onChange={(e)=>setActiveStat(e.target.value)}  >
+              <MenuItem value="1">Active</MenuItem>
+              <MenuItem value="2">In Active</MenuItem>
+              </Select>
+              </FormControl> 
             </Grid>
 
             {/* LOAD BUTTON */}
