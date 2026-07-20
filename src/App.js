@@ -69,6 +69,7 @@ import EmailProcessData from "./view/Transactions/EMailProcessData";
 import StockAndSalesUploadNew from "./view/trans/StockAndSalesUploadNew";
 import PrimarySalesTransact from "./view/Transactions/PrimarySales";
 import UploadClosing from "./view/Transactions/uploadClosingMain";
+import BeatCoverage from "./ExtractReport/BeatCoverage";
 
 function App() {
   const ProtectedRoute = () => {
@@ -305,6 +306,8 @@ function App() {
           <Route path="/reports/pcm_kam" element={<OrderReport />} />
           <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
           <Route path="/reports/stock_salesReport" element={<StockAndSalesReport />} />
+
+           <Route path="/reports/beat_coverage" element={<BeatCoverage />} />
 
           {/* sales analysis */}
           <Route path="/reports/performance_report" element={<SalesAnalysis />} />
