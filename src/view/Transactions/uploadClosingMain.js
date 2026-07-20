@@ -139,6 +139,7 @@ function UploadClosing() {
   const [mapConfirmOpen, setMapConfirmOpen] = useState(false);
   const [pendingMapRow, setPendingMapRow] = useState(null);
   const [mapActionRowKey, setMapActionRowKey] = useState(null);
+  const [rawInvalidCell, setRawInvalidCell] = useState(null);
 
   const [mapConfirm, setMapConfirm] = useState({
     open: false,
@@ -237,7 +238,7 @@ function UploadClosing() {
       if (r.prod_map_stat === 1 && !r.pn) unmapped++;
       if (r.prod_map_stat === 1 && r.pn) semi++;
       if (r.qty_map_stat === 1) invalid++;
-      if (r.prod_map_stat !== 1 && r.qty_map_stat !== 1) mapped++;
+      if (r.prod_map_stat !== 1) mapped++;
       totalQty += Number(r.prod_qty) || 0;
     });
     return {
@@ -278,6 +279,7 @@ function UploadClosing() {
   const { color: previewTriggerColor } = getPreviewMeta(fileType);
 
   const enterRawMappingMode = useCallback((data) => {
+    setRawInvalidCell(null);
     const formatType = data.format_type;
     const tdStart = data.file_type === 1 ? 2 : 1;
 
@@ -474,8 +476,16 @@ function UploadClosing() {
     try {
       const res = await api.post("/upload_to_s3", form);
       setManualMode(false);
-      handleApiResponse(res.data);
       setFiles([]);
+
+      if (res.data.result) {
+        // raw OCR pending — column-mapping mode, use payload directly
+        handleApiResponse(res.data);
+      } else {
+        // OCR + mapping already done server-side — re-fetch the
+        // canonical table view from getDesList (same as every other refresh)
+        await loadDesListData();
+      }
     } catch (err) {
       console.error("import:", err);
     } finally {
@@ -545,6 +555,16 @@ function UploadClosing() {
         return { ...page, rows };
       }),
     );
+
+    // clear the error once the user fixes that exact cell
+    setRawInvalidCell((prev) =>
+      prev &&
+      prev.pageIdx === pageIdx &&
+      prev.rowIdx === rowIdx &&
+      prev.colIdx === colIdx
+        ? null
+        : prev,
+    );
   };
 
   const buildRawColumns = (page, pageIdx) => {
@@ -601,17 +621,41 @@ function UploadClosing() {
             </MenuItem>
           </Select>
         ),
-        renderCell: ({ row }) => (
-          <TextField
-            size="small"
-            fullWidth
-            value={row.cells[colIdx] ?? ""}
-            onChange={(e) =>
-              handleRawCellChange(pageIdx, row._rowIdx, colIdx, e.target.value)
-            }
-            inputProps={{ style: { fontSize: 12 } }}
-          />
-        ),
+        renderCell: ({ row }) => {
+          const isInvalid =
+            rawInvalidCell &&
+            rawInvalidCell.pageIdx === pageIdx &&
+            rawInvalidCell.rowIdx === row._rowIdx &&
+            rawInvalidCell.colIdx === colIdx;
+
+          return (
+            <TextField
+              size="small"
+              fullWidth
+              value={row.cells[colIdx] ?? ""}
+              onChange={(e) =>
+                handleRawCellChange(
+                  pageIdx,
+                  row._rowIdx,
+                  colIdx,
+                  e.target.value,
+                )
+              }
+              error={!!isInvalid}
+              inputProps={{ style: { fontSize: 12 } }}
+              sx={
+                isInvalid
+                  ? {
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "#fdecea",
+                        "& fieldset": { borderColor: "error.main" },
+                      },
+                    }
+                  : undefined
+              }
+            />
+          );
+        },
       });
     });
 
@@ -627,6 +671,8 @@ function UploadClosing() {
     }));
 
   const handleRawSubmit = () => {
+    setRawInvalidCell(null);
+
     for (let p = 0; p < rawPages.length; p++) {
       const mapped = Object.values(rawPages[p].mapping);
       if (!mapped.includes("product_name")) {
@@ -639,7 +685,7 @@ function UploadClosing() {
       }
     }
 
-    const qtyRegex = /^[a-zA-Z0-9,.\s-]*$/;
+    const qtyRegex = /^\d+$/; // digits only — no letters, no dots, no symbols
     const allValues = [];
     const totPage = [];
 
@@ -662,11 +708,18 @@ function UploadClosing() {
       for (let r = 0; r < page.rows.length; r++) {
         const cells = page.rows[r];
         if (!cells.some((c) => c !== "" && c != null)) continue;
-        const qty = cells[qtyIdx] ?? "";
-        if (!qtyRegex.test(qty)) {
-          toast.error(`Invalid closing qty in row ${r + 1} of page ${p + 1}`);
+
+        const qty = String(cells[qtyIdx] ?? "").trim();
+
+        if (qty !== "" && !qtyRegex.test(qty)) {
+          setRawPageIndex(p); // jump to the page containing the error
+          setRawInvalidCell({ pageIdx: p, rowIdx: r, colIdx: qtyIdx });
+          toast.error(
+            `Invalid Closing Qty in row ${r + 1} of page ${p + 1} — only numbers are allowed`,
+          );
           return;
         }
+
         allValues.push({
           page_num: p + 1,
           product_name: cells[productIdx],
@@ -926,6 +979,101 @@ function UploadClosing() {
     </Box>
   );
 
+  const TableSkeleton = ({ rows = 8 }) => (
+    <Box>
+      {/* header/legend bar skeleton */}
+      <Box
+        sx={{
+          p: "10px 14px",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
+        {[70, 90, 80, 90, 60].map((w, i) => (
+          <Box
+            key={i}
+            sx={{
+              height: 24,
+              width: w,
+              borderRadius: "16px",
+              bgcolor: "grey.200",
+            }}
+          />
+        ))}
+      </Box>
+
+      {/* row skeletons */}
+      <Box sx={{ p: "10px 14px" }}>
+        {Array.from({ length: rows }).map((_, i) => (
+          <Box
+            key={i}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              py: 1.2,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Box
+              sx={{
+                width: 20,
+                height: 12,
+                borderRadius: 1,
+                bgcolor: "grey.200",
+              }}
+            />
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.6,
+              }}
+            >
+              <Box
+                sx={{
+                  height: 12,
+                  width: `${55 + ((i * 7) % 30)}%`,
+                  borderRadius: 1,
+                  bgcolor: "grey.300",
+                }}
+              />
+              <Box
+                sx={{
+                  height: 9,
+                  width: "35%",
+                  borderRadius: 1,
+                  bgcolor: "grey.200",
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                width: 110,
+                height: 34,
+                borderRadius: 1,
+                bgcolor: "grey.200",
+              }}
+            />
+            <Box
+              sx={{
+                width: 60,
+                height: 24,
+                borderRadius: 1,
+                bgcolor: "grey.200",
+              }}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+
   const handleDeleteRow = (row) => {
     setConfirm({
       open: true,
@@ -1016,6 +1164,7 @@ function UploadClosing() {
           setManualMode(false);
           if (response.data.status === 200) {
             toast.success(response.data.message);
+            window.location.reload();
           }
         } catch (err) {
           console.error(err);
@@ -1613,7 +1762,16 @@ function UploadClosing() {
       field: "prod_qty",
       headerName: "Closing Qty",
       width: 200,
-      align: "center",
+      textAlign: "center",
+      renderHeader: () => (
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          sx={{ width: "100%", textAlign: "center" }}
+        >
+          Closing Qty
+        </Typography>
+      ),
       renderCell: ({ row }) => {
         if (row._rowKey === mapActionRowKey) {
           return (
@@ -1810,7 +1968,22 @@ function UploadClosing() {
     },
   ];
 
-  console.log("available category", availableCategories);
+  const resetUploadState = () => {
+    setFiles([]);
+    setInputCount(1);
+    inputRefs.current = [];
+    setRawPages([]);
+    setRawPageIndex(0);
+    setRawInvalidCell(null);
+    setManualMode(false);
+    setTglVal(1);
+    setActiveFilter("total");
+    setSearch("");
+    setDltChecked({});
+    setSelectAll(false);
+    setSelCategory("all");
+    setPreviewFile(null);
+  };
 
   return (
     <Layout
@@ -1839,7 +2012,10 @@ function UploadClosing() {
                     views={["month", "year"]}
                     format="MMM YYYY"
                     value={selMonth}
-                    onChange={(v) => setSelMonth(v)}
+                    onChange={(v) => {
+                      resetUploadState();
+                      setSelMonth(v);
+                    }}
                     slotProps={{ textField: { size: "small" } }}
                     maxDate={dayjs()}
                     disabled={checking === 2}
@@ -1871,6 +2047,7 @@ function UploadClosing() {
                     `${option.stk_name} - ${option.stk_code}`
                   }
                   onChange={(event, newValue) => {
+                    resetUploadState();
                     if (newValue) {
                       setSelDesName(
                         `${newValue.id}|${newValue.stk_name}|${newValue.stk_code}|${newValue.ter_name}`,
@@ -2092,7 +2269,7 @@ function UploadClosing() {
                   <IconButton
                     onClick={() =>
                       setPreviewFile({
-                        docName: imgData[0]?.doc_name ?? "",
+                        docName: imgData.map((img) => img.doc_name).join(","),
                         fileType,
                       })
                     }
@@ -2295,12 +2472,29 @@ function UploadClosing() {
               columns={buildRawColumns(currentRawPage, rawPageIndex)}
               data={rawRowsForTable(currentRawPage)}
               loading={loading}
-              pageSize={10}
+              pagination={false}
+              searchable={false}
             />
           </Paper>
         )}
 
-        {showTable && (
+        {/* Skeleton — shown while fetching (covers distributor/month switch, import, refresh) */}
+        {loading && !rawMode && (
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: "10px",
+              overflow: "hidden",
+              boxShadow:
+                "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+            }}
+          >
+            <TableSkeleton rows={8} />
+          </Paper>
+        )}
+
+        {/* Real table — only once loading is done and we have data */}
+        {!loading && showTable && (
           <Paper
             elevation={0}
             sx={{
@@ -2487,7 +2681,6 @@ function UploadClosing() {
               )}
             </Box>
 
-            {/* ✅ DataTable now uses groupedRows + rowStyle */}
             <DataTable
               columns={manualMode ? manualColumns : dtColumns}
               data={groupedRows}
@@ -2537,7 +2730,7 @@ function UploadClosing() {
           </Box>
         )}
 
-        {!showTable && !rawMode && !loading && selDesName !== "0" && (
+        {!loading && !showTable && !rawMode && selDesName !== "0" && (
           <Paper
             elevation={0}
             sx={{
