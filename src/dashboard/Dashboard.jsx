@@ -94,7 +94,6 @@ const SamplePrevArrow = (props) => {
   );
 };
 
-// Helper: compute slidesToShow based on container width
 const getSlidesToShow = (width) => {
   if (width < 440) return 1;
   if (width < 730) return 2;
