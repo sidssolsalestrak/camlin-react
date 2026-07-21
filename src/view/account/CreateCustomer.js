@@ -1043,7 +1043,7 @@ function CreateCustomer() {
 
           {/* Region */}
           {fieldConfig["Region"]?.show && (
-            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
+            <Grid size={{ xs: 12, md: 3, lg: 3 }} sx={{height:'3rem'}}>
               <CommonAppSelect
                 label={fieldConfig["Region"]?.label || "Region"}
                 value={form.region || ""}
@@ -1055,6 +1055,9 @@ function CreateCustomer() {
                 error={!!fieldErrors.region}
                 helperText={fieldErrors.region}
               />
+              {fieldErrors.region && (
+                <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.region}</Typography>
+              )}
             </Grid>
           )}
 
@@ -1083,11 +1086,10 @@ function CreateCustomer() {
           ageOptions={ageOptions}
           marketingOptions={marketingOptions} />
 
-        {/*------------  Competitor Mapping ------------------------ */}
-        <Typography variant="h6" color="initial" sx={subHeaderStyle}>Competitor Mapping</Typography>
-        <Divider />
-        <Box sx={{ width: {lg:"50%",md:'50%',sm:'80%',xs:'90%'} }}>
-          <CompetitorMappping
+        
+         </Box>
+       {/*------------  Competitor Mapping ------------------------ */}
+       <CompetitorMappping
             brandData={brandData}
             setBrandData={setBrandData}
             cusId={decodedID || 0}   
@@ -1097,8 +1099,6 @@ function CreateCustomer() {
               setCompModalOpen(true);
             }}
           />
-        </Box>
-      </Box>
       {/*------------ contact info ------------------------ */}
       <ContactInfo
         fieldConfig={fieldConfig}

@@ -20,11 +20,19 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Button,
+  FormControl,
+  MenuItem,
+  InputLabel,
+  Select,
+  Switch,
 } from "@mui/material";
-import { FaTruck } from "react-icons/fa";
+import { FaFileExcel, FaTruck } from "react-icons/fa";
 import { FaCartShopping, FaMoneyBill, FaChartBar } from "react-icons/fa6";
 import { styled } from "@mui/material/styles";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CumulativeDashboard from "./CumulativeDashboard";
 
 import dayjs from "dayjs";
 import { Card, CardContent, Divider } from "@mui/material";
@@ -33,31 +41,24 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { CircularProgress } from "@mui/material";
+import { TfiMenuAlt } from "react-icons/tfi";
+import { exportActivityExcel } from "./exportActivityExcel";
 
-const StatTitle = styled(Typography)({
-  fontSize: "14px",
-  // fontFamily: '"Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif',
-  fontWeight: 600,
-  marginTop: "5px",
-  color: "#343A40",
-  marginBottom: "8px",
-  display: "flex",
-  alignItems: "flex-end",
-  gap: "8px",
-  justifyContent: "center",
-});
+const headContainer = {
+  background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
+  m: 1.5, borderRadius: '6px', boxShadow:
+    "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+  padding: "16px 18px",
+  width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
+}
 
-const GalleryImage = styled("img")({
-  width: "100%",
-  height: "200px",
-  objectFit: "cover",
-  cursor: "pointer",
-  borderRadius: "4px",
-  transition: "transform 0.3s ease",
-  "&:hover": {
-    transform: "scale(1.02)",
-  },
-});
+const menuStyle = {
+  PaperProps: {
+    style: {
+      maxHeight: 200
+    }
+  }
+}
 
 const SampleNextArrow = (props) => {
   const { className, style, onClick } = props;
@@ -93,7 +94,6 @@ const SamplePrevArrow = (props) => {
   );
 };
 
-// Helper: compute slidesToShow based on container width
 const getSlidesToShow = (width) => {
   if (width < 440) return 1;
   if (width < 730) return 2;
@@ -105,7 +105,6 @@ export default function Dashboard() {
   const [widgets, setWidgets] = useState([]);
   const [tabIndex, setTabIndex] = useState(1);
   const [showLogs, setShowLogs] = useState(false);
-
   const [soBooking, setSoBooking] = useState({
     mtd: "",
     ytd: "",
@@ -126,6 +125,126 @@ export default function Dashboard() {
   const sliderContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
+  const [filterType, setFilterType] = useState("1");
+  const [fromDateValue, setFromDateValue] = useState(dayjs().startOf("month"));
+  const [toDateValue, setToDateValue] = useState(dayjs());
+  const [activityData, setActivityData] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const [userTypeOptions, setUserTypeOptions] = useState([]); // from backend, mirrors $user_type_mas
+  const [empTypeOptions, setEmpTypeOptions] = useState([]);   // from backend, mirrors $bumas
+  const [activityBreakUp, setActivityBreakUp] = useState("2"); // default '2' per PHP ng-init
+  const [cusType, setCusType] = useState("");                  // '' = All, '2' = Retailer
+  const [empType, setEmpType] = useState("0");                 // '0' = All
+  const [showAllReported, setShowAllReported] = useState(true); // toggleCheckbox4 default checked
+
+  const [secondaryOrders, setSecondaryOrders] = useState({ pcs: 0, cum: 0, loading: true });
+  const [primaryOrders, setPrimaryOrders] = useState({ pcs: 0, cum: 0, loading: true });
+  const [primarySalesWidget, setPrimarySalesWidget] = useState({ pcs: 0, cum: 0, loading: true });
+  const [display, setDisplay] = useState({ totalreport: 0, totalimages: 0, avgrating: 0, unrateimages: 0, loading: true });
+  const [exporting, setExporting] = useState(false);
+  const BIO_URL = process.env.REACT_APP_API_URL;
+
+  const fetchUserTypeOptions = async () => {
+    try {
+      const res = await api.post("/dashboard/getUserTypeMas");
+      setUserTypeOptions(res.data.options || []);
+    } catch (err) {
+      console.error(err);
+      setUserTypeOptions([]);
+    }
+  };
+
+  const fetchEmpTypeOptions = async () => {
+    try {
+      const res = await api.post("/dashboard/getBuMas");
+      setEmpTypeOptions(res.data.bumas || []);
+    } catch (err) {
+      console.error(err);
+      setEmpTypeOptions([]);
+    }
+  };
+
+  const fetchSecondaryOrders = async () => {
+    try {
+      const res = await api.post("/dashboard/getOrders");
+      setSecondaryOrders({ pcs: res.data.pcs, cum: res.data.cum, loading: false });
+    } catch (err) {
+      console.error(err);
+      setSecondaryOrders((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const fetchPrimaryOrders = async () => {
+    try {
+      const res = await api.post("/dashboard/getPrimaryOrders");
+      setPrimaryOrders({ pcs: res.data.pcs, cum: res.data.cum, loading: false });
+    } catch (err) {
+      console.error(err);
+      setPrimaryOrders((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const fetchPrimarySalesWidget = async () => {
+    try {
+      const res = await api.post("/dashboard/getPrimarySalesWidget");
+      setPrimarySalesWidget({ pcs: res.data.pcs, cum: res.data.cum, loading: false });
+    } catch (err) {
+      console.error(err);
+      setPrimarySalesWidget((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const fetchDisplay = async () => {
+    try {
+      const res = await api.post("/dashboard/getDisplay");
+      setDisplay({
+        totalreport: res.data.totalreport,
+        totalimages: res.data.totalimages,
+        avgrating: res.data.avgrating,
+        unrateimages: res.data.unrateimages,
+        loading: false,
+      });
+    } catch (err) {
+      console.error(err);
+      setDisplay((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  useEffect(() => {
+    fetchSecondaryOrders();
+    fetchPrimaryOrders();
+    fetchPrimarySalesWidget();
+    fetchDisplay();
+    fetchUserTypeOptions();
+    fetchEmpTypeOptions();
+  }, []);
+
+  const fetchActivityData = async () => {
+    if (!fromDateValue || !toDateValue) return;
+    setActivityLoading(true);
+    try {
+      const res = await api.post("/activity_dashboard", {
+        from_date: fromDateValue.format("YYYY-MM-DD"),
+        to_date: toDateValue.format("YYYY-MM-DD"),
+        activity_type: 2, // or however your backend flags cumulative
+        activity_break_up: activityBreakUp, // '1' ASM/KAM vs '2' PSM etc.
+        cus_type: cusType,
+        emp_type: empType,
+      });
+      setActivityData(res.data?.tbldta || []);
+    } catch (err) {
+      console.error(err);
+      setActivityData([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (filterType === "1") fetchActivityData();
+  }, [filterType, fromDateValue, toDateValue, activityBreakUp, cusType, empType]);
+
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -142,36 +261,29 @@ export default function Dashboard() {
     setWidgets([
       {
         widget_id: 2,
-        title: "Sales Order Ready to Ship",
-        icon: (
-          <FaTruck
-            color="#808080"
-            fontSize={52}
-            style={{ marginTop: "0.35rem", cursor: "pointer" }}
-          />
-        ),
+        title: "Primary Orders",
+        unit: "Pcs",
+        color: "#1976D2",
+        type: "stat",
       },
       {
         widget_id: 3,
-        title: "Sales Order Partially Ready",
-        icon: (
-          <FaTruck
-            color="#808080"
-            fontSize={52}
-            style={{ marginTop: "0.35rem", cursor: "pointer" }}
-          />
-        ),
+        title: "Primary Sales",
+        unit: "Pcs",
+        color: "#2E7D32",
+        type: "stat",
       },
       {
         widget_id: 4,
-        title: "Pending Invoices",
-        icon: (
-          <FaMoneyBill
-            color="#808080"
-            fontSize={52}
-            style={{ marginTop: "0.35rem", cursor: "pointer" }}
-          />
-        ),
+        title: "Display",
+        color: "#9E9D24",
+        type: "display",
+      },
+      {
+        widget_id: 5,
+        title: "Campaigns",
+        color: "#1B5E20",
+        type: "campaign",
       },
     ]);
   }, []);
@@ -212,260 +324,249 @@ export default function Dashboard() {
     autoplay: false,
   };
 
-  const fetchSalesOrderBooking = async (status, year) => {
-    setSoBooking((prev) => ({ ...prev, loading: true }));
-    try {
-      const res = await api.post("/primary_ord_boooking", {
-        status: String(status),
-        year: String(year),
-      });
-      const data = res.data?.tbldta || [];
-      if (data.length > 0) {
-        setSoBooking({
-          mtd: data[0].mtd_val,
-          ytd: data[0].ytd_val,
-          regions: [],
-          loading: false,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setSoBooking((prev) => ({ ...prev, loading: false }));
-    }
-  };
-
-  const fetchPrimarySales = async () => {
-    setPrimarySales((prev) => ({ ...prev, loading: true }));
-    try {
-      const res = await api.post("/primary_sales");
-      const data = res.data?.tbldta || [];
-      if (data.length > 0) {
-        setPrimarySales({
-          mtd: data[0].mtd_val,
-          ytd: data[0].ytd_val,
-          loading: false,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setPrimarySales((prev) => ({ ...prev, loading: false }));
-    }
-  };
-
-  useEffect(() => {
-    fetchSalesOrderBooking(isFlipped ? 1 : 0, bookingYear);
-    fetchPrimarySales();
-  }, [isFlipped, bookingYear]);
-
   return (
     <Layout>
-      <Box sx={{ padding: "20px" }}>
+      <Box sx={{ padding: "20px 20px 0px 20px" }}>
         {/* ↓ Attach ref here so ResizeObserver watches this container */}
         <Box ref={sliderContainerRef}>
           <Slider {...settings}>
-            <div style={{ padding: "10px" }}>
-              <Card
-                sx={{
-                  width: "97%",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  height: "140px",
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}orderApproval/orders/`}>
+              <TopWidget
+                widget={{ widget_id: 1, title: "Secondary Orders", unit: "Pcs", color: "#F57C00" }}
+                salesBooking={{ mtd: secondaryOrders.cum, ytd: secondaryOrders.pcs, loading: secondaryOrders.loading }}
+              />
+            </div>
+
+            <div style={{ padding: "10px" }} onClick={() => {
+              const currentMonth = dayjs().format("MMM YYYY");
+              window.location.href = `${BIO_URL}mobile/Orders/${btoa(0)}/${btoa(0)}/${btoa(currentMonth)}/${btoa(0)}/${btoa(0)}/${btoa(0)}`;
+            }}>
+              <TopWidget
+                widget={{ widget_id: 2, title: "Primary Orders", unit: "Pcs", color: "#1976D2" }}
+                salesBooking={{ mtd: primaryOrders.cum, ytd: primaryOrders.pcs, loading: primaryOrders.loading }}
+              />
+            </div>
+
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}dashboard/primarysalesview/${btoa(1)}`}>
+              <TopWidget
+                widget={{ widget_id: 3, title: "Primary Sales", unit: "Pcs", color: "#2E7D32" }}
+                salesBooking={{ mtd: primarySalesWidget.cum, ytd: primarySalesWidget.pcs, loading: primarySalesWidget.loading }}
+                asOfLabel={`on ${dayjs().subtract(1, "day").format("DD MMM YYYY")}`}
+              />
+            </div>
+
+            <div style={{ padding: "10px" }} onClick={() => { /* opens Display breakup, see note below */ }}>
+              <TopWidget
+                widget={{ widget_id: 4, title: "Display", color: "#9E9D24", type: "display" }}
+                salesBooking={{
+                  reports: display.totalreport,
+                  images: display.totalimages,
+                  avgRating: display.avgrating,
+                  unrated: display.unrateimages,
+                  loading: display.loading,
                 }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <StatTitle>Primary Order Booking</StatTitle>
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontSize: "0.9rem",
-                        color: "text.secondary",
-                        fontWeight: 400,
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
-                    >
-                      Break-up
-                    </Typography>
-                  </Box>
-
-                  <Divider />
-
-                  {!soBooking.loading ? (
-                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">
-                          MTD (INR Lacs.)
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{ color: "rgb(0, 86, 171)" }}
-                        >
-                          {soBooking.mtd}
-                        </Typography>
-                      </Box>
-                      <Divider orientation="vertical" flexItem />
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">
-                          YTD (INR Lacs.)
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{ color: "rgb(0, 86, 171)" }}
-                        >
-                          {soBooking.ytd}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <CircularProgress />
-                  )}
-                </CardContent>
-              </Card>
+              />
             </div>
 
             <div style={{ padding: "10px" }}>
-              <Card
-                sx={{
-                  width: "97%",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  height: "140px",
-                }}
-              >
-                <CardContent>
-                  <StatTitle>Primary Sales Order</StatTitle>
-                  <Divider />
-                  {!primarySales.loading ? (
-                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">
-                          MTD (INR Lacs.)
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{ color: "rgb(0, 86, 171)" }}
-                        >
-                          {primarySales.mtd}
-                        </Typography>
-                      </Box>
-                      <Divider orientation="vertical" flexItem />
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography variant="caption">
-                          YTD (INR Lacs.)
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{ color: "rgb(0, 86, 171)" }}
-                        >
-                          {primarySales.ytd}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <CircularProgress />
-                  )}
-                </CardContent>
-              </Card>
+              <TopWidget
+                widget={{ widget_id: 5, title: "Campaigns", color: "#1B5E20", type: "campaign" }}
+                salesBooking={{ status: "active", loading: false }}
+              />
             </div>
-
-            {widgets.map((widget) => (
-              <div key={widget.widget_id} style={{ padding: "10px" }}>
-                <TopWidget widget={widget} />
-              </div>
-            ))}
           </Slider>
         </Box>
+      </Box>
 
-        <Box sx={{ pt: 0, pr: 0.75, pb: 0.75, pl: 0.75 }}>
-          <Grid container spacing={0.75}>
-            <Grid size={{ md: 9, xs: 12 }}>
-              <Paper
-                elevation={3}
-                sx={{ borderRadius: 2, overflow: "hidden", mb: 1 }}
-              >
-                <Tabs
-                  value={tabIndex}
-                  onChange={handleTabChange}
-                  variant="fullWidth"
-                  sx={{
-                    height: 12,
-                    backgroundColor: "#f5f5f5",
-                    "& .MuiTabs-indicator": {
-                      height: 2,
-                      borderRadius: "2px",
-                      backgroundColor: "#1976d2",
-                      transition: "all 0.3s ease-in-out",
-                    },
-                    "& .MuiTab-root": {
-                      fontWeight: "bold",
-                      pb: 4,
-                      textTransform: "none",
-                      transition: "all 0.2s ease-in-out",
-                      color: "#666",
-                      "&:hover": {
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                      },
-                      "&.Mui-selected": {
-                        color: "#1976d2",
-                        backgroundColor: "#e3f2fd",
-                      },
-                    },
-                  }}
-                >
-                  <Tab
-                    sx={{ fontSize: "1rem" }}
-                    label="Performance Reports"
-                    iconPosition="end"
-                    icon={<FaChartBar />}
-                  />
-                  <Tab
-                    sx={{ fontSize: "1rem" }}
-                    label="Outstandings"
-                    iconPosition="end"
-                    icon={<FaMoneyBill fontSize={15} />}
-                  />
-                </Tabs>
-              </Paper>
-              <Box sx={{ mt: 0.75 }}></Box>
-            </Grid>
-
-            <Grid size={{ md: 3, xs: 12 }}>
-              <Paper sx={{ p: 0.75, boxShadow: 3 }}>
-                <StatTitle sx={{ justifyContent: "flex-start" }}>
-                  Gallery
-                </StatTitle>
-                <GalleryImage
-                  src="https://salestrak-schuco.s3.ap-south-1.amazonaws.com/test/others/gallery_20240909110613.jpg"
-                  alt="Gallery"
-                />
-              </Paper>
-              <Paper sx={{ p: 0.75, boxShadow: 3, mt: 1 }}>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  onClick={toggleLogs}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <StatTitle sx={{ justifyContent: "flex-start", m: 0 }}>
-                    Customer Logs
-                  </StatTitle>
-                  <IconButton size="small">
-                    {showLogs ? <ExpandLess /> : <ExpandMore />}
-                  </IconButton>
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
+      <Box sx={headContainer}>
+        <Box>
+          <Button
+            onClick={() => {/* handle click */ }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 1,
+              textTransform: "none",
+              padding: 0,
+              color: "#000",
+              "&:hover": { background: "none", opacity: 0.75 },
+            }}
+          >
+            <TfiMenuAlt size={16} />
+            <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+              Activity Dashboard
+            </Typography>
+          </Button>
         </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+          <Box sx={{ flex: 1 }}>
+            <Grid container spacing={1} alignItems="center">
+              {filterType === "0" ? (
+                // ---- Day Wise: single Date field ----
+                <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Date"
+                      format="DD MMM YYYY"
+                      slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    />
+                  </LocalizationProvider>
+                </Grid>
+              ) : (
+                // ---- Cumulative: From / To range ----
+                <>
+                  <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        label="From"
+                        format="DD MMM YYYY"
+                        value={fromDateValue}
+                        onChange={(newVal) => setFromDateValue(newVal)}
+                        slotProps={{ textField: { size: "small", fullWidth: true } }}
+                        maxDate={toDateValue ? toDateValue : null}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        label="To"
+                        format="DD MMM YYYY"
+                        value={toDateValue}
+                        onChange={(newVal) => setToDateValue(newVal)}
+                        slotProps={{ textField: { size: "small", fullWidth: true } }}
+                        minDate={fromDateValue ? fromDateValue : null}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                </>
+              )}
+
+              <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="type">Type</InputLabel>
+                  <Select
+                    id="type"
+                    label="Type"
+                    MenuProps={menuStyle}
+                    labelId="type"
+                    variant="outlined"
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                  >
+                    <MenuItem style={{ fontSize: "11px" }} value="0">Day Wise</MenuItem>
+                    <MenuItem style={{ fontSize: "11px" }} value="1">Cumulative</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="Usertype">User Type</InputLabel>
+                  <Select
+                    id="Usertype"
+                    label="User Type"
+                    MenuProps={menuStyle}
+                    labelId="Usertype"
+                    variant="outlined"
+                    value={activityBreakUp}
+                    onChange={(e) => setActivityBreakUp(e.target.value)}
+                  >
+                    {userTypeOptions.map((opt) => (
+                      <MenuItem key={opt.value} style={{ fontSize: "11px" }} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {filterType === "0" ? (
+                <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography variant="body2" color="text.secondary">Show All</Typography>
+                    <Switch
+                      color="primary"
+                      checked={showAllReported}
+                      onChange={(e) => setShowAllReported(e.target.checked)}
+                    />
+                    <Typography variant="body2" color="text.secondary">Reported</Typography>
+                  </Box>
+                </Grid>
+              ) : (
+                <>
+                  <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                    <FormControl size="small" fullWidth>
+                      <InputLabel id="custype">Cus.Type</InputLabel>
+                      <Select
+                        id="custype" label="Cus.Type" MenuProps={menuStyle} labelId="custype" variant="outlined"
+                        value={cusType}
+                        onChange={(e) => setCusType(e.target.value)}
+                      >
+                        <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                        <MenuItem style={{ fontSize: "11px" }} value="2">Retailer</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                    <FormControl size="small" fullWidth>
+                      <InputLabel id="emptype">Emp Type</InputLabel>
+                      <Select
+                        id="emptype" label="Emp Type" MenuProps={menuStyle} labelId="emptype" variant="outlined"
+                        value={empType}
+                        onChange={(e) => setEmpType(e.target.value)}
+                      >
+                        <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
+                        {empTypeOptions.map((bu) => (
+                          <MenuItem key={bu.id} style={{ fontSize: "11px" }} value={String(bu.id)}>
+                            {bu.bu_name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </>
+              )}
+            </Grid>
+          </Box>
+          <Box>
+            <Button
+              variant="contained"
+              color="warning"
+              disabled={exporting}
+              startIcon={<FaFileExcel />}
+              onClick={async () => {
+                setExporting(true);
+                try {
+                  await exportActivityExcel(
+                    activityData,
+                    fromDateValue.format("DD MMM YYYY"),
+                    toDateValue.format("DD MMM YYYY")
+                  );
+                } catch (err) {
+                  console.error("Export failed:", err);
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              {exporting ? "Exporting..." : "Export"}
+            </Button>
+          </Box>
+        </Box>
+        {filterType === "1" && (
+          <CumulativeDashboard
+            activityData={activityData}      // your fetched array, same shape as PHP $activityData
+            fromDate={fromDateValue}         // 'YYYY-MM-DD'
+            toDate={toDateValue}
+            onSalePersonClick={(srId, regId, name) => { /* open callSummaryDetails */ }}
+            onFieldDetailClick={(cusCat, row) => { /* open FieldDetail modal */ }}
+            onCumCusDetailClick={(cusCat, row) => { /* open cumCusDetail modal */ }}
+            onEventClick={(id, row) => { /* open EventCellDetail modal */ }}
+            activityLoading={activityLoading}
+          />
+        )}
       </Box>
     </Layout>
   );

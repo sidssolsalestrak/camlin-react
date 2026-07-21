@@ -154,9 +154,10 @@ function AddUser() {
     message: "",
     severity: "success",
   });
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@A-Z]+@[^\s@A-Z]+\.[^\s@A-Z]+$/;
 
   const [errors, setErrors] = useState({});
+  const [duplicateErrors, setDuplicateErrors] = useState({});
 
   const getBusinessUnit = async () => {
     const res = await axios.post("/bussUint");
@@ -269,7 +270,7 @@ function AddUser() {
 
         setEmployeeType(d.emp_type_id || "");
         setEmployeeStatus(d.emp_stat_id || "");
-        setGrossSalary(d.sal_amt || "");
+        setGrossSalary(d.sal_amt !== null && d.sal_amt !== undefined ? d.sal_amt : "");
 
         if (d.user_id_stat === 1) {
           setUseMobile(true);
@@ -521,11 +522,8 @@ function AddUser() {
     if (!employeeType) temp.employeeType = "Select Employee Type";
     if (!employeeStatus) temp.employeeStatus = "Select Employee Status";
      if(!selectedBU || selectedBU.length===0) temp.selectBUnit = "Please select Business Unit"
-    if (!grossSalary) {
-      temp.grossSalary = "Enter Gross Salary";
-    }
-    if (!grossSalary || Number(grossSalary) <= 0) {
-      temp.grossSalary = "Enter valid Gross Salary";
+    if (grossSalary && (isNaN(Number(grossSalary)) || Number(grossSalary) < 0)) {
+    temp.grossSalary = "Enter valid Gross Salary";
     }
 
     if (Number(selectedType) > 4) {
@@ -587,11 +585,10 @@ function AddUser() {
       }
     }
     console.log("validation failures", temp)
-    const mergedErrors = { ...errors, ...temp };
-    setErrors(mergedErrors);
+    setErrors(temp);
 
     const duplicateKeys = ['email', 'mobileNum', 'employeeCode'];
-    const hasDuplicateError = duplicateKeys.some(key => mergedErrors[key]);
+    const hasDuplicateError = duplicateKeys.some(key => duplicateErrors[key]);
 
     return Object.keys(temp).length === 0 && !hasDuplicateError;
   };
@@ -621,9 +618,9 @@ function AddUser() {
     formData.append("dept_id", selectedDept);
     formData.append("design_id", selectedDesig);
     formData.append("title_id", selectedTitle);
-    formData.append("emp_code", employeeCode);
-    formData.append("first_name", fullName);
-    formData.append("last_name", lastName);
+    formData.append("emp_code", employeeCode.trim());
+    formData.append("first_name", fullName.trim());
+    formData.append("last_name", lastName.trim());
     formData.append("mobile", mobileNum);
     formData.append("email_id", email);
     formData.append("dob", dateOfBirth);
@@ -632,9 +629,9 @@ function AddUser() {
     formData.append("user_id_stat", userIdStat);
     formData.append("emp_type", employeeType);
     formData.append("emp_stat", employeeStatus);
-    formData.append("gross_salary", grossSalary);
+    formData.append("gross_salary", grossSalary || 0);
     formData.append("other_ref", otherRef);
-    formData.append("hq", hq);
+    formData.append("hq", hq.trim());
 
     // Business Unit IDs + Names
     formData.append("buUnit", selectedBU.join(","));
@@ -960,54 +957,51 @@ function AddUser() {
   };
 
   const checkEmailDuplicate = async (emailVal) => {
-  const trimmed = emailVal.trim();
+    const trimmed = emailVal.trim();
 
-  // If empty or invalid format, let validate() handle it — don't clear
-  if (!trimmed) return;
-  if (!emailRegex.test(trimmed)) {
-    setErrors(prev => ({ ...prev, email: "Please Enter a valid Email" }));
-    return;
-  }
+    // If empty or invalid format, let validate() handle it — don't clear/set here
+    if (!trimmed) return;
+    if (!emailRegex.test(trimmed)) return;
 
-  try {
-    const res = await axios.post("/checkEmailUser", { email: trimmed, id: id || null });
-    if (res.data.status === 400) {
-      setErrors(prev => ({ ...prev, email: res.data.message }));
-    } else {
-      setErrors(prev => { const e = { ...prev }; delete e.email; return e; });
+    try {
+      const res = await axios.post("/checkEmailUser", { email: trimmed, id: id || null });
+      if (res.data.status === 400) {
+        setDuplicateErrors(prev => ({ ...prev, email: res.data.message }));
+      } else {
+        setDuplicateErrors(prev => { const e = { ...prev }; delete e.email; return e; });
+      }
+    } catch (err) {
+      console.error("Email check failed", err);
     }
-  } catch (err) {
-    console.error("Email check failed", err);
-  }
-};
+  };
 
-const checkMobileDuplicate = async (mobileVal) => {
-  if (!mobileVal || mobileVal.length < 10) return;
-  try {
-    const res = await axios.post("/checkMobileNumber", { mobile: mobileVal, id: id || null });
-    if (res.data.status === 400) {
-      setErrors(prev => ({ ...prev, mobileNum: res.data.message }));
-    } else {
-      setErrors(prev => { const e = { ...prev }; delete e.mobileNum; return e; });
+  const checkMobileDuplicate = async (mobileVal) => {
+    if (!mobileVal || mobileVal.length < 10) return;
+    try {
+      const res = await axios.post("/checkMobileNumber", { mobile: mobileVal, id: id || null });
+      if (res.data.status === 400) {
+        setDuplicateErrors(prev => ({ ...prev, mobileNum: res.data.message }));
+      } else {
+        setDuplicateErrors(prev => { const e = { ...prev }; delete e.mobileNum; return e; });
+      }
+    } catch (err) {
+      console.error("Mobile check failed", err);
     }
-  } catch (err) {
-    console.error("Mobile check failed", err);
-  }
-};
+  };
 
-const checkEmpCodeDuplicate = async (codeVal) => {
-  if (!codeVal.trim()) return;
-  try {
-    const res = await axios.post("/checkEmpCode", { empCode: codeVal, id: id || null });
-    if (res.data.status === 400) {
-      setErrors(prev => ({ ...prev, employeeCode: res.data.message }));
-    } else {
-      setErrors(prev => { const e = { ...prev }; delete e.employeeCode; return e; });
+  const checkEmpCodeDuplicate = async (codeVal) => {
+    if (!codeVal.trim()) return;
+    try {
+      const res = await axios.post("/checkEmpCode", { empCode: codeVal, id: id || null });
+      if (res.data.status === 400) {
+        setDuplicateErrors(prev => ({ ...prev, employeeCode: res.data.message }));
+      } else {
+        setDuplicateErrors(prev => { const e = { ...prev }; delete e.employeeCode; return e; });
+      }
+    } catch (err) {
+      console.error("Emp code check failed", err);
     }
-  } catch (err) {
-    console.error("Emp code check failed", err);
-  }
-};
+  };
 
   const handleAreaChange = async (value) => {
     const val = Array.isArray(value) ? value : [value];
@@ -1265,10 +1259,11 @@ const formatDate = (val) => {
                   fullWidth
                   size="small"
                   value={employeeCode}
+                  required
                   onBlur={(e) => checkEmpCodeDuplicate(e.target.value)} 
                   onChange={(e) => setEmployeeCode(e.target.value)}
-                  error={Boolean(errors.employeeCode)}
-                  helperText={errors.employeeCode}
+                  error={Boolean(errors.employeeCode || duplicateErrors.employeeCode)}
+                  helperText={errors.employeeCode || duplicateErrors.employeeCode}
                 />
               </Grid>
 
@@ -1312,8 +1307,8 @@ const formatDate = (val) => {
                     onBlur={(e) => checkMobileDuplicate(e.target.value)}
                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
                     fullWidth
-                    error={Boolean(errors.mobileNum)}
-                    helperText={errors.mobileNum}
+                    error={Boolean(errors.mobileNum || duplicateErrors.mobileNum)}
+                    helperText={errors.mobileNum || duplicateErrors.mobileNum}
                     required={true}
                   />
                 </Box>
@@ -1332,8 +1327,8 @@ const formatDate = (val) => {
                       if (useEmail) setUserId(e.target.value);
                     }}
                     fullWidth
-                    error={Boolean(errors.email)}
-                    helperText={errors.email}
+                    error={Boolean(errors.email || duplicateErrors.email)}
+                    helperText={errors.email || duplicateErrors.email}
                     required={true}
                   />
                 </Box>
@@ -2115,16 +2110,6 @@ const formatDate = (val) => {
                   labelKey="visit_day"
                 />
               </Grid>
-              {/* <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 5 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}></Grid> */}
             </Grid>
           </Box>
         </Grid>
