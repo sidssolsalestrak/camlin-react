@@ -92,6 +92,7 @@ const ViewProduct = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
@@ -172,7 +173,7 @@ const ViewProduct = () => {
             field: "",
             headerName: "Action",
             filterable: true,
-            width:100,
+            width: 100,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
@@ -186,7 +187,7 @@ const ViewProduct = () => {
         },
     ]
 
-    const excelColumns=[
+    const excelColumns = [
         {
             field: "index",
             headerName: "#",
@@ -236,7 +237,7 @@ const ViewProduct = () => {
             field: "mrp_price",
             headerName: "MRP",
             filterable: true,
-        }, 
+        },
     ]
 
     /* ---------- table data & sub cat data---------- */
@@ -300,6 +301,7 @@ const ViewProduct = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.prodid
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/prod_delete/${id}`);
             //console.log("delete res:", res);
             if (res?.data?.success) {

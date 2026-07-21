@@ -76,6 +76,7 @@ const Designation = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
@@ -129,6 +130,7 @@ const Designation = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 desig_name: formData.designation,
                 desig_abbr_name: formData.abbreviation
@@ -158,6 +160,7 @@ const Designation = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 desig_name: formData.designation,
@@ -192,6 +195,7 @@ const Designation = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteDesignation/${id}`);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Designation")
@@ -360,9 +364,9 @@ const Designation = () => {
                                 <TextField
                                     value={formData.abbreviation}
                                     onChange={(e) => {
-                                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
-                                    formDataChange("abbreviation", onlyText)
-                                     }}
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
+                                        formDataChange("abbreviation", onlyText)
+                                    }}
                                     required size='small' placeholder="Enter Abbreviation"
                                     variant='outlined' label="Abbreviation" error={!!validation.abbreviation}
                                     helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.abbreviation}</span>} />

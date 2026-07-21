@@ -100,6 +100,7 @@ const AddProduct = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
@@ -202,6 +203,7 @@ const AddProduct = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post("/prodmas_create", payload)
             if (res?.data?.success) {
                 showAlert.success("Successfully Added Product")
@@ -259,6 +261,7 @@ const AddProduct = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             if (decodedId) {
                 payload.id = decodedId
                 payload.prodNameNew = original.prod_name.trim()
