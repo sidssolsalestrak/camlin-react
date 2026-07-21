@@ -7,14 +7,21 @@ import {
   TableHead,
   TableRow,
   Paper,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 import dayjs from "dayjs";
 
 const zeroTonullVal = (v) => {
   const n = Number(v);
   if (v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0)
-    return "";
-  return v;
+    return "-";
+  return n;
+};
+
+const num = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
 };
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -49,7 +56,8 @@ const styles = {
     border: "1px solid #ddd",
     padding: "6px 8px",
     fontSize: "12px",
-    whiteSpace: "nowrap",
+    whiteSpace: "normal",
+    maxWidth: 100,
   },
   totTr: {
     backgroundColor: "#ddd",
@@ -57,25 +65,30 @@ const styles = {
     border: "1px solid #ddd",
     padding: "6px 8px",
     fontSize: "12px",
+    maxWidth: 100,
+    color: "#000",
   },
   subHeading: {
     backgroundColor: "#6398c3",
     color: "#fff",
     fontWeight: 600,
-    fontSize: "16px",
+    fontSize: "12px",
     border: "1px solid #6398c3",
     padding: "6px 8px",
+    maxWidth: 100,
   },
   dataCell: {
     border: "1px solid #ddd",
     padding: "6px 8px",
     fontSize: "12px",
-    color: "#343A40",
+    color: "#133bde",
+    maxWidth: 100,
   },
   noborder: {
     border: "1px solid #fff",
     borderRight: "1px solid #ddd",
     padding: "6px 8px",
+    maxWidth: 100,
   },
   link: {
     color: "#1565C0",
@@ -84,6 +97,9 @@ const styles = {
   },
   clickable: {
     cursor: "pointer",
+    '&:hover': {
+      textDecoration: "underline"
+    }
   },
 };
 
@@ -91,7 +107,9 @@ const NumCell = ({ value, onClick, cellSx = {} }) => (
   <TableCell
     align="right"
     onClick={onClick}
-    sx={{ ...styles.dataCell, ...(onClick ? styles.clickable : {}), ...cellSx }}
+    sx={{
+      ...styles.dataCell, ...(onClick ? styles.clickable : {}), ...cellSx
+    }}
   >
     {zeroTonullVal(value)}
   </TableCell>
@@ -104,6 +122,7 @@ export default function CumulativeDashboard({
   onSalePersonClick,
   onFieldDetailClick,
   onCumCusDetailClick,
+  activityLoading
 }) {
   const totaldays = useMemo(() => {
     if (!fromDate || !toDate) return 0;
@@ -123,16 +142,16 @@ export default function CumulativeDashboard({
         tot = emptyTotals();
       }
 
-      const totalCall = (key.call_days || 0) + (key.oth_call || 0);
+      const totalCall = num(key.call_days) + num(key.oth_call);
       const totalnotCall =
-        totaldays - ((key.tot_call_day || 0) + (key.oth_call || 0));
-      const callAvg = key.call_days ? (key.tot_call || 0) / key.call_days : 0;
-      const prodAvg = key.call_days
-        ? (key.tot_pc_call || 0) / key.call_days
+        totaldays - (num(key.tot_call_day) + num(key.oth_call));
+      const callAvg = num(key.call_days) ? num(key.tot_call) / num(key.call_days) : 0;
+      const prodAvg = num(key.call_days)
+        ? num(key.tot_pc_call) / num(key.call_days)
         : 0;
-      const repeatCall = (key.tot_met || 0) - (key.cus_met || 0);
-      const perMissed = key.tot_cus
-        ? ((key.tot_miss || 0) / key.tot_cus) * 100
+      const repeatCall = num(key.tot_met) - num(key.cus_met);
+      const perMissed = num(key.tot_cus)
+        ? (num(key.tot_miss) / num(key.tot_cus)) * 100
         : 0;
 
       out.push({
@@ -148,21 +167,21 @@ export default function CumulativeDashboard({
       });
 
       const acc = {
-        call_days: key.call_days || 0,
-        oth_call: key.oth_call || 0,
+        call_days: num(key.call_days),
+        oth_call: num(key.oth_call),
         totalCall,
         totalnotCall,
-        tot_call: key.tot_call || 0,
-        tot_pc_call: key.tot_pc_call || 0,
-        tot_cus: key.tot_cus || 0,
-        cus_met: key.cus_met || 0,
+        tot_call: num(key.tot_call),
+        tot_pc_call: num(key.tot_pc_call),
+        tot_cus: num(key.tot_cus),
+        cus_met: num(key.cus_met),
         repeatCall,
-        tot_miss_a: key.tot_miss_a || 0,
-        tot_miss_c: key.tot_miss_c || 0,
-        tot_miss_b: key.tot_miss_b || 0,
-        tot_miss: key.tot_miss || 0,
-        tot_met: key.tot_met || 0,
-        tot_ord_val: key.tot_ord_val || 0,
+        tot_miss_a: num(key.tot_miss_a),
+        tot_miss_c: num(key.tot_miss_c),
+        tot_miss_b: num(key.tot_miss_b),
+        tot_miss: num(key.tot_miss),
+        tot_met: num(key.tot_met),
+        tot_ord_val: num(key.tot_ord_val),
       };
       Object.keys(acc).forEach((k) => {
         tot[k] += acc[k];
@@ -183,65 +202,78 @@ export default function CumulativeDashboard({
 
   return (
     <Paper elevation={0} sx={{ overflow: "hidden" }}>
-      <TableContainer sx={{ maxHeight: "70vh", overflow: "auto" }}>
+      <TableContainer>
         <Table
           size="small"
-          stickyHeader
           sx={{ borderCollapse: "collapse", fontSize: "12px", ...styles.border }}
         >
           <TableHead>
             {/* Group header row */}
             <TableRow>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }} />
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }} />
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
               <TableCell
                 colSpan={7}
                 align="center"
-                sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }}
+                sx={{ ...styles.theads, zIndex: 4 }}
               >
                 MAN DAYS REPORTED
               </TableCell>
               <TableCell
                 colSpan={8}
                 align="center"
-                sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }}
+                sx={{ ...styles.theads, zIndex: 4 }}
               >
                 CALL SUMMARY
               </TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }} />
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 0, zIndex: 4 }} />
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
             </TableRow>
 
             {/* Column header row */}
             <TableRow>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }} />
-              <TableCell align="left" sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
+              <TableCell align="left" sx={{ ...styles.theads, maxWidth: 200, zIndex: 4 }}>
                 PSM Name
               </TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Field Days</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Other Reporting</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Total Days Reported</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Total Days Not Reported</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Total Calls</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Call Avg</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Productive Calls</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Productive %</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Total Customers in List</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Visited</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Repeat Calls</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>A Class Missed</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>B Class Missed</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>C Class Missed</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>Total Missed</TableCell>
-              <TableCell sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>% Missed</TableCell>
-              <TableCell align="center" sx={{ ...styles.theads, position: "sticky", top: 33, zIndex: 4 }}>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Field Days</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Other Reporting</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Total Days Reported</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Total Days Not Reported</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Total Calls</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Call Avg</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Productive Calls</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Productive %</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Total Customers in List</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Visited</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Repeat Calls</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>A Class Missed</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>B Class Missed</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>C Class Missed</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Total Missed</TableCell>
+              <TableCell sx={{ ...styles.theads, zIndex: 4 }}>% Missed</TableCell>
+              <TableCell align="center" sx={{ ...styles.theads, zIndex: 4 }}>
                 Secondary Sales (In Lakh)
               </TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {tableData.length === 0 ? (
+            {activityLoading ? (
+              <TableRow>
+                <TableCell colSpan={19} align="center" sx={{ ...styles.dataCell, py: 4 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ) : tableData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={19} align="center" sx={{ ...styles.dataCell, py: 4 }}>
                   No data available
@@ -252,10 +284,10 @@ export default function CumulativeDashboard({
                 if (row._rowType === "regionTotal") {
                   return (
                     <TableRow key={row.id}>
-                      <TableCell sx={styles.noborder}>
+                      <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
-                      <TableCell sx={{ ...styles.totTr, textAlign: "left" }}>
+                      <TableCell sx={{ ...styles.totTr, maxWidth: 200, textAlign: "left" }}>
                         Total {row.reg_name}
                       </TableCell>
                       <NumCell value={row.call_days} cellSx={styles.totTr} />
@@ -284,10 +316,10 @@ export default function CumulativeDashboard({
                 if (row._rowType === "grandTotal") {
                   return (
                     <TableRow key={row.id}>
-                      <TableCell sx={styles.noborder}>
+                      <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
-                      <TableCell sx={styles.subHeading}>Grand Total</TableCell>
+                      <TableCell sx={{ ...styles.subHeading, maxWidth: 200 }}>Grand Total</TableCell>
                       <NumCell value={row.call_days} cellSx={styles.subHeading} />
                       <NumCell value={row.oth_call} cellSx={styles.subHeading} />
                       <NumCell value={row.totalCall} cellSx={styles.subHeading} />
@@ -316,16 +348,18 @@ export default function CumulativeDashboard({
                 // ── data row ──
                 return (
                   <TableRow key={row.id}>
-                    <TableCell sx={styles.noborder}>
+                    <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
                       <i className="fa fa-line-chart" aria-hidden="true" />
                     </TableCell>
-                    <TableCell sx={styles.dataCell}>
+                    <TableCell sx={{ ...styles.dataCell, maxWidth: 200 }}>
                       <span
                         onClick={() =>
                           onSalePersonClick &&
                           onSalePersonClick(row.sr_id, row.reg_id, row.sr_name)
                         }
                         style={styles.link}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
                       >
                         {row.sr_name}
                       </span>

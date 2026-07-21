@@ -70,6 +70,7 @@ const CardShell = ({ borderColor, title, children }) => (
 export default function TopWidget({
   widget,
   salesBooking = { mtd: 0, ytd: 0, loading: false },
+  asOfLabel
 }) {
   const borderColor = widget?.color || "#F57C00";
 
@@ -146,7 +147,7 @@ export default function TopWidget({
             gap: 1
           }}
         >
-          <FaBullhorn size={20} />
+          <FaBullhorn color="#1565C0" size={20} />
           <Typography sx={{ fontSize: "2.25rem", fontWeight: 700, color: "#1565C0" }}>
             {status}
           </Typography>
@@ -167,7 +168,7 @@ export default function TopWidget({
         <StatValue>{salesBooking.ytd || 0}</StatValue>
         <StatUnit>{widget.unit || "Pcs"}</StatUnit>
       </Box>
-      <AsOfLabel>as of {dayjs().format("DD MMM YYYY")}</AsOfLabel>
+      <AsOfLabel>{asOfLabel || `as of ${dayjs().format("DD MMM YYYY")}`}</AsOfLabel>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2.5 }}>
         <Typography sx={{ fontSize: "1rem", color: "#a9c2e6" }}>
           MTD:{" "}
