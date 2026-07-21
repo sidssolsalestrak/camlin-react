@@ -12,19 +12,19 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 const zeroTonullVal = (v) => {
   const n = Number(v);
   if (v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0)
     return "-";
-  return n;
+  return round2(n);
 };
 
 const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
-
-const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 function emptyTotals() {
   return {

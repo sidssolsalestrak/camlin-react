@@ -89,6 +89,7 @@ const ProductSubCategory = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false,
         });
     };
 
@@ -136,7 +137,7 @@ const ProductSubCategory = () => {
         if (!formData.categoryName || formData.categoryName.trim() === "") {
             newValidations.categoryName = "The Sub Category field is required.";
             isValid = false;
-        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
             newValidations.categoryName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
@@ -167,6 +168,7 @@ const ProductSubCategory = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 cat_id: formData.category,
                 sub_code: formData.categoryCode,
@@ -197,6 +199,7 @@ const ProductSubCategory = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 cat_id: formData.category,
@@ -254,6 +257,7 @@ const ProductSubCategory = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteCatSub/${id}`);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Sub Category")

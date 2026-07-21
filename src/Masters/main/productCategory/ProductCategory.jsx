@@ -86,6 +86,7 @@ const ProductCategory = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false,
         });
     };
 
@@ -149,6 +150,7 @@ const ProductCategory = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 brand_id: formData.brand,
                 cat_code: formData.categoryCode,
@@ -179,6 +181,7 @@ const ProductCategory = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 brand_id: formData.brand,
@@ -255,6 +258,7 @@ const ProductCategory = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteCat/${id}`);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Category")

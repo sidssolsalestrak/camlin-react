@@ -66,6 +66,7 @@ const Department = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
@@ -105,7 +106,7 @@ const Department = () => {
         if (!formData.departmentName || formData.departmentName.trim() === "") {
             newValidations.departmentName = "The Department Name field is required";
             isValid = false;
-        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.departmentName)) {
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.departmentName)) {
             newValidations.departmentName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
@@ -116,6 +117,7 @@ const Department = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 dept_name: formData.departmentName
             }
@@ -144,6 +146,7 @@ const Department = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 dept_name: formData.departmentName,
@@ -176,6 +179,7 @@ const Department = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteDept/${id}`);
             if (res?.data?.success) {
                 showAlert.success("Successfully Deleted Department")
@@ -325,7 +329,7 @@ const Department = () => {
                         {/*---------------- Add section--------------- */}
                         <TabPanel value="1">
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                               <TextField value={formData.departmentName}
+                                <TextField value={formData.departmentName}
                                     onChange={(e) => {
                                         const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                         formDataChange("departmentName", onlyText)
