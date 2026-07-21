@@ -1174,7 +1174,7 @@ const formatDate = (val) => {
                   error={Boolean(errors.selectBUnit)}
                 />
                 {errors.selectBUnit && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.selectBUnit}
                   </Typography>
                 )}
@@ -1193,7 +1193,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.selectedType && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.selectedType}
                   </Typography>
                 )}
@@ -1211,7 +1211,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.selectedDept && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.selectedDept}
                   </Typography>
                 )}
@@ -1229,7 +1229,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.selectedDesig && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.selectedDesig}
                   </Typography>
                 )}
@@ -1247,7 +1247,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.selectedTitle && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.selectedTitle}
                   </Typography>
                 )}
@@ -1406,7 +1406,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.employeeType && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.employeeType }
                     </Typography>
                   )}
@@ -1424,7 +1424,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.employeeStatus && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.employeeStatus }
                     </Typography>
                   )}
@@ -1496,7 +1496,7 @@ const formatDate = (val) => {
                     required={true}
                   />
                   {errors.zone && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.zone}
                     </Typography>
                   )}
@@ -1517,7 +1517,7 @@ const formatDate = (val) => {
                     required={true}
                   />
                   {errors.region && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.region}
                     </Typography>
                   )}
@@ -1538,7 +1538,7 @@ const formatDate = (val) => {
                     required={true}
                   />
                   {errors.area && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.area}
                     </Typography>
                   )}
@@ -1559,7 +1559,7 @@ const formatDate = (val) => {
                     required={true}
                   />
                   {errors.territory && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.territory}
                     </Typography>
                   )}
@@ -1579,7 +1579,7 @@ const formatDate = (val) => {
                     required={true}
                   />
                   {errors.beat && (
-                    <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                       {errors.beat}
                     </Typography>
                   )}
@@ -1598,7 +1598,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.reportType && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.reportType}
                   </Typography>
                 )}
@@ -1616,7 +1616,7 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.reportTo && (
-                  <Typography sx={{ color: "red", fontSize: "9px", ml: 1 }}>
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
                     {errors.reportTo}
                   </Typography>
                 )}
@@ -1870,7 +1870,7 @@ const formatDate = (val) => {
                     <Box sx={{ mb: 2 }}>
                       <Typography>
                         Deactivation Type{" "}
-                        <span style={{ color: "red" }}>*</span>
+                        <span style={{ color: "#d32f2f" }}>*</span>
                       </Typography>
 
                       <CommonAppSelect
@@ -1888,7 +1888,7 @@ const formatDate = (val) => {
                       />
                       {errors.deactivateType && (
                         <Typography
-                          sx={{ color: "red", fontSize: "10px", ml: 1 }}
+                          sx={{ color: "#d32f2f", fontSize: "10px", ml: 1 }}
                         >
                           {errors.deactivateType}
                         </Typography>
@@ -1898,7 +1898,7 @@ const formatDate = (val) => {
                     {/* Remarks */}
                     <Box sx={{ mb: 2 }}>
                       <Typography>
-                        Remarks <span style={{ color: "red" }}>*</span>
+                        Remarks <span style={{ color: "#d32f2f" }}>*</span>
                       </Typography>
                       <TextField
                         multiline

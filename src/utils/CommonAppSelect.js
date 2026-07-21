@@ -30,16 +30,16 @@ export default function CommonAppSelect({
       error={Boolean(error)}
       sx={{
         "& .MuiInputLabel-root": {
-          color: Boolean(error) ? "red" : "inherit",
+          color: Boolean(error) ? "#d32f2f" : "inherit",
         },
         "& .MuiOutlinedInput-root.Mui-error fieldset": {
-          borderColor: "red !important",
+          borderColor: "#d32f2f !important",
         },
         "& .MuiInputLabel-root.Mui-error": {
-          color: "red !important",
+          color: "#d32f2f !important",
         },
         "& .MuiFormLabel-asterisk": {
-        color: Boolean(error) ? "red !important" : "inherit",
+        color: Boolean(error) ? "#d32f2f !important" : "inherit",
         },
         ...sx,
       }}

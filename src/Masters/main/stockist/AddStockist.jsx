@@ -40,7 +40,7 @@ const AddStockist = () => {
     /*------------ handle form change ------------*/
     const handleChangeForm = (field, value) => {
         // Regex: allows only alphabets and numbers
-        const regex = /^[a-zA-Z]*$/;
+        const regex = /^[a-zA-Z][a-zA-Z ]*$|^$/;
         //allow only numbers
         const numRegex = /^[0-9]*$/;
 
@@ -59,7 +59,9 @@ const AddStockist = () => {
         }))
 
         // Clear error for this field on change
-        if (errors[field]) {
+        const hasValue = typeof value === "string" ? value.trim() !== "" : Array.isArray(value) ? value.length > 0 : !!value;
+
+        if (errors[field] && hasValue) {
             setErrors((prev) => ({
                 ...prev,
                 [field]: ""
@@ -155,6 +157,7 @@ const AddStockist = () => {
             setoriginal({
                 userID: data.stk_login || "",
                 password: data.stk_pwd || "",
+                code: data.stk_code || "",
             });
 
         } catch (error) {
@@ -181,16 +184,17 @@ const AddStockist = () => {
 
         // StockDetails validation
         if (!formData.type) newErrors.type = "The Type field is required.";
-        if (!formData.name || formData.name.trim()==="") newErrors.name = "The Stockist Name field is required.";
+        if (!formData.code || formData.code.trim() === "") newErrors.code = "Stockist Code is required";
+        if (!formData.name || formData.name.trim() === "") newErrors.name = "The Stockist Name field is required.";
 
-        if (!formData.email || formData.email.trim()==="") newErrors.email = "The Email field is required.";
+        if (!formData.email || formData.email.trim() === "") newErrors.email = "The Email field is required.";
         else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
 
         if (!formData.mobile) newErrors.mobile = "The Mobile No field is required.";
         else if (formData.mobile.length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
 
         // SalestrakCredential validation
-        if (!formData.userID || formData.userID.trim()==="") newErrors.userID = "The Username Name field is required.";
+        if (!formData.userID || formData.userID.trim() === "") newErrors.userID = "The Username Name field is required.";
         else if (!validateUser(formData.userID)) newErrors.userID = "Invalid User Name";
 
         if (!original.password) {
@@ -219,30 +223,29 @@ const AddStockist = () => {
     /*------------ payload for submit and edit ------------*/
     let payload = {
         stk_type_id: formData.type,
-        stk_code: formData.code || 0,
-        stk_name: formData.name,
-        stk_add: formData.Address,
-        stk_cont: formData.contactPerson,
-        stk_pin: formData.pin || 0,
-        stk_tel: formData.phone || 0,
-        stk_mob: formData.mobile,
-        stk_email: formData.email,
+        stk_code: (formData.code || "").toString().trim() || 0,
+        stk_name: (formData.name || "").trim(),
+        stk_add: (formData.Address || "").trim(),
+        stk_cont: (formData.contactPerson || "").trim(),
+        stk_pin: (formData.pin || "").toString().trim() || 0,
+        stk_tel: (formData.phone || "").toString().trim() || 0,
+        stk_mob: (formData.mobile || "").toString().trim(),
+        stk_email: (formData.email || "").trim(),
         state_id: formData.state,
         city_id: formData.city,
-        //city_name,
         stk_cat_id: formData.category || 0,
         stk_matrix_id: formData.matrixGroup || 0,
         zone_id: formData.zone,
         reg_id: formData.region,
         area_id: formData.area,
         ter_id: formData.teritory,
-        stk_login: formData.userID,
+        stk_login: (formData.userID || "").trim(),
         stk_pwd: formData.password,
         sup_id: formData.supplied_By || 0,
         sup_type_id: formData.supplied_Type || 0,
         stk_stat: formData.blockStatus,
         user: formData.user ? formData.user.map(u => u.id).join(",") : "",
-        password: formData.password ? formData.password : original.password,
+        password: formData.password ? formData.password.trim() : original.password,
         confpassword: formData.confirmPassword,
     }
 
@@ -280,9 +283,9 @@ const AddStockist = () => {
                 payload.original_name = original.name;
                 payload.original_user = original.userID;
                 payload.original_password = original.password;
+                payload.original_code = original.code;
             }
             const res = await axios.post("/update_stockist", payload)
-            //console.log("insert res", res);
             if (res?.data?.success) {
                 showAlert.success("Stockist Updated successfully")
                 navigate(`/masters/stockist`)
@@ -298,8 +301,6 @@ const AddStockist = () => {
         } finally {
             setloading(false);
             closeConfirmationDialog();
-            setFormData(INITIAL_FORM_STATE)
-            getEditData(decodedId);
         }
     }
 
@@ -307,6 +308,7 @@ const AddStockist = () => {
     useEffect(() => {
         if (!decodedId) {
             setFormData(INITIAL_FORM_STATE)
+            setDefaultUserId(null)
             return;
         }
         getEditData(decodedId);

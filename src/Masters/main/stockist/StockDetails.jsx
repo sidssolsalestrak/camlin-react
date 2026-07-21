@@ -73,10 +73,15 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 </Select>
                 {errors?.type && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.type}</span>}
             </FormControl>
-            <TextField value={formData.code}
-                onChange={(e) => handleChangeForm("code", e.target.value)}
+            <TextField value={formData.code} required
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    handleChangeForm("code", onlyText)
+                }}
                 size='small' placeholder='Enter Code'
                 variant='outlined' label="Code" fullWidth
+                error={!!errors.code}
+                helperText={errors.code}
             />
 
             <ClickAwayListener onClickAway={handleTooltipClose}>
@@ -103,7 +108,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
             </ClickAwayListener>
 
             <TextField value={formData.contactPerson}
-                onChange={(e) => handleChangeForm("contactPerson", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    handleChangeForm("contactPerson", onlyText)
+                }}
                 size='small' placeholder='Enter Contact Person'
                 variant='outlined' label="Contact Person" fullWidth
             />
@@ -111,7 +119,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 size="small"
                 multiline
                 value={formData.Address}
-                onChange={(e) => handleChangeForm('Address', e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    handleChangeForm('Address', onlyText)
+                }}
                 rows={3}
                 label="Address"
                 InputProps={{
@@ -144,7 +155,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 variant='outlined' label="Pin" fullWidth
             />
             <TextField value={formData.email}
-                onChange={(e) => handleChangeForm("email", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    handleChangeForm("email", onlyText)
+                }}
                 onBlur={(e) => {
                     if (!validateEmail(e.target.value)) {
                         setErrors((prev) => ({

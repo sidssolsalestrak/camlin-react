@@ -1056,7 +1056,7 @@ function CreateCustomer() {
                 helperText={fieldErrors.region}
               />
               {fieldErrors.region && (
-                <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.region}</Typography>
+                <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>{fieldErrors.region}</Typography>
               )}
             </Grid>
           )}

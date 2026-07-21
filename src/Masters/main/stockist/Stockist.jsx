@@ -37,8 +37,10 @@ const Stockist = () => {
     const [loading, setLoading] = useState(false)
     const [formData, setFormdata] = useState({
         region: "",
-        area: "0"
+        area: "0",
+        status: "1"
     })
+    const [formError, setFormError] = useState(false);
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
@@ -101,6 +103,13 @@ const Stockist = () => {
     /*----------for tab change---------*/
     const handleChange = useCallback((event, newValue) => {
         setValue(newValue);
+        setshowTable(false);
+        settableData([])
+        setFormdata({
+            region: "",
+            area: "0",
+            status: "1"
+        })
     }, []);
 
     /*------ handleChangeForm ---- */
@@ -124,19 +133,55 @@ const Stockist = () => {
             filterable: true,
         },
         {
+            field: "stk_type_name",
+            headerName: "TYPE",
+            filterable: true,
+        },
+        {
+            field: "stk_code",
+            headerName: "CODE",
+            filterable: true,
+        },
+        {
+            field: "stk_name",
+            headerName: "STOCKIST",
+            filterable: true,
+        },
+        {
+            field: "reg_name",
+            headerName: "REGION",
+            filterable: true,
+        },
+        {
+            field: "area_name",
+            headerName: "AREA",
+            filterable: true,
+        },
+        {
             field: "stk_name",
             headerName: "PSM",
             filterable: true,
         },
         {
-            field: "zone_name",
-            headerName: "ZONE",
+            field: "state_name",
+            headerName: "STATE",
+            filterable: true,
+        },
+        {
+            field: "city_name",
+            headerName: "CITY",
+            filterable: true,
+        },
+        {
+            field: "status",
+            headerName: "STATUS",
             filterable: true,
         },
         {
             field: "",
             headerName: "ACTION",
             filterable: true,
+            width: 100,
             renderCell: (row) => (
                 <>
                     <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
@@ -183,13 +228,16 @@ const Stockist = () => {
         try {
             if (!formData.region || formData.region <= "0") {
                 showAlert.error("Please select Region!");
+                setFormError(true)
                 return;
             }
+            setFormError(false)
             setLoading(true);
             setshowTable(true);
             let payload = {
                 reg_id: formData.region,
-                area_id: formData.area
+                area_id: formData.area,
+                status: formData.status
             }
             const res = await axios.post("/getStockistList", payload);
             //console.log("table res:", res?.data?.data);
@@ -244,13 +292,17 @@ const Stockist = () => {
                         </Box>
                     </TabPanel>
                     {/*---------------- View section--------------- */}
-                    <TabPanel value="2" sx={{padding:"10px 20px"}}>
+                    <TabPanel value="2" sx={{ padding: "10px 20px" }}>
                         <Typography sx={style}>Stockist Records</Typography>
                         <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
                             <FormControl sx={{ width: "200px" }} size="small" >
                                 <InputLabel id="region">Region</InputLabel>
-                                <Select value={formData.region} id='region' label="Region"
-                                    labelId="region" variant="outlined" onChange={(e) => handleChangeForm("region", e.target.value)}>
+                                <Select value={formData.region} id='region' label="Region" error={formError}
+                                    labelId="region" variant="outlined"
+                                    onChange={(e) => {
+                                        handleChangeForm("region", e.target.value);
+                                        if (formError) setFormError(false);
+                                    }}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
                                     {region?.map((item, index) => (
                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.reg_name}</MenuItem>
@@ -265,6 +317,15 @@ const Stockist = () => {
                                     {area?.map((item, index) => (
                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.area_name}</MenuItem>
                                     ))}
+                                </Select>
+                            </FormControl>
+                            <FormControl sx={{ width: "200px" }} size="small" >
+                                <InputLabel id="status">Status</InputLabel>
+                                <Select value={formData.status} id='status' label="Status"
+                                    labelId="status" variant="outlined" onChange={(e) => handleChangeForm("status", e.target.value)}>
+                                    <MenuItem style={{ fontSize: "11px" }} value="3">All</MenuItem>
+                                    <MenuItem style={{ fontSize: "11px" }} value="1">Active</MenuItem>
+                                    <MenuItem style={{ fontSize: "11px" }} value="2">In Active</MenuItem>
                                 </Select>
                             </FormControl>
                             <Button onClick={() => fetchTableData()} variant='contained' color="primary">Search</Button>
