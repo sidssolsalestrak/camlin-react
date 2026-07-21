@@ -132,7 +132,7 @@ const AddProduct = () => {
             newValidations.productType = "The Product Type field is required";
             isValid = false;
         }
-        if (!formData.productName || formData.productName.trim()==="") {
+        if (!formData.productName || formData.productName.trim() === "") {
             newValidations.productName = "The Product Name field is required";
             isValid = false;
         }
@@ -140,11 +140,11 @@ const AddProduct = () => {
             newValidations.subCatName = "The Sub-Category Name field is required";
             isValid = false;
         }
-        if (!formData.shortName || formData.shortName.trim()==="") {
+        if (!formData.shortName || formData.shortName.trim() === "") {
             newValidations.shortName = "The Short Name field is required";
             isValid = false;
         }
-        if (!formData.code || formData.code.trim()==="") {
+        if (!formData.code || formData.code.trim() === "") {
             newValidations.code = "The Code field is required";
             isValid = false;
         }
@@ -186,8 +186,8 @@ const AddProduct = () => {
         prod_type: formData.productType,
         prod_name: formData.productName.trim(),
         subcat_id: formData.subCatName,
-        prod_code: formData.shortName,
-        code: formData.code,
+        prod_code: formData.shortName.trim(),
+        code: formData.code.trim(),
         ord_id: Number(formData.sortingOrder) || 0,
         fac_price: Number(formData.asp) || 0,
         wd_price: Number(formData.cfa) || 0,
@@ -196,7 +196,7 @@ const AddProduct = () => {
         mrp_price: Number(formData.mrp) || 0,
         pack_pcs: Number(formData.pcsPerPack) || 0,
         cart_pcs: Number(formData.pcsPerCarton) || 0,
-        prod_uom: formData.uom,
+        prod_uom: formData.uom.trim(),
         unit_conv: Number(formData.unitConvertion) || 0,
     }
     /*---------- form submit ---------*/
@@ -332,7 +332,7 @@ const AddProduct = () => {
                             {validation.productType && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.productType}</span>}
                         </FormControl>
                     </Grid>
-                  
+
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField value={formData.mrp} onChange={(e) => handleChange("mrp", e.target.value)} error={!!validation.mrp} helperText={validation.mrp ? validation.mrp : null}
                             type='number' required fullWidth size='small' variant='outlined' label="MRP" placeholder='Enter MRP Price' />
@@ -343,7 +343,7 @@ const AddProduct = () => {
                             variant='outlined' label="Sorting Order" placeholder='Enter Sorting Order' />
                     </Grid>
                     {/* row 2 */}
-                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" >
                             <InputLabel id="SubCategoryName">SubCategory Name*</InputLabel>
                             <Select id='SubCategoryName' label="SubCategory Name*" value={formData.subCatName} MenuProps={menuStyle}
@@ -368,9 +368,14 @@ const AddProduct = () => {
                     {/* row 3 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField required fullWidth size='small' variant='outlined' label="Code" error={!!validation.code} helperText={validation.code ? validation.code : null}
-                            value={formData.code} onChange={(e) => handleChange("code", e.target.value)} placeholder='Enter Code' />
+                            value={formData.code}
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                handleChange("code", onlyText)
+                            }}
+                            placeholder='Enter Code' />
                     </Grid>
-                   
+
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.cfa}
                             onChange={(e) => handleChange("cfa", e.target.value)} label="CFA/ Superstockist" placeholder='Enter Super Stock-list' />
@@ -382,21 +387,30 @@ const AddProduct = () => {
                     {/* row 4 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField required fullWidth size='small' value={formData.productName} error={!!validation.productName} helperText={validation.productName ? validation.productName : null}
-                            onChange={(e) => handleChange("productName", e.target.value)} variant='outlined' label="Product Name" placeholder='Enter Product Name' />
-                    </Grid>    
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                handleChange("productName", onlyText)
+                            }} variant='outlined' label="Product Name" placeholder='Enter Product Name' />
+                    </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.pts} error={!!validation.pts} helperText={validation.pts ? validation.pts : null}
                             onChange={(e) => handleChange("pts", e.target.value)} label="Stockist Price (PTS)" placeholder='Enter Stock Price   ' />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField fullWidth size='small' variant='outlined' label="UOM" value={formData.uom}
-                            onChange={(e) => handleChange("uom", e.target.value)} placeholder='Enter UOM' />
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                handleChange("uom", onlyText)
+                            }} placeholder='Enter UOM' />
                     </Grid>
                     {/* row 5 */}
-                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField required fullWidth size='small' variant='outlined' value={formData.shortName} error={!!validation.shortName} helperText={validation.shortName ? validation.shortName : null}
-                            onChange={(e) => handleChange("shortName", e.target.value)} label="Short Name" placeholder='Enter Short Name' />
-                     </Grid>
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                handleChange("shortName", onlyText)
+                            }} label="Short Name" placeholder='Enter Short Name' />
+                    </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.ptr} error={!!validation.ptr} helperText={validation.ptr ? validation.ptr : null}
                             onChange={(e) => handleChange("ptr", e.target.value)} label="Retail Price (PTR)" placeholder='Enter Retail Price   ' />

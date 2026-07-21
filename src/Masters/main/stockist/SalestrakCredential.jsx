@@ -23,7 +23,10 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
             <Typography sx={style}>Salestrak Login Credentials</Typography>
             <TextField value={formData.userID}
-                onChange={(e) => handleChangeForm("userID", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("userID", onlyText)
+                }}
                 size='small' placeholder='Enter User ID' required
                 variant='outlined' label="User ID" fullWidth
                 error={!!errors.userID}
@@ -43,7 +46,10 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                 }}
             />
             <TextField value={formData.password} type='password' required
-                onChange={(e) => handleChangeForm("password", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("password", onlyText)
+                }}
                 size='small' placeholder='Enter Password'
                 variant='outlined' label="Password" fullWidth
                 error={!!errors.password}
@@ -65,7 +71,10 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                 }}
             />
             <TextField value={formData.confirmPassword} type='password' required
-                onChange={(e) => handleChangeForm("confirmPassword", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("confirmPassword", onlyText)
+                }}
                 size='small' placeholder='Confirm Password'
                 variant='outlined' label="Confirm Password" fullWidth
                 error={!!errors.confirmPassword}
