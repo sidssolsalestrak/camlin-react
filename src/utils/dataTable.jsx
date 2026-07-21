@@ -53,14 +53,17 @@ function ExpandedContent({ row, expandableRow, cacheKey }) {
       }
     };
     run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [cacheKey]);
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" p={2}>
-      <CircularProgress size={20} />
-    </Box>
-  );
+  if (loading)
+    return (
+      <Box display="flex" justifyContent="center" p={2}>
+        <CircularProgress size={20} />
+      </Box>
+    );
 
   return content;
 }
@@ -71,7 +74,7 @@ const DataTable = ({
   loading = false,
   title = "Data Table",
   defaultPageSize = 25,
-  pageSizeOptions = [10, 25, 50, 100],
+  pageSizeOptions = [10, 25, 50, 100, 200, 500],
   onRowClick = null,
   sx = {},
   additionalFilters = [],
@@ -110,7 +113,7 @@ const DataTable = ({
 
   // expandedRows: { [rowKey]: 'focus' | 'beat' | undefined }
   const [expandedRows, setExpandedRows] = useState({});
-  const location=useLocation()
+  const location = useLocation();
 
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -141,19 +144,18 @@ const DataTable = ({
 
   // Reset to first page and clear expanded rows whenever data changes
   useEffect(() => {
-  if (
-    !location.pathname.startsWith('/input/stock_sales/') &&
-    !location.pathname.startsWith('/reports/preview_stk_sales/') &&
-    !location.pathname.startsWith('/upload_closing')
-  ) {
-    setPage(0);
-  }
-  setExpandedRows({});
+    if (
+      !location.pathname.startsWith("/input/stock_sales/") &&
+      !location.pathname.startsWith("/reports/preview_stk_sales/") &&
+      !location.pathname.startsWith("/upload_closing")
+    ) {
+      setPage(0);
+    }
+    setExpandedRows({});
   }, [data]);
 
   // ── Stable row key ───────────────────────────────────────────────────────
-  const getRowKey = (row, ri) =>
-    row.id ?? `row-${ri}`;
+  const getRowKey = (row, ri) => row.id ?? `row-${ri}`;
 
   // ── Toggle expand: same type = close, different type = switch ────────────
   const handleRowExpand = (rowKey, type) => {
@@ -210,9 +212,9 @@ const DataTable = ({
       case "currency":
         return typeof value === "number"
           ? value.toLocaleString("en-IN", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
           : value;
       case "boolean":
         return value ? "Yes" : "No";
@@ -287,25 +289,66 @@ const DataTable = ({
 
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return data;
-    const term = searchTerm.toLowerCase().trim();
-    return data.filter((row) => {
-      // Combined name support
-      const fullName = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
-      if (fullName.toLowerCase().includes(term)) return true;
 
-      return flatColumns.some((col) => {
+    const term = searchTerm.toLowerCase().trim();
+
+    return data.filter((row) => {
+      const searchParts = [];
+
+      // Add all raw row values
+      Object.values(row).forEach((val) => {
+        if (val === null || val === undefined) return;
+        if (typeof val === "object") return;
+        searchParts.push(String(val));
+      });
+
+      // Add common combined fields
+      if (row.first_name || row.last_name) {
+        searchParts.push(`${row.first_name ?? ""} ${row.last_name ?? ""}`);
+      }
+
+      if (row.prod_code || row.prod_name) {
+        searchParts.push(`${row.prod_code ?? ""} ${row.prod_name ?? ""}`);
+      }
+
+      if (row.cat_code_1 || row.prod_name) {
+        searchParts.push(`${row.cat_code_1 ?? ""} ${row.prod_name ?? ""}`);
+      }
+
+      if (row.strak_prod_code || row.strak_prod_name) {
+        searchParts.push(
+          `${row.strak_prod_code ?? ""} ${row.strak_prod_name ?? ""}`,
+        );
+      }
+
+      if (row.pc || row.pn) {
+        searchParts.push(`${row.pc ?? ""} ${row.pn ?? ""}`);
+      }
+
+      if (row.strak_prod_name) {
+        searchParts.push(row.strak_prod_name);
+      }
+
+      if (row.strak_prod_code) {
+        searchParts.push(row.strak_prod_code);
+      }
+
+      // Date fields
+      flatColumns.forEach((col) => {
         const val = row[col.field];
-        if (val === null || val === undefined) return false;
+        if (val === null || val === undefined) return;
 
         if (col.type === "date" && dayjs(val).isValid()) {
-          return (
-            String(val).toLowerCase().includes(term) ||
-            dayjs(val).format("DD-MM-YYYY").toLowerCase().includes(term) ||
-            dayjs(val).format("DD MMM YYYY").toLowerCase().includes(term)
-          );
+          searchParts.push(dayjs(val).format("DD-MM-YYYY"));
+          searchParts.push(dayjs(val).format("DD MMM YYYY"));
+          searchParts.push(dayjs(val).format("YYYY-MM-DD"));
+        } else {
+          searchParts.push(String(val));
         }
-        return String(val).toLowerCase().includes(term);
       });
+
+      const searchableText = searchParts.join(" ").toLowerCase();
+      return searchableText.includes(term);
     });
   }, [data, searchTerm, flatColumns]);
 
@@ -327,14 +370,14 @@ const DataTable = ({
   }, [filteredData, sortConfig]);
 
   const paginatedData = useMemo(() => {
-    if (!pagination) return sortedData;   // ← show all rows when pagination is false
+    if (!pagination) return sortedData; // ← show all rows when pagination is false
     const start = page * rowsPerPage;
     return sortedData.slice(start, start + rowsPerPage);
-}, [sortedData, page, rowsPerPage, pagination]);
+  }, [sortedData, page, rowsPerPage, pagination]);
 
   const calcTotal = (field) =>
     data.reduce((sum, row) => {
-      if (row._isSubtotal) return sum;   // ← skip subtotal rows
+      if (row._isSubtotal) return sum; // ← skip subtotal rows
       return sum + (Number(row[field]) || 0);
     }, 0);
 
@@ -380,7 +423,15 @@ const DataTable = ({
       }}
     >
       {showTableTitle && (
-        <Box sx={{ display: "flex", justifyContent: "center", bgcolor: "#3464a7", alignSelf: "center", p: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            bgcolor: "#3464a7",
+            alignSelf: "center",
+            p: 1,
+          }}
+        >
           <Typography
             sx={{
               fontSize: "14px",
@@ -411,32 +462,34 @@ const DataTable = ({
           >
             {/* Left: rows-per-page + extra filters + count */}
             <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-              <FormControl size="small" sx={{ minWidth: 50 }}>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(+e.target.value);
-                    setPage(0);
-                  }}
-                  IconComponent={KeyboardArrowDown}
-                  sx={{
-                    fontSize: "0.875rem",
-                    height: 32,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#d1d5db",
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "primary.main",
-                    },
-                  }}
-                >
-                  {pageSizeOptions.map((s) => (
-                    <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>
-                      {s}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {pagination && (
+                <FormControl size="small" sx={{ minWidth: 50 }}>
+                  <Select
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(+e.target.value);
+                      setPage(0);
+                    }}
+                    IconComponent={KeyboardArrowDown}
+                    sx={{
+                      fontSize: "0.875rem",
+                      height: 32,
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d1d5db",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    {pageSizeOptions.map((s) => (
+                      <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               {additionalFilters.map((filter, i) => (
                 <FormControl key={i} size="small" sx={{ minWidth: 150 }}>
@@ -475,25 +528,27 @@ const DataTable = ({
                 </FormControl>
               ))}
 
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#6b7280",
-                  backgroundColor: "#f3f4f6",
-                  px: 1.5,
-                  py: 0.25,
-                  borderRadius: 1,
-                  fontSize: "0.875rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {filteredData.length > 0
-                  ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
-                    (page + 1) * rowsPerPage,
-                    filteredData.length,
-                  )} of ${filteredData.length.toLocaleString()} entries`
-                  : "Showing 0 to 0 of 0 entries"}
-              </Typography>
+              {pagination && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#6b7280",
+                    backgroundColor: "#f3f4f6",
+                    px: 1.5,
+                    py: 0.25,
+                    borderRadius: 1,
+                    fontSize: "0.875rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {filteredData.length > 0
+                    ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
+                        (page + 1) * rowsPerPage,
+                        filteredData.length,
+                      )} of ${filteredData.length.toLocaleString()} entries`
+                    : "Showing 0 to 0 of 0 entries"}
+                </Typography>
+              )}
             </Box>
 
             {/* Right: search + optional headerActions slot */}
@@ -647,7 +702,7 @@ const DataTable = ({
 
             {/* Sub-header row */}
             {hasSubColumns && !hideSubHeader && (
-              <TableRow sx={{  backgroundColor: "#eceae65a"}}>
+              <TableRow sx={{ backgroundColor: "#eceae65a" }}>
                 {columns.map((col, pi) =>
                   col.subColumns?.length ? (
                     col.subColumns.map((sub, si) => (
@@ -656,7 +711,7 @@ const DataTable = ({
                         sx={{
                           minWidth: sub.width,
                           width: sub.width,
-                          color: '#706E69',
+                          color: "#706E69",
                           // borderRight: "1px solid #e5e7eb",
                           p: 1,
                           // borderBottom: "1px solid #e5e7eb",
@@ -683,7 +738,7 @@ const DataTable = ({
                             sx={{
                               // fontFamily: '"Open Sans", sans-serif',
                               fontSize: "11px",
-                              textWrap:'nowrap'
+                              textWrap: "nowrap",
                             }}
                           >
                             {sub.headerName}
@@ -790,7 +845,6 @@ const DataTable = ({
 
                 return (
                   <React.Fragment key={rowKey}>
-
                     {/* ── Main data row ── */}
                     <TableRow
                       onClick={() => onRowClick?.(row)}
@@ -800,21 +854,22 @@ const DataTable = ({
                         // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
                         // "&:hover td": { backgroundColor: "#e1f3ff" },
                         ...Object.keys(columnBgColors).reduce((acc, field) => {
-                        const colIndex = flatColumns.findIndex(c => c.field === field);
-                        if (colIndex !== -1) {
-                          acc[`&:hover td:nth-of-type(${colIndex + 1})`] = {
-                            backgroundColor: columnBgColors[field],
-                          };
-                        }
-                        return acc;
-                      }, {}),
+                          const colIndex = flatColumns.findIndex(
+                            (c) => c.field === field,
+                          );
+                          if (colIndex !== -1) {
+                            acc[`&:hover td:nth-of-type(${colIndex + 1})`] = {
+                              backgroundColor: columnBgColors[field],
+                            };
+                          }
+                          return acc;
+                        }, {}),
                         "&:hover td": { backgroundColor: "#FAFAF8" },
                         "& td": { color: "#706E69" },
                         ...(rowStyle ? rowStyle(row) : {}),
                       }}
                     >
                       {flatColumns.map((col, ci) => {
-
                         // ── ✅ __expand__ → Focus Range expansion ───────────
                         if (col.field === "__expand__" && expandableRow) {
                           return (
@@ -849,8 +904,12 @@ const DataTable = ({
                         }
 
                         // ── ✅ __expand_beat__ → Beat expansion ─────────────
-                        if (col.field === "__expand_beat__" && expandableRowBeat) {
-                          const hasBeat = row.beat_work && row.beat_work.trim() !== "";
+                        if (
+                          col.field === "__expand_beat__" &&
+                          expandableRowBeat
+                        ) {
+                          const hasBeat =
+                            row.beat_work && row.beat_work.trim() !== "";
 
                           // No beat — render cell normally, no expand behavior
                           if (!hasBeat) {
@@ -865,9 +924,12 @@ const DataTable = ({
                                 }}
                               >
                                 {col.renderCell
-                                  ? col.renderCell({ value: row[col.field], row, isExpanded: false })
-                                  : "-"
-                                }
+                                  ? col.renderCell({
+                                      value: row[col.field],
+                                      row,
+                                      isExpanded: false,
+                                    })
+                                  : "-"}
                               </TableCell>
                             );
                           }
@@ -887,7 +949,9 @@ const DataTable = ({
                                 handleRowExpand(rowKey, "beat");
                               }}
                             >
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
                                 <Typography
                                   component="span"
                                   sx={{
@@ -900,9 +964,12 @@ const DataTable = ({
                                   {expandedType === "beat" ? "−" : "+"}
                                 </Typography>
                                 {col.renderCell
-                                  ? col.renderCell({ value: row[col.field], row, isExpanded: expandedType === "beat" })
-                                  : null
-                                }
+                                  ? col.renderCell({
+                                      value: row[col.field],
+                                      row,
+                                      isExpanded: expandedType === "beat",
+                                    })
+                                  : null}
                               </Box>
                             </TableCell>
                           );
@@ -922,8 +989,12 @@ const DataTable = ({
                         return (
                           <TableCell
                             key={col.field ?? `col-${ci}`}
-                            align={["number", "currency", "date"].includes(col.type) ? "right"
-                              : col.type === "alignCenter" ? "center" : "left"
+                            align={
+                              ["number", "currency", "date"].includes(col.type)
+                                ? "right"
+                                : col.type === "alignCenter"
+                                  ? "center"
+                                  : "left"
                             }
                             sx={{
                               fontSize: "12px",
@@ -938,11 +1009,11 @@ const DataTable = ({
                               fontWeight: 400,
                               // borderBottom: "1px solid #f3f4f6",
                               borderBottom: "1px solid rgba(0,0,0,0.08)",
-                              backgroundColor: columnBgColor || "inherit", 
+                              backgroundColor: columnBgColor || "inherit",
                               transition: "background 0.1s",
                               animation: "rowIn 0.3s ease both",
                               ...getStickyStyles(ci, flatColumns),
-                              ...(col.cellSx || {}),  
+                              ...(col.cellSx || {}),
                             }}
                           >
                             {isStatus ? (
@@ -974,7 +1045,9 @@ const DataTable = ({
                                       textOverflow: "ellipsis",
                                       whiteSpace: "nowrap",
                                       verticalAlign: "middle",
-                                      cursor: showTooltip ? "pointer" : "default",
+                                      cursor: showTooltip
+                                        ? "pointer"
+                                        : "default",
                                     }}
                                   >
                                     {rawContent}
@@ -1061,7 +1134,6 @@ const DataTable = ({
                         </TableCell>
                       </TableRow>
                     )}
-
                   </React.Fragment>
                 );
               })
@@ -1085,7 +1157,9 @@ const DataTable = ({
                 {flatColumns.map((col, i) => {
                   const firstIdx = flatColumns.findIndex((c) => c.showTotal);
                   const total = col.showTotal ? calcTotal(col.field) : null;
-                  const avgTotal = col.showAverageTotal ? calcAverageTotal(col.field) : null;
+                  const avgTotal = col.showAverageTotal
+                    ? calcAverageTotal(col.field)
+                    : null;
                   const isNumeric =
                     col.type === "number" || col.type === "currency";
                   return (
@@ -1095,7 +1169,7 @@ const DataTable = ({
                       sx={{
                         fontSize: "12px",
                         fontWeight: 700,
-                        color: '#706E69',
+                        color: "#706E69",
                         borderRight:
                           i !== flatColumns.length - 1
                             ? "1px solid #e5e7eb"
@@ -1110,7 +1184,9 @@ const DataTable = ({
                         : col.showAverageTotal
                           ? formatTotal(avgTotal)
                           : i === firstIdx - 1
-                            ? (grandTotal ? "Grand Total" : "Total")
+                            ? grandTotal
+                              ? "Grand Total"
+                              : "Total"
                             : ""}
                     </TableCell>
                   );
