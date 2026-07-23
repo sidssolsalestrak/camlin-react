@@ -25,7 +25,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
-import {jwtDecode} from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import ConfirmationDialog from "../utils/confirmDialog";
 
 function AddUser() {
@@ -140,9 +140,9 @@ function AddUser() {
   const [weeklyOff, setWeeklyOff] = useState([1]);
   const [weekDays, setWeekDays] = useState([]);
   const [flag, setFlag] = useState(0)
-  const [oldProfileImage,setOldProfileImage]=useState("")
-  const [existingPass,setExistingPass]=useState(null)
-  const [sessionId,setSessionId]=useState(null)
+  const [oldProfileImage, setOldProfileImage] = useState("")
+  const [existingPass, setExistingPass] = useState(null)
+  const [sessionId, setSessionId] = useState(null)
   const [modifyLoading, setModifyLoading] = useState(false);
 
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
@@ -191,26 +191,26 @@ function AddUser() {
   };
 
   const getReportToUsers = async (typeId) => {
-    try{
-    const res = await axios.post("/get_repo_to_user", {
-      usrtyp: String(typeId),
-    });
+    try {
+      const res = await axios.post("/get_repo_to_user", {
+        usrtyp: String(typeId),
+      });
 
-    if (res.data.status === 200) {
-      const formatted = (res.data.data || []).map((item) => ({
-        ...item,
-        full_name: `${item.first_name || ""} ${item.last_name || ""}`.trim(),
-      }));
+      if (res.data.status === 200) {
+        const formatted = (res.data.data || []).map((item) => ({
+          ...item,
+          full_name: `${item.first_name || ""} ${item.last_name || ""}`.trim(),
+        }));
 
-      setReportToUsers(formatted);
+        setReportToUsers(formatted);
+      }
+      else {
+        setReportToUsers([])
+      }
     }
-    else{
-       setReportToUsers([])
+    catch (err) {
+      console.log("fetching get to user err", err)
     }
-  }
-  catch(err){
-     console.log("fetching get to user err",err)
-  }
   };
 
   const getEmpDropdowns = async () => {
@@ -333,15 +333,15 @@ function AddUser() {
         const relievingDateStr = d.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "";
         const invalidDates = ['1900-01-01', '1970-01-01', '0000-00-00', '1899-12-31'];
         setRelievingDate(
-          relievingDateStr && !invalidDates.includes(relievingDateStr) 
-            ? relievingDateStr 
+          relievingDateStr && !invalidDates.includes(relievingDateStr)
+            ? relievingDateStr
             : ""
         );
 
         const dobStr = d.emp_dob ? d.emp_dob.split("T")[0] : "";
         setDateOfBirth(
-          dobStr && !invalidDates.includes(dobStr) 
-            ? dobStr 
+          dobStr && !invalidDates.includes(dobStr)
+            ? dobStr
             : ""
         );
 
@@ -383,7 +383,7 @@ function AddUser() {
         setPsDay(d.plan_rule_day || "");
 
         setRepSubCutoff(String(d.report_rule_id || "0"));
-        setWeekend(d. report_rule_day || ""); // if needed
+        setWeekend(d.report_rule_day || ""); // if needed
         setRsDay(d.report_rule_lag || "");
 
         setReportType(String(d.rep_type || "0"));
@@ -418,47 +418,47 @@ function AddUser() {
   }, [selectedReportType]);
 
   useEffect(() => {
-        const token = localStorage.getItem("session-token");
-        if (token) {
-            try {
-                let decoded = jwtDecode(token)
-                setSessionId(decoded.user_id)
-                console.log("decoded user id",decoded.user_id)
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    }, [])
+    const token = localStorage.getItem("session-token");
+    if (token) {
+      try {
+        let decoded = jwtDecode(token)
+        setSessionId(decoded.user_id)
+        console.log("decoded user id", decoded.user_id)
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }, [])
 
 
-    const [confirmationDialog, setConfirmationDialog] = useState({
-          open: false,
-          title: "",
-          message: "",
-          onConfirm: null,
-          confirmText: "Confirm",
-          cancelText: "Cancel",
-          confirmColor: "primary",
-        });
-    
-        const showConfirmationDialog = (config) => {
-        setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
-      };
-    
-      const closeConfirmationDialog = () => {
-        setConfirmationDialog((prev) => ({ ...prev, open: false }));
-      };
-    
-      const showLogoutConfirmation = (row) => {
-        showConfirmationDialog({
-          title: "Confirmation",
-          message: `Are you sure you want ${fullName} ${lastName} to LOGOUT from app?`,
-          confirmText: "OK",
-          cancelText: "Close",
-          confirmColor: "primary",
-          onConfirm: () => handleAppLogout(),
-        });
-      };
+  const [confirmationDialog, setConfirmationDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+  });
+
+  const showConfirmationDialog = (config) => {
+    setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+  };
+
+  const closeConfirmationDialog = () => {
+    setConfirmationDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  const showLogoutConfirmation = (row) => {
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: `Are you sure you want ${fullName} ${lastName} to LOGOUT from app?`,
+      confirmText: "OK",
+      cancelText: "Close",
+      confirmColor: "primary",
+      onConfirm: () => handleAppLogout(),
+    });
+  };
 
   const checkPasswordValidation = (value) => {
     const isWhitespace = /^(?=.*\s)/;
@@ -521,9 +521,9 @@ function AddUser() {
     if (!selectedReportTo) temp.reportTo = "Please Select Reporting To User";
     if (!employeeType) temp.employeeType = "Select Employee Type";
     if (!employeeStatus) temp.employeeStatus = "Select Employee Status";
-     if(!selectedBU || selectedBU.length===0) temp.selectBUnit = "Please select Business Unit"
+    if (!selectedBU || selectedBU.length === 0) temp.selectBUnit = "Please select Business Unit"
     if (grossSalary && (isNaN(Number(grossSalary)) || Number(grossSalary) < 0)) {
-    temp.grossSalary = "Enter valid Gross Salary";
+      temp.grossSalary = "Enter valid Gross Salary";
     }
 
     if (Number(selectedType) > 4) {
@@ -559,18 +559,18 @@ function AddUser() {
     }
 
     if (!id) {
-        if (!password.trim()) {
-          temp.password = "Password is required";
-        } else {
-          const pwdCheck = checkPasswordValidation(password);
-          if (pwdCheck !== 1) temp.password = pwdCheck;
-        }
-        if (!confirmPassword.trim()) {
-          temp.confirmPassword = "Confirm Password is required";
-        } else if (password !== confirmPassword) {
-          temp.confirmPassword = "Password & Confirm Password does not match";
-        }
+      if (!password.trim()) {
+        temp.password = "Password is required";
+      } else {
+        const pwdCheck = checkPasswordValidation(password);
+        if (pwdCheck !== 1) temp.password = pwdCheck;
       }
+      if (!confirmPassword.trim()) {
+        temp.confirmPassword = "Confirm Password is required";
+      } else if (password !== confirmPassword) {
+        temp.confirmPassword = "Password & Confirm Password does not match";
+      }
+    }
     // UPDATE USER
     if (id && (password || confirmPassword)) {
       if (!password || !confirmPassword) {
@@ -600,47 +600,103 @@ function AddUser() {
   const handleSubmit = async () => {
     if (!validate()) return;
     try {
-    const formData = new FormData();
+      const formData = new FormData();
 
-    // Helper to get name by id from an options array
-    const getNames = (selectedIds, options, valueKey, labelKey) => {
-      if (!selectedIds || selectedIds.length === 0) return "";
-      return selectedIds
-        .map((id) => {
-          const found = options.find((o) => String(o[valueKey]) === String(id));
-          return found ? found[labelKey] : "";
-        })
-        .join(",");
-    };
+      // Helper to get name by id from an options array
+      const getNames = (selectedIds, options, valueKey, labelKey) => {
+        if (!selectedIds || selectedIds.length === 0) return "";
+        return selectedIds
+          .map((id) => {
+            const found = options.find((o) => String(o[valueKey]) === String(id));
+            return found ? found[labelKey] : "";
+          })
+          .join(",");
+      };
 
-    formData.append("user_id", id || 0);
-    formData.append("user_type", selectedType);
-    formData.append("dept_id", selectedDept);
-    formData.append("design_id", selectedDesig);
-    formData.append("title_id", selectedTitle);
-    formData.append("emp_code", employeeCode.trim());
-    formData.append("first_name", fullName.trim());
-    formData.append("last_name", lastName.trim());
-    formData.append("mobile", mobileNum);
-    formData.append("email_id", email);
-    formData.append("dob", dateOfBirth);
-    formData.append("doj", dateOfJoin);
-    formData.append("address", address);
-    formData.append("user_id_stat", userIdStat);
-    formData.append("emp_type", employeeType);
-    formData.append("emp_stat", employeeStatus);
-    formData.append("gross_salary", grossSalary || 0);
-    formData.append("other_ref", otherRef);
-    formData.append("hq", hq.trim());
+      formData.append("user_id", id || 0);
+      formData.append("user_type", selectedType);
+      formData.append("dept_id", selectedDept);
+      formData.append("design_id", selectedDesig);
+      formData.append("title_id", selectedTitle);
+      formData.append("emp_code", employeeCode.trim());
+      formData.append("first_name", fullName.trim());
+      formData.append("last_name", lastName.trim());
+      formData.append("mobile", mobileNum);
+      formData.append("email_id", email);
+      formData.append("dob", dateOfBirth);
+      formData.append("doj", dateOfJoin);
+      formData.append("address", address);
+      formData.append("user_id_stat", userIdStat);
+      formData.append("emp_type", employeeType);
+      formData.append("emp_stat", employeeStatus);
+      formData.append("gross_salary", grossSalary || 0);
+      formData.append("other_ref", otherRef);
+      formData.append("hq", hq.trim());
 
-    // Business Unit IDs + Names
-    formData.append("buUnit", selectedBU.join(","));
-    formData.append("buUnitName", getNames(selectedBU, businessUnits, "id", "brand_name"));
+      // Business Unit IDs + Names
+      formData.append("buUnit", selectedBU.join(","));
+      formData.append("buUnitName", getNames(selectedBU, businessUnits, "id", "brand_name"));
 
-    if (Number(selectedType) > 4) {
-      if (mngType === 1) {
-        formData.append("zone_id", selectedZones.join(","));
-        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+      if (Number(selectedType) > 4) {
+        if (mngType === 1) {
+          formData.append("zone_id", selectedZones.join(","));
+          formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+          formData.append("reg_id", 0);
+          formData.append("reg_Name", "");
+          formData.append("area_id", 0);
+          formData.append("area_name", "");
+          formData.append("ter_id", 0);
+          formData.append("ter_name", "");
+          formData.append("beat_id", 0);
+          formData.append("beat_name", "");
+        } else if (mngType === 2) {
+          formData.append("zone_id", selectedZones.join(","));
+          formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+          formData.append("reg_id", selectedRegions.join(","));
+          formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
+          formData.append("area_id", 0);
+          formData.append("area_name", "");
+          formData.append("ter_id", 0);
+          formData.append("ter_name", "");
+          formData.append("beat_id", 0);
+          formData.append("beat_name", "");
+        } else if (mngType === 3) {
+          formData.append("zone_id", selectedZones.join(","));
+          formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+          formData.append("reg_id", selectedRegions.join(","));
+          formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
+          formData.append("area_id", selectedAreas.join(","));
+          formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
+          formData.append("ter_id", 0);
+          formData.append("ter_name", "");
+          formData.append("beat_id", 0);
+          formData.append("beat_name", "");
+        } else if (mngType === 4) {
+          formData.append("zone_id", selectedZones.join(","));
+          formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+          formData.append("reg_id", selectedRegions.join(","));
+          formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
+          formData.append("area_id", selectedAreas.join(","));
+          formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
+          formData.append("ter_id", selectedTerritories.join(","));
+          formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
+          formData.append("beat_id", 0);
+          formData.append("beat_name", "");
+        } else if (mngType === 0) {
+          formData.append("zone_id", selectedZones.join(","));
+          formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
+          formData.append("reg_id", selectedRegions.join(","));
+          formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
+          formData.append("area_id", selectedAreas.join(","));
+          formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
+          formData.append("ter_id", selectedTerritories.join(","));
+          formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
+          formData.append("beat_id", selectedBeats.join(","));
+          formData.append("beat_name", getNames(selectedBeats, beats, "id", "beat_name"));
+        }
+      } else {
+        formData.append("zone_id", 0);
+        formData.append("zone_name", "");
         formData.append("reg_id", 0);
         formData.append("reg_Name", "");
         formData.append("area_id", 0);
@@ -649,105 +705,49 @@ function AddUser() {
         formData.append("ter_name", "");
         formData.append("beat_id", 0);
         formData.append("beat_name", "");
-      } else if (mngType === 2) {
-        formData.append("zone_id", selectedZones.join(","));
-        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
-        formData.append("reg_id", selectedRegions.join(","));
-        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
-        formData.append("area_id", 0);
-        formData.append("area_name", "");
-        formData.append("ter_id", 0);
-        formData.append("ter_name", "");
-        formData.append("beat_id", 0);
-        formData.append("beat_name", "");
-      } else if (mngType === 3) {
-        formData.append("zone_id", selectedZones.join(","));
-        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
-        formData.append("reg_id", selectedRegions.join(","));
-        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
-        formData.append("area_id", selectedAreas.join(","));
-        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
-        formData.append("ter_id", 0);
-        formData.append("ter_name", "");
-        formData.append("beat_id", 0);
-        formData.append("beat_name", "");
-      } else if (mngType === 4) {
-        formData.append("zone_id", selectedZones.join(","));
-        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
-        formData.append("reg_id", selectedRegions.join(","));
-        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
-        formData.append("area_id", selectedAreas.join(","));
-        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
-        formData.append("ter_id", selectedTerritories.join(","));
-        formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
-        formData.append("beat_id", 0);
-        formData.append("beat_name", "");
-      } else if (mngType === 0) {
-        formData.append("zone_id", selectedZones.join(","));
-        formData.append("zone_name", getNames(selectedZones, zones, "id", "zone_name"));
-        formData.append("reg_id", selectedRegions.join(","));
-        formData.append("reg_Name", getNames(selectedRegions, regions, "id", "reg_name"));
-        formData.append("area_id", selectedAreas.join(","));
-        formData.append("area_name", getNames(selectedAreas, areas, "id", "area_name"));
-        formData.append("ter_id", selectedTerritories.join(","));
-        formData.append("ter_name", getNames(selectedTerritories, territories, "id", "ter_name"));
-        formData.append("beat_id", selectedBeats.join(","));
-        formData.append("beat_name", getNames(selectedBeats, beats, "id", "beat_name"));
       }
-    } else {
-      formData.append("zone_id", 0);
-      formData.append("zone_name", "");
-      formData.append("reg_id", 0);
-      formData.append("reg_Name", "");
-      formData.append("area_id", 0);
-      formData.append("area_name", "");
-      formData.append("ter_id", 0);
-      formData.append("ter_name", "");
-      formData.append("beat_id", 0);
-      formData.append("beat_name", "");
-    }
 
-    formData.append("report_type", selectedReportType);
-    formData.append("report_user_id", selectedReportTo);
-    formData.append("user_name", userId);
-    formData.append("password", password || existingPass);
-    formData.append("conf_password", confirmPassword);
-    formData.append("web_access", webAccess === "yes" ? 0 : 1);
-    formData.append("app_access", appAccess === "yes" ? 0 : 1);
-    formData.append("plan_sub_cutoff", planSubCutoff);
-    formData.append("ps_day", psDay);
-    formData.append("plan_approval", planApproval);
-    formData.append("rep_sub_cutoff", repSubCutoff);
-    formData.append("weekend", weekend);
-    formData.append("rs_day", rsDay || 0);
-    formData.append("data_mode", dataMode);
-    formData.append("location_tracking", locationTracking);
-    formData.append("selfie", selfie);
-    formData.append("attendance", attendance);
+      formData.append("report_type", selectedReportType);
+      formData.append("report_user_id", selectedReportTo);
+      formData.append("user_name", userId);
+      formData.append("password", password || existingPass);
+      formData.append("conf_password", confirmPassword);
+      formData.append("web_access", webAccess === "yes" ? 0 : 1);
+      formData.append("app_access", appAccess === "yes" ? 0 : 1);
+      formData.append("plan_sub_cutoff", planSubCutoff);
+      formData.append("ps_day", psDay);
+      formData.append("plan_approval", planApproval);
+      formData.append("rep_sub_cutoff", repSubCutoff);
+      formData.append("weekend", weekend);
+      formData.append("rs_day", rsDay || 0);
+      formData.append("data_mode", dataMode);
+      formData.append("location_tracking", locationTracking);
+      formData.append("selfie", selfie);
+      formData.append("attendance", attendance);
 
-    formData.append("weekly_off", weeklyOff.join(","));
-    formData.append("dor", relievingDate);
-    formData.append("deact_type", deactivateType);
-    formData.append("deactRemarks", deactivateRemarks);
-    formData.append("flag", flag);
-    formData.append("rep_type", reportType)
-    formData.append("desig_name", getNames([selectedDesig], designations, "id", "desig_name"))
-    formData.append("oldStat",accStatus)
+      formData.append("weekly_off", weeklyOff.join(","));
+      formData.append("dor", relievingDate);
+      formData.append("deact_type", deactivateType);
+      formData.append("deactRemarks", deactivateRemarks);
+      formData.append("flag", flag);
+      formData.append("rep_type", reportType)
+      formData.append("desig_name", getNames([selectedDesig], designations, "id", "desig_name"))
+      formData.append("oldStat", accStatus)
 
-    if (selectedFile) {
-      formData.append("profileImg_file", selectedFile);
-    }
-    else{
-      formData.append("hdprofileImg",oldProfileImage)
-    }
+      if (selectedFile) {
+        formData.append("profileImg_file", selectedFile);
+      }
+      else {
+        formData.append("hdprofileImg", oldProfileImage)
+      }
 
-    /* ===== DEBUG (remove later) ===== */
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
-    // return;
+      /* ===== DEBUG (remove later) ===== */
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      // return;
 
-   
+
       const res = await axios.post("/AddNewUser", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -840,7 +840,7 @@ function AddUser() {
     const allowed = /jpeg|jpg|gif|jpe|png/;
     const ext = file.name.split('.').pop().toLowerCase();
     if (!allowed.test(ext)) {
-       setToast({
+      setToast({
         open: true,
         message: "Only jpg, jpeg, png, gif files are allowed",
         severity: "error",
@@ -863,12 +863,12 @@ function AddUser() {
     // 4. Safe filename check (no double extensions like file.php.jpg)
     const nameParts = file.name.split('.');
     const allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'jpe'];
-    const middleParts = nameParts.slice(1, -1); 
+    const middleParts = nameParts.slice(1, -1);
     const hasDangerousExt = middleParts.some(
       (part) => !allowedTypes.includes(part.toLowerCase())
     );
     if (hasDangerousExt) {
-        setToast({
+      setToast({
         open: true,
         message: "Invalid filename",
         severity: "error",
@@ -1037,121 +1037,121 @@ function AddUser() {
   };
 
   const handleAppLogout = async () => {
-  try {
-    const res = await axios.post("/logoutApp", { user_id: id });
-    if (res.data.success) {
+    try {
+      const res = await axios.post("/logoutApp", { user_id: id });
+      if (res.data.success) {
+        setToast({
+          open: true,
+          message: `${fullName} ${lastName} has been Logged Out!`,
+          severity: "success",
+        });
+        // Refresh user details to reflect updated app_stat
+        getUserDetails();
+      } else {
+        setToast({
+          open: true,
+          message: res.data.message || "Logout failed",
+          severity: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
       setToast({
         open: true,
-        message: `${fullName} ${lastName} has been Logged Out!`,
-        severity: "success",
-      });
-      // Refresh user details to reflect updated app_stat
-      getUserDetails();
-    } else {
-      setToast({
-        open: true,
-        message: res.data.message || "Logout failed",
+        message: "Server error during logout",
         severity: "error",
       });
     }
-  } catch (err) {
-    console.error("Logout error:", err);
-    setToast({
-      open: true,
-      message: "Server error during logout",
-      severity: "error",
-    });
-  }
-  finally{
-    closeConfirmationDialog()
-  }
-};
+    finally {
+      closeConfirmationDialog()
+    }
+  };
 
   const handleUserTypeChange = (e) => {
-  const selected = e.target.value;
-  const selectedObj = userTypes.find(
-    (u) => String(u.id) === String(selected),
-  );
-  const mng = selectedObj?.mng_type || 0;
-  setSelectedType(selected);
-  setMngType(mng);
+    const selected = e.target.value;
+    const selectedObj = userTypes.find(
+      (u) => String(u.id) === String(selected),
+    );
+    const mng = selectedObj?.mng_type || 0;
+    setSelectedType(selected);
+    setMngType(mng);
 
-  // RESET ALL VISIBILITY
-  setShowZone(false);
-  setShowRegion(false);
-  setShowArea(false);
-  setShowTerritory(false);
-  setShowBeat(false);
+    // RESET ALL VISIBILITY
+    setShowZone(false);
+    setShowRegion(false);
+    setShowArea(false);
+    setShowTerritory(false);
+    setShowBeat(false);
 
-  // ✅ CLEAR ERRORS for all territory fields when user type changes
-  setErrors((prev) => {
-    const updated = { ...prev };
-    delete updated.selectedType;
-    delete updated.zone;
-    delete updated.region;
-    delete updated.area;
-    delete updated.territory;
-    delete updated.beat;
-    return updated;
-  });
+    // ✅ CLEAR ERRORS for all territory fields when user type changes
+    setErrors((prev) => {
+      const updated = { ...prev };
+      delete updated.selectedType;
+      delete updated.zone;
+      delete updated.region;
+      delete updated.area;
+      delete updated.territory;
+      delete updated.beat;
+      return updated;
+    });
 
-  // RESET SELECTED VALUES too (so stale data doesn't linger)
-  setSelectedZones([]);
-  setSelectedRegions([]);
-  setSelectedAreas([]);
-  setSelectedTerritories([]);
-  setSelectedBeats([]);
+    // RESET SELECTED VALUES too (so stale data doesn't linger)
+    setSelectedZones([]);
+    setSelectedRegions([]);
+    setSelectedAreas([]);
+    setSelectedTerritories([]);
+    setSelectedBeats([]);
 
-  if (selected > 4) {
-    if (mng === 1) {
-      setShowZone(true);
-    }
-    if (mng === 2) {
-      setShowZone(true);
-      setShowRegion(true);
-    }
-    if (mng === 3) {
-      setShowZone(true);
-      setShowRegion(true);
-      setShowArea(true);
-    }
-    if (mng === 4) {
-      setShowZone(true);
-      setShowRegion(true);
-      setShowArea(true);
-      setShowTerritory(true);
-    }
-    if (mng === 0) {
-      if (Number(selected) === 12) {
-        return;
+    if (selected > 4) {
+      if (mng === 1) {
+        setShowZone(true);
       }
-      setShowZone(true);
-      setShowRegion(true);
-      setShowArea(true);
-      setShowTerritory(true);
-      setShowBeat(true);
+      if (mng === 2) {
+        setShowZone(true);
+        setShowRegion(true);
+      }
+      if (mng === 3) {
+        setShowZone(true);
+        setShowRegion(true);
+        setShowArea(true);
+      }
+      if (mng === 4) {
+        setShowZone(true);
+        setShowRegion(true);
+        setShowArea(true);
+        setShowTerritory(true);
+      }
+      if (mng === 0) {
+        if (Number(selected) === 12) {
+          return;
+        }
+        setShowZone(true);
+        setShowRegion(true);
+        setShowArea(true);
+        setShowTerritory(true);
+        setShowBeat(true);
+      }
     }
-  }
-};
+  };
 
-const formatDate = (val) => {
-  if (!val) return "";
+  const formatDate = (val) => {
+    if (!val) return "";
 
-  let d;
-  if (!isNaN(val)) {
-    // number (timestamp in seconds)
-    d = dayjs(val * 1000);
-  } else {
-    // ISO string
-    d = dayjs(val);
-  }
+    let d;
+    if (!isNaN(val)) {
+      // number (timestamp in seconds)
+      d = dayjs(val * 1000);
+    } else {
+      // ISO string
+      d = dayjs(val);
+    }
 
-  if (d.year() === 1900) return "";
+    if (d.year() === 1900) return "";
 
-  return d.format("DD-MMM-YYYY HH:mm:ss");
-};
+    return d.format("DD-MMM-YYYY HH:mm:ss");
+  };
 
- console.log("Selected buieness unit",selectedBU)
+  console.log("Selected buieness unit", selectedBU)
   return (
     <Layout>
       <Grid container spacing={2} sx={{ padding: "8px" }}>
@@ -1260,8 +1260,11 @@ const formatDate = (val) => {
                   size="small"
                   value={employeeCode}
                   required
-                  onBlur={(e) => checkEmpCodeDuplicate(e.target.value)} 
-                  onChange={(e) => setEmployeeCode(e.target.value)}
+                  onBlur={(e) => checkEmpCodeDuplicate(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setEmployeeCode(onlyText)
+                  }}
                   error={Boolean(errors.employeeCode || duplicateErrors.employeeCode)}
                   helperText={errors.employeeCode || duplicateErrors.employeeCode}
                 />
@@ -1274,7 +1277,8 @@ const formatDate = (val) => {
                   size="small"
                   value={fullName}
                   onChange={(e) => {
-                    handleFirstNameChange(e.target.value);
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    handleFirstNameChange(onlyText);
                   }}
                   error={Boolean(errors.fullName)}
                   helperText={errors.fullName}
@@ -1288,7 +1292,10 @@ const formatDate = (val) => {
                   fullWidth
                   size="small"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setLastName(onlyText)
+                  }}
                 />
               </Grid>
 
@@ -1321,10 +1328,11 @@ const formatDate = (val) => {
                     size="small"
                     label="Email"
                     value={email}
-                    onBlur={(e) => checkEmailDuplicate(e.target.value)} 
+                    onBlur={(e) => checkEmailDuplicate(e.target.value)}
                     onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (useEmail) setUserId(e.target.value);
+                      const onlyText = e.target.value.replace(/^\s+/, "");
+                      setEmail(onlyText);
+                      if (useEmail) setUserId(onlyText);
                     }}
                     fullWidth
                     error={Boolean(errors.email || duplicateErrors.email)}
@@ -1350,7 +1358,7 @@ const formatDate = (val) => {
                       textField: {
                         fullWidth: true,
                         size: "small",
-                        required:true,
+                        required: true,
                         error: Boolean(errors.dateOfBirth),
                         helperText: errors.dateOfBirth,
                       },
@@ -1365,7 +1373,10 @@ const formatDate = (val) => {
                   label="Any Other Reference"
                   fullWidth
                   value={otherRef}
-                  onChange={(e) => setOtherRef(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setOtherRef(onlyText)
+                  }}
                 />
               </Grid>
 
@@ -1406,10 +1417,10 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.employeeType && (
-                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
-                      {errors.employeeType }
-                    </Typography>
-                  )}
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
+                    {errors.employeeType}
+                  </Typography>
+                )}
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -1424,10 +1435,10 @@ const formatDate = (val) => {
                   required={true}
                 />
                 {errors.employeeStatus && (
-                    <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
-                      {errors.employeeStatus }
-                    </Typography>
-                  )}
+                  <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
+                    {errors.employeeStatus}
+                  </Typography>
+                )}
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -1456,7 +1467,10 @@ const formatDate = (val) => {
                   multiline
                   minRows={3}
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setAddress(onlyText)
+                  }}
                   error={Boolean(errors.address)}
                   helperText={errors.address}
                 />
@@ -1475,7 +1489,10 @@ const formatDate = (val) => {
                   fullWidth
                   size="small"
                   value={hq}
-                  onChange={(e) => setHQ(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setHQ(onlyText)
+                  }}
                   error={Boolean(errors.hq)}
                   helperText={errors.hq}
                   required
@@ -1622,41 +1639,41 @@ const formatDate = (val) => {
                 )}
               </Grid>
             </Grid>
-           {Number(flag)===0 &&
-            <Button
-              variant="contained"
-              sx={{ mt: 2 }}
-              onClick={() => {
-                if (!validate()) {
-                  setToast({
-                    open: true,
-                    message: "Please fix all mandotory fields",
-                    severity: "error",
-                  });
-                  return
-                };
-                setOpenSaveDialog(true);
-              }}
-            >
-             Add User
-            </Button>}
-            {Number(flag)===1 &&  Number(accStatus)===0 &&  Number(sessionId)!==id &&
-            <Button  variant="contained"
-              sx={{ mt: 2 }}
-              onClick={() => {
-                if (!validate()) {
-                  setToast({
-                    open: true,
-                    message: "Please fix all mandotory fields",
-                    severity: "error",
-                  });
-                  return
-                };
-                setOpenSaveDialog(true);
-              }}>
-              Update User
-            </Button>
-}
+            {Number(flag) === 0 &&
+              <Button
+                variant="contained"
+                sx={{ mt: 2 }}
+                onClick={() => {
+                  if (!validate()) {
+                    setToast({
+                      open: true,
+                      message: "Please fix all mandotory fields",
+                      severity: "error",
+                    });
+                    return
+                  };
+                  setOpenSaveDialog(true);
+                }}
+              >
+                Add User
+              </Button>}
+            {Number(flag) === 1 && Number(accStatus) === 0 && Number(sessionId) !== id &&
+              <Button variant="contained"
+                sx={{ mt: 2 }}
+                onClick={() => {
+                  if (!validate()) {
+                    setToast({
+                      open: true,
+                      message: "Please fix all mandotory fields",
+                      severity: "error",
+                    });
+                    return
+                  };
+                  setOpenSaveDialog(true);
+                }}>
+                Update User
+              </Button>
+            }
           </Box>
         </Grid>
 
@@ -1679,7 +1696,10 @@ const formatDate = (val) => {
                   fullWidth
                   size="small"
                   value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/^\s+/, "");
+                    setUserId(onlyText)
+                  }}
                   error={Boolean(errors.userId)}
                   helperText={errors.userId}
                   InputProps={{ readOnly: true }}
@@ -1692,7 +1712,10 @@ const formatDate = (val) => {
                   size="small"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    setPassword(onlyText)
+                  }}
                   error={Boolean(errors.password)}
                   helperText={errors.password}
                   sx={{ mt: 2 }}
@@ -1704,7 +1727,10 @@ const formatDate = (val) => {
                   size="small"
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    setConfirmPassword(onlyText)
+                  }}
                   error={Boolean(errors.confirmPassword)}
                   helperText={errors.confirmPassword}
                   sx={{ mt: 2 }}
@@ -1983,10 +2009,10 @@ const formatDate = (val) => {
                   value={repSubCutoff}
                   onChange={(e) => {
                     setRepSubCutoff(e.target.value)
-                     if(e.target.value==="3" && weekend.length===0){
+                    if (e.target.value === "3" && weekend.length === 0) {
                       setWeekend([1])
                     }
-                    if(e.target.value==="5" && rsDay===""){
+                    if (e.target.value === "5" && rsDay === "") {
                       setRsDay(1)
                     }
                   }}
@@ -2187,17 +2213,17 @@ const formatDate = (val) => {
           {toast.message}
         </Alert>
       </Snackbar>
-          <ConfirmationDialog
-                        open={confirmationDialog.open}
-                        onClose={closeConfirmationDialog}
-                        onConfirm={confirmationDialog.onConfirm}
-                        title={confirmationDialog.title}
-                        message={confirmationDialog.message}
-                        confirmText={confirmationDialog.confirmText}
-                        cancelText={confirmationDialog.cancelText}
-                        loading={modifyLoading}
-                        confirmColor={confirmationDialog.confirmColor}
-                      />
+      <ConfirmationDialog
+        open={confirmationDialog.open}
+        onClose={closeConfirmationDialog}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        message={confirmationDialog.message}
+        confirmText={confirmationDialog.confirmText}
+        cancelText={confirmationDialog.cancelText}
+        loading={modifyLoading}
+        confirmColor={confirmationDialog.confirmColor}
+      />
     </Layout>
   );
 }
