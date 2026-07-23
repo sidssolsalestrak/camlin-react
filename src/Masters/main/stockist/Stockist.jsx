@@ -158,7 +158,7 @@ const Stockist = () => {
             filterable: true,
         },
         {
-            field: "stk_name",
+            field: "sr_name",
             headerName: "PSM",
             filterable: true,
         },

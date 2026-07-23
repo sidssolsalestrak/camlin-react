@@ -343,7 +343,7 @@ function UserList() {
                 }}
                 onClick={() => handleUserClick(row)}
               >
-                {row.first_name} {row.last_name}
+                {row.full_name}
               </span>
             </div>
 

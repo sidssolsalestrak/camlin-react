@@ -14,6 +14,7 @@ import useToast from "../../../utils/useToast";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const menuStyle = {
@@ -32,6 +33,16 @@ const ProductCategory = () => {
     const [brandData, setbrandData] = useState([]);
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     /*---------- form fields ---------*/
     const [formData, setFormData] = useState({
         brand: "",
@@ -378,7 +389,7 @@ const ProductCategory = () => {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Product Category</h1>
+                    <h1 className="mainTitle">{masterPanel["PCAT"] || "Product Category"}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     <TabContext value={value}>
