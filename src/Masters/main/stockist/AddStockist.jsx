@@ -8,6 +8,7 @@ import { ImDownload3 } from "react-icons/im";
 import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useNavigate, useParams } from 'react-router-dom';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const boxStyle = { border: 1, borderColor: "divider", borderRadius: "5px", minHeight: "20vh", p: 1 }
 
@@ -28,6 +29,19 @@ const AddStockist = () => {
     const [loading, setloading] = useState(false);
     const [formData, setFormData] = useState(INITIAL_FORM_STATE)
     const [defaultUserId, setDefaultUserId] = useState(null);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // label derived from masterPanel with fallback
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
         userID: "",
@@ -102,7 +116,7 @@ const AddStockist = () => {
             return;
         }
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Stockist`,
+            title: `${decodedId ? "Edit" : "Add"} ${stkLabel}`,
             message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
@@ -184,8 +198,8 @@ const AddStockist = () => {
 
         // StockDetails validation
         if (!formData.type) newErrors.type = "The Type field is required.";
-        if (!formData.code || formData.code.trim() === "") newErrors.code = "Stockist Code is required";
-        if (!formData.name || formData.name.trim() === "") newErrors.name = "The Stockist Name field is required.";
+        if (!formData.code || formData.code.trim() === "") newErrors.code = `${stkLabel} Code is required`;
+        if (!formData.name || formData.name.trim() === "") newErrors.name = `The ${stkLabel} Name field is required.`;
 
         if (!formData.email || formData.email.trim() === "") newErrors.email = "The Email field is required.";
         else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
@@ -257,7 +271,7 @@ const AddStockist = () => {
             const res = await axios.post("/create_stockist", payload)
             //console.log("insert res", res);
             if (res?.data?.success) {
-                showAlert.success("Stockist added successfully")
+                showAlert.success(`${stkLabel} added successfully`)
                 setFormData(INITIAL_FORM_STATE)
             }
         } catch (error) {
@@ -287,7 +301,7 @@ const AddStockist = () => {
             }
             const res = await axios.post("/update_stockist", payload)
             if (res?.data?.success) {
-                showAlert.success("Stockist Updated successfully")
+                showAlert.success(`${stkLabel} Updated successfully`)
                 navigate(`/masters/stockist`)
             }
         } catch (error) {

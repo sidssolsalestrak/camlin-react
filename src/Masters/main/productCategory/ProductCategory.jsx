@@ -103,8 +103,9 @@ const ProductCategory = () => {
 
     const showSubmitConfirmation = () => {
         if (!validations()) return;
+        const label = masterPanel["PCAT"] || "Product Category";
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Category`,
+            title: `${decodedId ? "Edit" : "Add"} ${label}`,
             message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
@@ -135,8 +136,10 @@ const ProductCategory = () => {
             isValid = false;
         }
 
+        const label = masterPanel["PCAT"] || "Product Category";
+
         if (!formData.categoryCode || formData.categoryCode.trim() === "") {
-            newValidations.categoryCode = "The Category Code field is required";
+            newValidations.categoryCode = `The ${label} Code field is required`;
             isValid = false;
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryCode)) {
             newValidations.categoryCode = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
@@ -144,10 +147,10 @@ const ProductCategory = () => {
         }
 
         if (!formData.categoryName || formData.categoryName.trim() === "") {
-            newValidations.categoryName = "The Category Name field is required";
+            newValidations.categoryName = `The ${label} Name field is required`;
             isValid = false;
         } else if (formData.categoryName.trim().length < 3) {
-            newValidations.categoryName = "Category Name must be at least 3 characters";
+            newValidations.categoryName = `${label} Name must be at least 3 characters`;
             isValid = false;
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
             newValidations.categoryName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
@@ -169,7 +172,7 @@ const ProductCategory = () => {
             }
             const res = await axios.post("/addCat", payload)
             if (res?.data?.success) {
-                showAlert.success("Category Added Successfully")
+                showAlert.success(`${masterPanel["PCAT"] || "Product Category"} Added Successfully`)
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
@@ -182,7 +185,7 @@ const ProductCategory = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Category")
+                showAlert.error(`Failed to ADD ${masterPanel["PCAT"] || "Product Category"}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -203,7 +206,7 @@ const ProductCategory = () => {
             }
             const res = await axios.post("/editCat", payload)
             if (res?.data?.success) {
-                showAlert.success("Category Updated Successfully")
+                showAlert.success(`${masterPanel["PCAT"] || "Product Category"} Updated Successfully`)
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/cat`)
@@ -216,7 +219,7 @@ const ProductCategory = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Category")
+                showAlert.error(`Failed to Update ${masterPanel["PCAT"] || "Product Category"}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -272,7 +275,7 @@ const ProductCategory = () => {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteCat/${id}`);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Category")
+                showAlert.success(`Successfully Deleted ${masterPanel["PCAT"] || "Product Category"}`)
                 fetchTableData();
             }
         } catch (error) {
@@ -299,13 +302,13 @@ const ProductCategory = () => {
         },
         {
             field: "cat_code",
-            headerName: "Category Code",
+            headerName: `${masterPanel["PCAT"] || "Product Category"} Code`,
             filterable: true,
             sortable: true
         },
         {
             field: "cat_name",
-            headerName: "Category",
+            headerName: masterPanel["PCAT"] || "Product Category",
             filterable: true,
             sortable: true
         }, {
@@ -379,7 +382,7 @@ const ProductCategory = () => {
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Product Category" },
+            { label: masterPanel["PCAT"] ? `${masterPanel["PCAT"]}` : "Product Category" },
         ]}>
             <Box
                 p={2}
@@ -400,7 +403,7 @@ const ProductCategory = () => {
                                     <Tab sx={tabStyle} label="VIEW LIST" value="2" />
                                 </TabList>
                             </Box> :
-                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Product Category Details</Typography>
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["PCAT"]} Details</Typography>
                         }
                         {/*---------------- Add section--------------- */}
                         <TabPanel value="1">
@@ -424,7 +427,7 @@ const ProductCategory = () => {
                                         formDataChange("categoryCode", onlyText)
                                     }}
                                     required size='small'
-                                    variant='outlined' label="Product Category Code"
+                                    variant='outlined' label={masterPanel["PCAT"] ? `${masterPanel["PCAT"]} Code` : "Product Category Code"}
                                     error={!!validation.categoryCode}
                                     helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryCode}</span>} />
                                 <TextField
@@ -434,7 +437,7 @@ const ProductCategory = () => {
                                         formDataChange("categoryName", onlyText)
                                     }}
                                     required size='small'
-                                    variant='outlined' label="Product Category Name"
+                                    variant='outlined' label={masterPanel["PCAT"] ? `${masterPanel["PCAT"]} Name` : "Product Category Name"}
                                     error={!!validation.categoryName}
                                     helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
                             </Box>

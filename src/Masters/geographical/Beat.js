@@ -14,9 +14,7 @@ import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
-
-const DEFAULT_AREA = { id: "0", area_name: "Select Area" }
-const DEFAULT_TERRITORY = { id: "0", ter_name: "Select Territory" }
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function Beat() {
 
@@ -47,6 +45,23 @@ export default function Beat() {
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
     const location = useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+
+    const DEFAULT_AREA = { id: "0", area_name: `Select ${areaLabel}` }
+    const DEFAULT_TERRITORY = { id: "0", ter_name: `Select ${territoryLabel}` }
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchAllBeat()
@@ -176,7 +191,7 @@ export default function Beat() {
 
         if (!beatName || beatName.trim() === "") {
             setBeatError(true)
-            setBeatErrorMsg("The Beat Name field is required.")
+            setBeatErrorMsg(`The ${beatLabel} Name field is required.`)
             isValid = false
         }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(beatName)) {
             setBeatError(true)
@@ -264,8 +279,8 @@ export default function Beat() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedEditBeatId ? "Edit" : "Add"} Beat`,
-            message: `Are you sure you want to ${decodedEditBeatId ? "Edit" : "Add"} this Beat?`,
+            title: `${decodedEditBeatId ? "Edit" : "Add"} ${beatLabel}`,
+            message: `Are you sure you want to ${decodedEditBeatId ? "Edit" : "Add"} this ${beatLabel}?`,
             confirmText: decodedEditBeatId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -293,8 +308,8 @@ export default function Beat() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "ter_name", headerName: "Territory Name", filterable: true, sortable: true },
-        { field: "beat_name", headerName: "Beat Name", filterable: true, sortable: true },
+        { field: "ter_name", headerName: `${territoryLabel} Name`, filterable: true, sortable: true },
+        { field: "beat_name", headerName: `${beatLabel} Name`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -317,7 +332,7 @@ export default function Beat() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: "/masters/beat_mas" },
                 { label: " Geographical", path: "/masters/beat_mas" },
-                { label: "Beat", path: location.pathname },
+                { label: beatLabel, path: location.pathname },
             ]}>
             <Box
                 p={2}
@@ -327,7 +342,7 @@ export default function Beat() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Beat</h1>
+                    <h1 className="mainTitle">{beatLabel}</h1>
                 </Box>
 
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
@@ -338,7 +353,7 @@ export default function Beat() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Beat Details</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {beatLabel} Details</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
@@ -358,10 +373,10 @@ export default function Beat() {
                                     <TextField
                                         required
                                         {...params}
-                                        label="Area Name"
+                                        label={`${areaLabel} Name`}
                                         size="small"
                                         error={areaError}
-                                        helperText={areaError ? "The Area Name field is required." : ""}
+                                        helperText={areaError ? `The ${areaLabel} Name field is required.` : ""}
                                     />
                                 )}
                             />
@@ -377,16 +392,16 @@ export default function Beat() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Territory Name"
+                                        label={`${territoryLabel} Name`}
                                         size="small"
                                         error={territoryError}
                                         required
-                                        helperText={territoryError ? "The Territory Name field is required." : ""}
+                                        helperText={territoryError ? `The ${territoryLabel} Name field is required.` : ""}
                                     />
                                 )}
                             />
                             <TextField
-                                label="Beat Name"
+                                label={`${beatLabel} Name`}
                                 size="small"
                                 value={beatName}
                                 onChange={(e) => {

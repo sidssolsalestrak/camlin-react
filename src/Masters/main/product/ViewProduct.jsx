@@ -11,6 +11,7 @@ import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const menuStyle = {
     PaperProps: {
@@ -54,6 +55,20 @@ const ViewProduct = () => {
         productName: "",
         subCatName: ""
     })
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const prodLabel = masterPanel["PROD"] || "Product";
+    const subCatLabel = masterPanel["PSUB"] || "Sub Category";
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*---------- decode values  ---------*/
     const decodedProductName = safeAtob(searchParams.get('product'));
@@ -98,8 +113,8 @@ const ViewProduct = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Product`,
-            message: `Are you sure you want to delete this Product?`,
+            title: `Delete ${prodLabel}`,
+            message: `Are you sure you want to delete this ${prodLabel}?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -131,7 +146,7 @@ const ViewProduct = () => {
         },
         {
             field: "sub_name",
-            headerName: "Subcategory Name",
+            headerName: `${subCatLabel} Name`,
             filterable: true,
         },
         {
@@ -141,12 +156,12 @@ const ViewProduct = () => {
         },
         {
             field: "prod_type",
-            headerName: "Product Type",
+            headerName: `${prodLabel} Type`,
             filterable: true,
         },
         {
             field: "prod_name",
-            headerName: "Product Name",
+            headerName: `${prodLabel} Name`,
             filterable: true,
         },
         {
@@ -156,7 +171,7 @@ const ViewProduct = () => {
         },
         {
             field: "wd_price",
-            headerName: "Stockist Price (PTS)",
+            headerName: `${stkLabel} Price (PTS)`,
             filterable: true,
         },
         {
@@ -200,7 +215,7 @@ const ViewProduct = () => {
         },
         {
             field: "sub_name",
-            headerName: "Subcategory Name",
+            headerName: `${subCatLabel} Name`,
             filterable: true,
         },
         {
@@ -210,12 +225,12 @@ const ViewProduct = () => {
         },
         {
             field: "prod_type",
-            headerName: "Product Type",
+            headerName: `${prodLabel} Type`,
             filterable: true,
         },
         {
             field: "prod_name",
-            headerName: "Product Name",
+            headerName: `${prodLabel} Name`,
             filterable: true,
         },
         {
@@ -225,7 +240,7 @@ const ViewProduct = () => {
         },
         {
             field: "wd_price",
-            headerName: "Stockist Price (PTS)",
+            headerName: `${stkLabel} Price (PTS)`,
             filterable: true,
         },
         {
@@ -305,7 +320,7 @@ const ViewProduct = () => {
             const res = await axios.post(`/prod_delete/${id}`);
             //console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product")
+                showAlert.success(`Successfully Deleted ${prodLabel}`)
                 fetchData({ name: decodedProductName, cat: decodedSubCategory });
             }
         } catch (error) {
@@ -333,24 +348,24 @@ const ViewProduct = () => {
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Product View" },
+            { label: `${prodLabel} View` },
         ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                     {/* <Typography sx={style}>Product View</Typography> */}
                     <Box>
-                        <h1 className="mainTitle">Product View</h1>
+                        <h1 className="mainTitle">{prodLabel} View</h1>
                     </Box>
-                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add New Product</Button>
+                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add New {prodLabel}</Button>
                 </Box>
                 <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap" }}>
                     <TextField value={formData.productName} sx={{ width: "200px" }} size='small' variant='outlined'
-                        label="Product Name" placeholder='Enter Product Name' onChange={(e) => handleChange("productName", e.target.value)} />
+                        label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} onChange={(e) => handleChange("productName", e.target.value)} />
                     <FormControl sx={{ width: "200px" }} size="small" >
-                        <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name" MenuProps={menuStyle}
+                        <InputLabel id="SubCategoryName">{subCatLabel} Name</InputLabel>
+                        <Select value={formData.subCatName} id='SubCategoryName' label={`${subCatLabel} Name`} MenuProps={menuStyle}
                             labelId="SubCategoryName" variant="outlined" onChange={(e) => handleChange("subCatName", e.target.value)}>
-                            <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="">Select {subCatLabel}</MenuItem>
                             {subCat?.map((item, index) => (
                                 <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.sub_name}</MenuItem>
                             ))}

@@ -11,6 +11,7 @@ import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function Area() {
 
@@ -39,6 +40,20 @@ export default function Area() {
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
     const location = useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const stateLabel = "State"; // No STAT tag_id in master_panel - stays static
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchArea()
@@ -46,16 +61,16 @@ export default function Area() {
         fetchState()
     }, [])
 
-      useEffect(() => {
-         try {
-           const accStat = localStorage.getItem("acc_stat");
-           setAccStat(accStat);
-           console.log("Acc Stat",accStat)
-         } catch (err) {
-           console.log(err);
-         }
-   
-     }, []);
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
+
+    }, []);
 
     useEffect(() => {
         if (!decodedAreaId) {
@@ -143,9 +158,9 @@ export default function Area() {
 
         if (!areaName || areaName.trim() === "") {
             setAreaError(true)
-            setAreaErrorMsg("The Area Name field is required.")
+            setAreaErrorMsg(`The ${areaLabel} Name field is required.`)
             isValid = false
-        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(areaName)) {
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(areaName)) {
             setAreaError(true)
             setAreaErrorMsg("Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed")
             isValid = false
@@ -234,8 +249,8 @@ export default function Area() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedAreaId ? "Edit" : "Add"} Area`,
-            message: `Are you sure you want to ${decodedAreaId ? "Edit" : "Add"} this Area?`,
+            title: `${decodedAreaId ? "Edit" : "Add"} ${areaLabel}`,
+            message: `Are you sure you want to ${decodedAreaId ? "Edit" : "Add"} this ${areaLabel}?`,
             confirmText: decodedAreaId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -255,9 +270,9 @@ export default function Area() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "reg_name", headerName: "REGION", filterable: true, sortable: true },
-        { field: "state_name", headerName: "STATE", filterable: true, sortable: true },
-        { field: "area_name", headerName: "AREA", filterable: true, sortable: true },
+        { field: "reg_name", headerName: regionLabel.toUpperCase(), filterable: true, sortable: true },
+        { field: "state_name", headerName: stateLabel.toUpperCase(), filterable: true, sortable: true },
+        { field: "area_name", headerName: areaLabel.toUpperCase(), filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -265,10 +280,10 @@ export default function Area() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
-                    { [0,2].includes(Number(accStat)) &&
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) &&
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
                     }
                 </>
             )
@@ -281,7 +296,7 @@ export default function Area() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: "/masters/area_mas/" },
                 { label: " Geographical", path: "/masters/area_mas/" },
-                { label: "Area", path: location.pathname },
+                { label: areaLabel, path: location.pathname },
             ]}
         >
             <Box
@@ -292,7 +307,7 @@ export default function Area() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Area</h1>
+                    <h1 className="mainTitle">{areaLabel}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     {!decodedAreaId ?
@@ -302,13 +317,13 @@ export default function Area() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Area Details</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {areaLabel} Details</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
                             <Autocomplete
-                                options={[{ id: "0", reg_name: "Select Region" }, ...allRegion]}
+                                options={[{ id: "0", reg_name: `Select ${regionLabel}` }, ...allRegion]}
                                 getOptionLabel={(option) => option.reg_name || ""}
                                 value={selRegion}
                                 onChange={(e, newValue) => {
@@ -319,17 +334,17 @@ export default function Area() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Region Name"
+                                        label={`${regionLabel} Name`}
                                         size="small"
                                         error={regionError}
                                         required
-                                        helperText={regionError ? "The Region Name field is required." : ""}
+                                        helperText={regionError ? `The ${regionLabel} Name field is required.` : ""}
                                     />
                                 )}
                             />
 
                             <Autocomplete
-                                options={[{ id: "0", state_name: "Select State" }, ...allState]}
+                                options={[{ id: "0", state_name: `Select ${stateLabel}` }, ...allState]}
                                 getOptionLabel={(option) => option.state_name || ""}
                                 value={selState}
                                 onChange={(e, newValue) => {
@@ -340,16 +355,16 @@ export default function Area() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="State Name"
+                                        label={`${stateLabel} Name`}
                                         size="small"
                                         error={stateError}
                                         required
-                                        helperText={stateError ? "The State Name field is required." : ""}
+                                        helperText={stateError ? `The ${stateLabel} Name field is required.` : ""}
                                     />
                                 )}
                             />
 
-                            <TextField label="Area Name" size="small" value={areaName}
+                            <TextField label={`${areaLabel} Name`} size="small" value={areaName}
                                 onChange={(e) => {
                                     const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                     setAreaName(onlyText)
@@ -359,16 +374,16 @@ export default function Area() {
                                 required
                                 helperText={areaError ? areaErrorMsg : ""}
                             />
-                            {(!decodedAreaId && [0,1].includes(Number(accStat)))&&
-                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                                onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
-                                {decodedAreaId ? "Update" : "Create"}
-                            </Button>}
-                            {(decodedAreaId && [0,2].includes(Number(accStat))) &&
-                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                                onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
-                             Update
-                            </Button>
+                            {(!decodedAreaId && [0, 1].includes(Number(accStat))) &&
+                                <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                    onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
+                                    {decodedAreaId ? "Update" : "Create"}
+                                </Button>}
+                            {(decodedAreaId && [0, 2].includes(Number(accStat))) &&
+                                <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                    onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
+                                    Update
+                                </Button>
                             }
                         </Box>
                     )}

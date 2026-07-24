@@ -17,7 +17,8 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Download } from '../utils/downloadExcel/Download'
 import useToast from "../utils/useToast";
-import {DownloadNoCell} from ".././utils/xlsnoCellsDownload/DownloadNoCell";
+import { DownloadNoCell } from ".././utils/xlsnoCellsDownload/DownloadNoCell";
+import { getMasterPanel } from "../services/masterPanelService";
 
 function UserLog() {
   const location = useLocation();
@@ -37,6 +38,25 @@ function UserLog() {
     userType: 0,
     user: 0,
   });
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  // labels derived from masterPanel with fallbacks
+  const userLabel = masterPanel["USER"] || "Users";
+  const departmentLabel = masterPanel["DEPT"] || "Department";
+  const zonelabel = masterPanel["ZONE"] || "Zone";
+  const regLabel = masterPanel["REGN"] || "Region";
+  const areaLabel = masterPanel["AREA"] || "Area";
+  const territoryLabel = masterPanel["TERR"] || "Territory";
+  const desigLabel = masterPanel["DESI"] || "Designation";
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const decode = (val) => {
     try {
@@ -59,12 +79,12 @@ function UserLog() {
   }, []);
 
   const fetchUserTypes = async () => {
-    try{
-    const res = await api.post("/getUsertypeList");
-    setUserTypeList(res.data.userRes || []);
+    try {
+      const res = await api.post("/getUsertypeList");
+      setUserTypeList(res.data.userRes || []);
     }
-    catch(err){
-      console.log("fetch user type Err",err)
+    catch (err) {
+      console.log("fetch user type Err", err)
     }
   };
 
@@ -89,12 +109,12 @@ function UserLog() {
 
   const fetchUsersByType = async (userType) => {
     if (!userType) return;
-    try{
-    const res = await api.post("/getUserByType", { userType });
-    setUserList(res.data.data || []);
+    try {
+      const res = await api.post("/getUserByType", { userType });
+      setUserList(res.data.data || []);
     }
-    catch(err){
-      console.log("fetch userType err",err)
+    catch (err) {
+      console.log("fetch userType err", err)
     }
   };
 
@@ -107,25 +127,25 @@ function UserLog() {
   }, [filters.userType]);
 
   const fetchTable = async () => {
-    try{
-    const res = await api.post("/getUserLog", {
-      module: decodedParams.module,
-      fromDt: decodedParams.fromDt,
-      toDt: decodedParams.toDt,
-      userType: decodedParams.userType,
-      userId: decodedParams.user,
-    });
+    try {
+      const res = await api.post("/getUserLog", {
+        module: decodedParams.module,
+        fromDt: decodedParams.fromDt,
+        toDt: decodedParams.toDt,
+        userType: decodedParams.userType,
+        userId: decodedParams.user,
+      });
 
-    setTableData(
-      (res.data.data || []).map((item, i) => ({
-        ...item,
-        sl: i + 1,
-      })),
-    );
-  }
-  catch(err){
-    console.log("fetch table Error",err)
-  }
+      setTableData(
+        (res.data.data || []).map((item, i) => ({
+          ...item,
+          sl: i + 1,
+        })),
+      );
+    }
+    catch (err) {
+      console.log("fetch table Error", err)
+    }
   };
 
   useEffect(() => {
@@ -151,7 +171,7 @@ function UserLog() {
 
   const handleLoad = () => {
     if (!filters.userType) {
-      toast.warning("Select User Type");
+      toast.warning(`Select ${userLabel} Type`);
       return;
     }
 
@@ -170,7 +190,7 @@ function UserLog() {
       field: "name",
       headerName: "Name",
       width: 220,
-      sortable:true,
+      sortable: true,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span className="marker-link">
@@ -189,12 +209,12 @@ function UserLog() {
         </div>
       ),
     },
-    { field: "client_alias", headerName: "User Type", sortable:true, width: 150 },
-    { field: "module", headerName: "Module", sortable:true, width: 120 },
+    { field: "client_alias", headerName: `${userLabel} Type`, sortable: true, width: 150 },
+    { field: "module", headerName: "Module", sortable: true, width: 120 },
     {
       field: "log_type",
       headerName: "Log Type",
-      sortable:true,
+      sortable: true,
       width: 150,
       renderCell: ({ value }) => {
         if (value == 1) return "System Login";
@@ -205,113 +225,113 @@ function UserLog() {
         return "-";
       },
     },
-    { field: "browser", headerName: "Browser" ,sortable:true, },
-    { field: "browser_ver", headerName: "Version" ,sortable:true, },
-    { field: "os", headerName: "OS", sortable:true, },
-    { field: "device", headerName: "Device", sortable:true, },
+    { field: "browser", headerName: "Browser", sortable: true, },
+    { field: "browser_ver", headerName: "Version", sortable: true, },
+    { field: "os", headerName: "OS", sortable: true, },
+    { field: "device", headerName: "Device", sortable: true, },
     {
       field: "date",
       headerName: "Date",
-      sortable:true,
+      sortable: true,
       width: 180,
       renderCell: ({ value }) =>
         value ? dayjs(value).format("DD MMM YYYY HH:mm:ss") : "-",
     },
   ];
 
-  const ExcelColumn=[
+  const ExcelColumn = [
     {
-      field:"name",
-      headerName:"Name"
+      field: "name",
+      headerName: "Name"
     },
     {
-      field:"user_desig",
-      headerName:"Designation"
+      field: "user_desig",
+      headerName: desigLabel
     },
     {
-      field:"client_alias",
-      headerName:"User type"
+      field: "client_alias",
+      headerName: `${userLabel} type`
     },
     {
-      field:"module",
-      headerName:"Module"
+      field: "module",
+      headerName: "Module"
     },
     {
-      field:"log_type",
-      headerName:"Log Type"
+      field: "log_type",
+      headerName: "Log Type"
     },
     {
-      field:"browser",
-      headerName:"Browser"
+      field: "browser",
+      headerName: "Browser"
     },
     {
-      field:"browser_ver",
-      headerName:"Version"
+      field: "browser_ver",
+      headerName: "Version"
     },
     {
-      field:"os",
-      headerName:"OS"
+      field: "os",
+      headerName: "OS"
     },
     {
-      field:"device",
-      headerName:"Device"
+      field: "device",
+      headerName: "Device"
     },
     {
-      field:"date",
-      headerName:"Date",
+      field: "date",
+      headerName: "Date",
     }
 
   ]
 
   const handleDownloadExcel = () => {
-  try {
-    const safeColumns = ExcelColumn.map(
-      ({ renderCell, renderHeader, ...rest }) => rest,
-    );
+    try {
+      const safeColumns = ExcelColumn.map(
+        ({ renderCell, renderHeader, ...rest }) => rest,
+      );
 
-    let excelData = tableData.map((val) => ({
-      ...val,
-      name: val.first_name || val.last_name
-        ? `${val.first_name || ''} ${val.last_name || ''}`.trim()
-        : '-',
-      user_desig: val.user_desig || '-',
-      client_alias: val.client_alias || '-',
-      module: val.module || '-',
-      log_type: val.log_type || '-',
-      browser: val.browser || '-',
-      browser_ver: val.browser_ver || '-',
-      os: val.os || '-',
-      device: val.device || '-',
-      date: val.date && dayjs(val.date).isValid()
-        ? dayjs(val.date).format(`DD-MMM-YYYY\nHH:mm:ss`)
-        : '-'
-    }));
+      let excelData = tableData.map((val) => ({
+        ...val,
+        name: val.first_name || val.last_name
+          ? `${val.first_name || ''} ${val.last_name || ''}`.trim()
+          : '-',
+        user_desig: val.user_desig || '-',
+        client_alias: val.client_alias || '-',
+        module: val.module || '-',
+        log_type: val.log_type || '-',
+        browser: val.browser || '-',
+        browser_ver: val.browser_ver || '-',
+        os: val.os || '-',
+        device: val.device || '-',
+        date: val.date && dayjs(val.date).isValid()
+          ? dayjs(val.date).format(`DD-MMM-YYYY\nHH:mm:ss`)
+          : '-'
+      }));
 
-    let filteredusrName = userTypeList.filter((val) => Number(val.id) == Number(filters.userType));
-    console.log("filtered user types", filteredusrName);
-    let UserTypeName = filters.userType === 2 ? "Super Admin" : filteredusrName[0]?.client_alias;
-    let dynamicTitle3 = `User Type -${UserTypeName}`;
+      let filteredusrName = userTypeList.filter((val) => Number(val.id) == Number(filters.userType));
+      console.log("filtered user types", filteredusrName);
+      let UserTypeName = filters.userType === 2 ? "Super Admin" : filteredusrName[0]?.client_alias;
+      let dynamicTitle3 = `User Type -${UserTypeName}`;
 
-    const moduleLabelMap = {
-      "0": "Log In",
-      "2": "App Log In",
-      "3": "App Sync",
-    };
+      const moduleLabelMap = {
+        "0": "Log In",
+        "2": "App Log In",
+        "3": "App Sync",
+      };
 
-    let dynamicTitle2 =
-      filters.module !== "-1"
-        ? `Module - ${moduleLabelMap[filters.module] || "-"}`
-        :false;
+      let dynamicTitle2 =
+        filters.module !== "-1"
+          ? `Module - ${moduleLabelMap[filters.module] || "-"}`
+          : false;
 
-      let dynamicTitle4=`Date-${dayjs(filters.fromDt).format('DD MMM YYYY')} to ${dayjs(filters.toDt).format('DD MMM YYYY')}` 
+      let dynamicTitle4 = `Date-${dayjs(filters.fromDt).format('DD MMM YYYY')} to ${dayjs(filters.toDt).format('DD MMM YYYY')}`
 
-    DownloadNoCell(excelData, safeColumns, 'User Logs', setProgress, toast, 'User_Logs', { titleRow2: dynamicTitle2, titleRow3: dynamicTitle3, titleRow4: dynamicTitle4 });
+      DownloadNoCell(excelData, safeColumns, 'User Logs', setProgress, toast, 'User_Logs', { titleRow2: dynamicTitle2, titleRow3: dynamicTitle3, titleRow4: dynamicTitle4 });
 
-  } catch (err) {
-    console.log("Export excel Error", err);
-  }
-};
-  console.log("User list",userTypeList)
+    } catch (err) {
+      console.log("Export excel Error", err);
+    }
+  };
+  console.log("User list", userTypeList)
 
   return (
     <Layout
@@ -319,11 +339,11 @@ function UserLog() {
         { label: "Home", path: "/" },
         { label: "Master", path: location.pathname },
         { label: "Users", path: location.pathname },
-        { label: "User Log", path: location.pathname },
+        { label: `${userLabel} Log`, path: location.pathname },
       ]}
     >
       <Box p={2} display="flex" flexDirection="column" gap={2}>
-        <h2>User Log Details</h2>
+        <h2>{userLabel} Log Details</h2>
 
         <Grid
           container
@@ -383,10 +403,10 @@ function UserLog() {
 
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>User Type</InputLabel>
+              <InputLabel>{userLabel} Type</InputLabel>
               <Select
                 value={filters.userType}
-                label="User Type"
+                label={`${userLabel} Type`}
                 onChange={(e) => handleChange("userType", e.target.value)}
               >
                 {/* ALL */}
@@ -409,10 +429,10 @@ function UserLog() {
 
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>User</InputLabel>
+              <InputLabel>{userLabel}</InputLabel>
               <Select
                 value={filters.user}
-                label="User"
+                label={userLabel}
                 onChange={(e) => handleChange("user", e.target.value)}
                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
               >
@@ -433,7 +453,7 @@ function UserLog() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 1, lg: 1 }}>
-            <Button fullWidth variant="contained" onClick={()=>handleDownloadExcel()} color="warning">
+            <Button fullWidth variant="contained" onClick={() => handleDownloadExcel()} color="warning">
               Excel
             </Button>
           </Grid>

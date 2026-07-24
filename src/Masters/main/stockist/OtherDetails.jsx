@@ -2,6 +2,7 @@ import { Autocomplete, Box, FormControl, FormControlLabel, FormLabel, InputLabel
 import React, { useEffect } from 'react'
 import { useState } from 'react'
 import axios from "../../../services/api";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const style = {
     color: "#1a1917",
@@ -29,6 +30,22 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     const [city, setcity] = useState([])
     const [stockCat, setstockCat] = useState([])
     const [matGroup, setmatGroup] = useState([])
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const resetFields = (fields) => {
         fields.forEach((field) => handleChangeForm(field, field === "user" ? [] : ""));
@@ -226,8 +243,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
             <Typography sx={style}>Other Details</Typography>
             <FormControl fullWidth size="small" required>
-                <InputLabel id="zone">Zone</InputLabel>
-                <Select value={formData.zone} id='zone' label="Zone" error={!!errors.zone} MenuProps={menuStyle}
+                <InputLabel id="zone">{zoneLabel}</InputLabel>
+                <Select value={formData.zone} id='zone' label={zoneLabel} error={!!errors.zone} MenuProps={menuStyle}
                     labelId="zone" variant="outlined"
                     onChange={(e) => {
                         handleChangeForm("zone", e.target.value);
@@ -248,8 +265,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Region">Region</InputLabel>
-                <Select value={formData.region} id='Region' label="Region" error={!!errors.region} MenuProps={menuStyle}
+                <InputLabel id="Region">{regionLabel}</InputLabel>
+                <Select value={formData.region} id='Region' label={regionLabel} error={!!errors.region} MenuProps={menuStyle}
                     labelId="Region" variant="outlined"
                     onChange={(e) => {
                         handleChangeForm("region", e.target.value);
@@ -266,8 +283,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Area">Area</InputLabel>
-                <Select value={formData.area} id='Area' label="Area" error={!!errors.area} MenuProps={menuStyle}
+                <InputLabel id="Area">{areaLabel}</InputLabel>
+                <Select value={formData.area} id='Area' label={areaLabel} error={!!errors.area} MenuProps={menuStyle}
                     labelId="Area" variant="outlined"
                     onChange={(e) => {
                         handleChangeForm("area", e.target.value);
@@ -283,8 +300,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Territory">Territory</InputLabel>
-                <Select value={formData.teritory} id='Territory' label="Territory" error={!!errors.teritory} MenuProps={menuStyle}
+                <InputLabel id="Territory">{territoryLabel}</InputLabel>
+                <Select value={formData.teritory} id='Territory' label={territoryLabel} error={!!errors.teritory} MenuProps={menuStyle}
                     labelId="Territory" variant="outlined" onChange={(e) => handleChangeForm("teritory", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {teritory?.map((val) => (
@@ -373,8 +390,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" >
-                <InputLabel id="category">Stockist Category</InputLabel>
-                <Select value={formData.category} id='category' label="Stockist Category" MenuProps={menuStyle}
+                <InputLabel id="category">{stkLabel} Category</InputLabel>
+                <Select value={formData.category} id='category' label={`${stkLabel} Category`} MenuProps={menuStyle}
                     labelId="category" variant="outlined" onChange={(e) => handleChangeForm("category", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {stockCat?.map((val) => (
@@ -384,8 +401,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" >
-                <InputLabel id="matrixGroup">Stockist Matrix Group</InputLabel>
-                <Select value={formData.matrixGroup} id='matrixGroup' label="Stockist Matrix Group" MenuProps={menuStyle}
+                <InputLabel id="matrixGroup">{stkLabel} Matrix Group</InputLabel>
+                <Select value={formData.matrixGroup} id='matrixGroup' label={`${stkLabel} Matrix Group`} MenuProps={menuStyle}
                     labelId="matrixGroup" variant="outlined" onChange={(e) => handleChangeForm("matrixGroup", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {matGroup?.map((val) => (
