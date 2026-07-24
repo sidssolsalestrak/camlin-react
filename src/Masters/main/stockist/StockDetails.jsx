@@ -3,6 +3,7 @@ import React from 'react'
 import { useEffect } from 'react'
 import { useState } from 'react'
 import axios from "../../../services/api";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const style = {
     color: "#1a1917",
@@ -31,6 +32,19 @@ const tooltipSx = {
 
 const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     const [type, setType] = useState([]);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // label derived from masterPanel with fallback
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     //tooltip
     const [open, setOpen] = React.useState(false);
     const handleTooltipClose = () => {
@@ -61,7 +75,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
-            <Typography sx={style}>Stockist Details</Typography>
+            <Typography sx={style}>{stkLabel} Details</Typography>
             <FormControl fullWidth size="small" required>
                 <InputLabel id="type">Type</InputLabel>
                 <Select value={formData.type} id='type' label="Type" error={!!errors.type}

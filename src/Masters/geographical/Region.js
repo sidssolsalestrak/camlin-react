@@ -11,6 +11,7 @@ import DataTable from "../../utils/dataTable";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function Region() {
 
@@ -35,6 +36,16 @@ export default function Region() {
     const [accStat, setAccStat] = useState(null)
     const location = useLocation()
 
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -46,15 +57,15 @@ export default function Region() {
     }, [])
 
     useEffect(() => {
-         try {
-           const accStat = localStorage.getItem("acc_stat");
-           setAccStat(accStat);
-           console.log("Acc Stat",accStat)
-         } catch (err) {
-           console.log(err);
-         }
-   
-     }, []);
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
+
+    }, []);
 
     useEffect(() => {
         if (!decodedEditRegionId) {
@@ -108,24 +119,27 @@ export default function Region() {
         }
     }
 
+    // AFTER
     const validateRegion = () => {
         let isValid = true
+        const regLabel = masterPanel["REGN"] || "Region"
+        const zoneLabel = masterPanel["ZONE"] || "Zone"
         setZoneError(false); setZoneErrMsg("")
         setRegionError(false); setRegionErrMsg("")
 
         if (Number(selectedZone) === 0) {
             setZoneError(true)
-            setZoneErrMsg("Zone name is required")
+            setZoneErrMsg(`${zoneLabel} name is required`)
             isValid = false
         }
 
         if (!regionName || regionName.trim() === "") {
             setRegionError(true)
-            setRegionErrMsg("The Region Name field is required")
+            setRegionErrMsg(`The ${regLabel} Name field is required`)
             isValid = false
         } else if (regionName.trim().length < 3) {
             setRegionError(true)
-            setRegionErrMsg("Region Name must be at least 3 characters")
+            setRegionErrMsg(`${regLabel} Name must be at least 3 characters`)
             isValid = false
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(regionName)) {
             setRegionError(true)
@@ -139,6 +153,7 @@ export default function Region() {
 
         return isValid
     }
+
     const handleSubmit = async () => {
         try {
             setModifyLoading(true)
@@ -155,7 +170,7 @@ export default function Region() {
             } else {
                 let response = await api.post("/regionCreate", { zone_id: selectedZone, regName: regionName.trim() })
                 if (response.data.success) {
-                    toast.success("Region added successfully")
+                    toast.success(`${masterPanel["REGN"] || "Region"} added successfully`)
                     setSelectedZone("0")
                     setRegionName("")
                     fetchRegData()
@@ -203,9 +218,10 @@ export default function Region() {
     }
 
     const showSubmitConfirmation = () => {
+        const label = masterPanel["REGN"] || "Region"
         showConfirmationDialog({
-            title: `${decodedEditRegionId ? "Edit" : "Add"} Region`,
-            message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this Region?`,
+            title: `${decodedEditRegionId ? "Edit" : "Add"} ${label}`,
+            message: `Are you sure you want to ${decodedEditRegionId ? "Edit" : "Add"} this ${label}?`,
             confirmText: decodedEditRegionId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -225,8 +241,8 @@ export default function Region() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "zone_name", headerName: "ZONE", filterable: true, sortable: true },
-        { field: "reg_name", headerName: "REGION NAME", filterable: true, sortable: true },
+        { field: "zone_name", headerName: (masterPanel["ZONE"] || "ZONE").toUpperCase(), filterable: true, sortable: true },
+        { field: "reg_name", headerName: `${(masterPanel["REGN"] || "Region").toUpperCase()} NAME`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -234,11 +250,11 @@ export default function Region() {
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
                     </IconButton>
-                    {[0,2].includes(Number(accStat)) && 
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
-                  }
+                    {[0, 2].includes(Number(accStat)) &&
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    }
                 </>
             )
         }
@@ -250,7 +266,7 @@ export default function Region() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: "/masters/region" },
                 { label: " Geographical", path: "/masters/region" },
-                { label: "Region", path: location.pathname },
+                { label: masterPanel["REGN"] ? `${masterPanel["REGN"]}` : "Region", path: location.pathname },
             ]}
         >
             <Box
@@ -261,7 +277,7 @@ export default function Region() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Region</h1>
+                    <h1 className="mainTitle">{masterPanel["REGN"] || "Region"}</h1>
                 </Box>
 
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
@@ -272,18 +288,17 @@ export default function Region() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Region Details</Typography>
-                    }
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["REGN"] || "Region"} Details</Typography>}
 
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                             <FormControl sx={{ width: '100%' }}>
-                                <InputLabel id="zone_name">Zone Name*</InputLabel>
+                                <InputLabel id="zone_name">{masterPanel["ZONE"] || "Zone"} Name*</InputLabel>
                                 <Select
                                     value={selectedZone}
                                     onChange={(e) => setSelectedZone(e.target.value)}
                                     labelId="zone_name"
-                                    label="Zone Name*"
+                                    label={`${masterPanel["ZONE"] || "Zone"} Name*`}
                                     size="small"
                                     error={zoneError}
                                     MenuProps={{
@@ -294,7 +309,7 @@ export default function Region() {
                                         }
                                     }}
                                 >
-                                    <MenuItem value="0">Select Zone</MenuItem>
+                                    <MenuItem value="0">Select {masterPanel["ZONE"] || "Zone"}</MenuItem>
                                     {zoneName.map((val) => (
                                         <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
                                     ))}
@@ -303,8 +318,8 @@ export default function Region() {
                             </FormControl>
 
                             <TextField
-                                label="Region Name"
-                                placeholder="Enter Region Name"
+                                label={`${masterPanel["REGN"] || "Region"} Name`}
+                                placeholder={`Enter ${masterPanel["REGN"] || "Region"} Name`}
                                 size="small"
                                 value={regionName}
                                 error={!!regionError}
@@ -317,16 +332,16 @@ export default function Region() {
                                 }}
                             />
 
-                            {(!decodedEditRegionId && [0,1].includes(Number(accStat))) &&  (<Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                            {(!decodedEditRegionId && [0, 1].includes(Number(accStat))) && (<Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
                                 onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
-                             Create
+                                Create
                             </Button>)
                             }
-                            {(decodedEditRegionId && [0,2].includes(Number(accStat))) && (
-                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
-                                onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
-                             Update
-                            </Button>
+                            {(decodedEditRegionId && [0, 2].includes(Number(accStat))) && (
+                                <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                    onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
+                                    Update
+                                </Button>
                             )
                             }
                         </Box>

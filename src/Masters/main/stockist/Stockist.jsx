@@ -15,6 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddStockist from './AddStockist';
 import ConfirmationDialog from '../../../utils/confirmDialog';
 import { MdOutlineEdit } from 'react-icons/md';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const style = {
     color: "#1a1917",
@@ -41,6 +42,20 @@ const Stockist = () => {
         status: "1"
     })
     const [formError, setFormError] = useState(false);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const areaLabel = masterPanel["AREA"] || "Area";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
@@ -75,8 +90,8 @@ const Stockist = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Stockist`,
-            message: `Are you sure you want to delete this Stockist Record?`,
+            title: `Delete ${stkLabel}`,
+            message: `Are you sure you want to delete this ${stkLabel} Record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -89,7 +104,7 @@ const Stockist = () => {
         try {
             const res = await axios.post(`/delete_stockist/${id}`);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Stockist Record")
+                showAlert.success(`Successfully Deleted ${stkLabel} Record`)
                 fetchTableData();
             }
         } catch (error) {
@@ -144,17 +159,17 @@ const Stockist = () => {
         },
         {
             field: "stk_name",
-            headerName: "STOCKIST",
+            headerName: stkLabel.toUpperCase(),
             filterable: true,
         },
         {
             field: "reg_name",
-            headerName: "REGION",
+            headerName: regionLabel.toUpperCase(),
             filterable: true,
         },
         {
             field: "area_name",
-            headerName: "AREA",
+            headerName: areaLabel.toUpperCase(),
             filterable: true,
         },
         {
@@ -227,7 +242,7 @@ const Stockist = () => {
     const fetchTableData = async () => {
         try {
             if (!formData.region || formData.region <= "0") {
-                showAlert.error("Please select Region!");
+                showAlert.error(`Please select ${regionLabel}!`);
                 setFormError(true)
                 return;
             }
@@ -272,7 +287,7 @@ const Stockist = () => {
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Stockist" },
+            { label: stkLabel },
         ]}>
             <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '97%', md: '97%', sm: '90%', xs: '90%' } }}>
                 <TabContext value={value}>
@@ -283,7 +298,7 @@ const Stockist = () => {
                                 <Tab sx={tabStyle} label="VIEW LIST" value="2" />
                             </TabList>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Stockist</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {stkLabel}</Typography>
                     }
                     {/*---------------- Add section--------------- */}
                     <TabPanel value="1">
@@ -293,14 +308,15 @@ const Stockist = () => {
                     </TabPanel>
                     {/*---------------- View section--------------- */}
                     <TabPanel value="2" sx={{ padding: "10px 20px" }}>
-                        <Typography sx={style}>Stockist Records</Typography>
+                        <Typography sx={style}>{stkLabel} Records</Typography>
                         <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
                             <FormControl sx={{ width: "200px" }} size="small" >
-                                <InputLabel id="region">Region</InputLabel>
-                                <Select value={formData.region} id='region' label="Region" error={formError}
+                                <InputLabel id="region">{regionLabel}</InputLabel>
+                                <Select value={formData.region} id='region' label={regionLabel} error={formError}
                                     labelId="region" variant="outlined"
                                     onChange={(e) => {
                                         handleChangeForm("region", e.target.value);
+                                        handleChangeForm("area", "0");
                                         if (formError) setFormError(false);
                                     }}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
@@ -310,8 +326,8 @@ const Stockist = () => {
                                 </Select>
                             </FormControl>
                             <FormControl sx={{ width: "200px" }} size="small" >
-                                <InputLabel id="area">Area</InputLabel>
-                                <Select value={formData.area} id='area' label="Area"
+                                <InputLabel id="area">{areaLabel}</InputLabel>
+                                <Select value={formData.area} id='area' label={areaLabel}
                                     labelId="area" variant="outlined" onChange={(e) => handleChangeForm("area", e.target.value)}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                     {area?.map((item, index) => (

@@ -27,6 +27,7 @@ import dayjs from "dayjs";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 import { jwtDecode } from 'jwt-decode'
 import ConfirmationDialog from "../utils/confirmDialog";
+import { getMasterPanel } from "../services/masterPanelService";
 
 function AddUser() {
   const navigate = useNavigate();
@@ -148,6 +149,25 @@ function AddUser() {
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
   const showRsDay = repSubCutoff === "5";
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  // labels derived from masterPanel with fallbacks
+  const userLabel = masterPanel["USER"] || "Users";
+  const departmentLabel = masterPanel["DEPT"] || "Department";
+  const zonelabel = masterPanel["ZONE"] || "Zone";
+  const regLabel = masterPanel["REGN"] || "Region";
+  const areaLabel = masterPanel["AREA"] || "Area";
+  const territoryLabel = masterPanel["TERR"] || "Territory";
+  const desigLabel = masterPanel["DESI"] || "Designation";
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const [toast, setToast] = useState({
     open: false,
@@ -496,9 +516,9 @@ function AddUser() {
 
   const validate = () => {
     let temp = {};
-    if (!selectedType) temp.selectedType = "Please select user type";
-    if (!selectedDept) temp.selectedDept = "Please select department";
-    if (!selectedDesig) temp.selectedDesig = "Please select designation";
+    if (!selectedType) temp.selectedType = `Please select ${userLabel} type`;
+    if (!selectedDept) temp.selectedDept = `Please select ${departmentLabel}`;
+    if (!selectedDesig) temp.selectedDesig = `Please select ${desigLabel}`;
     if (!selectedTitle) temp.selectedTitle = "Please select title";
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
@@ -515,7 +535,7 @@ function AddUser() {
       ["13", "14", "15", "16"].includes(String(selectedType)) &&
       selectedRegions.length === 0
     ) {
-      temp.region = "Please Select Region";
+      temp.region = `Please Select ${regLabel}`;
     }
     if (!selectedReportType) temp.reportType = "Please Select Reporting Type";
     if (!selectedReportTo) temp.reportTo = "Please Select Reporting To User";
@@ -528,32 +548,32 @@ function AddUser() {
 
     if (Number(selectedType) > 4) {
       if (mngType === 1 && showZone && selectedZones.length === 0) {
-        temp.zone = "Select Zone";
+        temp.zone = `Select ${zonelabel}`;
       }
 
       if (mngType === 2) {
-        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
-        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
+        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
+        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
       }
 
       if (mngType === 3) {
-        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
-        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
-        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
+        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
+        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
+        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
       }
 
       if (mngType === 4) {
-        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
-        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
-        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
-        if (showTerritory && selectedTerritories.length === 0) temp.territory = "Select Territory";
+        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
+        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
+        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
+        if (showTerritory && selectedTerritories.length === 0) temp.territory = `Select ${territoryLabel}`;
       }
 
       if (mngType === 0) {
-        if (showZone && selectedZones.length === 0) temp.zone = "Select Zone";
-        if (showRegion && selectedRegions.length === 0) temp.region = "Select Region";
-        if (showArea && selectedAreas.length === 0) temp.area = "Select Area";
-        if (showTerritory && selectedTerritories.length === 0) temp.territory = "Select Territory";
+        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
+        if (showRegion && selectedRegions.length === 0) temp.region =`Select ${regLabel}`;
+        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
+        if (showTerritory && selectedTerritories.length === 0) temp.territory = `Select ${territoryLabel}`;
         if (showBeat && selectedBeats.length === 0) temp.beat = "Select Beat";
       }
     }
@@ -1182,7 +1202,7 @@ function AddUser() {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="User Type"
+                  label={`${userLabel} Type`}
                   value={selectedType}
                   //   onChange={handleUserTypeChange}
                   onChange={handleUserTypeChange}
@@ -1201,7 +1221,7 @@ function AddUser() {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="Department"
+                  label={departmentLabel}
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
                   options={departments}
@@ -1219,7 +1239,7 @@ function AddUser() {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="Designation"
+                  label={desigLabel}
                   value={selectedDesig}
                   onChange={(e) => setSelectedDesig(e.target.value)}
                   options={designations}
@@ -1479,7 +1499,7 @@ function AddUser() {
           </Box>
 
           <Box className="bodyDiv" style={{ marginTop: "10px" }}>
-            <Typography className="headerName">Territory Details</Typography>
+            <Typography className="headerName">{territoryLabel} Details</Typography>
             {/* <Divider sx={{ mb: 2 }} /> */}
 
             <Grid container spacing={2}>
@@ -1502,7 +1522,7 @@ function AddUser() {
               {showZone && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <CommonAppSelect
-                    label="Zone"
+                    label={zonelabel}
                     value={selectedZones}
                     onChange={(e) => handleZoneChange(e.target.value)}
                     options={zones}
@@ -1523,7 +1543,7 @@ function AddUser() {
               {showRegion && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <CommonAppSelect
-                    label="Region"
+                    label={regLabel}
                     value={selectedRegions}
                     options={regions}
                     onChange={(e) => handleRegionChange(e.target.value)}
@@ -1544,7 +1564,7 @@ function AddUser() {
               {showArea && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <CommonAppSelect
-                    label="Area"
+                    label={areaLabel}
                     value={selectedAreas}
                     onChange={(e) => handleAreaChange(e.target.value)}
                     multiple
@@ -1565,7 +1585,7 @@ function AddUser() {
               {showTerritory && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <CommonAppSelect
-                    label="Territory"
+                    label={territoryLabel}
                     value={selectedTerritories}
                     onChange={(e) => handleTerritoryChange(e.target.value)}
                     multiple
@@ -1631,6 +1651,7 @@ function AddUser() {
                   labelKey="full_name"
                   disabled={!selectedReportType}
                   required={true}
+                  error={Boolean(errors.reportTo)}
                 />
                 {errors.reportTo && (
                   <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>
@@ -1692,7 +1713,7 @@ function AddUser() {
               {/* LEFT SIDE */}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
-                  label="User Id"
+                  label={`${userLabel} Id`}
                   fullWidth
                   size="small"
                   value={userId}

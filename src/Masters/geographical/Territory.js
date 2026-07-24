@@ -14,6 +14,7 @@ import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function Territory() {
 
@@ -38,6 +39,19 @@ export default function Territory() {
         confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
     const location = useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+    const areaLabel = masterPanel["AREA"] || "Area";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchAllTerritory()
@@ -124,7 +138,7 @@ export default function Territory() {
 
         if (!terName || terName.trim() === "") {
             setTerError(true)
-            setTerErrorMsg("The Territory Name field is required.")
+            setTerErrorMsg(`The ${territoryLabel} Name field is required.`)
             isValid = false
         }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(terName)) {
             setTerError(true)
@@ -212,8 +226,8 @@ export default function Territory() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedEditTerritoryId ? "Edit" : "Add"} Territory`,
-            message: `Are you sure you want to ${decodedEditTerritoryId ? "Edit" : "Add"} this Territory?`,
+            title: `${decodedEditTerritoryId ? "Edit" : "Add"} ${territoryLabel}`,
+            message: `Are you sure you want to ${decodedEditTerritoryId ? "Edit" : "Add"} this ${territoryLabel}?`,
             confirmText: decodedEditTerritoryId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -233,8 +247,8 @@ export default function Territory() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "area", headerName: "AREA", filterable: true, sortable: true },
-        { field: "ter_name", headerName: "TERRITORY", filterable: true, sortable: true },
+        { field: "area", headerName: areaLabel.toUpperCase(), filterable: true, sortable: true },
+        { field: "ter_name", headerName: territoryLabel.toUpperCase(), filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -257,7 +271,7 @@ export default function Territory() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: "/masters/ter_mas" },
                 { label: " Geographical", path: "/masters/ter_mas" },
-                { label: "Territory", path: location.pathname },
+                { label: territoryLabel, path: location.pathname },
             ]}
         >
             <Box
@@ -268,7 +282,7 @@ export default function Territory() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Territory</h1>
+                    <h1 className="mainTitle">{territoryLabel}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     {!decodedEditTerritoryId ?
@@ -278,12 +292,12 @@ export default function Territory() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Territory Details</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {territoryLabel} Details</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
                             <Autocomplete
-                                options={[{ id: "0", area_name: "Select Area" }, ...allArea]}
+                                options={[{ id: "0", area_name: `Select ${areaLabel}` }, ...allArea]}
                                 getOptionLabel={(option) => option.area_name}
                                 value={selArea}
                                 onChange={(event, newValue) => {
@@ -293,16 +307,16 @@ export default function Territory() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Area Name"
+                                        label={`${areaLabel} Name`}
                                         size="small"
                                         error={areaError}
                                         required
-                                        helperText={areaError ? "The Area Name field is required." : ""}
+                                        helperText={areaError ? `The ${areaLabel} Name field is required.` : ""}
                                     />
                                 )}
                                 isOptionEqualToValue={(option, value) => option.id === value?.id}
                             />
-                            <TextField label="Territory Name" size="small" value={terName}
+                            <TextField label={`${territoryLabel} Name`} size="small" value={terName}
                                 onChange={(e) => {
                                     const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                     setTerName(onlyText)

@@ -18,6 +18,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { useSnackbar } from "notistack";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 
 export default function Zone() {
@@ -25,7 +26,7 @@ export default function Zone() {
   const [hdnZoneName, setHdnZoneName] = useState("");
   const [zoneError, setZoneError] = useState(false);
   const [accStat, setAccStat] = useState(null);
-  const [zoneErrorMsg, setZoneErrorMsg] = useState("The Zone Name field is Required");
+  const [zoneErrorMsg, setZoneErrorMsg] = useState("");
   const [zoneList, setZoneList] = useState([]);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,15 @@ export default function Zone() {
   const toast = useToast()
   const navigate = useNavigate();
   const location = useLocation()
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
@@ -55,13 +65,13 @@ export default function Zone() {
   }, []);
 
   useEffect(() => {
-      try {
-        const accStat = localStorage.getItem("acc_stat");
-        setAccStat(accStat);
-        console.log("Acc Stat",accStat)
-      } catch (err) {
-        console.log(err);
-      }
+    try {
+      const accStat = localStorage.getItem("acc_stat");
+      setAccStat(accStat);
+      console.log("Acc Stat", accStat)
+    } catch (err) {
+      console.log(err);
+    }
 
   }, []);
 
@@ -93,14 +103,15 @@ export default function Zone() {
   };
 
   const validateZone = () => {
+    const label = masterPanel["ZONE"] || "Zone";
     if (!zoneName || zoneName.trim() === "") {
       setZoneError(true);
-      setZoneErrorMsg("The Zone Name field is Required");
+      setZoneErrorMsg(`The ${label} Name field is Required`);
       return false;
     }
     if (zoneName.trim().length < 3) {
       setZoneError(true);
-      setZoneErrorMsg("Zone Name must be at least 3 characters");
+      setZoneErrorMsg(`${label} Name must be at least 3 characters`);
       return false;
     }
     const specialChar = /[^a-zA-Z0-9_\-\/ ]/;
@@ -179,15 +190,16 @@ export default function Zone() {
     setConfirmationDialog((prev) => ({ ...prev, open: false }));
   };
 
-  const showSubmitConfirmation = () => {
+const showSubmitConfirmation = () => {
+    const label = masterPanel["ZONE"] || "Zone";
     showConfirmationDialog({
-      title: `${decodedEditZoneid ? "Edit" : "Add"} Zone`,
-      message: `Are you sure you want to ${decodedEditZoneid ? "Edit" : "Add"} this Zone?`,
+      title: `${decodedEditZoneid ? "Edit" : "Add"} ${label}`,
+      message: `Are you sure you want to ${decodedEditZoneid ? "Edit" : "Add"} this ${label}?`,
       confirmText: decodedEditZoneid ? "Update" : "Add",
       confirmColor: "primary",
       onConfirm: () => handleAddZone(),
     });
-  };
+};
 
   const showDeleteConfirmation = (id) => {
     showConfirmationDialog({
@@ -223,7 +235,7 @@ export default function Zone() {
     { field: "si_no", headerName: "#", filterable: true, sortable: true },
     {
       field: "zone_name",
-      headerName: "Zone Name",
+       headerName: `${masterPanel["ZONE"] || "Zone"} Name`,
       filterable: true,
       sortable: true,
     },
@@ -236,10 +248,10 @@ export default function Zone() {
           <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
             <MdOutlineEdit size={15} />
           </IconButton>
-          {[0,2].includes(Number(accStat)) &&
-          <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
-            <DeleteIcon size={15} />
-          </IconButton>
+          {[0, 2].includes(Number(accStat)) &&
+            <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
+              <DeleteIcon size={15} />
+            </IconButton>
           }
         </>
       ),
@@ -251,7 +263,7 @@ export default function Zone() {
       { label: "Home", path: "/" },
       { label: "Master", path: "/masters/zone_mas" },
       { label: " Geographical", path: "/masters/zone_mas" },
-      { label: "Zone", path: location.pathname },
+      { label: masterPanel["ZONE"] ? `${masterPanel["ZONE"]}` : "Zone", path: location.pathname },
     ]}>
       <Box
         p={2}
@@ -261,7 +273,7 @@ export default function Zone() {
         gap={2}
       >
         <Box>
-          <h1 className="mainTitle">Zone</h1>
+          <h1 className="mainTitle">{masterPanel["ZONE"] || "Zone"}</h1>
         </Box>
         <Box
           sx={{
@@ -286,14 +298,14 @@ export default function Zone() {
             </Box>
           ) : (
             <Typography sx={{ px: 3, mt: 3, color: "#212121", fontSize: "18px" }}>
-              Edit Zone Details
+              Edit {masterPanel["ZONE"] || "Zone"} Details
             </Typography>
           )}
 
           {tabValue === 0 && (
             <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-             <TextField
-                label="Zone Name"
+              <TextField
+               label={`${masterPanel["ZONE"] || "Zone"} Name`}
                 value={zoneName}
                 required
                 type="text"
@@ -306,8 +318,21 @@ export default function Zone() {
                 error={!!zoneError}
                 helperText={zoneError ? zoneErrorMsg : ""}
               />
-              {(!editId && [0,1].includes(Number(accStat))) && (
-              <Button
+              {(!editId && [0, 1].includes(Number(accStat))) && (
+                <Button
+                  sx={{ ml: 1, width: "2rem" }}
+                  variant="contained"
+                  onClick={() => {
+                    if (validateZone()) {
+                      showSubmitConfirmation();
+                    } else {
+                      toast.error("Please fix all mandatory fields")
+                    }
+                  }}
+                >
+                  Submit
+                </Button>)}
+              {(editId && [0, 2].includes(Number(accStat))) && (<Button
                 sx={{ ml: 1, width: "2rem" }}
                 variant="contained"
                 onClick={() => {
@@ -318,20 +343,7 @@ export default function Zone() {
                   }
                 }}
               >
-               Submit
-              </Button>)}
-             {(editId && [0,2].includes(Number(accStat))) && ( <Button 
-                sx={{ ml: 1, width: "2rem" }}
-                variant="contained"
-                onClick={() => {
-                  if (validateZone()) {
-                    showSubmitConfirmation();
-                  } else {
-                    toast.error("Please fix all mandatory fields")
-                  }
-                }}
-              >
-              Update
+                Update
               </Button>)}
             </Box>
           )}

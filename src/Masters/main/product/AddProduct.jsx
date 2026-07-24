@@ -7,6 +7,7 @@ import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
@@ -63,6 +64,21 @@ const AddProduct = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [subCat, setSubCat] = useState([]);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const prodLabel = masterPanel["PROD"] || "Product";
+    const subCatLabel = masterPanel["PSUB"] || "Sub Category";
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
     /*----------form fields ---------*/
@@ -107,8 +123,8 @@ const AddProduct = () => {
     const showSubmitConfirmation = () => {
         if (!validations()) return;
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Product`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Product?`,
+            title: `${decodedId ? "Edit" : "Add"} ${prodLabel}`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this ${prodLabel}?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -130,15 +146,15 @@ const AddProduct = () => {
             mrp: "",
         }
         if (formData.productType < 0) {
-            newValidations.productType = "The Product Type field is required";
+            newValidations.productType = `The ${prodLabel} Type field is required`;
             isValid = false;
         }
         if (!formData.productName || formData.productName.trim() === "") {
-            newValidations.productName = "The Product Name field is required";
+            newValidations.productName = `The ${prodLabel} Name field is required`;
             isValid = false;
         }
         if (formData.subCatName === "" || formData.subCatName === null || formData.subCatName === undefined) {
-            newValidations.subCatName = "The Sub-Category Name field is required";
+            newValidations.subCatName = `The ${subCatLabel} Name field is required`;
             isValid = false;
         }
         if (!formData.shortName || formData.shortName.trim() === "") {
@@ -154,7 +170,7 @@ const AddProduct = () => {
             isValid = false;
         }
         if (formData.pts === "" || formData.pts === null || formData.pts === undefined) {
-            newValidations.pts = "The Stockist Price field is required";
+            newValidations.pts = `The ${stkLabel} Price field is required`;
             isValid = false;
         }
         if (formData.ptr === "" || formData.ptr === null || formData.ptr === undefined) {
@@ -206,7 +222,7 @@ const AddProduct = () => {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post("/prodmas_create", payload)
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Product")
+                showAlert.success(`Successfully Added ${prodLabel}`)
                 resetForm();
             } else {
                 showAlert.error(res?.data?.message)
@@ -217,12 +233,15 @@ const AddProduct = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Product")
+                showAlert.error(`Failed to ADD ${prodLabel}`)
             }
         } finally {
             closeConfirmationDialog();
         }
     }
+
+    // treats 0/undefined/null as empty string, keeps other numbers as-is
+    const zeroToEmpty = (val) => (val === 0 || val === null || val === undefined ? "" : val);
 
     /*---------- get data for edit ---------*/
     const getEditData = async (decodedId) => {
@@ -236,16 +255,16 @@ const AddProduct = () => {
                     subCatName: data[0]?.subcat_id ?? "",
                     shortName: data[0]?.prod_code || "",
                     code: data[0]?.code || "",
-                    sortingOrder: data[0]?.ord_id ?? "",
-                    asp: data[0]?.fac_price ?? "",
-                    cfa: data[0]?.wd_price ?? "",
-                    pts: data[0]?.stk_price ?? "",
-                    ptr: data[0]?.retail_price ?? "",
-                    mrp: data[0]?.mrp_price ?? "",
-                    pcsPerPack: data[0]?.pack_pcs ?? "",
-                    pcsPerCarton: data[0]?.cart_pcs ?? "",
+                    sortingOrder: zeroToEmpty(data[0]?.ord_id),
+                    asp: zeroToEmpty(data[0]?.fac_price),
+                    cfa: zeroToEmpty(data[0]?.wd_price),
+                    pts: zeroToEmpty(data[0]?.stk_price),
+                    ptr: zeroToEmpty(data[0]?.retail_price),
+                    mrp: zeroToEmpty(data[0]?.mrp_price),
+                    pcsPerPack: zeroToEmpty(data[0]?.pack_pcs),
+                    pcsPerCarton: zeroToEmpty(data[0]?.cart_pcs),
                     uom: data[0]?.prod_uom || "",
-                    unitConvertion: data[0]?.unit_conv ?? "",
+                    unitConvertion: zeroToEmpty(data[0]?.unit_conv),
                 });
                 setoriginal({
                     prod_name: data[0]?.prod_name || "",
@@ -269,7 +288,7 @@ const AddProduct = () => {
             }
             const res = await axios.post("/prodmas_update", payload)
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Product")
+                showAlert.success(`Successfully updated ${prodLabel}`)
                 resetForm();
                 navigate(`/masters/prodview`)
             } else {
@@ -281,7 +300,7 @@ const AddProduct = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Product")
+                showAlert.error(`Failed to Update ${prodLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -307,26 +326,32 @@ const AddProduct = () => {
         getEditData(decodedId);
     }, [decodedId]);
 
+    const blockInvalidNumberChars = (e) => {
+        if (["e", "E", "+", "-"].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Add Product" },
+            { label: `Add ${prodLabel}` },
         ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                     <Box>
-                        <h1 className="mainTitle">Product Details</h1>
+                        <h1 className="mainTitle">{prodLabel} Details</h1>
                     </Box>
-                    <Button onClick={viewClick} sx={{ height: "30px" }} variant="contained" color="primary">View Product</Button>
+                    <Button onClick={viewClick} sx={{ height: "30px" }} variant="contained" color="primary">View {prodLabel}</Button>
                 </Box>
                 <Grid container spacing={2}>
                     {/* row 1 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" required>
-                            <InputLabel id="ProductType">Product Type</InputLabel>
-                            <Select id='ProductType' label="Product Type" error={!!validation.productType}
+                            <InputLabel id="ProductType">{prodLabel} Type</InputLabel>
+                            <Select id='ProductType' label={`${prodLabel} Type`} error={!!validation.productType}
                                 labelId="ProductType" variant="outlined"
                                 value={formData.productType} onChange={(e) => handleChange("productType", e.target.value)}>
                                 <MenuItem style={{ fontSize: "11px" }} value="0">Existing</MenuItem>
@@ -338,21 +363,25 @@ const AddProduct = () => {
 
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField value={formData.mrp} onChange={(e) => handleChange("mrp", e.target.value)} error={!!validation.mrp} helperText={validation.mrp ? validation.mrp : null}
-                            type='number' required fullWidth size='small' variant='outlined' label="MRP" placeholder='Enter MRP Price' />
+                            type='number' required fullWidth size='small' variant='outlined' label="MRP" placeholder='Enter MRP Price'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField fullWidth type='number' size='small' value={formData.sortingOrder}
                             onChange={(e) => handleChange("sortingOrder", e.target.value)}
-                            variant='outlined' label="Sorting Order" placeholder='Enter Sorting Order' />
+                            variant='outlined' label="Sorting Order" placeholder='Enter Sorting Order'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     {/* row 2 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <FormControl fullWidth size="small" >
-                            <InputLabel id="SubCategoryName">SubCategory Name*</InputLabel>
-                            <Select id='SubCategoryName' label="SubCategory Name*" value={formData.subCatName} MenuProps={menuStyle}
+                            <InputLabel id="SubCategoryName">{subCatLabel} Name*</InputLabel>
+                            <Select id='SubCategoryName' label={`${subCatLabel} Name*`} value={formData.subCatName} MenuProps={menuStyle}
                                 onChange={(e) => handleChange("subCatName", e.target.value)} error={!!validation.subCatName}
                                 labelId="SubCategoryName" variant="outlined">
-                                <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="">Select {subCatLabel}</MenuItem>
                                 {subCat?.map((item, index) => (
                                     <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.sub_name}</MenuItem>
                                 ))}
@@ -362,11 +391,15 @@ const AddProduct = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' value={formData.asp} error={!!validation.asp} helperText={validation.asp ? validation.asp : null}
-                            onChange={(e) => handleChange("asp", e.target.value)} variant='outlined' label="Ex Factory (ASP)" placeholder='Enter Factory Price' />
+                            onChange={(e) => handleChange("asp", e.target.value)} variant='outlined' label="Ex Factory (ASP)" placeholder='Enter Factory Price'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.pcsPerPack}
-                            onChange={(e) => handleChange("pcsPerPack", e.target.value)} label="Pcs Per Pack" placeholder='Enter Pack Value' />
+                            onChange={(e) => handleChange("pcsPerPack", e.target.value)} label="Pcs Per Pack" placeholder='Enter Pack Value'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     {/* row 3 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
@@ -381,11 +414,15 @@ const AddProduct = () => {
 
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.cfa}
-                            onChange={(e) => handleChange("cfa", e.target.value)} label="CFA/ Superstockist" placeholder='Enter Super Stock-list' />
+                            onChange={(e) => handleChange("cfa", e.target.value)} label="CFA/ Superstockist" placeholder='Enter Super Stock-list'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.pcsPerCarton}
-                            onChange={(e) => handleChange("pcsPerCarton", e.target.value)} label="Pcs Per Carton" placeholder='Enter Carton Value' />
+                            onChange={(e) => handleChange("pcsPerCarton", e.target.value)} label="Pcs Per Carton" placeholder='Enter Carton Value'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     {/* row 4 */}
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
@@ -393,11 +430,13 @@ const AddProduct = () => {
                             onChange={(e) => {
                                 const onlyText = e.target.value.replace(/^\s+/, "")
                                 handleChange("productName", onlyText)
-                            }} variant='outlined' label="Product Name" placeholder='Enter Product Name' />
+                            }} variant='outlined' label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.pts} error={!!validation.pts} helperText={validation.pts ? validation.pts : null}
-                            onChange={(e) => handleChange("pts", e.target.value)} label="Stockist Price (PTS)" placeholder='Enter Stock Price   ' />
+                            onChange={(e) => handleChange("pts", e.target.value)} label={`${stkLabel} Price (PTS)`} placeholder='Enter Stock Price   '
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField fullWidth size='small' variant='outlined' label="UOM" value={formData.uom}
@@ -416,11 +455,15 @@ const AddProduct = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' required fullWidth size='small' variant='outlined' value={formData.ptr} error={!!validation.ptr} helperText={validation.ptr ? validation.ptr : null}
-                            onChange={(e) => handleChange("ptr", e.target.value)} label="Retail Price (PTR)" placeholder='Enter Retail Price   ' />
+                            onChange={(e) => handleChange("ptr", e.target.value)} label="Retail Price (PTR)" placeholder='Enter Retail Price   '
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField type='number' fullWidth size='small' variant='outlined' value={formData.unitConvertion}
-                            onChange={(e) => handleChange("unitConvertion", e.target.value)} label="Unit Convertion" placeholder='Enter Unit' />
+                            onChange={(e) => handleChange("unitConvertion", e.target.value)} label="Unit Convertion" placeholder='Enter Unit'
+                            onKeyDown={blockInvalidNumberChars}
+                            autoComplete="off" />
                     </Grid>
                 </Grid>
                 <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" } }}>

@@ -15,6 +15,7 @@ import useToast from "../../../utils/useToast";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
@@ -34,6 +35,20 @@ const ProductSubCategory = () => {
     const [catData, setCatData] = useState([])
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const subCatLabel = masterPanel["PSUB"] || "Product Sub Category";
+    const catLabel = masterPanel["PCAT"] || "Category";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         category: "",
@@ -96,7 +111,7 @@ const ProductSubCategory = () => {
     const showSubmitConfirmation = () => {
         if (!validations()) return;
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Category`,
+            title: `${decodedId ? "Edit" : "Add"} ${subCatLabel}`,
             message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
@@ -106,7 +121,7 @@ const ProductSubCategory = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Category`,
+            title: `Delete ${subCatLabel}`,
             message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
@@ -122,12 +137,12 @@ const ProductSubCategory = () => {
             categoryName: ""
         }
         if (!formData.category) {
-            newValidations.category = "The Category field is required";
+            newValidations.category = `The ${catLabel} field is required`;
             isValid = false;
         }
 
         if (!formData.categoryCode || formData.categoryCode.trim() === "") {
-            newValidations.categoryCode = "The Sub Category Code field is required.";
+            newValidations.categoryCode = `The ${subCatLabel} Code field is required.`;
             isValid = false;
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryCode)) {
             newValidations.categoryCode = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
@@ -135,7 +150,7 @@ const ProductSubCategory = () => {
         }
 
         if (!formData.categoryName || formData.categoryName.trim() === "") {
-            newValidations.categoryName = "The Sub Category field is required.";
+            newValidations.categoryName = `The ${subCatLabel} field is required.`;
             isValid = false;
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
             newValidations.categoryName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
@@ -176,7 +191,7 @@ const ProductSubCategory = () => {
             }
             const res = await axios.post("/addCatSub", payload)
             if (res?.data?.success) {
-                showAlert.success("Sub Category Added Successfully")
+                showAlert.success(`${subCatLabel} Added Successfully`)
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
@@ -189,7 +204,7 @@ const ProductSubCategory = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Sub Category")
+                showAlert.error(`Failed to ADD ${subCatLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -210,7 +225,7 @@ const ProductSubCategory = () => {
             }
             const res = await axios.post("/subCatEdit", payload)
             if (res?.data?.success) {
-                showAlert.success("Sub Category Updated Successfully")
+                showAlert.success(`${subCatLabel} Updated Successfully`)
                 setFormData({ category: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/catSub`)
@@ -223,7 +238,7 @@ const ProductSubCategory = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Sub Category")
+                showAlert.error(`Failed to Update ${subCatLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -260,7 +275,7 @@ const ProductSubCategory = () => {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteCatSub/${id}`);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Sub Category")
+                showAlert.success(`Successfully Deleted ${subCatLabel}`)
                 fetchTableData();
             }
         } catch (error) {
@@ -281,19 +296,19 @@ const ProductSubCategory = () => {
         },
         {
             field: "cat_name",
-            headerName: "Category Name",
+            headerName: `${catLabel} Name`,
             filterable: true,
             sortable: true,
         },
         {
             field: "sub_code",
-            headerName: "Sub Category Code",
+            headerName: `${subCatLabel} Code`,
             filterable: true,
             sortable: true,
         },
         {
             field: "sub_name",
-            headerName: "Sub Category Name",
+            headerName: `${subCatLabel} Name`,
             filterable: true,
             sortable: true,
         }, {
@@ -367,7 +382,7 @@ const ProductSubCategory = () => {
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Product Sub Category" },
+            { label: subCatLabel },
         ]}>
             <Box
                 p={2}
@@ -377,7 +392,7 @@ const ProductSubCategory = () => {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Product Sub Category</h1>
+                    <h1 className="mainTitle">{subCatLabel}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     <TabContext value={value}>
@@ -388,18 +403,18 @@ const ProductSubCategory = () => {
                                     <Tab sx={tabStyle} label="VIEW LIST" value="2" />
                                 </TabList>
                             </Box> :
-                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Product Sub Category</Typography>
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {subCatLabel}</Typography>
                         }
                         {/*---------------- Add section--------------- */}
                         <TabPanel value="1">
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 <FormControl fullWidth size="small" required>
-                                    <InputLabel id="Category">Category</InputLabel>
-                                    <Select id='Category-select' label="Category" labelId="Category" variant="outlined"
+                                    <InputLabel id="Category">{catLabel}</InputLabel>
+                                    <Select id='Category-select' label={catLabel} labelId="Category" variant="outlined"
                                         value={formData.category} error={!!validation.category} MenuProps={menuStyle}
                                         onChange={(e) => formDataChange("category", e.target.value)}
                                     >
-                                        <MenuItem style={{ fontSize: "11px" }} value="">Select Category</MenuItem>
+                                        <MenuItem style={{ fontSize: "11px" }} value="">Select {catLabel}</MenuItem>
                                         {catData?.map((item, index) => (
                                             <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
                                                 {item?.cat_name}
@@ -414,7 +429,7 @@ const ProductSubCategory = () => {
                                         formDataChange("categoryCode", onlyText)
                                     }}
                                     required size='small'
-                                    variant='outlined' label="Product Sub Category Code"
+                                    variant='outlined' label={`${subCatLabel} Code`}
                                     error={!!validation.categoryCode}
                                     helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryCode}</span>} />
                                 <TextField
@@ -424,7 +439,7 @@ const ProductSubCategory = () => {
                                         formDataChange("categoryName", onlyText)
                                     }}
                                     required size='small'
-                                    variant='outlined' label="Product Sub Category Name"
+                                    variant='outlined' label={`${subCatLabel} Name`}
                                     error={!!validation.categoryName}
                                     helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
                             </Box>

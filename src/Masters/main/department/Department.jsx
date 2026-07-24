@@ -15,6 +15,7 @@ import useToast from "../../../utils/useToast";
 import { useCallback } from 'react';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { MdOutlineEdit } from 'react-icons/md';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
@@ -40,6 +41,19 @@ const Department = () => {
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const departmentLabel = masterPanel["DEPT"] || "Department";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*---------- re usable toast ---------*/
     const showAlert = useToast();
@@ -73,7 +87,7 @@ const Department = () => {
     const showSubmitConfirmation = () => {
         if (!validations()) return;
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Department`,
+            title: `${decodedId ? "Edit" : "Add"} ${departmentLabel}`,
             message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
@@ -83,7 +97,7 @@ const Department = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Department`,
+            title: `Delete ${departmentLabel}`,
             message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
@@ -104,7 +118,7 @@ const Department = () => {
             departmentName: "",
         }
         if (!formData.departmentName || formData.departmentName.trim() === "") {
-            newValidations.departmentName = "The Department Name field is required";
+            newValidations.departmentName = `The ${departmentLabel} Name field is required`;
             isValid = false;
         } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.departmentName)) {
             newValidations.departmentName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
@@ -123,7 +137,7 @@ const Department = () => {
             }
             const res = await axios.post("/addDept", payload)
             if (res?.data?.success) {
-                showAlert.success("Department Added Successfully")
+                showAlert.success(`${departmentLabel} Added Successfully`)
                 setFormData({ departmentName: "" });
                 fetchTableData();
                 resetValidations();
@@ -136,7 +150,7 @@ const Department = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Department")
+                showAlert.error(`Failed to ADD ${departmentLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -154,7 +168,7 @@ const Department = () => {
             }
             const res = await axios.post("/updateDept", payload)
             if (res?.data?.success) {
-                showAlert.success("Department Updated Successfully")
+                showAlert.success(`${departmentLabel} Updated Successfully`)
                 setFormData({ departmentName: "" });
                 setValue('1')
                 navigate(`/masters/dept`)
@@ -167,7 +181,7 @@ const Department = () => {
                 showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Department")
+                showAlert.error(`Failed to Update ${departmentLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -182,7 +196,7 @@ const Department = () => {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteDept/${id}`);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Department")
+                showAlert.success(`Successfully Deleted ${departmentLabel}`)
                 fetchTableData();
             }
         } catch (error) {
@@ -222,7 +236,7 @@ const Department = () => {
         },
         {
             field: "dept_name",
-            headerName: "Department Name",
+            headerName: `${departmentLabel} Name`,
             filterable: true,
             sortable: true,
         },
@@ -303,7 +317,7 @@ const Department = () => {
             { label: "Home", path: "/" },
             { label: "Master", path: location.pathname },
             { label: "Main", path: location.pathname },
-            { label: "Department" },
+            { label: departmentLabel },
         ]}>
             <Box
                 p={2}
@@ -313,7 +327,7 @@ const Department = () => {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Department</h1>
+                    <h1 className="mainTitle">{departmentLabel}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     <TabContext value={value}>
@@ -324,7 +338,7 @@ const Department = () => {
                                     <Tab sx={tabStyle} label="VIEW LIST" value="2" />
                                 </TabList>
                             </Box> :
-                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Department</Typography>
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {departmentLabel}</Typography>
                         }
                         {/*---------------- Add section--------------- */}
                         <TabPanel value="1">
@@ -335,7 +349,7 @@ const Department = () => {
                                         formDataChange("departmentName", onlyText)
                                     }}
                                     required size='small'
-                                    variant='outlined' label="Department Name" error={!!validation.departmentName}
+                                    variant='outlined' label={`${departmentLabel} Name`} error={!!validation.departmentName}
                                     helperText={validation.departmentName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.departmentName}</span>} />
                             </Box>
                             <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
