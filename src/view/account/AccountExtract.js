@@ -21,6 +21,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import CircularProgress from "../../utils/CircularProgressLoading";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function AccountExtract() {
   const navigate = useNavigate();
@@ -40,6 +41,16 @@ function AccountExtract() {
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selactiveStat,setActiveStat]=useState("1")
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const toast = useToast();
   const location = useLocation()
@@ -168,13 +179,13 @@ function AccountExtract() {
     );
 
     const meta = {
-      "": `Account Master Extract (${AccName})`,
+      "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
       Date: dayjs().format("DD MMM YYYY")
     }
     DownloadCSV(
       FormattedData,
       safeColumns,
-      `Account_Master_Extract_(${AccName})`,
+      `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
       setProgress,
       enqueueSnackbar,
       meta,
@@ -209,13 +220,13 @@ function AccountExtract() {
       );
 
       const meta = {
-        "": `Account Master Extract (${AccName})`,
+        "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
         Date: dayjs().format("DD MMM YYYY")
       }
       DownloadCSV(
         FormattedData,
         safeColumns,
-        `Account_Master_Extract_(${AccName})`,
+        `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
         setProgress,
         enqueueSnackbar,
         meta,
@@ -246,7 +257,7 @@ function AccountExtract() {
   const columns = [
     { field: "sl", headerName: "SL", sortable:true, width: 80 },
 
-    { field: "reg_name", headerName: "Region", sortable:true, width: 120 },
+    { field: "reg_name", headerName: masterPanel["REGN"] || "Region", sortable:true, width: 120 },
 
     { field: "emp_code", headerName: "SO/User Code", sortable:true, width: 120 },
 
@@ -268,7 +279,7 @@ function AccountExtract() {
       renderCell: ({ row }) => `${row.main_id}_${row.sub_id}`,
     },
 
-    { field: "stk_name", headerName: "Distributor", sortable:true, width: 150 },
+    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor", sortable:true, width: 150 },
 
     { field: "sup_name", headerName: "WD Name", sortable:true, width: 150 },
 
@@ -276,7 +287,7 @@ function AccountExtract() {
 
     {
       field: "P_class",
-      headerName: "Potential Class",
+      headerName: masterPanel["PCLS"] || "Potential Class",
        sortable:true,
       width: 120,
     },
@@ -288,7 +299,7 @@ function AccountExtract() {
       width: 120,
     },
 
-    { field: "area_name", headerName: "Area", sortable:true, width: 150 },
+    { field: "area_name", headerName: masterPanel["AREA"] || "Area", sortable:true, width: 150 },
 
     { field: "beat_name", headerName: "Beat/Territory", sortable:true, width: 150 },
 
@@ -297,17 +308,17 @@ function AccountExtract() {
 
   const ExcelColumns = [
     {field:"sl",headerName:"SL NO"},
-    { field: "reg_name", headerName: "Region" },
+    { field: "reg_name", headerName: masterPanel["REGN"] || "Region" },
     { field: "emp_code", headerName: "SO/User Code" },
     { field: "user_name", headerName: "SO/User Name" },
     { field: "so_hq_name", headerName: "SO/HQ" },
     { field: "id", headerName: "Customer ID" },
     { field: "stk_name", headerName: "WD Name" },
-    { field: "sup_name", headerName: "Distributor" },
+    { field: "sup_name", headerName: masterPanel["STKS"] || "Distributor" },
     { field: "clinic_name", headerName: "Store Name" },
-    { field: "P_class", headerName: "Potential Class" },
+    { field: "P_class", headerName: masterPanel["PCLS"] || "Potential Class" },
     { field: "cus_visit_freq", headerName: "Frequency Class" },
-    { field: "area_name", headerName: "Area" },
+    { field: "area_name", headerName: masterPanel["AREA"] || "Area" },
     { field: "beat_name", headerName: "Beat/Territory" },
     { field: "mobile", headerName: "Mobile No" },
     {field:"create_dt",headerName:"Created Date"}
@@ -318,8 +329,8 @@ function AccountExtract() {
     <Layout  
        breadcrumb={ [
           { label: "Home", path: "/" },
-          { label: "Account", path: location.pathname },
-          { label: "Account Master Extract",path: location.pathname },
+          { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+          { label: `${masterPanel["ACCM"] || "Account"} Master Extract`,path: location.pathname },
         ]}
      >
       <Box
@@ -330,7 +341,7 @@ function AccountExtract() {
         gap={2}
       >
         <Box>
-          <h2 >Account Master Extract</h2>
+          <h2 >{masterPanel["ACCM"] || "Account"} Master Extract</h2>
         </Box>
 
         <Box sx={{
@@ -343,10 +354,10 @@ function AccountExtract() {
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Zone</InputLabel>
+                <InputLabel>{masterPanel["ZONE"] || "Zone"}</InputLabel>
                 <Select
                   value={selectedRegion}
-                  label="Zone"
+                  label={masterPanel["ZONE"] || "Zone"}
                   onChange={(e) =>{ 
                     setSelectedRegion(e.target.value)
                     setSelectedUser(0);
@@ -417,7 +428,7 @@ function AccountExtract() {
                 value={userData.find((u) => u.id === selectedUser) || null}
                 onChange={(e, val) => setSelectedUser(val ? val.id : 0)}
                 renderInput={(params) => (
-                  <TextField {...params} label="User" size="small" />
+                  <TextField {...params} label={masterPanel["USER"] || "User"} size="small" />
                 )}
               />
             </Grid>
@@ -470,7 +481,7 @@ function AccountExtract() {
               data={tableData}
               columns={columns}
               loading={loading}
-              title="Account Extract List"
+              title={`${masterPanel["ACCM"] || "Account"} Extract List`}
               sx={{
                 background: "#fff",
                 borderRadius: "10px",

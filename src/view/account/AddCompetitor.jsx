@@ -147,13 +147,14 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
 
     // Handle other brand name change
     const handleOtherNameChange = (pid, value) => {
+        const onlyText = value.replace(/^\s+/, "");
         setRows((prev) =>
             prev.map((r) => {
                 if (r.pid !== pid) return r;
                 return {
                     ...r,
-                    other_name: value,
-                    oth_qty: value.trim() === '' ? '' : r.oth_qty
+                    other_name: onlyText,
+                    oth_qty: onlyText.trim() === '' ? '' : r.oth_qty
                 };
             })
         );

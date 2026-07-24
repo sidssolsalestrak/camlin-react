@@ -52,12 +52,15 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
     // ── 3. DISTRIBUTOR ────────────────────────────────────────────────────
     if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
-      toastMessages.push("Please Select Distributor");
+      newErrors.stkId = "Distributor is required";
       hasError = true;
     }
 
-    // ── 4. MOBILE ─────────────────────────────────────────────────────────
-    if (!validateMobile(form.mobile)) {
+   // ── 4. MOBILE ─────────────────────────────────────────────────────────
+    if (form.sendSms === "1" && (!form.mobile || !form.mobile.trim())) {
+      newErrors.mobile = "Mobile No is required";
+      hasError = true;
+    } else if (form.mobile && form.mobile.trim() && !validateMobile(form.mobile)) {
       newErrors.mobile = "Please enter valid Mobile No";
       hasError = true;
     } else {
@@ -65,13 +68,15 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     }
 
     // ── 5. EMAIL ──────────────────────────────────────────────────────────
-    if (!validateEmail(form.email)) {
+    if (form.sendEmail === "1" && (!form.email || !form.email.trim())) {
+      newErrors.email = "Email is required";
+      hasError = true;
+    } else if (form.email && form.email.trim() && !validateEmail(form.email)) {
       newErrors.email = "Please enter valid Email address";
       hasError = true;
     } else {
       newErrors.email = "";
     }
-
     // ── 6. DUPLICATE REP VALIDATION ───────────────────────────────────────
     if (form.cusType === "1") {
       const repIds = clinics.map(c => c.repIncharge).filter(id => id && id !== "0");
@@ -106,15 +111,28 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     //   hasError = true;
     // }
 
+    const noAccountOwner = clinics.some(c =>
+  form.cusType === "2"
+    ? (!c.repInchargePOS || c.repInchargePOS === "0")
+    : (!c.repIncharge || c.repIncharge === "0")
+);
+if (noAccountOwner) {
+  newErrors.repIncharge = form.cusType === "2"
+    ? "Account Owner is Required"
+    : "Rep Incharge is Required";
+  hasError = true;
+}
+
     // ── 9. BEAT VALIDATION ────────────────────────────────────────────────
     const noBeat = filteredClinics.some(c => !c.beat || c.beat === "0");
     if (noBeat) {
-      newErrors.beat="Please add Beat to the Clinical";
+      newErrors.beat="Beat is Required";
       hasError = true;
     }
     const noBranch= filteredClinics.some(c=> !c.clinicName || c.clinicName.trim()==="");
     if(noBranch){
       newErrors.clinicName="Branch Name is Required";
+      hasError = true;
     }
 
     // ── 10. CLINIC CONTACT NO VALIDATION ──────────────────────────────────
@@ -138,6 +156,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
     if (hasError) {
       toastMessages.forEach((msg) => toast.error(msg));
+      toast.error("Please fix all mandatory fields");
       return null;
     }
 
@@ -180,7 +199,12 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
       phChain: c.phChain || "0",
     }));
 
-    // ── 14. SHARED DOCTOR DETAILS ──────────────────────────────────────────
+    // ── 14. FULL NAME ───────────────────────────────────────────────────────
+    const full_name = form.lastName && form.lastName.trim()
+      ? `${(form.firstName || "").trim()} ${form.lastName.trim()}`
+      : (form.firstName || "").trim();
+
+    // ── 15. SHARED DOCTOR DETAILS ──────────────────────────────────────────
     const doctorDetails = {
       cusType: form.cusType || "2",
       customerRetType: form.retailerType || "1",
@@ -190,6 +214,7 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
 
       customeFirstName: form.firstName || "",
       customeLastName: form.lastName || "",
+      full_name,
       customeTitleQualification: form.titleQualification || "",
       customerGender: form.gender || "1",
       customerAgeGroup: form.agegroup || "1",
