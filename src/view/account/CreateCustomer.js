@@ -62,6 +62,21 @@ function CreateCustomer() {
   const isTemp = decodedReq !== "0";
 
   const showAlert = useToast();
+
+  // ── Role-based access control (same pattern as Area.jsx / AccountMas.jsx) ──
+  // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+  const [accStat, setAccStat] = useState(null);
+
+  useEffect(() => {
+    try {
+      const accStat = localStorage.getItem("acc_stat");
+      setAccStat(accStat);
+      console.log("Acc Stat", accStat);
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
   // ---------------- STATE ---------------------------
   const [fieldConfig, setFieldConfig] = useState({});
   const [dropdowns, setDropdowns] = useState({
@@ -104,6 +119,7 @@ function CreateCustomer() {
       pharmaType: "1",  
     marketingTools: [],
     agegroup: "1",
+    potentiality: "1",
   });
 
   const isHcpField = (form.cusType === "1"); // hcpDiv2 fields only show for HCP
@@ -145,7 +161,8 @@ function CreateCustomer() {
   };
 
   const handleEmailChange = (e) => {
-    setForm((f) => ({ ...f, email: e.target.value, sendEmail: "0" }));
+    const onlyText = e.target.value.replace(/^\s+/, "");
+    setForm((f) => ({ ...f, email: onlyText, sendEmail: "0" }));
     setFieldErrors((prev) => ({ ...prev, email: "" }));
   };
 
@@ -272,11 +289,12 @@ function CreateCustomer() {
   const handleAccTypeChange = (e) => {
     const val = String(e.target.value);
     setForm((f) => ({
-      ...f, cusType: val,
-      gender: "1", agegroup: "1", pharmaType: 1, practiceType: "",
-      potentiality: "", loyalty: "", loyaltyType: "", frequency: "",
-      retailerType: "1",
+    ...f, cusType: val,
+    gender: "1", agegroup: "1", pharmaType: 1, practiceType: "",
+    potentiality: "1", loyalty: "", loyaltyType: "", frequency: "",  // ← "1" not ""
+    retailerType: "1",
     }));
+    setFieldErrors((prev) => ({ ...prev, cusType: "" }));
     setGenderOptions([]); setAgeOptions([]);
     setPracticeOptions([]); setPharmaOptions([]);
     setPotentialityOptions([]);
@@ -291,6 +309,7 @@ function CreateCustomer() {
     const zoneId = selectedRegion?.zone_id || "0";
 
     setForm((f) => ({ ...f, region: val }));
+    setFieldErrors((prev) => ({ ...prev, region: "" }));
 
     try {
       const [repRes, repPoso, distRes, brandsRes] = await Promise.all([
@@ -403,15 +422,17 @@ function CreateCustomer() {
       if (i !== idx) return c;
       return { ...c, [isPos ? "repInchargePOS" : "repIncharge"]: repId };
     });
+
+    // ── clear the mandatory error as soon as a value is picked ──
+    setFieldErrors((prev) => ({ ...prev, repIncharge: "" }));
+
     try {
       const res = await api.post("/getClinicBeat", { repInchargeId: repId });
       const opts = (Array.isArray(res.data.data.beats) ? res.data.data.beats : []).map((i) => ({ ...i, id: String(i.id) }));
-      console.log("beat options", opts);
-
       updated[idx] = { ...updated[idx], beatOptions: opts, beat: "" };
     } catch (err) { console.error(err); }
     setClinics(updated);
-  };
+};
 
   const fetchAccountOwner = async () => {
     try {
@@ -425,8 +446,20 @@ function CreateCustomer() {
     }
   }
 
-  const updateClinic = (idx, field, value) =>
+  const updateClinic = (idx, field, value) => {
     setClinics((prev) => prev.map((c, i) => (i === idx ? { ...c, [field]: value } : c)));
+
+    // ── clear relevant field error on edit ──
+    if (field === "beat" && value && value !== "0") {
+      setFieldErrors((prev) => ({ ...prev, beat: "" }));
+    }
+    if (field === "clinicName" && value && value.trim() !== "") {
+      setFieldErrors((prev) => ({ ...prev, clinicName: "" }));
+    }
+    if (field === "stkId" && value && value !== "0") {
+      setFieldErrors((prev) => ({ ...prev, stkId: "" }));
+    }
+};
 
   const toggleMeetingDay = (idx, dayValue) =>
     setClinics((prev) =>
@@ -701,8 +734,8 @@ function CreateCustomer() {
                   for this account ! Waiting for Approval..
                 </Box>
               ) : (
-                // ── No pending request + account is Active → show button ──
-                delFlag === 0 && (
+                // ── No pending request + account is Active → show button (Checker / All only) ──
+                delFlag === 0 && [0, 2].includes(Number(accStat)) && (
                   <Button
                     variant="contained"
                     onClick={() => handleUpdate(decodedID)}
@@ -714,7 +747,10 @@ function CreateCustomer() {
             </>
           )}
 
-          {!decodedID && <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>}
+          {/* Add New Request — Maker / All only */}
+          {!decodedID && [0, 1].includes(Number(accStat)) && (
+            <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>
+          )}
 
           <Button
             variant="contained"
@@ -739,6 +775,8 @@ function CreateCustomer() {
               valueKey="id"
               labelKey="cus_type_name"
               required={true}
+              error={!!fieldErrors.cusType}
+              helperText={fieldErrors.cusType}
             />
           </Grid>
 
@@ -748,9 +786,10 @@ function CreateCustomer() {
               <CommonAppSelect
                 label={fieldConfig["Type"]?.label || "Type"}
                 value={form.retailerType}
-                onChange={(e) =>
+                onChange={(e) => {
                   setForm({ ...form, retailerType: String(e.target.value) })
-                }
+                  setFieldErrors((prev) => ({ ...prev, retailerType: "" }));
+                }}
                 options={[
                   { id: "1", name: "Retailer" },
                   { id: "2", name: "HO" },
@@ -760,6 +799,8 @@ function CreateCustomer() {
                 valueKey="id"
                 labelKey="name"
                 required={true}
+                error={!!fieldErrors.retailerType}
+                helperText={fieldErrors.retailerType}
               />
             </Grid>
           )}
@@ -832,9 +873,11 @@ function CreateCustomer() {
                 size="small"
                 sx={{height:'3rem'}}
                 value={form.firstName || ""}
-                onChange={(e) =>
-                  setForm({ ...form, firstName: e.target.value })
-                }
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, firstName: onlyText })
+                  setFieldErrors((prev) => ({ ...prev, firstName: "" }));
+                }}
                 error={!!fieldErrors.firstName}
                 helperText={fieldErrors.firstName}
               />
@@ -849,9 +892,10 @@ function CreateCustomer() {
                 fullWidth
                 size="small"
                 value={form.lastName || ""}
-                onChange={(e) =>
-                  setForm({ ...form, lastName: e.target.value })
-                }
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, lastName: onlyText })
+                }}
               />
             </Grid>
           )}
@@ -863,9 +907,10 @@ function CreateCustomer() {
                 label={fieldConfig["Title/Qualification"]?.label || "Title / Qualification"}
                 fullWidth size="small"
                 value={form.titleQualification}
-                onChange={(e) =>
-                  setForm({ ...form, titleQualification: e.target.value })
-                }
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, titleQualification: onlyText })
+                }}
               />
             </Grid>
           )}
@@ -947,13 +992,16 @@ function CreateCustomer() {
               <CommonAppSelect
                 label={fieldConfig["Potentiality Class"]?.label || "Potentiality Class"}
                 value={form.potentiality || "1"}
-                onChange={(e) =>
+                onChange={(e) => {
                   setForm({ ...form, potentiality: String(e.target.value) })
-                }
+                  setFieldErrors((prev) => ({ ...prev, potentiality: "" }));
+                }}
                 options={potentialityOptions}
                 valueKey="id"
                 labelKey="cat_type"
                 required={true}
+                error={!!fieldErrors.potentiality}
+                helperText={fieldErrors.potentiality}
               />
             </Grid>
           )}
@@ -1068,9 +1116,10 @@ function CreateCustomer() {
                 label={fieldConfig["Remarks"]?.label || "Remarks"}
                 fullWidth size="small" multiline rows={2}
                 value={form.remarks || ""}
-                onChange={(e) =>
-                  setForm({ ...form, remarks: String(e.target.value) })
-                }
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, remarks: onlyText })
+                }}
               />
             </Grid>
           )}

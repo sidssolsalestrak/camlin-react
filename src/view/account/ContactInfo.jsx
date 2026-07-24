@@ -45,8 +45,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                             <AccordionDetails sx={{ pt: 2 }}>
                                 <Grid container spacing={2}>
 
-                                    {/* Rep Incharge (HCP) */}
-                                    {isHcp && (
+                                 {isHcp && (
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <CommonAppSelect
                                                 label="Rep Incharge"
@@ -55,11 +54,18 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 options={repInchargeOptions}
                                                 valueKey="id"
                                                 labelKey="first_name"
+                                                required={true}
+                                                error={!!fieldErrors.repIncharge}
+                                                helperText={fieldErrors.repIncharge}
                                             />
+                                            {fieldErrors.repIncharge && (
+                                                <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>
+                                                    {fieldErrors.repIncharge}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                     )}
 
-                                    {/* Account Owner / POS (Retailer) jfj */}
                                     {isRetailer && (
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <CommonAppSelect
@@ -70,10 +76,16 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 valueKey="id"
                                                 labelKey="first_name"
                                                 required={true}
+                                                error={!!fieldErrors.repIncharge}
+                                                helperText={fieldErrors.repIncharge}
                                             />
+                                            {fieldErrors.repIncharge && (
+                                                <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>
+                                                    {fieldErrors.repIncharge}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                     )}
-
                                     {/* Beat – loaded after rep selection */}
                                     {fieldConfig["Beat"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
@@ -85,6 +97,8 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 valueKey="id"
                                                 labelKey="beat_name"
                                                 required={true}
+                                                error={!!fieldErrors.beat}
+                                                helperText={fieldErrors.beat}
                                             />
                                             {fieldErrors.beat && <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.beat}</Typography>}
                                         </Grid>
@@ -111,8 +125,13 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={isRetailer ? fieldConfig["Branch Name"]?.label : "Clinic Name"}
                                                 fullWidth size="small" placeholder='Enter Clinic Name'
                                                 value={clinic.clinicName}
-                                                onChange={(e) => updateClinic(idx, "clinicName", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "clinicName", onlyText)
+                                                }}
                                                 required={true}
+                                                error={!!fieldErrors.clinicName}
+                                                helperText={fieldErrors.clinicName}
                                             />
                                         </Grid>
                                     )}
@@ -124,7 +143,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={fieldConfig["Contact Person"]?.label || "Contact Name"}
                                                 fullWidth size="small" placeholder='Enter Contact Name'
                                                 value={clinic.contactName}
-                                                onChange={(e) => updateClinic(idx, "contactName", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "contactName", onlyText)
+                                                }}
                                             />
                                         </Grid>
                                     )}
@@ -153,7 +175,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={fieldConfig["Address"]?.label || "Address"}
                                                 fullWidth size="small" multiline rows={2}
                                                 value={clinic.address}
-                                                onChange={(e) => updateClinic(idx, "address", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "address", onlyText)
+                                                }}
                                             />
                                         </Grid>
                                     )}
@@ -165,7 +190,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={fieldConfig["City"]?.label || "City Name"}
                                                 fullWidth size="small" placeholder='Enter City Name'
                                                 value={clinic.city}
-                                                onChange={(e) => updateClinic(idx, "city", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "city", onlyText)
+                                                }}
                                             />
                                         </Grid>
                                     )}
@@ -177,7 +205,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={fieldConfig["Zip Code"]?.label || "Zip Code"}
                                                 fullWidth size="small" placeholder='Enter Zip Code'
                                                 value={clinic.zipCode}
-                                                onChange={(e) => updateClinic(idx, "zipCode", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "zipCode", onlyText)
+                                                }}
                                             />
                                         </Grid>
                                     )}
@@ -199,7 +230,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                     {/* Distributor */}
                                     {fieldConfig["Distributor"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
-                                            <FormControl fullWidth size="small" required>
+                                            <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
                                                 <InputLabel id="Distributor">Distributor</InputLabel>
                                                 <Select value={clinic.stkId} id='Distributor' label="Distributor" 
                                                     labelId="Distributor" variant="outlined"
@@ -210,6 +241,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                         </MenuItem>
                                                     ))}
                                                 </Select>
+                                                {fieldErrors.stkId && <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.stkId}</Typography>}
                                             </FormControl>
                                         </Grid>
                                     )}
@@ -259,7 +291,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={fieldConfig["Meeting Time"]?.show || "Meeting Timings"}
                                                 fullWidth size="small"
                                                 value={clinic.meetingTime}
-                                                onChange={(e) => updateClinic(idx, "meetingTime", e.target.value)}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "meetingTime", onlyText)
+                                                }}
                                             />
                                         </Grid>
                                     )}

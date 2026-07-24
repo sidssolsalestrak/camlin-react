@@ -24,6 +24,7 @@ import { Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LinearProgress } from "@mui/material";
 import dayjs from "dayjs";
 import "../../assets/css/accountMas.css";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function AccountMas() {
   const user = getUserFromToken();
@@ -34,6 +35,16 @@ function AccountMas() {
   const params = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const decodedParams = useMemo(
     () => ({
@@ -48,6 +59,20 @@ function AccountMas() {
     [params],
   );
   console.log("decodedParams:", decodedParams);
+
+  // ── Role-based access control (same pattern as Area.jsx) ──
+  // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+  const [accStat, setAccStat] = useState(null);
+
+  useEffect(() => {
+    try {
+      const accStat = localStorage.getItem("acc_stat");
+      setAccStat(accStat);
+      console.log("Acc Stat", accStat);
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
 
   useEffect(() => {
     const generateToken = async () => {
@@ -73,8 +98,10 @@ function AccountMas() {
     generateToken();
   }, [decodedParams.login_id]);
 
-  const title =
-    decodedParams.reqType == 2 ? "Approval List" : "Account Masters";
+ const title =
+  decodedParams.reqType == 2
+    ? "Approval List"
+    : `${masterPanel["ACCM"] || "Account"} Masters`;
   const [regionData, setRegionData] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState("");
 
@@ -222,7 +249,7 @@ function AccountMas() {
 
     {
       field: "user",
-      headerName: "USER",
+      headerName: (masterPanel["USER"] || "User").toUpperCase(),
       renderCell: ({ row }) => {
         const name = [row.req_first_name, row.req_last_name]
           .filter(Boolean)
@@ -240,20 +267,17 @@ function AccountMas() {
       width: 150,
     },
 
-    {
+      {
       field: "account",
-      headerName: "ACCOUNT DETAILS",
+      headerName: `${(masterPanel["ACCM"] || "Account").toUpperCase()} DETAILS`,
       renderCell: ({ row }) => {
         const name = [row.first_name, row.last_name].filter(Boolean).join(" ");
         const type = row.cus_type_id == 1 ? "HCP" : "Retailer";
 
-        // ── navigate based on cusReq
         const handleClick = () => {
           if (decodedParams.cusReq == 2) {
-            // Requests list → temp record
             navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
           } else {
-            // Current customers → normal record
             navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(1)}/${btoa(0)}`);
           }
         };
@@ -274,7 +298,7 @@ function AccountMas() {
           </div>
         );
       },
-      width: 280,
+      width: decodedParams.cusReq == 2 ? 200 : 500,
     },
 
     {
@@ -361,7 +385,8 @@ function AccountMas() {
       ]
       : []),
 
-    ...(decodedParams.cusReq == 2
+    // ── APPROVE — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
       ? [
         {
           field: "approve",
@@ -397,7 +422,8 @@ function AccountMas() {
       ]
       : []),
 
-    ...(decodedParams.cusReq == 2
+    // ── REJECT — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
       ? [
         {
           field: "reject",
@@ -433,7 +459,8 @@ function AccountMas() {
       ]
       : []),
 
-    ...(decodedParams.cusReq == 1
+    // ── EDIT — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 1 && [0, 2].includes(Number(accStat))
       ? [
         {
           field: "edit",
@@ -450,7 +477,8 @@ function AccountMas() {
       ]
       : []),
 
-    ...(decodedParams.cusReq == 1
+    // ── DELETE — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 1 && [0, 2].includes(Number(accStat))
       ? [
         {
           field: "delete",
@@ -480,7 +508,6 @@ function AccountMas() {
               View Logs
             </span>
           ),
-          width: 140,
         },
       ]
       : []),
@@ -632,7 +659,7 @@ function AccountMas() {
         params.value ? dayjs(params.value).format("DD MMM YYYY h:mm A") : "-",
     },
 
-    { field: "cat_type", headerName: "POTENTIAL CLASS" },
+    { field: "cat_type", headerName: (masterPanel["PCLS"] || "Potentiality Class").toUpperCase() },
 
     { field: "mobile", headerName: "MOBILE NUMBER" },
 
@@ -862,8 +889,8 @@ const handleRejectAll = () => {
       {...(!decodedParams.login_id && {
         breadcrumb: [
           { label: "Home", path: "/" },
-          { label: "Account", path: location.pathname },
-          { label: "Account List" },
+          { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+          { label: `${masterPanel["ACCM"] || "Account"} List` },
         ],
       })}
     >
@@ -883,12 +910,12 @@ const handleRejectAll = () => {
         >
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
             <FormControl required fullWidth size="small">
-              <InputLabel id="region-label">Region</InputLabel>
+              <InputLabel id="region-label">{masterPanel["REGN"] || "Region"}</InputLabel>
 
               <Select
                 labelId="region-label"
                 value={selectedRegion}
-                label="Region"
+                label={masterPanel["REGN"] || "Region"}
                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 onChange={(e) => {
                   setSelectedRegion(e.target.value);
@@ -969,9 +996,9 @@ const handleRejectAll = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    placeholder="Select User"
+                    placeholder={`Select ${masterPanel["USER"] || "User"}`}
                     variant="outlined"
-                    label="User"
+                    label={masterPanel["USER"] || "User"}
                   />
                 )}
               />
@@ -1049,6 +1076,7 @@ const handleRejectAll = () => {
           }}
         >
          {decodedParams.cusReq == 2 &&
+  [0, 2].includes(Number(accStat)) &&
   tableData.some(
     (row) =>
       row.mgr_approved_stat == 0 &&
@@ -1126,6 +1154,7 @@ const handleRejectAll = () => {
         </Box>
 
         {decodedParams.cusReq == 2 &&
+          [0, 2].includes(Number(accStat)) &&
           tableData.some(
             (row) =>
               row.mgr_approved_stat == 0 &&

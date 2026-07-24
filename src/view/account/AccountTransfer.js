@@ -20,6 +20,7 @@ import "../../assets/css/accountMas.css";
 import useToast from "../../utils/useToast";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { enqueueSnackbar } from "notistack";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function AccountTransfer() {
     const [allRegion, setAllRegion] = useState([])
@@ -37,6 +38,34 @@ function AccountTransfer() {
     const toast = useToast()
     const location=useLocation()
 
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    // ── Role-based access control (same pattern as AccountMas.jsx) ──
+    // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+    // Transfer is a data-modifying action, so it is gated the same way
+    // Edit/Delete are gated in AccountMas.jsx: Checker / All only.
+    const [accStat, setAccStat] = useState(null);
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat);
+        } catch (err) {
+            console.log(err);
+        }
+    }, []);
+
+    const canTransfer = [0, 2].includes(Number(accStat));
+
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -52,9 +81,9 @@ function AccountTransfer() {
 
     const showSubmitTransferConfirmation = () => {
         showConfirmationDialog({
-            title: `Account Transfer`,
-            message: `Are you sure want to Transfer ${selectedRows.length} Accounts from ${selFromUser.user_name} 
-            to ${selToUser.user_name} for Selected Accounts??`,
+            title: `${masterPanel["ACCM"] || "Account"} Transfer`,
+            message: `Are you sure want to Transfer ${selectedRows.length} ${masterPanel["ACCM"] || "Account"}s from ${selFromUser.user_name} 
+            to ${selToUser.user_name} for Selected ${masterPanel["ACCM"] || "Account"}s??`,
             confirmText: `Yes`,
             confirmColor: "primary",
             onConfirm: () => handleTransferCustomer()
@@ -216,7 +245,7 @@ function AccountTransfer() {
 
         if (!selToUser) {
             newErrors.toUser = true;
-            toast.error("Please Select Transfer To User");
+            toast.error(`Please Select Transfer To ${masterPanel["USER"] || "User"}`);
         }
 
         if (selToUser && selectedRows.length === 0) {
@@ -288,12 +317,12 @@ function AccountTransfer() {
         },
         {
             field: "beat_name",
-            headerName: "Beat",
+            headerName: masterPanel["BEAT"] || "Beat",
             filterable: true,
         },
         {
             field: "req_first_name",
-            headerName: "User",
+            headerName: masterPanel["USER"] || "User",
             filterable: true,
             renderCell: (params) => (
                 <Box>
@@ -309,7 +338,7 @@ function AccountTransfer() {
         },
         {
             field: "first_name",
-            headerName: "Account Details",
+            headerName: `${masterPanel["ACCM"] || "Account"} Details`,
             filterable: true,
             renderCell: (params) => (
                 <Box>
@@ -376,8 +405,8 @@ function AccountTransfer() {
         <Layout     
             breadcrumb={ [
           { label: "Home", path: "/" },
-          { label: "Account", path: location.pathname },
-          { label: "Account Transfer" },
+          { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+          { label: `${masterPanel["ACCM"] || "Account"} Transfer` },
         ]}
         >
             <Box p={0.5}>
@@ -388,7 +417,7 @@ function AccountTransfer() {
                     gap={2}
                 >
                     <Box>
-                        <h2 className="mainTitle">Account Transfer</h2>
+                        <h2 className="mainTitle">{masterPanel["ACCM"] || "Account"} Transfer</h2>
                     </Box>
                     <Box sx={{
                         mb: 0.5,
@@ -408,10 +437,10 @@ function AccountTransfer() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Region *"
+                                        label={`${masterPanel["REGN"] || "Region"} *`}
                                         size="small"
                                         error={!!errors.region}
-                                        helperText={errors.region ? "Please Select Zone" : ""}
+                                        helperText={errors.region ? `Please Select ${masterPanel["ZONE"] || "Zone"}` : ""}
                                     />
                                 )}
                             />
@@ -428,15 +457,15 @@ function AccountTransfer() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="From User *"
+                                        label={`From ${masterPanel["USER"] || "User"} *`}
                                         size="small"
                                         error={!!errors.fromUser}
-                                        helperText={errors.fromUser ? "Please Select Transfer From User" : ""}
+                                        helperText={errors.fromUser ? `Please Select Transfer From ${masterPanel["USER"] || "User"}` : ""}
                                     />
                                 )}
                             />
                             <Box>
-                                {allBeat.length > 0 && <Typography sx={{ mb: 1, mt: 0.5 }}>Beat Mapped*</Typography>}
+                                {allBeat.length > 0 && <Typography sx={{ mb: 1, mt: 0.5 }}>{masterPanel["BEAT"] || "Beat"} Mapped*</Typography>}
                             </Box>
                             {allBeat.map((val) => (
                                 <MenuItem
@@ -448,7 +477,7 @@ function AccountTransfer() {
 
                                         // FIX 1: return early to prevent removing last beat
                                         if (isSelected && selBeat.length === 1) {
-                                            toast.error("Please Select At Least 1 Beat to Load");
+                                            toast.error(`Please Select At Least 1 ${masterPanel["BEAT"] || "Beat"} to Load`);
                                             return;
                                         }
 
@@ -476,10 +505,10 @@ function AccountTransfer() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="To User *"
+                                        label={`To ${masterPanel["USER"] || "User"} *`}
                                         size="small"
                                         error={!!errors.toUser}
-                                        helperText={errors.toUser ? "Please Select Transfer To User" : ""}
+                                        helperText={errors.toUser ? `Please Select Transfer To ${masterPanel["USER"] || "User"}` : ""}
                                     />
                                 )}
                             />
@@ -501,17 +530,19 @@ function AccountTransfer() {
                                         boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                                     }}
                                 />
-                                <Button
-                                    onClick={() => {
-                                        if (validateFields()) {
-                                            showSubmitTransferConfirmation()
-                                        }
-                                    }}
-                                    variant="contained"
-                                    sx={{ mt: 3, ml: 2, mb: 2, textTransform: 'none' }}
-                                >
-                                    Transfer
-                                </Button>
+                                {canTransfer && (
+                                    <Button
+                                        onClick={() => {
+                                            if (validateFields()) {
+                                                showSubmitTransferConfirmation()
+                                            }
+                                        }}
+                                        variant="contained"
+                                        sx={{ mt: 3, ml: 2, mb: 2, textTransform: 'none' }}
+                                    >
+                                        Transfer
+                                    </Button>
+                                )}
                             </Box>
                         )}
                     </Box>
