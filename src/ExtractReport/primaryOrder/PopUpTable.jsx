@@ -17,7 +17,7 @@ const mainTitle = { fontWeight: "bold", fontSize: "14px" }
 const subTitle = { fontSize: "14px", color: "#212121" }
 
 
-const PopUpTable = ({ open, setOpen, rowData }) => {
+const PopUpTable = ({ open, setOpen, rowData,distributorLabel,userLabel,prod }) => {
     const [tableData, settableData] = useState([]);
     const [loading, setloading] = useState(false);
 
@@ -54,7 +54,7 @@ const PopUpTable = ({ open, setOpen, rowData }) => {
         },
         {
             field: "prod_price",
-            headerName: "Stockist Price (PTS)",
+            headerName: `${distributorLabel} Price (PTS)`,
             filterable: true,
             type: "alignCenter"
         },
@@ -102,7 +102,7 @@ const PopUpTable = ({ open, setOpen, rowData }) => {
                     <Typography
                         sx={{ color: "#343a40", fontSize: "16px", fontWeight: "400" }}
                     >
-                        Order Product Breakup
+                        Order {prod} Breakup
                     </Typography>
                     <span
                         onClick={() => setOpen(false)}
@@ -122,11 +122,11 @@ const PopUpTable = ({ open, setOpen, rowData }) => {
                             <span style={subTitle}>{" "}{rowData?.ord_date || null}</span>
                         </Box>
                         <Box>
-                            <span style={mainTitle}>User:</span>
+                            <span style={mainTitle}>{userLabel}:</span>
                             <span style={subTitle}>{" "}{rowData?.user_name || null}</span>
                         </Box>
                         <Box>
-                            <span style={mainTitle}>Distributor:</span>
+                            <span style={mainTitle}>{distributorLabel}:</span>
                             <span style={subTitle}>{" "}{rowData?.stk_code} - {rowData?.stk_name}</span>
                         </Box>
                     </Box>

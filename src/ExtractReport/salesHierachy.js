@@ -10,6 +10,7 @@ import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import DataTable from "../utils/dataTable";
 import CircularProgress from "../utils/CircularProgressLoading";
+import { getMasterPanel } from "../services/masterPanelService";
 
 export default function SalesHierachy() {
     const [selZone, setSelZone] = useState(0)
@@ -40,6 +41,29 @@ export default function SalesHierachy() {
             ? parseInt(progress)
             : null;
 
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+    const userLabel = masterPanel["USER"] || "Users";
+    const stkLabel = masterPanel["STKS"] || "Distributor";
+    const catLabel = masterPanel["PCAT"] || "Category";
+    const rsmLabel = masterPanel["ZM"] || "RSM";     // tag ZM -> alias "RSM"
+    const zbmLabel = masterPanel["RM"] || "ZBM";     // tag RM -> alias "ZBM"
+    const amLabel = masterPanel["ASM"] || "AM/FSO";  // tag ASM -> alias "AM/FSO"
+    const srLabel = masterPanel["KAM"] || "SR";      // tag KAM -> alias "SR"
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     useEffect(() => {
         fetchZone()
         fetchUserType()
@@ -59,20 +83,20 @@ export default function SalesHierachy() {
         if (!decodeduserId) {
             setSelUsers({ id: 0, u_name: "All" })
         }
-        if (!selUserType || selUserType === 0){
-          setAllUsers([])
-          setSelUsers({ id: 0, u_name: "All" })
-          return
+        if (!selUserType || selUserType === 0) {
+            setAllUsers([])
+            setSelUsers({ id: 0, u_name: "All" })
+            return
         }
         fetchSSUserList()
-    }, [selUserType,selZone,selRegion])
+    }, [selUserType, selZone, selRegion])
 
     useEffect(() => {
         if (!decodedDistributorId) {
             setSelDistributor(0)
             setAllDistributor([])
         }
-        if ((!selRegion || selRegion === 0) && (!selUsers || selUsers.id === 0)){
+        if ((!selRegion || selRegion === 0) && (!selUsers || selUsers.id === 0)) {
             setSelDistributor(0)
             setAllDistributor([])
             return
@@ -81,20 +105,20 @@ export default function SalesHierachy() {
     }, [selRegion, selUsers])
 
     useEffect(() => {
-    const fetchTableData = async () => {
-        if (URL !== 'active_sales_new') {
-            setSelZone(Number(zoneid ? decodedZoneId : 0))
-            setSelRegion(Number(regionid ? decodedRegionId : 0))
-            setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
-            setSelDistributor(Number(decodedDistributorId ? decodedDistributorId : 0))
+        const fetchTableData = async () => {
+            if (URL !== 'active_sales_new') {
+                setSelZone(Number(zoneid ? decodedZoneId : 0))
+                setSelRegion(Number(regionid ? decodedRegionId : 0))
+                setSelUserType(Number(usertypeId ? decodedUserTypeId : 0))
+                setSelDistributor(Number(decodedDistributorId ? decodedDistributorId : 0))
+            }
+            let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
+            setAllHeirachyData(hierachyData)
         }
-        let hierachyData = await fetchHierachyData(decodedZoneId, decodedRegionId, decodedUserTypeId, decodeduserId, decodedDistributorId)
-        setAllHeirachyData(hierachyData)
-    }
-    if (zoneid || regionid || usertypeId || userid || distributorid) {
-        fetchTableData()
-    }
-}, [zoneid, regionid, usertypeId, userid, distributorid])
+        if (zoneid || regionid || usertypeId || userid || distributorid) {
+            fetchTableData()
+        }
+    }, [zoneid, regionid, usertypeId, userid, distributorid])
 
     useEffect(() => {
         if (!decodeduserId && allUsers) return
@@ -181,11 +205,11 @@ export default function SalesHierachy() {
         },
         {
             field: "stk_code",
-            headerName: "Distributor Code",
+            headerName: `${stkLabel} Code`
         },
         {
             field: "stk_name",
-            headerName: "Distributor Name",
+            headerName: `${stkLabel} Name`,
         },
         {
             field: "city_name",
@@ -200,108 +224,108 @@ export default function SalesHierachy() {
         },
         {
             field: "zone_name",
-            headerName: "Zone",
+            headerName: zoneLabel,
         },
         {
             field: "reg_name",
-            headerName: "Region",
+            headerName: regionLabel,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "area_name",
-            headerName: "Area",
+            headerName: areaLabel,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "ter_name",
-            headerName: "Territory",
+            headerName: territoryLabel,
         },
         {
             field: "rsm_code",
-            headerName: "RSM Code",
+            headerName: `${rsmLabel} Code`,
         },
         {
             field: "rsm_name",
-            headerName: "RSM Name",
+            headerName: `${rsmLabel} Name`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "rsm_email",
-            headerName: "RSM Email",
+            headerName: `${rsmLabel} Email`,
         },
         {
             field: "rsm_mobile",
-            headerName: "RSM Mobile",
+            headerName: `${rsmLabel} Mobile`,
         },
         {
             field: "zbm_code",
-            headerName: "ZBM Code",
+            headerName: `${zbmLabel} Code`,
         },
         {
             field: "zbm_name",
-            headerName: "ZBM Name",
+            headerName: `${zbmLabel} Name`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "zbm_email",
-            headerName: "ZBM Email",
+            headerName: `${zbmLabel} Email`,
         },
         {
             field: "zbm_mobile",
-            headerName: "ZBM Mobile",
+            headerName: `${zbmLabel} Mobile`,
         },
         {
             field: "am_code",
-            headerName: "AM Code",
+            headerName: `${amLabel} Code`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "am_name",
-            headerName: "AM Name",
+            headerName: `${amLabel} Name`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "am_email",
-            headerName: "AM Email",
+            headerName: `${amLabel} Email`,
         },
         {
             field: "am_mobile",
-            headerName: "AM Mobile",
+            headerName: `${amLabel} Mobile`,
         },
         {
             field: "sr_code",
-            headerName: "SR Code",
+            headerName: `${srLabel} Code`,
         },
         {
             field: "sr_name",
-            headerName: "SR Name",
+            headerName: `${srLabel} Name`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "sr_hq_name",
-            headerName: "SR Headquarter",
+            headerName: `${srLabel} Headquarter`,
         },
         {
             field: "sr_email",
-            headerName: "SR Email",
+            headerName: `${srLabel} Email`,
         },
         {
             field: "sr_mobile",
-            headerName: "SR Mobile",
+            headerName: `${srLabel} Mobile`,
         },
 
     ]
@@ -357,27 +381,28 @@ export default function SalesHierachy() {
                 const match = list.find((item) => item.id === selectedId)
                 return match ? `${prefix}- ${match[labelKey]}` : `${prefix}- All`
             }
-
+            const userLabel1 = (masterPanel["USER"] || "Users").replace(/\s+T\s*$/, '').trim() || "Users";
+            
             const selectedUserTypeLabel = (() => {
-                if (!selUserType || selUserType === 0) return "UserType - All"
+                if (!selUserType || selUserType === 0) return `${userLabel1} Type - All`
                 const match = allUserType.find((u) => u.id === selUserType)
-                return match ? `UserType- ${match.client_alias}` : "UserType - All"
+                return match ? `${userLabel1} Type- ${match.client_alias}` : `${userLabel1} Type - All`
             })()
 
             const selectedDistributorLabel = (() => {
-                if (!selDistributor || selDistributor === 0) return "Distributor- All"
+                if (!selDistributor || selDistributor === 0) return `${stkLabel}- All`
                 const match = allDistributor.find((d) => d.stk_id === selDistributor)
-                return match ? `Distributor-${match.stk_code}-${match.stk_name}` : "Distributor- All"
+                return match ? `${stkLabel}-${match.stk_code}-${match.stk_name}` : `${stkLabel}- All`
             })()
 
             const meta = {
-                Zone: getLabel(allZone, selZone, "zone_name", "Zone"),
-                Region: getLabel(allRegion, selRegion, "reg_name", "Region"),
+                Zone: getLabel(allZone, selZone, "zone_name", zoneLabel),
+                Region: getLabel(allRegion, selRegion, "reg_name", regionLabel),
                 UserType: selectedUserTypeLabel,
-                User: `User - ${selUsers?.u_name ?? "All"}`,
+                User: `${userLabel} - ${selUsers?.u_name ?? "All"}`,
                 Distributor: selectedDistributorLabel,
             }
-          
+
 
             DownloadCSV(
                 finalHierachyData,
@@ -423,132 +448,132 @@ export default function SalesHierachy() {
                         borderRadius: "10px"
                     }}>
                         <Grid container spacing={0.95}>
-                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth sx={{ height: '3rem' }}>
-                            <InputLabel id="zone">Zone </InputLabel>
-                            <Select value={selZone} onChange={(e) => {
-                                setSelRegion(0)
-                                setSelZone(e.target.value)
-                            }}  labelId="zone" label="Zone" size="small"
-                                MenuProps={{
-                                    PaperProps: {
-                                        style: {
-                                            maxHeight: 200
-                                        }
-                                    }
-                                }}
-                            >
-                                <MenuItem value={0}>All</MenuItem>
-                                {allZone.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
-                                ))}
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth sx={{ height: '3rem' }}>
+                                    <InputLabel id="zone">{zoneLabel} </InputLabel>
+                                    <Select value={selZone} onChange={(e) => {
+                                        setSelRegion(0)
+                                        setSelZone(e.target.value)
+                                    }} labelId="zone" label={zoneLabel} size="small"
+                                        MenuProps={{
+                                            PaperProps: {
+                                                style: {
+                                                    maxHeight: 200
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allZone.map((val) => (
+                                            <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
+                                        ))}
 
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth sx={{ height: '3rem' }}>
-                            <InputLabel id="region">Region </InputLabel>
-                            <Select value={selRegion} onChange={(e) => {
-                                setSelDistributor(0)
-                                setSelRegion(e.target.value)
-                            }}  labelId="region" label="Region" size="small"
-                                MenuProps={{
-                                    PaperProps: {
-                                        style: {
-                                            maxHeight: 200
-                                        }
-                                    }
-                                }}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth sx={{ height: '3rem' }}>
+                                    <InputLabel id="region">{regionLabel} </InputLabel>
+                                    <Select value={selRegion} onChange={(e) => {
+                                        setSelDistributor(0)
+                                        setSelRegion(e.target.value)
+                                    }} labelId="region" label={regionLabel} size="small"
+                                        MenuProps={{
+                                            PaperProps: {
+                                                style: {
+                                                    maxHeight: 200
+                                                }
+                                            }
+                                        }}
 
-                            >
-                                <MenuItem value={0}>All</MenuItem>
-                                {allRegion.map((val) => (
-                                    <MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>
-                                ))}
+                                    >
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allRegion.map((val) => (
+                                            <MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>
+                                        ))}
 
 
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth sx={{ height: '3rem' }}>
-                            <InputLabel id="usr_type">User Type </InputLabel>
-                            <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)}  labelId="usr_type" label="User Type" size="small"
-                                MenuProps={{
-                                    PaperProps: {
-                                        style: {
-                                            maxHeight: 200
-                                        }
-                                    }
-                                }}
-                            >
-                                <MenuItem value={0}>All</MenuItem>
-                                {allUserType.map((val) => (
-                                    <MenuItem value={val.id} key={val.id}>{val.client_alias}</MenuItem>
-                                ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth sx={{ height: '3rem' }}>
+                                    <InputLabel id="usr_type">{userLabel} Type </InputLabel>
+                                    <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} labelId="usr_type" label={`${userLabel} Type`} size="small"
+                                        MenuProps={{
+                                            PaperProps: {
+                                                style: {
+                                                    maxHeight: 200
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allUserType.map((val) => (
+                                            <MenuItem value={val.id} key={val.id}>{val.client_alias}</MenuItem>
+                                        ))}
 
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth sx={{ height: '3rem' }}>
-                            <Autocomplete
-                                options={[{ id: 0, u_name: "All" }, ...allUsers]}
-                                getOptionLabel={(option) => option.u_name}
-                                value={selUsers}
-                                onChange={(event, newValue) => {
-                                    setSelDistributor(0)
-                                    setSelUsers(newValue)
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="User"
-                                        size="small"
-                                        error={!!userError}
-                                        helperText={userError ? "Please Select User to Load" : ""}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth sx={{ height: '3rem' }}>
+                                    <Autocomplete
+                                        options={[{ id: 0, u_name: "All" }, ...allUsers]}
+                                        getOptionLabel={(option) => option.u_name}
+                                        value={selUsers}
+                                        onChange={(event, newValue) => {
+                                            setSelDistributor(0)
+                                            setSelUsers(newValue)
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label={userLabel}
+                                                size="small"
+                                                error={!!userError}
+                                                helperText={userError ? "Please Select User to Load" : ""}
+                                            />
+                                        )}
+                                        isOptionEqualToValue={(option, value) => option.id === value?.id}
                                     />
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth sx={{ height: '3rem' }}>
+                                    <InputLabel id="Distributor">{stkLabel}</InputLabel>
+                                    <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)} labelId="Distributor" label={stkLabel} size="small"
+                                        MenuProps={{
+                                            PaperProps: {
+                                                style: {
+                                                    maxHeight: 200,
+                                                }
+                                            }
+                                        }}
+
+                                    >
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allDistributor.map((val) => (
+                                            <MenuItem sx={{ textWrap: 'wrap' }} key={val.stk_id} value={val.stk_id}>{val.stk_code}-{val.stk_name}</MenuItem>
+                                        ))}
+
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            {URL !== 'active_sales_new' && <Grid size={{ md: 1.3, lg: 1, xs: 4, sm: 2 }}> <Button variant="contained" sx={{ mt: 0.1 }} onClick={() => handleLoad()} >
+                                Load
+                            </Button>
+                            </Grid>
+                            }
+                            <Grid size={{ md: 1, lg: 0.5, xs: 2, sm: 1 }}>
+                                {progress ? (
+                                    <CircularProgress progress={progress} />
+                                ) : (
+                                    <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                                        <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                                    </span>
                                 )}
-                                isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            />
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth sx={{ height: '3rem' }}>
-                            <InputLabel id="Distributor">Distributor</InputLabel>
-                            <Select value={selDistributor} onChange={(e) => setSelDistributor(e.target.value)}  labelId="Distributor" label="Distributor" size="small"
-                                MenuProps={{
-                                    PaperProps: {
-                                        style: {
-                                            maxHeight: 200,
-                                        }
-                                    }
-                                }}
-
-                            >
-                                <MenuItem value={0}>All</MenuItem>
-                                {allDistributor.map((val) => (
-                                    <MenuItem sx={{ textWrap: 'wrap' }} key={val.stk_id} value={val.stk_id}>{val.stk_code}-{val.stk_name}</MenuItem>
-                                ))}
-
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        {URL !== 'active_sales_new' && <Grid size={{ md:1.3, lg: 1, xs: 4,sm:2 }}> <Button variant="contained" sx={{mt:0.1}} onClick={() => handleLoad()} >
-                            Load
-                        </Button>
-                         </Grid>
-                        }
-                        <Grid size={{ md:1, lg: 0.5, xs: 2,sm:1 }}>
-                          {progress ? (
-                        <CircularProgress progress={progress} />
-                    ) : (
-                        <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
-                            <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
-                        </span>
-                    )}
-                        </Grid>
+                            </Grid>
                         </Grid>
                     </Box>
                     {URL !== 'active_sales_new' &&

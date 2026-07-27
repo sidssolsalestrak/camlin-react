@@ -14,6 +14,7 @@ import CircularProgressLoading from '../utils/CircularProgressLoading';
 import { AiOutlineFileExcel } from 'react-icons/ai';
 import { excelWithFilters } from '../utils/ExcelWithFilters';
 import { addSubtotalsSales } from './addSubtotalsSales';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -81,6 +82,24 @@ const StockAndSalesReport = () => {
     const [distribute, setdistribute] = useState([]);
     const [zoneerror, setzoneerror] = useState("")
     const [usererror, setusererror] = useState("")
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const stkLabel = masterPanel["STKS"] || "Distributor";
+    const catLabel = masterPanel["PCAT"] || "Category";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const handleChange = (name, val) => {
         setFormData((prev) => ({
@@ -178,13 +197,13 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
-        if (formData.userType > 0 && (formData.zone>0 || formData.region>0)) {
+        if (formData.userType > 0 && (formData.zone > 0 || formData.region > 0)) {
             fetchSSUserList();
         } else {
             setuser([])
             handleChange("User", { id: 0, u_name: "All" })
         }
-    }, [formData.userType,formData.zone,formData.region]);
+    }, [formData.userType, formData.zone, formData.region]);
 
     // Region or User changes → fetch distributors
     useEffect(() => {
@@ -279,13 +298,13 @@ const StockAndSalesReport = () => {
     }, [user, decodedUser]);
 
     const columns = [
-        { field: "zone_name", headerName: "Zone", filterable: true },
-        { field: "reg_name", headerName: "Region", filterable: true },
-        { field: "stk_code", headerName: "Distributor Code", filterable: true },
-        { field: "stk_name", headerName: "Distributor Name", width: 150, filterable: true },
+        { field: "zone_name", headerName: zoneLabel, filterable: true },
+        { field: "reg_name", headerName: regionLabel, filterable: true },
+        { field: "stk_code", headerName: `${stkLabel} Code`, filterable: true },
+        { field: "stk_name", headerName: `${stkLabel} Name`, width: 150, filterable: true },
         { field: "city_name", headerName: "City", filterable: true },
         { field: "state_name", headerName: "State", filterable: true },
-        { field: "cat_name", headerName: "Category", filterable: true },
+        { field: "cat_name", headerName: catLabel, filterable: true },
         { field: "sub_name", headerName: "Range", filterable: true },
         { field: "code", headerName: "SKU Code", filterable: true },
         { field: "prod_name", headerName: "SKU Name", filterable: true },
@@ -382,11 +401,11 @@ const StockAndSalesReport = () => {
 
             const filters = [
                 { label: `Month : ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
-                { label: `Zone : ${getLabel(zoneData, formData.zone, "zone_name", "")}`, bold: false, sz: 10 },
-                { label: `Region : ${getLabel(regionData, formData.region, "reg_name", "")}`, bold: false, sz: 10 },
-                { label: `UserType : ${getLabel(usertype, formData.userType, "client_alias", "")}`, bold: false, sz: 10 },
-                { label: `User : ${formData.User?.u_name}`, bold: false, sz: 10 },
-                { label: `Distributor : ${getLabel(distribute, formData.Distributor, (item) => `${item.stk_code} - ${item.stk_name}`, "", "stk_id")}`, bold: false, sz: 10 },];
+                { label: `${zoneLabel} : ${getLabel(zoneData, formData.zone, "zone_name", "")}`, bold: false, sz: 10 },
+                { label: `${regionLabel} : ${getLabel(regionData, formData.region, "reg_name", "")}`, bold: false, sz: 10 },
+                { label: `${userLabel}Type : ${getLabel(usertype, formData.userType, "client_alias", "")}`, bold: false, sz: 10 },
+                { label: `${userLabel} : ${formData.User?.u_name}`, bold: false, sz: 10 },
+                { label: `${stkLabel} : ${getLabel(distribute, formData.Distributor, (item) => `${item.stk_code} - ${item.stk_name}`, "", "stk_id")}`, bold: false, sz: 10 },];
 
             await excelWithFilters(addSubtotalsSales(tableData), excelColumns, `Stock_Sales_Report_${dayjs(month).format("MMM YYYY")}`, filters, setProgress);
         } catch (err) {
@@ -429,12 +448,12 @@ const StockAndSalesReport = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="zone">Zone</InputLabel>
-                            <Select value={formData.zone} onChange={(e) =>{ 
+                            <InputLabel id="zone">{zoneLabel}</InputLabel>
+                            <Select value={formData.zone} onChange={(e) => {
                                 handleChange("region", "0")
                                 handleChange("zone", e.target.value)
-                                }}
-                                id='zone' label="Zone" MenuProps={menuStyle} labelId="zone" variant="outlined" error={!!zoneerror}>
+                            }}
+                                id='zone' label={zoneLabel} MenuProps={menuStyle} labelId="zone" variant="outlined" error={!!zoneerror}>
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
@@ -445,8 +464,8 @@ const StockAndSalesReport = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Region">Region</InputLabel>
-                            <Select id='Region' label="Region" MenuProps={menuStyle}
+                            <InputLabel id="Region">{regionLabel}</InputLabel>
+                            <Select id='Region' label={regionLabel} MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
                                 labelId="Region" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -458,8 +477,8 @@ const StockAndSalesReport = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="type">User Type</InputLabel>
-                            <Select id='type' label="User Type" MenuProps={menuStyle}
+                            <InputLabel id="type">{userLabel} Type</InputLabel>
+                            <Select id='type' label={`${userLabel} Type`} MenuProps={menuStyle}
                                 value={formData.userType} onChange={(e) => handleChange("userType", e.target.value)}
                                 labelId="type" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -479,15 +498,15 @@ const StockAndSalesReport = () => {
                                 handleChange("User", newValue ?? { id: 0, u_name: "All" })
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} label="User" size="small" error={!!usererror} helperText={usererror ? usererror : null} />
+                                <TextField {...params} label={userLabel} size="small" error={!!usererror} helperText={usererror ? usererror : null} />
                             )}
                             isOptionEqualToValue={(option, value) => option.id === value?.id}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Distributor">Distributor</InputLabel>
-                            <Select id='Distributor' label="Distributor" MenuProps={menuStyle}
+                            <InputLabel id="Distributor">{stkLabel}</InputLabel>
+                            <Select id='Distributor' label={stkLabel} MenuProps={menuStyle}
                                 value={formData.Distributor} onChange={(e) => handleChange("Distributor", e.target.value)}
                                 labelId="Distributor" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>

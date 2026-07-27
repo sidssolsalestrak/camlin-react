@@ -35,6 +35,8 @@ const ProductCategory = () => {
     const [loading, setLoading] = useState(true)
     const [masterPanel, setMasterPanel] = useState({});
 
+    const brandLabel = masterPanel["BRND"] || "Brand";
+
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();
@@ -132,7 +134,7 @@ const ProductCategory = () => {
             categoryName: ""
         }
         if (!formData.brand) {
-            newValidations.brand = "The Brand field is required";
+            newValidations.brand = `The ${brandLabel} field is required`;
             isValid = false;
         }
 
@@ -296,7 +298,7 @@ const ProductCategory = () => {
         },
         {
             field: "brand_name",
-            headerName: "Brand",
+            headerName: brandLabel,
             filterable: true,
             sortable: true
         },
@@ -409,12 +411,12 @@ const ProductCategory = () => {
                         <TabPanel value="1">
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 <FormControl fullWidth size="small" required>
-                                    <InputLabel id="Brand">Brand</InputLabel>
-                                    <Select id='Brand-select' label="Brand" labelId="Brand" variant="outlined"
+                                    <InputLabel id="Brand">{brandLabel}</InputLabel>
+                                    <Select id='Brand-select' label={brandLabel} labelId="Brand" variant="outlined"
                                         value={formData.brand} error={!!validation.brand} MenuProps={menuStyle}
                                         onChange={(e) => formDataChange("brand", e.target.value)}
                                     >
-                                        <MenuItem style={{ fontSize: "11px" }} value="">Select Brand</MenuItem>
+                                        <MenuItem style={{ fontSize: "11px" }} value="">Select {brandLabel}</MenuItem>
                                         {brandData?.map((item, index) => (
                                             <MenuItem key={index || item.id} style={{ fontSize: "11px" }} value={item.id}>{item?.brand_name}</MenuItem>
                                         ))}

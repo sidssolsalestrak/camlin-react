@@ -13,7 +13,7 @@ import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { Download } from "../utils/downloadExcel/Download";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { getMasterPanel } from "../services/masterPanelService";
 
 export default function OutletCount() {
     const { enzone, enRegion, enArea, enSo } = useParams();
@@ -46,6 +46,21 @@ export default function OutletCount() {
     const [showTable, setShowTable] = useState(false)
 
     const toast = useToast();
+    const [masterPanel, setMasterPanel] = useState({});
+
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     // ── Helpers ────────────────────────────────────────────────────────────────
     const fmt = (val) => (!val || Number(val) === 0 ? "-" : val);
@@ -150,16 +165,16 @@ export default function OutletCount() {
     const COLUMNS = [
         {
             field: "_name",
-            headerName: "Zone",
-            renderHeader: () => (<Typography sx={{ textAlign: 'start', ml: 2 }}>Zone</Typography>),
+            headerName: zoneLabel,
+            renderHeader: () => (<Typography sx={{ textAlign: 'start', ml: 2 }}>{zoneLabel}</Typography>),
             width: 500,
             renderCell: ({ row }) => {
                 if (row._rowType === "subheader") return (
                     <Box display="flex" gap={1} alignItems="center" sx={{ width: "100%" }}>
                         <Typography sx={{ width: 20, fontWeight: 700, fontSize: 12, color: "#555" }}>#</Typography>
                         <Typography sx={{ width: 150, fontWeight: 700, fontSize: 12, color: "#555" }}>SO</Typography>
-                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: 12, color: "#555" }}>Territory</Typography>
-                        <Typography sx={{ width: 100, fontWeight: 700, fontSize: 12, color: "#555" }}>Beat</Typography>
+                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: 12, color: "#555" }}>{territoryLabel}</Typography>
+                        <Typography sx={{ width: 100, fontWeight: 700, fontSize: 12, color: "#555" }}>{beatLabel}</Typography>
                     </Box>
                 );
                 if (row._rowType === "zone") return (
@@ -243,11 +258,11 @@ export default function OutletCount() {
     const ExcelColumns = [
         { field: 'emp_code', headerName: 'Code' },
         { field: 'uname', headerName: 'SO' },
-        { field: 'zone_name', headerName: 'Zone' },
-        { field: 'reg_name', headerName: 'Region' },
-        { field: 'area_name', headerName: 'Area' },
-        { field: 'ter_name', headerName: 'Territory' },
-        { field: 'beat_name', headerName: 'Beat' },
+        { field: 'zone_name', headerName: zoneLabel },
+        { field: 'reg_name', headerName: regionLabel },
+        { field: 'area_name', headerName: areaLabel },
+        { field: 'ter_name', headerName: territoryLabel },
+        { field: 'beat_name', headerName: beatLabel },
         { field: 'tot_cus', headerName: 'Total Outlets' },
     ];
 
@@ -371,32 +386,32 @@ export default function OutletCount() {
         }
     };
 
-   const handleDownloadExcel = () => {
-    try {
-        const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
-        
-        // Calculate grand total
-        const totalOutlets = allOutLets.reduce((sum, row) => sum + (Number(row.tot_cus) || 0), 0);
-        
-        // Append grand total row
-        const exportData = [
-            ...allOutLets,
-            {
-                emp_code: 'Grand Total',
-                uname: '',
-                zone_name: '',
-                reg_name: '',
-                area_name: '',
-                ter_name: '',
-                beat_name: '',
-                tot_cus: totalOutlets,
-            }
-        ];
-        
-        Download(exportData, safeColumns, 'Total_Outlets', setProgress, toast, 'Total_Outlets', {}, true);
-    } catch (err) {
-        console.log("Export Excel Err", err);
-    }
+    const handleDownloadExcel = () => {
+        try {
+            const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
+
+            // Calculate grand total
+            const totalOutlets = allOutLets.reduce((sum, row) => sum + (Number(row.tot_cus) || 0), 0);
+
+            // Append grand total row
+            const exportData = [
+                ...allOutLets,
+                {
+                    emp_code: 'Grand Total',
+                    uname: '',
+                    zone_name: '',
+                    reg_name: '',
+                    area_name: '',
+                    ter_name: '',
+                    beat_name: '',
+                    tot_cus: totalOutlets,
+                }
+            ];
+
+            Download(exportData, safeColumns, 'Total_Outlets', setProgress, toast, 'Total_Outlets', {}, true);
+        } catch (err) {
+            console.log("Export Excel Err", err);
+        }
     };
 
     // ── Effects ────────────────────────────────────────────────────────────────
@@ -436,9 +451,9 @@ export default function OutletCount() {
                     });
                     setAllSo(Array.isArray(r.data.data) ? r.data.data : []);
                 }
-                if(enzone || enRegion || enArea || enSo){
+                if (enzone || enRegion || enArea || enSo) {
 
-                await handleLoadWithValues(decodeZone, decodeRegion, decodeArea, decodeSo);
+                    await handleLoadWithValues(decodeZone, decodeRegion, decodeArea, decodeSo);
                 }
             } catch (e) {
                 console.log("Param load error:", e);
@@ -468,82 +483,82 @@ export default function OutletCount() {
                     borderRadius: "10px",
                 }}>
                     <Grid container spacing={0.95}>
-                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel id="zone">Zone</InputLabel>
-                        <Select value={selZone} labelId="zone" label="Zone" size="small"
-                            onChange={(e) => handleZoneChange(e.target.value)}>
-                            <MenuItem value={0}>All</MenuItem>
-                            {allZone.map((z) => (
-                                <MenuItem key={z.id} value={z.id}>{z.zone_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    </Grid>
-                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel id="region">Region</InputLabel>
-                        <Select value={selRegion} labelId="region" label="Region" size="small" 
-                            onChange={(e) => handleRegionChange(e.target.value)}>
-                            <MenuItem value={0}>All</MenuItem>
-                            {allRegion.map((r) => (
-                                <MenuItem key={r.id} value={r.id}>{r.reg_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    </Grid>
-                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel id="area">Area</InputLabel>
-                        <Select value={selArea} labelId="area" label="Area" size="small"
-                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} 
-                            onChange={(e) => handleAreaChange(e.target.value)}>
-                            <MenuItem value={0}>All</MenuItem>
-                            {allArea.map((a) => (
-                                <MenuItem key={a.id} value={a.id}>{a.area_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    </Grid>
-                    <Grid  size={{ md:3, lg: 1.8, xs: 12,sm:6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel id="so">SO</InputLabel>
-                        <Select value={selSo} labelId="so" label="SO" size="small"
-                            MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }} 
-                            onChange={(e) => setSelSo(e.target.value)}>
-                            <MenuItem value={0}>All</MenuItem>
-                            {allSo.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>{s.user_name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    </Grid>
-                    <Grid  size={{ md:1.2, lg: 0.9, xs:3.5,sm:1.4 }}>
-                    <Button variant="contained" fullWidth onClick={encodeAndNavigate}>Load</Button>
-                    </Grid>
-                    <Grid size={{ md:2.5, lg: 1.5, xs:8,sm:3.1 }}>
-                    <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
-                    </Grid>
-                    {Number(userType) < 4 && (
-                        <Grid size={{ md:3, lg: 1.9, xs:8,sm:3.3 }}>
-                        <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
-                            Render Location
-                        </Button>
+                        <Grid size={{ md: 3, lg: 1.8, xs: 12, sm: 6 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="zone">{zoneLabel}</InputLabel>
+                                <Select value={selZone} labelId="zone" label={zoneLabel} size="small"
+                                    onChange={(e) => handleZoneChange(e.target.value)}>
+                                    <MenuItem value={0}>All</MenuItem>
+                                    {allZone.map((z) => (
+                                        <MenuItem key={z.id} value={z.id}>{z.zone_name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Grid>
-                    )}
-                    <Grid size={{ md:1, lg: 0.5, xs:3,sm:3 }}>
-                    {progress ? (
-                        <CircularProgress progress={progress} />
-                    ) : (
-                        <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
-                            <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
-                        </span>
-                    )}
+                        <Grid size={{ md: 3, lg: 1.8, xs: 12, sm: 6 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="region">{regionLabel}</InputLabel>
+                                <Select value={selRegion} labelId="region" label={regionLabel} size="small"
+                                    onChange={(e) => handleRegionChange(e.target.value)}>
+                                    <MenuItem value={0}>All</MenuItem>
+                                    {allRegion.map((r) => (
+                                        <MenuItem key={r.id} value={r.id}>{r.reg_name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid size={{ md: 3, lg: 1.8, xs: 12, sm: 6 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="area">{areaLabel}</InputLabel>
+                                <Select value={selArea} labelId="area" label={areaLabel} size="small"
+                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                    onChange={(e) => handleAreaChange(e.target.value)}>
+                                    <MenuItem value={0}>All</MenuItem>
+                                    {allArea.map((a) => (
+                                        <MenuItem key={a.id} value={a.id}>{a.area_name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid size={{ md: 3, lg: 1.8, xs: 12, sm: 6 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="so">SO</InputLabel>
+                                <Select value={selSo} labelId="so" label="SO" size="small"
+                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                    onChange={(e) => setSelSo(e.target.value)}>
+                                    <MenuItem value={0}>All</MenuItem>
+                                    {allSo.map((s) => (
+                                        <MenuItem key={s.id} value={s.id}>{s.user_name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid size={{ md: 1.2, lg: 0.9, xs: 3.5, sm: 1.4 }}>
+                            <Button variant="contained" fullWidth onClick={encodeAndNavigate}>Load</Button>
+                        </Grid>
+                        <Grid size={{ md: 2.5, lg: 1.5, xs: 8, sm: 3.1 }}>
+                            <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
+                        </Grid>
+                        {Number(userType) < 4 && (
+                            <Grid size={{ md: 3, lg: 1.9, xs: 8, sm: 3.3 }}>
+                                <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
+                                    Render Location
+                                </Button>
+                            </Grid>
+                        )}
+                        <Grid size={{ md: 1, lg: 0.5, xs: 3, sm: 3 }}>
+                            {progress ? (
+                                <CircularProgress progress={progress} />
+                            ) : (
+                                <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                                    <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                                </span>
+                            )}
+                        </Grid>
                     </Grid>
-                 </Grid>
                 </Box>
 
-               {showTable && <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%',md:'100%' } }}>
+                {showTable && <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%', md: '100%' } }}>
                     <DataTable
                         data={tableData}
                         columns={COLUMNS}
@@ -552,10 +567,10 @@ export default function OutletCount() {
                         showHeader={true}
                         defaultPageSize={100}
                         rowStyle={(row) => {
-                            if (row._rowType === "grand") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 700,  color: "#555"  } };
-                            if (row._rowType === "zone" && expandedZones.has(row._zoneId)) return { "& td": { backgroundColor: "#f0f0f0 !important",  color: "#555" } };
-                            if (row._rowType === "region" ) return { "& td": { backgroundColor: "#fad8d8b6 !important",  color: "#555"  } };
-                            if (row._rowType === "subheader") return { "& td": { fontWeight: 700, color: "#555"  } };
+                            if (row._rowType === "grand") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 700, color: "#555" } };
+                            if (row._rowType === "zone" && expandedZones.has(row._zoneId)) return { "& td": { backgroundColor: "#f0f0f0 !important", color: "#555" } };
+                            if (row._rowType === "region") return { "& td": { backgroundColor: "#fad8d8b6 !important", color: "#555" } };
+                            if (row._rowType === "subheader") return { "& td": { fontWeight: 700, color: "#555" } };
                             return {};
                         }}
                         sx={{

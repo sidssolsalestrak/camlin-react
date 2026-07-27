@@ -161,11 +161,7 @@ self.onmessage = function (e) {
         ([, v]) => v !== null && v !== undefined && v !== ""
       );
       metaEntries.forEach(([key, value]) => {
-        if (typeof value === "string" && value.includes(key)) {
-          csvContent += `${escapeCSV(value)}\n`;
-        } else {
-          csvContent += `${escapeCSV(key)}: ${escapeCSV(value)}\n`;
-        }
+        csvContent += `${escapeCSV(value)}\n`;
       });
       if (metaEntries.length > 0) csvContent += "\n";
     }

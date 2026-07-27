@@ -14,6 +14,7 @@ import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { useSnackbar } from 'notistack'
 import FormatCurrency from "../utils/formatCurrency";
 import useToast from '../utils/useToast';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -57,6 +58,18 @@ const RegionWiseSales = () => {
     const [progress, setProgress] = useState(null);
     const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
     const [toDate, settoDate] = useState(dayjs().endOf("month"));
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    const regionLabel = masterPanel["REGN"] || "Region";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*----------------- fetch table data --------*/
     const fetchTableData = async ({ from, to }) => {
@@ -110,7 +123,7 @@ const RegionWiseSales = () => {
     const columns = [
         {
             field: "reg_name",
-            headerName: "Region",
+            headerName: regionLabel,
             filterable: true,
             width: 100
         },

@@ -4,7 +4,7 @@ import api from "../services/api";
 import useToast from "../utils/useToast";
 import DataTable from "../utils/dataTable";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete,Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Grid
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -14,6 +14,7 @@ import CircularProgress from "../utils/CircularProgressLoading";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { Download } from "../utils/downloadExcel/Download";
+import { getMasterPanel } from "../services/masterPanelService";
 
 function DataSubmissionLog() {
     const { encodeyear, encodezone, encoderegion } = useParams()
@@ -29,7 +30,22 @@ function DataSubmissionLog() {
     const decodedZone = encodezone ? Number(atob(encodezone)) : 0
     const decodedRegion = encoderegion ? Number(atob(encoderegion)) : 0
     const decodedYearStr = decodedYear.format("YYYY")
-    const toast=useToast()
+    const toast = useToast()
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const distributorLabel = masterPanel["STKS"] || "Distributor";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const navigate = useNavigate()
     console.log("encoded values", encodeyear, encodezone, encoderegion)
@@ -149,20 +165,20 @@ function DataSubmissionLog() {
         return {
             field: `month_${i + 1}`,
             headerName: monthName,
-            width:90
+            width: 90
         };
     });
 
     const columns = [
         {
-            field: "zone_name", headerName: "Zone",
+            field: "zone_name", headerName: zoneLabel,
             renderCell: (params) => (
                 <Typography sx={{ fontWeight: 600, textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
         {
             field: "reg_name",
-            headerName: "Region",
+            headerName: regionLabel,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
@@ -174,12 +190,13 @@ function DataSubmissionLog() {
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
         },
-        { field: "stk_code", 
-          headerName: "Distributor Code" 
+        {
+            field: "stk_code",
+            headerName: `${distributorLabel} Code`
         },
         {
-            field: "stk_name", 
-            headerName: "Distributor Name",
+            field: "stk_name",
+            headerName: `${distributorLabel} Name`,
             renderCell: (params) => (
                 <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
             )
@@ -220,66 +237,66 @@ function DataSubmissionLog() {
                         <h1 className="mainTitle">Data Submission Log</h1>
                     </Box>
                     <Box sx={{
-                        mb: 0.5,  backgroundColor: "#fff", boxShadow:
+                        mb: 0.5, backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px",
                     }}>
                         <Grid container spacing={0.95}>
-                        <Grid  size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
-                        <FormControl fullWidth>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Year"
-                                    views={["year"]}
-                                    format="YYYY"
-                                    value={selYear}
-                                    onChange={(newVal) => setSelYear(newVal)}
-                                    slotProps={{
-                                        textField: {
-                                            size: "small",
-                                            className: "date-input",
-                                        },
-                                    }}
-                                    maxDate={dayjs()}
-                                />
-                            </LocalizationProvider>
-                        </FormControl>
-                        </Grid>
-                        <Grid  size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
-                        <FormControl fullWidth>
-                            <InputLabel id="zone">Zone</InputLabel>
-                            <Select labelId="zone" label="Zone" size="small" onChange={(e) => {
-                                setSelRegion(0)
-                                setSelZone(e.target.value)
-                            }} value={selZone}>
-                                <MenuItem value={0}>All</MenuItem>
-                                {allZone.map((val) => (
-                                    <MenuItem value={val.id}>{val.zone_name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth >
-                            <InputLabel id='region'>Region</InputLabel>
-                            <Select labelId="region" label="Region" size="small" value={selRegion} onChange={(e) => setSelRegion(e.target.value)}>
-                                <MenuItem value={0}>All</MenuItem>
-                                {allRegion.map((val) => (
-                                    <MenuItem value={val.id}>{val.reg_name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid  size={{ md:1.5, lg: 1, xs: 4,sm:1.5 }}>
-                        <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
-                        </Grid>
-                        <Grid  size={{ md:0.5, lg: 0.5, xs: 3,sm:1 }}>
-                        {progress ? <CircularProgress progress={progress} /> :
-                            <span onClick={() => handleDownloadExcel()}>
-                                <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
-                            </span>}
-                        </Grid>
+                            <Grid size={{ md: 3, lg: 2.3, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Year"
+                                            views={["year"]}
+                                            format="YYYY"
+                                            value={selYear}
+                                            onChange={(newVal) => setSelYear(newVal)}
+                                            slotProps={{
+                                                textField: {
+                                                    size: "small",
+                                                    className: "date-input",
+                                                },
+                                            }}
+                                            maxDate={dayjs()}
+                                        />
+                                    </LocalizationProvider>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2.3, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth>
+                                    <InputLabel id="zone">{zoneLabel}</InputLabel>
+                                    <Select labelId="zone" label={zoneLabel} size="small" onChange={(e) => {
+                                        setSelRegion(0)
+                                        setSelZone(e.target.value)
+                                    }} value={selZone}>
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allZone.map((val) => (
+                                            <MenuItem value={val.id}>{val.zone_name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth >
+                                    <InputLabel id='region'>{regionLabel}</InputLabel>
+                                    <Select labelId="region" label={regionLabel} size="small" value={selRegion} onChange={(e) => setSelRegion(e.target.value)}>
+                                        <MenuItem value={0}>All</MenuItem>
+                                        {allRegion.map((val) => (
+                                            <MenuItem value={val.id}>{val.reg_name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 1.5, lg: 1, xs: 4, sm: 1.5 }}>
+                                <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
+                            </Grid>
+                            <Grid size={{ md: 0.5, lg: 0.5, xs: 3, sm: 1 }}>
+                                {progress ? <CircularProgress progress={progress} /> :
+                                    <span onClick={() => handleDownloadExcel()}>
+                                        <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
+                                    </span>}
+                            </Grid>
                         </Grid>
                     </Box>
                 </Box>

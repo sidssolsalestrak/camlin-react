@@ -39,7 +39,7 @@ const headerCellBase = {
     whiteSpace: 'nowrap',
 };
 
-const BeatCoverageTable = ({ rawData, yr, loading }) => {
+const BeatCoverageTable = ({ rawData, yr, loading, areaLabel = "Area", beatLabel = "Beat" }) => {
     const { monthNames, displayRows, grandTotals } = useMemo(() => {
         const monthNames = buildMonthNames(yr);
         const grouped = groupBeatCoverageRows(rawData || []);
@@ -55,9 +55,6 @@ const BeatCoverageTable = ({ rawData, yr, loading }) => {
             elevation={0}
             sx={{
                 background: '#fff',
-                borderRadius: '10px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)',
-                overflow: 'hidden',
             }}
         >
             <TableContainer
@@ -91,13 +88,13 @@ const BeatCoverageTable = ({ rawData, yr, loading }) => {
                                 rowSpan={2}
                                 sx={{ ...headerCellBase, position: 'sticky', top: 0, zIndex: 5, width: '15%' }}
                             >
-                                Area
+                                {areaLabel}
                             </TableCell>
                             <TableCell
                                 rowSpan={2}
                                 sx={{ ...headerCellBase, position: 'sticky', top: 0, zIndex: 5, width: '15%' }}
                             >
-                                Beat
+                                {beatLabel}
                             </TableCell>
                             {[1, 2, 3, 4].map((q) => (
                                 <TableCell

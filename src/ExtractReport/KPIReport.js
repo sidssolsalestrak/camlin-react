@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Layout from "../layout";
 import api from "../services/api";
 import DataTable from "../utils/dataTable";
@@ -13,6 +13,7 @@ import { Download } from "../utils/downloadExcel/Download";
 import useToast from "../utils/useToast";
 import { MdOutlineLoop } from "react-icons/md";
 import ConfirmationDialog from "../utils/confirmDialog";
+import { getMasterPanel } from "../services/masterPanelService";
 
 
 function KPIReport() {
@@ -28,6 +29,19 @@ function KPIReport() {
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const areaLabel = masterPanel["AREA"] || "Area";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const HCOLOR = {
         backgroundColor: "#d0e8f5",
@@ -205,22 +219,22 @@ function KPIReport() {
         { field: "tot_call", headerName: "Total Calls", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "eco_no", headerName: "Total Outlets Visited", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "repeated", headerName: "Total Outlets Repeated", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
-        { field: "num_dist_per",width:30, headerName: "Numeric Distribution %", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}} >{fmtF(value)}</Box> },
+        { field: "num_dist_per", width: 30, headerName: "Numeric Distribution %", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }} >{fmtF(value)}</Box> },
         { field: "tot_field_day", headerName: "Field Days", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "call_dy_tgt", headerName: "Calls/Day Target", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmt(value)}</Typography> },
         { field: "mtd_tot_call", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-        { field: "coverage_per", headerName: "Coverage %", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}}>{fmtF(value)}</Box> },
+        { field: "coverage_per", headerName: "Coverage %", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }}>{fmtF(value)}</Box> },
         { field: "prod_dy_tgt", headerName: "Productivity Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "mtd_tot_pc", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-        { field: "prod_per", headerName: "Productivity %", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}}>{fmtF(value)}</Box> },
+        { field: "prod_per", headerName: "Productivity %", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }}>{fmtF(value)}</Box> },
         { field: "unq_mtd_pc_call", headerName: "Unique Productive Calls", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
-        { field: "unq_prod_per", headerName: "Unique Productivity %", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}}>{fmtF(value)}</Box> },
+        { field: "unq_prod_per", headerName: "Unique Productivity %", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }}>{fmtF(value)}</Box> },
         { field: "tot_prod_call", headerName: "Productive Calls", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
         { field: "lpc_cnt", headerName: "Total LPC", renderCell: ({ value }) => <Box>{zeroToNullRound(value)}</Box> },
-        { field: "lpc_per", headerName: "Avg. LPC", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}}>{fmtF(value)}</Box> },
+        { field: "lpc_per", headerName: "Avg. LPC", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }}>{fmtF(value)}</Box> },
         { field: "visible_dy_tgt", headerName: "Visibility Tgt", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "mtd_visible_cnt", headerName: "Actual", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
-        { field: "visible_per", headerName: "Visibility %", renderCell: ({ value }) => <Box sx={{textAlign:'center',fontWeight:600}}>{fmtF(value)}</Box> },
+        { field: "visible_per", headerName: "Visibility %", renderCell: ({ value }) => <Box sx={{ textAlign: 'center', fontWeight: 600 }}>{fmtF(value)}</Box> },
         { field: "train_stat", headerName: "Training Done (Y/N)", renderCell: ({ value }) => value || "-" },
         { field: "cap_index", headerName: "Capability Index %", renderCell: ({ value }) => <Typography sx={{ textAlign: 'right' }}>{fmtF(value)}</Typography> },
         { field: "exe_tier", headerName: "Execution Tier", renderCell: ({ value }) => <Box sx={tierStyle(value)}>{value || "-"}</Box> },
@@ -268,7 +282,7 @@ function KPIReport() {
     const excelColumns = [
         { field: 'full_name', headerName: 'Sales Rep' },
         { field: 'hq_name', headerName: 'HQ' },
-        { field: 'area_name', headerName: 'Area' },
+        { field: 'area_name', headerName: areaLabel },
         { field: 'sale_tgt', headerName: `${dayjs(reportMonth).format('MMM YYYY')}-TGT` },
         { field: "tot_cus", headerName: "Total Outlets" },
         { field: "tot_call", headerName: "Total Calls" },
@@ -478,16 +492,16 @@ function KPIReport() {
                         showHeader={true}
                         hideSubHeader
                         columnBgColors={{
-                        "num_dist_per": "#d0e8f5",
-                        "coverage_per":"#d0e8f5",
-                        "prod_per":"#d0e8f5",
-                        "unq_prod_per":"#d0e8f5",
-                        "lpc_per":"#d0e8f5",
-                        "visible_per":"#d0e8f5",
+                            "num_dist_per": "#d0e8f5",
+                            "coverage_per": "#d0e8f5",
+                            "prod_per": "#d0e8f5",
+                            "unq_prod_per": "#d0e8f5",
+                            "lpc_per": "#d0e8f5",
+                            "visible_per": "#d0e8f5",
 
                         }}
                         rowStyle={(row) => {
-                        if (row._rowType === 'zone' && row._expanded) return { "& td": { backgroundColor: "#eeeeee !important",color:row._expanded?'#555':null} };
+                            if (row._rowType === 'zone' && row._expanded) return { "& td": { backgroundColor: "#eeeeee !important", color: row._expanded ? '#555' : null } };
                             return {};
                         }}
                         sx={{

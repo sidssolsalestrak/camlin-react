@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { PiWarningCircleLight } from "react-icons/pi";
 import { useParams, useNavigate } from "react-router-dom";
+import { getMasterPanel } from "../services/masterPanelService";
 
 // ─── Helper: inject zone subtotal rows ───────────────────────────────────────
 const getDataWithZoneTotals = (data) => {
@@ -87,7 +88,7 @@ const getDataWithZoneTotals = (data) => {
             ord_qty: grandTotalQty,
             ord_val: grandTotalVal,
             _isSubtotal: true,
-            _isGrandTotal:true
+            _isGrandTotal: true
         })
     });
 
@@ -118,6 +119,24 @@ function OrderFrequencyReport() {
     const [warningDialog, setWarningDialog] = useState(false);
     const [zoneNullErr, setZoneNullErr] = useState(false);
     const toast = useToast();
+    const [loading, setloading] = useState(false)
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     // Initial zone load 
     useEffect(() => {
@@ -134,10 +153,10 @@ function OrderFrequencyReport() {
     }, [decodeMonth, decodeRegId, decodeType, decodeUserId, decodeZoneId]);
 
     useEffect(() => {
-        if(!selZone){
-        setSelRegion(0);
-        setAllRegion([]);
-        return
+        if (!selZone) {
+            setSelRegion(0);
+            setAllRegion([]);
+            return
         }
         if (selZone) fetchRegionList(selZone);
     }, [selZone]);
@@ -188,6 +207,7 @@ function OrderFrequencyReport() {
 
     const fetchDayWiseReport = async () => {
         try {
+            setloading(true)
             if (Number(selZone) === 0) {
                 setZoneNullErr(true);
                 setWarningDialog(true);
@@ -215,6 +235,8 @@ function OrderFrequencyReport() {
             setAllDayWiseRepData(DaywiserepRes);
         } catch (err) {
             console.log("fetching Daywise Report Error", err);
+        }finally{
+            setloading(false)
         }
     };
 
@@ -273,8 +295,8 @@ function OrderFrequencyReport() {
         loadedType && {
             field: 'call_date',
             headerName: 'Order Month',
-            renderCell:(row)=>(
-                <Typography>{row.value?dayjs(row.value).format("DD MMM YYYY"):''}</Typography>
+            renderCell: (row) => (
+                <Typography>{row.value ? dayjs(row.value).format("DD MMM YYYY") : ''}</Typography>
             )
         },
         {
@@ -290,7 +312,7 @@ function OrderFrequencyReport() {
         },
         {
             field: 'area_name',
-            headerName: "Area",
+            headerName: areaLabel,
             renderCell: (params) =>
                 params.row._isSubtotal ? null : (
                     <Typography sx={{ textWrap: 'nowrap' }}>{params.value}</Typography>
@@ -313,7 +335,7 @@ function OrderFrequencyReport() {
         },
         {
             field: 'beat_name',
-            headerName: "Beat",
+            headerName: beatLabel,
             width: 40,
             renderCell: (params) => (
                 <Typography sx={{
@@ -321,7 +343,7 @@ function OrderFrequencyReport() {
                     fontWeight: params.row._isSubtotal ? 700 : 400,
                     textAlign: params.row._isSubtotal ? 'right' : 'left',
                     width: '100%',
-                    color:'#555'
+                    color: '#555'
                 }}>
                     {params.value}
                 </Typography>
@@ -371,14 +393,14 @@ function OrderFrequencyReport() {
 
     const ExcelColumns = [
         ...(loadedType ? [{ field: 'call_date', headerName: 'Order Month', type: 'date' }] : []),
-        { field: 'zone_name', headerName: "Zone" },
+        { field: 'zone_name', headerName: zoneLabel },
         { field: 'full_name', headerName: "Sales Person" },
         { field: 'hq_name', headerName: "HQ Name" },
-        { field: 'area_name', headerName: "Area" },
+        { field: 'area_name', headerName: areaLabel },
         { field: 'cus_code', headerName: "Customer Code" },
         { field: 'cus_name', headerName: "Customer Name" },
         { field: 'freq_name', headerName: "Visit Frequency" },
-        { field: 'beat_name', headerName: "Beat" },
+        { field: 'beat_name', headerName: beatLabel },
         { field: 'mtd_tot_pc', headerName: "No. Of Orders" },
         { field: 'tot_prod', headerName: "Distinct Sku" },
         { field: 'ord_qty', headerName: "Ord. Qty" },
@@ -410,7 +432,7 @@ function OrderFrequencyReport() {
                 </Box>
             </Box>
 
-           
+
             <Box sx={{
                 mx: 1.5,
                 backgroundColor: "#fff",
@@ -419,127 +441,128 @@ function OrderFrequencyReport() {
                 borderRadius: "10px",
             }}>
                 <Grid container spacing={0.95}>
-                <Grid size={{ md:3, lg: 2.3, xs: 12,sm:6 }}>
-                <FormControl fullWidth>
-                    <InputLabel id='type'>Type</InputLabel>
-                    <Select
-                        value={selType}
-                        labelId="type"
-                        label='Type'
-                        size="small"
-                        onChange={(e) => setSelType(e.target.value)}
-                    >
-                        <MenuItem value={1}>Month Wise</MenuItem>
-                        <MenuItem value={2}>Day Wise</MenuItem>
-                    </Select>
-                </FormControl>
-                </Grid>
-                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                <FormControl fullWidth>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="Month"
-                            views={["month", "year"]}
-                            format="MMM YYYY"
-                            value={selMonth}
-                            onChange={(v) => setSelMonth(v)}
-                            slotProps={{
-                                textField: {
-                                    size: "small",
-                                    className: "date-input",
-                                },
-                            }}
-                            maxDate={dayjs()}
-                        />
-                    </LocalizationProvider>
-                </FormControl>
-                </Grid>
-                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                <FormControl fullWidth>
-                    <InputLabel id="zone">Zone</InputLabel>
-                    <Select
-                        value={selZone}
-                        onChange={(e) => setSelZone(e.target.value)}
-                        labelId="zone"
-                        label="Zone"
-                        size="small"
-                        error={zoneNullErr}
-                        MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                    >
-                        <MenuItem value={0}>All</MenuItem>
-                        {allZone.map((val) => (
-                            <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                </Grid>
-                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                <FormControl fullWidth>
-                    <InputLabel id='region'>Region</InputLabel>
-                    <Select
-                        labelId="region"
-                        onChange={(e) => setSelRegion(e.target.value)}
-                        label="Region"
-                        size="small"
-                        value={selRegion}
-                        MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                    >
-                        <MenuItem value={0}>All</MenuItem>
-                        {allRegion.map((val) => (
-                            <MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                </Grid>
-                <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                <FormControl fullWidth sx={{ height: '3rem' }}>
-                    <Autocomplete
-                        options={[{ id: 0, u_name: "All" }, ...allUsers]}
-                        getOptionLabel={(option) => option.u_name}
-                        value={selUsers}
-                        onChange={(event, newValue) => setSelUsers(newValue)}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="User"
+                    <Grid size={{ md: 3, lg: 2.3, xs: 12, sm: 6 }}>
+                        <FormControl fullWidth>
+                            <InputLabel id='type'>Type</InputLabel>
+                            <Select
+                                value={selType}
+                                labelId="type"
+                                label='Type'
                                 size="small"
+                                onChange={(e) => setSelType(e.target.value)}
+                            >
+                                <MenuItem value={1}>Month Wise</MenuItem>
+                                <MenuItem value={2}>Day Wise</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                        <FormControl fullWidth>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Month"
+                                    views={["month", "year"]}
+                                    format="MMM YYYY"
+                                    value={selMonth}
+                                    onChange={(v) => setSelMonth(v)}
+                                    slotProps={{
+                                        textField: {
+                                            size: "small",
+                                            className: "date-input",
+                                        },
+                                    }}
+                                    maxDate={dayjs()}
+                                />
+                            </LocalizationProvider>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                        <FormControl fullWidth>
+                            <InputLabel id="zone">{zoneLabel}</InputLabel>
+                            <Select
+                                value={selZone}
+                                onChange={(e) => setSelZone(e.target.value)}
+                                labelId="zone"
+                                label={zoneLabel}
+                                size="small"
+                                error={zoneNullErr}
+                                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                            >
+                                <MenuItem value={0}>All</MenuItem>
+                                {allZone.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                        <FormControl fullWidth>
+                            <InputLabel id='region'>{regionLabel}</InputLabel>
+                            <Select
+                                labelId="region"
+                                onChange={(e) => setSelRegion(e.target.value)}
+                                label={regionLabel}
+                                size="small"
+                                value={selRegion}
+                                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                            >
+                                <MenuItem value={0}>All</MenuItem>
+                                {allRegion.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                        <FormControl fullWidth sx={{ height: '3rem' }}>
+                            <Autocomplete
+                                options={[{ id: 0, u_name: "All" }, ...allUsers]}
+                                getOptionLabel={(option) => option.u_name}
+                                value={selUsers}
+                                onChange={(event, newValue) => setSelUsers(newValue)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label={userLabel}
+                                        size="small"
+                                    />
+                                )}
+                                isOptionEqualToValue={(option, value) => option.id === value?.id}
                             />
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{ md: 1.3, lg: 1, xs: 3, sm: 2 }}>
+                        <Button onClick={encodeAndNavigate} variant="contained" sx={{ width: '2rem' }}>
+                            Load
+                        </Button>
+                    </Grid>
+                    <Grid size={{ md: 1, lg: 0.5, xs: 2, sm: 1 }}>
+                        {progress ? (
+                            <CircularProgress progress={progress} />
+                        ) : (
+                            <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                                <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                            </span>
                         )}
-                        isOptionEqualToValue={(option, value) => option.id === value?.id}
-                    />
-                </FormControl>
-                </Grid>
-                <Grid  size={{ md:1.3, lg: 1, xs: 3,sm:2 }}>
-                <Button onClick={encodeAndNavigate} variant="contained" sx={{ width: '2rem' }}>
-                    Load
-                </Button>
-                </Grid>
-                <Grid  size={{ md:1, lg: 0.5, xs:2,sm:1 }}>
-                {progress ? (
-                    <CircularProgress progress={progress} />
-                ) : (
-                    <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
-                        <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
-                    </span>
-                )}
-                </Grid>
+                    </Grid>
                 </Grid>
             </Box>
 
-          
+
             <Box sx={{ p: 1.5 }}>
                 <DataTable
                     data={tableData}
                     columns={columns}
                     hideSubHeader
                     grandTotal={true}
+                    loading={loading}
                     getRowClassName={(params) =>
                         params.row._isSubtotal ? 'zone-subtotal-row' : ''
                     }
                     rowStyle={(row) => {
-                        if (row._isGrandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600, color:'#555 !important'} };
-                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600 , color:'#555 !important'} };
-                        if (row. _isSubtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600, color:'#555 !important' } };
+                        if (row._isGrandTotal) return { "& td": { backgroundColor: "#bdbdbd !important", fontWeight: 600, color: '#555 !important' } };
+                        if (row._zoneTotal) return { "& td": { backgroundColor: "#e0e0e0 !important", fontWeight: 600, color: '#555 !important' } };
+                        if (row._isSubtotal) return { "& td": { backgroundColor: "#eeeeee !important", fontWeight: 600, color: '#555 !important' } };
                         return {};
                     }}
                     sx={{
@@ -551,14 +574,14 @@ function OrderFrequencyReport() {
                 />
             </Box>
 
-          
+
             <Dialog open={warningDialog} maxWidth="xs" PaperProps={{ sx: { width: '320px' } }}>
                 <DialogContent>
                     <Box sx={{ textAlign: 'center' }}>
                         <PiWarningCircleLight size={80} color="#F8BB86" />
                     </Box>
                     <Typography sx={{ color: '#797979', fontWeight: 500, fontSize: '1.2rem', textAlign: 'center' }}>
-                        You can View Report only Zonewise!. Please Select Zone. For All Consolidated Report Please Use Excel Export Option.
+                        You can View Report only {zoneLabel}wise!. Please Select {zoneLabel}. For All Consolidated Report Please Use Excel Export Option.
                     </Typography>
                 </DialogContent>
                 <DialogActions>

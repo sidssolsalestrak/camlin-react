@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
 import { Box } from '@mui/material'
 import CircularProgress from '../utils/CircularProgressLoading';
@@ -12,6 +12,7 @@ import { useSnackbar } from 'notistack';
 import { DownloadCSV } from '../utils/Download CSV/DownloadCSV';
 import axios from "../services/api";
 import useToast from '../utils/useToast';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -27,6 +28,26 @@ const StockAndSalesSummary = () => {
     const [progress, setProgress] = useState(null);
     const [year, setYear] = useState(dayjs());
     const showAlert = useToast();
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const stkLabel = masterPanel["STKS"] || "Distributor";
+    const catLabel = masterPanel["PCAT"] || "Category";
+    const rsmLabel = masterPanel["ZM"] || "RSM";
+    const zbmLabel = masterPanel["RM"] || "ZBM";
+    const amLabel = masterPanel["ASM"] || "AM/FSO";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
@@ -54,13 +75,13 @@ const StockAndSalesSummary = () => {
 
             //Fixed columns matching API field names
             const fixedColumns = [
-                { field: "zone_name", headerName: "Zone" },
-                { field: "reg_name", headerName: "Region" },
-                { field: "rsm_name", headerName: "RSM" },
-                { field: "zbm_name", headerName: "ZBM" },
-                { field: "am_name", headerName: "AM" },
-                { field: "stk_code", headerName: "Distributor Code" },
-                { field: "stk_name", headerName: "Distributor Name" },
+                { field: "zone_name", headerName: zoneLabel },
+                { field: "reg_name", headerName: regionLabel },
+                { field: "rsm_name", headerName: masterPanel["ZM"] || "RSM" },
+                { field: "zbm_name", headerName: masterPanel["RM"] || "ZBM" },
+                { field: "am_name", headerName: masterPanel["ASM"] || "AM/FSO" },
+                { field: "stk_code", headerName: `${stkLabel} Code` },
+                { field: "stk_name", headerName: `${stkLabel} Name` },
                 { field: "city_name", headerName: "City" },
                 { field: "state_name", headerName: "State" },
             ];

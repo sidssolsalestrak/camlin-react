@@ -369,7 +369,7 @@ const ProductCategory = () => {
                                         value={formData.stateName} error={!!validation.stateName}
                                         onChange={(e) => formDataChange("stateName", e.target.value)}
                                     >
-                                        <MenuItem style={{ fontSize: "11px" }} value="">Select Brand</MenuItem>
+                                        <MenuItem style={{ fontSize: "11px" }} value="">Select State</MenuItem>
                                         {state?.map((item, index) => (
                                             <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.state_name}</MenuItem>
                                         ))}
