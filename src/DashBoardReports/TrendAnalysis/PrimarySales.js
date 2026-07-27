@@ -90,7 +90,11 @@ function PrimarySales({ enType }) {
     const progressRef = useRef(null);
     const setProgress = (val) => { progressRef.current = val; };
 
-    const yr = dayjs(selYear).format("YYYY");
+    // ✅ FIX: yr now derives from the URL param (decodeYear), which only
+    // changes after handleLoad/handleApply navigate — NOT from the live
+    // selYear picker value. So headers/title/excel only change after Load.
+    const loadedYear = useMemo(() => (decodeYear ? dayjs(decodeYear) : dayjs()), [decodeYear]);
+    const yr = loadedYear.format("YYYY");
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -312,7 +316,6 @@ function PrimarySales({ enType }) {
         { id: selRepType === 1 ? "saliency_qty" : "saliency_val", label: "Saliency" },
     ];
 
-    // ✅ FIX: useMemo — only recomputes when rawData or groupBy actually changes, not on every render
     const tableData = useMemo(() => {
         if (!decodeYear || !rawData || rawData.length === 0) return [];
 
@@ -465,7 +468,7 @@ function PrimarySales({ enType }) {
         rows.push(grandObj);
         return rows;
 
-    }, [rawData, decodegroupBy, decodeYear]); // ✅ only these affect table structure
+    }, [rawData, decodegroupBy, decodeYear]);
 
     const fmt = (val) => {
         const num = Number(val);
@@ -495,7 +498,6 @@ function PrimarySales({ enType }) {
     const excelTableData = tableData.map(row => {
     const updated = { ...row };
 
-    // Replace 0 with "-" for monthly columns
     MONTHS.forEach((_, i) => {
         const valKey = `m_val_${i}`;
         const qtyKey = `m_qty_${i}`;
@@ -503,11 +505,9 @@ function PrimarySales({ enType }) {
         updated[qtyKey] = (!updated[qtyKey] || Number(updated[qtyKey]) === 0) ? "-" : updated[qtyKey];
     });
 
-    // Replace 0 with "-" for total columns
     updated.total_val = (!updated.total_val || Number(updated.total_val) === 0) ? "-" : updated.total_val;
     updated.total_qty = (!updated.total_qty || Number(updated.total_qty) === 0) ? "-" : updated.total_qty;
 
-    // Existing saliency formatting
     updated.saliency_val = (!updated.saliency_val || Number(updated.saliency_val) === 0 || updated.saliency_val === "0.00") ? "-" : Number(updated.saliency_val);
     updated.saliency_qty = (!updated.saliency_qty || Number(updated.saliency_qty) === 0 || updated.saliency_qty === "0.00") ? "-" : Number(updated.saliency_qty);
 
@@ -519,7 +519,7 @@ function PrimarySales({ enType }) {
     });
 
             const filters = [
-                { label: `Trend Analysis Data FY-${dayjs(selYear).format('YYYY')}`, bold: true, sz: 13 },
+                { label: `Trend Analysis Data FY-${yr}`, bold: true, sz: 13 },
                 { label: `${masterPanel["ZONE"] || "Zone"} : ${getLabel(allZone, selZone, "zone_name", "")}`, bold: false, sz: 10 },
                 { label: `${masterPanel["REGN"] || "Region"} : ${getLabel(allRegion, selRegion, "reg_name", "")}`, bold: false, sz: 10 },
                 { label: `${masterPanel["AREA"] || "Area"} : ${getLabel(allArea, selArea, 'area_name', "")}`, bold: false, sz: 10 },
@@ -531,7 +531,6 @@ function PrimarySales({ enType }) {
             ];
 
             const filename = `Trend_Analysis_${yr}`;
-            // ✅ FIX: passes setProgress (ref-based) — no state update, no re-render
             excelWithFilters(excelTableData, ExcelColumns, filename, filters, setProgress, {
                 headerFontSize: 12,
                 cellFontSize: 10
@@ -697,13 +696,14 @@ function PrimarySales({ enType }) {
                    {initialLoad && <Box sx={{ p: 0, backgroundColor: "#fff",
                                 borderRadius: "10px",
                                 boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)", }}>
-                        <Typography sx={{px:2.3,pt:1,pb:-1,fontFamily:'giespira',fontSize:'18.6px',color:'#121212'}}>Trend Analysis Data-{selYear.format('YYYY')}</Typography>
+                        <Typography sx={{px:2.3,pt:1,pb:-1,fontFamily:'giespira',fontSize:'18.6px',color:'#121212'}}>Trend Analysis Data-{yr}</Typography>
                         <DataTable
                             data={tableData}
                             columns={COLUMNS}
                             showHeader={false}
                             hideSubHeader
                             rowStyle={rowStyle}
+                            loading={loading}
                         />
                     </Box>
                   }

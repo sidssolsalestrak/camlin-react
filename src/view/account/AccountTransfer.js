@@ -35,6 +35,7 @@ function AccountTransfer() {
     const [selectedRows, setSelectedRows] = useState([])
     const [errors, setErrors] = useState({})
     const [modifyLoading, setModifyLoading] = useState(false)
+    const [loading, setLoading] = useState(false)
     const toast = useToast()
     const location=useLocation()
 
@@ -217,6 +218,7 @@ function AccountTransfer() {
     // FIX 3 & 6: Accept beatIds as parameter to avoid stale closure
     const fetchCustomerListTransfer = async (beatIds) => {
         try {
+            setLoading(true)
             let beatids = beatIds.join(',')
             let payload = {
                 from_user_id: selFromUser.id,
@@ -228,6 +230,9 @@ function AccountTransfer() {
         }
         catch (err) {
             console.log(err)
+        }
+        finally {
+            setLoading(false)
         }
     }
 
@@ -524,6 +529,7 @@ function AccountTransfer() {
                                     columns={columns}
                                     data={allCustomerList}
                                     defaultPageSize={10}
+                                    loading={loading}
                                     sx={{
                                         backgroundColor: "#fff",
                                         borderRadius: "10px",

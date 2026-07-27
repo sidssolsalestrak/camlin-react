@@ -33,6 +33,7 @@ function PreviewStkSales() {
     const[masId,setMasId]=useState(0)
     let frmMonth = decodemonth ? dayjs(decodemonth).format("MMM YYYY") : null;
     const [modifyLoading, setModifyLoading] = useState(false)
+    const [loading, setLoading] = useState(false)
     const toast = useToast()
     const [allPreviewData, setAllPreviewData] = useState([]);
     const location=useLocation()
@@ -81,6 +82,7 @@ function PreviewStkSales() {
 
     const fetchpreviewStkData = async () => {
         try {
+            setLoading(true)
             let response = await api.post('/previewStkSales', { month: decodemonth, stk_id: decodedStkId });
             let data = Array.isArray(response.data.salesData) ? response.data.salesData : [];
 
@@ -100,6 +102,8 @@ function PreviewStkSales() {
             setAllPreviewData(initialized);
         } catch (err) {
             console.log("fetchpreviewStkData error", err);
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -379,6 +383,7 @@ function PreviewStkSales() {
                     columns={column}
                     data={tableData}
                     rowStyle={rowStyle}
+                    loading={loading}
                 />
 
 

@@ -38,6 +38,7 @@ function PrimarySalesTransact() {
     const [subCatList, setSubCatList] = useState([]);
     const [salesData,  setSalesData]  = useState([]);
     const [progress,   setProgress]   = useState(null);
+    const [loading,    setLoading]    = useState(false);
     const [masterPanel, setMasterPanel] = useState({});
     const toast    = useToast();
     const navigate = useNavigate();
@@ -100,6 +101,7 @@ function PrimarySalesTransact() {
 
     const fetchPrimarySales = async (month, stkId, cId) => {
         try {
+            setLoading(true);
             const response = await api.post('/getPrimarySales', {
                 month:  dayjs(month).format("YYYY-MM-DD"),
                 stk_id: stkId,
@@ -108,6 +110,8 @@ function PrimarySalesTransact() {
             setSalesData(response.data.data ?? []);
         } catch (err) {
             console.log("fetchPrimarySales error", err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -389,6 +393,7 @@ function PrimarySalesTransact() {
                     rowStyle={finalRowStyle}
                     getRowId={(row) => row.id}
                     searchPlaceholder="Type ProdName to Search"
+                    loading={loading}
                 />
 
 
