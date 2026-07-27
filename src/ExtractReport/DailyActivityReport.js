@@ -36,16 +36,17 @@ export default function DailyActivityReport() {
     const [focusRangeData, setFocusRangeData] = useState([]);
     const [userId, setUserId] = useState("");
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
     const [coordinates, setCoordinates] = useState([]);
     const [mapOpen, setMapOpen] = useState(false);
     const [userType, setUserType] = useState(null);
     const [selectedRows, setSelectedRows] = useState([]);
     const [masterPanel, setMasterPanel] = useState({});
-
+    const [tableLoad, setTableLoad] = useState(false)
     const areaLabel = masterPanel["AREA"] || "Area";
     const designationLabel = masterPanel["DESI"] || "Designation";
     const beatLabel = masterPanel["BEAT"] || "Beat";
-    
+
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();
@@ -93,6 +94,7 @@ export default function DailyActivityReport() {
 
     const fetchReportData = async () => {
         try {
+            setTableLoad(true)
             let payload = {
                 from_call_date: fromDate.format('YYYY-MM-DD'),
                 to_call_date: toDate.format('YYYY-MM-DD'),
@@ -120,6 +122,8 @@ export default function DailyActivityReport() {
         } catch (err) {
             console.log("fetchreport data error", err);
             return [];
+        } finally {
+            setTableLoad(false)
         }
     };
 
@@ -208,7 +212,7 @@ export default function DailyActivityReport() {
         { field: "call_date", headerName: "Call Date" },
         { field: "create_dt", headerName: "Received Date", type: "date" },
         { field: "report_type", headerName: "Report Type" },
-        { field: "beat_work", headerName:`${beatLabel} Name` },
+        { field: "beat_work", headerName: `${beatLabel} Name` },
         { field: "tot_cus", headerName: "Total Outlets" },
         { field: "tot_call", headerName: "Total Calls" },
         { field: "prod_call", headerName: "Productive Calls" },
@@ -422,6 +426,7 @@ export default function DailyActivityReport() {
 
     const handleDownloadExcel = async () => {
         try {
+            setProgress1("0%")
             const freshData = await fetchReportData();
             const dashIfEmptyFields = [
                 "tot_cus",
@@ -430,7 +435,8 @@ export default function DailyActivityReport() {
                 "sec_tgt_val",
                 "sec_ach_val",
             ];
-
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%");
             const exportData = freshData.map((row) => {
                 const updatedRow = { ...row };
                 dashIfEmptyFields.forEach((field) => {
@@ -465,8 +471,12 @@ export default function DailyActivityReport() {
             };
 
             DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%");
         } catch (err) {
             console.log("excelDownload error", err);
+        } finally {
+            setProgress1(null)
         }
     };
     console.log("selected rows", selectedRows)
@@ -560,8 +570,8 @@ export default function DailyActivityReport() {
                                 </FormControl>
                             </Grid>
                             <Grid size={{ md: 1, lg: 0.5, xs: 3, sm: 2 }}>
-                                {progress ? (
-                                    <CircularProgress progress={progress} />
+                                {progress1 ? (
+                                    <CircularProgress progress={progress1} />
                                 ) : (
                                     <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
                                         <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
@@ -583,6 +593,7 @@ export default function DailyActivityReport() {
                 {URL !== 'getfieldActivity_new' &&
                     <Box sx={{ px: 1.5 }}>
                         <DataTable
+                            loading={tableLoad}
                             columns={tableColumns}
                             data={allReportData}
                             sx={{

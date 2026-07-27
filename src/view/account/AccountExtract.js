@@ -9,7 +9,7 @@ import {
   MenuItem,
   TextField,
   Autocomplete,
-  IconButton,Button
+  IconButton, Button
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../services/api";
@@ -37,10 +37,11 @@ function AccountExtract() {
   const [selectedUserType, setSelectedUserType] = useState(0);
   const [selectedUser, setSelectedUser] = useState(0);
   const [progress, setProgress] = useState(null);
+  const [progress1, setProgress1] = useState(false);
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selactiveStat,setActiveStat]=useState("1")
+  const [selactiveStat, setActiveStat] = useState("1")
 
   const [masterPanel, setMasterPanel] = useState({});
 
@@ -71,7 +72,7 @@ function AccountExtract() {
     accType: decode(params.accType),
     userType: decode(params.userType),
     user: decode(params.user),
-    type:decode(params.type)
+    type: decode(params.type)
   };
 
   // ---------------- FETCH FILTER DATA ----------------
@@ -118,7 +119,7 @@ function AccountExtract() {
   const fetchExtractData = async (payload) => {
     try {
       setLoading(true);
-      console.log("deocded value payload",payload)
+      console.log("deocded value payload", payload)
       const res = await api.post("/getAccountExtract", payload);
 
       setTableData(
@@ -166,52 +167,59 @@ function AccountExtract() {
   }, [params]);
 
   const handleDownloadCSV = async () => {
-    let FormattedData = tableData.map((val) => ({
-      ...val, id: `${val.main_id}_${val.sub_id}`,
-      user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
-      create_dt: val?.create_dt? dayjs( val?.create_dt).format("DD-MM-YYYY HH:mm"):''
-    }))
+    try {
+      setProgress1(true)
+      let FormattedData = tableData.map((val) => ({
+        ...val, id: `${val.main_id}_${val.sub_id}`,
+        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
+        create_dt: val?.create_dt ? dayjs(val?.create_dt).format("DD-MM-YYYY HH:mm") : ''
+      }))
 
-    let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
+      let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
 
-    const safeColumns = ExcelColumns.map(
-      ({ renderCell, renderHeader, ...rest }) => rest,
-    );
+      const safeColumns = ExcelColumns.map(
+        ({ renderCell, renderHeader, ...rest }) => rest,
+      );
 
-    const meta = {
-      "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
-      Date: dayjs().format("DD MMM YYYY")
+      const meta = {
+        "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
+        Date: dayjs().format("DD MMM YYYY")
+      }
+      DownloadCSV(
+        FormattedData,
+        safeColumns,
+        `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
+        setProgress,
+        enqueueSnackbar,
+        meta,
+      );
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setProgress1(false)
     }
-    DownloadCSV(
-      FormattedData,
-      safeColumns,
-      `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
-      setProgress,
-      enqueueSnackbar,
-      meta,
-    );
   }
 
   const handleExtractCSV = async () => {
 
     try {
-      setProgress("0%")
+      setProgress1(true)
       let payload = {
         country: selectedRegion,
         accType: selectedAccType,
         user: selectedUser,
         userType: selectedUserType,
-        type:selactiveStat
+        type: selactiveStat
 
       }
       let response = await api.post('/getAccountExtract', payload)
       let extData = Array.isArray(response.data.data) ? response.data.data : []
-      let FormattedData = extData.map((val,index) => ({
+      let FormattedData = extData.map((val, index) => ({
         ...val, id: `${val.main_id}_${val.sub_id}`,
-        sl:index+1,
+        sl: index + 1,
         user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
-        create_dt:val.create_dt?dayjs(val.create_dt).format('DD-MM-YYYY HH:mm'):''
-        }))
+        create_dt: val.create_dt ? dayjs(val.create_dt).format('DD-MM-YYYY HH:mm') : ''
+      }))
 
       let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
 
@@ -234,6 +242,8 @@ function AccountExtract() {
     }
     catch (err) {
       console.log("Extract CSV Error", err)
+    } finally {
+      setProgress1(false)
     }
   }
 
@@ -255,59 +265,59 @@ function AccountExtract() {
 
   // ---------------- TABLE COLUMNS ----------------
   const columns = [
-    { field: "sl", headerName: "SL", sortable:true, width: 80 },
+    { field: "sl", headerName: "SL", sortable: true, width: 80 },
 
-    { field: "reg_name", headerName: masterPanel["REGN"] || "Region", sortable:true, width: 120 },
+    { field: "reg_name", headerName: masterPanel["REGN"] || "Region", sortable: true, width: 120 },
 
-    { field: "emp_code", headerName: "SO/User Code", sortable:true, width: 120 },
+    { field: "emp_code", headerName: "SO/User Code", sortable: true, width: 120 },
 
     {
       field: "user_name",
       headerName: "SO/User Name",
-      sortable:true,
+      sortable: true,
       width: 150,
       renderCell: ({ row }) => `${row.u_fname || ""} ${row.u_lname || ""}`,
     },
 
-    { field: "so_hq_name", headerName: "SO/HQ", sortable:true, width: 120 },
+    { field: "so_hq_name", headerName: "SO/HQ", sortable: true, width: 120 },
 
     {
       field: "id",
       headerName: "ID",
-      sortable:true,
+      sortable: true,
       width: 140,
       renderCell: ({ row }) => `${row.main_id}_${row.sub_id}`,
     },
 
-    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor", sortable:true, width: 150 },
+    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor", sortable: true, width: 150 },
 
-    { field: "sup_name", headerName: "WD Name", sortable:true, width: 150 },
+    { field: "sup_name", headerName: "WD Name", sortable: true, width: 150 },
 
-    { field: "clinic_name", headerName: "Store Name", sortable:true, width: 150 },
+    { field: "clinic_name", headerName: "Store Name", sortable: true, width: 150 },
 
     {
       field: "P_class",
       headerName: masterPanel["PCLS"] || "Potential Class",
-       sortable:true,
+      sortable: true,
       width: 120,
     },
 
     {
       field: "cus_visit_freq",
       headerName: "Frequency Class",
-      sortable:true,
+      sortable: true,
       width: 120,
     },
 
-    { field: "area_name", headerName: masterPanel["AREA"] || "Area", sortable:true, width: 150 },
+    { field: "area_name", headerName: masterPanel["AREA"] || "Area", sortable: true, width: 150 },
 
-    { field: "beat_name", headerName: "Beat/Territory", sortable:true, width: 150 },
+    { field: "beat_name", headerName: "Beat/Territory", sortable: true, width: 150 },
 
-    { field: "mobile", headerName: "Mobile No", sortable:true, width: 150 },
+    { field: "mobile", headerName: "Mobile No", sortable: true, width: 150 },
   ];
 
   const ExcelColumns = [
-    {field:"sl",headerName:"SL NO"},
+    { field: "sl", headerName: "SL NO" },
     { field: "reg_name", headerName: masterPanel["REGN"] || "Region" },
     { field: "emp_code", headerName: "SO/User Code" },
     { field: "user_name", headerName: "SO/User Name" },
@@ -321,18 +331,18 @@ function AccountExtract() {
     { field: "area_name", headerName: masterPanel["AREA"] || "Area" },
     { field: "beat_name", headerName: "Beat/Territory" },
     { field: "mobile", headerName: "Mobile No" },
-    {field:"create_dt",headerName:"Created Date"}
+    { field: "create_dt", headerName: "Created Date" }
 
   ]
 
   return (
-    <Layout  
-       breadcrumb={ [
-          { label: "Home", path: "/" },
-          { label: masterPanel["ACCM"] || "Account", path: location.pathname },
-          { label: `${masterPanel["ACCM"] || "Account"} Master Extract`,path: location.pathname },
-        ]}
-     >
+    <Layout
+      breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+        { label: `${masterPanel["ACCM"] || "Account"} Master Extract`, path: location.pathname },
+      ]}
+    >
       <Box
         p={2}
         sx={{ borderRadius: 1 }}
@@ -358,7 +368,7 @@ function AccountExtract() {
                 <Select
                   value={selectedRegion}
                   label={masterPanel["ZONE"] || "Zone"}
-                  onChange={(e) =>{ 
+                  onChange={(e) => {
                     setSelectedRegion(e.target.value)
                     setSelectedUser(0);
                   }}
@@ -433,13 +443,13 @@ function AccountExtract() {
               />
             </Grid>
             <Grid size={{ xs: 12, md: 2, lg: 1.5 }}>
-             <FormControl fullWidth>
-              <InputLabel id="type">Type</InputLabel>
-              <Select labelId="type" label="type" size="small" value={selactiveStat} onChange={(e)=>setActiveStat(e.target.value)}  >
-              <MenuItem value="1">Active</MenuItem>
-              <MenuItem value="2">In Active</MenuItem>
-              </Select>
-              </FormControl> 
+              <FormControl fullWidth>
+                <InputLabel id="type">Type</InputLabel>
+                <Select labelId="type" label="type" size="small" value={selactiveStat} onChange={(e) => setActiveStat(e.target.value)}  >
+                  <MenuItem value="1">Active</MenuItem>
+                  <MenuItem value="2">In Active</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
 
             {/* LOAD BUTTON */}
@@ -461,11 +471,12 @@ function AccountExtract() {
               </Grid>}
             <Grid size={{ xs: 12, md: 2, lg: 1 }}>
               <Button
+                disabled={progress1}
                 fullWidth
                 variant="contained"
                 color="warning"
-                sx={{height:'2.4rem',width:'2rem'}}
-                
+                sx={{ height: '2.4rem', width: '2rem' }}
+
                 onClick={() => URL !== 'extract_new' ? handleDownloadCSV() : handleExtractCSV()}
               >
                 Excel

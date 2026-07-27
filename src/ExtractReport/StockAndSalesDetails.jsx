@@ -26,6 +26,7 @@ const StockAndSalesDetails = () => {
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const [progress, setProgress] = useState(null);
+  const [progress1, setProgress1] = useState(null);
   const [fromDate, setFromDate] = useState(dayjs().subtract(2, "month").startOf("month"));
   const [toDate, settoDate] = useState(dayjs().endOf("month"));
   const showAlert = useToast();
@@ -56,7 +57,7 @@ const StockAndSalesDetails = () => {
       }
 
       let tableData = [];
-      setProgress("0%");
+      setProgress1("0%");
       try {
         const payload = {
           startDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
@@ -70,7 +71,8 @@ const StockAndSalesDetails = () => {
         // API not ready yet — proceed with empty data so file still downloads
         console.warn("API unavailable, downloading with no data:", err.message);
       }
-
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("40%");
       const meta = {
         centered: true,
         title: "DISTRIBUTOR STOCK AND SALES DETAIL EXTRACT",
@@ -100,7 +102,8 @@ const StockAndSalesDetails = () => {
         { field: "physical_qty", headerName: "Closing Qty" },
         { field: "cls_val", headerName: "Closing Stock Value" },
       ]
-
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("90%");
       let formattedData = tableData.map((val) => ({ ...val, sale_month1: val.sale_month ? dayjs(val.sale_month).format('DD-MMM-YYYY') : '' }))
 
       DownloadCSV(
@@ -111,11 +114,13 @@ const StockAndSalesDetails = () => {
         enqueueSnackbar,
         meta,
       );
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("100%");
     } catch (error) {
       showAlert.error("Failed to Download")
-      setProgress(null);
+      setProgress1(null);
     } finally {
-      setProgress(null);
+      setProgress1(null);
     }
   };
 
@@ -154,7 +159,7 @@ const StockAndSalesDetails = () => {
               minDate={fromDate ? fromDate : null}
             />
           </LocalizationProvider>
-          {progress ? <CircularProgress progress={progress} /> :
+          {progress1 ? <CircularProgress progress={progress1} /> :
             <span onClick={handleDownloadExcel}>
               <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
             </span>}

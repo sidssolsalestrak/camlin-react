@@ -25,7 +25,9 @@ export default function SalesHierachy() {
     const [selDistributor, setSelDistributor] = useState(0)
     const [userError, setUserError] = useState(false)
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
     const [allHierachyData, setAllHeirachyData] = useState([])
+    const [tableloading, settableloading] = useState(false);
     const { zoneid, regionid, usertypeId, userid, distributorid } = useParams()
     const decodedZoneId = zoneid !== undefined && zoneid !== null ? Number(atob(zoneid)) : 0
     const decodedRegionId = regionid !== undefined && regionid !== null ? Number(atob(regionid)) : 0
@@ -332,6 +334,7 @@ export default function SalesHierachy() {
 
     const fetchHierachyData = async (zone, region, usertyp, userid, stkid) => {
         try {
+            settableloading(true)
             let payload = {
                 zone_id: zone,
                 reg_id: region,
@@ -348,6 +351,8 @@ export default function SalesHierachy() {
         catch (err) {
             console.log("fetching heirachy data error", err)
             return []
+        }finally{
+            settableloading(false)
         }
     }
 
@@ -363,6 +368,7 @@ export default function SalesHierachy() {
 
     const handleDownloadExcel = async () => {
         try {
+            setProgress1("0%")
             if (selUsers?.id === 0 && selUserType > 0) {
                 setUserError(true)
                 toast.warning("Please Select User to Load")
@@ -374,7 +380,8 @@ export default function SalesHierachy() {
             const safeColumns = columns.map(
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
-
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%");
             //  Build dynamic meta from selected filter values
             const getLabel = (list, selectedId, labelKey, prefix) => {
                 if (!selectedId || selectedId === 0) return `${prefix}- All`
@@ -382,7 +389,7 @@ export default function SalesHierachy() {
                 return match ? `${prefix}- ${match[labelKey]}` : `${prefix}- All`
             }
             const userLabel1 = (masterPanel["USER"] || "Users").replace(/\s+T\s*$/, '').trim() || "Users";
-            
+
             const selectedUserTypeLabel = (() => {
                 if (!selUserType || selUserType === 0) return `${userLabel1} Type - All`
                 const match = allUserType.find((u) => u.id === selUserType)
@@ -413,9 +420,13 @@ export default function SalesHierachy() {
                 meta,                   // ← pass meta here
             );
 
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%");
         }
         catch (err) {
             console.log("Download excel err", err)
+        } finally {
+            setProgress1(null)
         }
     }
     console.log("All Heirachy Data", allHierachyData)
@@ -566,8 +577,8 @@ export default function SalesHierachy() {
                             </Grid>
                             }
                             <Grid size={{ md: 1, lg: 0.5, xs: 2, sm: 1 }}>
-                                {progress ? (
-                                    <CircularProgress progress={progress} />
+                                {progress1 ? (
+                                    <CircularProgress progress={progress1} />
                                 ) : (
                                     <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
                                         <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
@@ -580,6 +591,7 @@ export default function SalesHierachy() {
                         <DataTable
                             columns={columns}
                             data={allHierachyData}
+                            loading={tableloading}
                             sx={{
                                 background: "#fff",
                                 borderRadius: "10px",
