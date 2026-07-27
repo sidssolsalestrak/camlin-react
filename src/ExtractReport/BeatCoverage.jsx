@@ -73,6 +73,7 @@ const BeatCoverage = () => {
     const [tableData, settableData] = useState([]);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
 
     const [masterPanel, setMasterPanel] = useState({});
 
@@ -246,9 +247,14 @@ const BeatCoverage = () => {
 
     const handleDownloadExcel = async () => {
         try {
+            setProgress1("0%")
             const payload = buildPayload();
             const response = await axios.post("/view_beat_coverage_report", payload);
             const rawData = Array.isArray(response.data.data) ? response.data.data : [];
+
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%");
+
             const yr = month ? month.format('YYYY') : dayjs().format('YYYY');
             const excelRows = buildExportRows(rawData, yr);
             const grandTotalRow = buildGrandTotalRow(rawData, yr);
@@ -262,6 +268,8 @@ const BeatCoverage = () => {
                 {},
                 false
             );
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%");
         } catch (err) {
             if (err?.response?.status === 404) {
                 toast.warning("No Data Available To Export")
@@ -269,6 +277,8 @@ const BeatCoverage = () => {
                 console.log("Download excel Error", err);
                 toast.error("Failed to Export Excel")
             }
+        }finally{
+            setProgress1(null)
         }
     };
 
@@ -343,8 +353,8 @@ const BeatCoverage = () => {
                         <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.6, lg: 0.6 }} sx={{ display: 'flex', alignItems: 'center' }}>
-                        {progress ? (
-                            <CircularProgressLoading progress={progress} />
+                        {progress1 ? (
+                            <CircularProgressLoading progress={progress1} />
                         ) : (
                             <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
                                 <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
