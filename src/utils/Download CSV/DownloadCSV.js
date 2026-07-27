@@ -49,14 +49,14 @@ export const DownloadCSV = async (
       a.click();
       URL.revokeObjectURL(url);
       setProgress("100%");
-      setTimeout(() => setProgress(null), 1500);
+      setTimeout(() => setProgress(null), 500);
     } else {
       console.error(error);
       enqueueSnackbar(`CSV Export Error: ${error}`, {
         variant: "error",
         anchorOrigin: { vertical: "top", horizontal: "center" },
       });
-      setTimeout(() => setProgress(null), 1500);
+      setTimeout(() => setProgress(null), 500);
     }
     worker.terminate();
   };

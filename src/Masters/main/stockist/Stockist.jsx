@@ -37,7 +37,7 @@ const Stockist = () => {
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(false)
     const [formData, setFormdata] = useState({
-        region: "",
+        region: "0",
         area: "0",
         status: "1"
     })
@@ -48,6 +48,7 @@ const Stockist = () => {
     const stkLabel = masterPanel["STKS"] || "Stockist";
     const regionLabel = masterPanel["REGN"] || "Region";
     const areaLabel = masterPanel["AREA"] || "Area";
+    const psmlabel = masterPanel["PSM"] || "PSM";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -121,7 +122,7 @@ const Stockist = () => {
         setshowTable(false);
         settableData([])
         setFormdata({
-            region: "",
+            region: "0",
             area: "0",
             status: "1"
         })
@@ -174,7 +175,7 @@ const Stockist = () => {
         },
         {
             field: "sr_name",
-            headerName: "PSM",
+            headerName: psmlabel,
             filterable: true,
         },
         {

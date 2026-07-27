@@ -23,7 +23,7 @@ import { AllLocationsMap } from "./BeatMapExpansion";
 import { FaMinus } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 import CircularProgress from "../utils/CircularProgressLoading";
-
+import { getMasterPanel } from "../services/masterPanelService";
 
 
 export default function DailyActivityReport() {
@@ -40,6 +40,19 @@ export default function DailyActivityReport() {
     const [mapOpen, setMapOpen] = useState(false);
     const [userType, setUserType] = useState(null);
     const [selectedRows, setSelectedRows] = useState([]);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const designationLabel = masterPanel["DESI"] || "Designation";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+    
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const toast = useToast();
     const { enqueueSnackbar } = useSnackbar();
@@ -157,7 +170,7 @@ export default function DailyActivityReport() {
 
     const handleSubmit = async () => {
         try {
-            if(selectedRows.length===1 && selectedRows[0]===0){
+            if (selectedRows.length === 1 && selectedRows[0] === 0) {
                 toast.error("Please select at least one report.")
                 return
             }
@@ -187,15 +200,15 @@ export default function DailyActivityReport() {
 
     const columns = [
         { field: "u_name", headerName: "Name" },
-        { field: "desig_name", headerName: "Designation" },
-        { field: "area_name", headerName: "Area" },
+        { field: "desig_name", headerName: designationLabel },
+        { field: "area_name", headerName: areaLabel },
         { field: "u_hq_name", headerName: "HQ" },
         { field: "app_version", headerName: "App Version" },
         { field: "app_type", headerName: "App Type" },
         { field: "call_date", headerName: "Call Date" },
         { field: "create_dt", headerName: "Received Date", type: "date" },
         { field: "report_type", headerName: "Report Type" },
-        { field: "beat_work", headerName: "Beat Name" },
+        { field: "beat_work", headerName:`${beatLabel} Name` },
         { field: "tot_cus", headerName: "Total Outlets" },
         { field: "tot_call", headerName: "Total Calls" },
         { field: "prod_call", headerName: "Productive Calls" },
@@ -211,7 +224,7 @@ export default function DailyActivityReport() {
         {
             field: "u_name",
             headerName: "Name",
-            width:130,
+            width: 130,
             renderCell: (params) => {
                 const currentIndex = allReportData.findIndex(r => r === params.row);
                 const prevUserId = currentIndex > 0 ? allReportData[currentIndex - 1].user_id : null;
@@ -220,18 +233,18 @@ export default function DailyActivityReport() {
 
                 return (
                     <Box sx={{ overflow: 'hidden' }}>
-                            <Typography sx={{
-                                color: '#133BDE',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                '&:hover': {
-                                        textDecoration: 'underline',
-                                }
-                              
-                            }}>
-                                {params.value}
-                            </Typography>
+                        <Typography sx={{
+                            color: '#133BDE',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            '&:hover': {
+                                textDecoration: 'underline',
+                            }
+
+                        }}>
+                            {params.value}
+                        </Typography>
 
                         <Tooltip title={`${params.row.desig_name} | ${params.row.area_name} HQ: ${params.row.u_hq_name}`} placement="top">
                             <Box sx={{ display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
@@ -240,8 +253,8 @@ export default function DailyActivityReport() {
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
-                                    width:'11rem'
-                                    
+                                    width: '11rem'
+
                                 }}>
                                     {params.row.desig_name}|{params.row.area_name} (HQ:{params.row.u_hq_name})
                                 </Typography>
@@ -274,7 +287,7 @@ export default function DailyActivityReport() {
                     {params.row.call_date !== '' && params.row.call_date !== '1970-01-01' && params.row.call_date &&
                         <Typography sx={{
                             fontSize: '8px',
-                             textWrap:'nowrap',
+                            textWrap: 'nowrap',
                             color: dayjs(params.row.call_date).format('DD-MM-YYYY') !== dayjs(params.row.create_dt).format('DD-MM-YYYY') ? 'red' : null
                         }}>
                             Recieved Date:{params.row.call_date ? dayjs(params.row.create_dt).format("DD MMM YYYY hh:mm A") : null}
@@ -290,7 +303,7 @@ export default function DailyActivityReport() {
         },
         {
             field: "__expand_beat__",
-            headerName: "Beat Name",
+            headerName: `${beatLabel} Name`,
             width: 105,
             renderCell: (params) => (
                 (params.row.beat_work !== " " && params.row.beat_work) ?
@@ -303,7 +316,7 @@ export default function DailyActivityReport() {
         {
             field: "tot_cus",
             headerName: "Total Outlets",
-            width:40,
+            width: 40,
             showTotal: true,
             renderCell: (params) => (
                 <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
@@ -369,10 +382,10 @@ export default function DailyActivityReport() {
                 const selectedAndVisible = selectedRows.filter(id => pendingIds.includes(id));
 
                 return (
-                    <Box sx={{ display: 'flex', flexDirection: 'row',gap:0.5 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
                         <Typography sx={{ fontSize: '12px' }}>STATUS</Typography>
                         <Checkbox
-                            sx={{p:0}}
+                            sx={{ p: 0 }}
                             size="small"
                             checked={
                                 pendingIds.length > 0 &&
@@ -407,54 +420,54 @@ export default function DailyActivityReport() {
         { field: "prod_call_new", headerName: "Prod.Calls", type: 'number', showTotal: true },
     ];
 
-   const handleDownloadExcel = async () => {
-    try {
-        const freshData = await fetchReportData();
-        const dashIfEmptyFields = [
-            "tot_cus",
-            "tot_call",
-            "prod_call",
-            "sec_tgt_val",
-            "sec_ach_val",
-        ];
+    const handleDownloadExcel = async () => {
+        try {
+            const freshData = await fetchReportData();
+            const dashIfEmptyFields = [
+                "tot_cus",
+                "tot_call",
+                "prod_call",
+                "sec_tgt_val",
+                "sec_ach_val",
+            ];
 
-        const exportData = freshData.map((row) => {
-            const updatedRow = { ...row };
-            dashIfEmptyFields.forEach((field) => {
-                const val = updatedRow[field];
-                if (!val || Number(val) === 0) {
-                    updatedRow[field] = "-";
-                }
+            const exportData = freshData.map((row) => {
+                const updatedRow = { ...row };
+                dashIfEmptyFields.forEach((field) => {
+                    const val = updatedRow[field];
+                    if (!val || Number(val) === 0) {
+                        updatedRow[field] = "-";
+                    }
+                });
+                return updatedRow;
             });
-            return updatedRow;
-        });
 
-        const safeColumns = columns.map(
-            ({ renderCell, renderHeader, ...rest }) => rest,
-        );
+            const safeColumns = columns.map(
+                ({ renderCell, renderHeader, ...rest }) => rest,
+            );
 
-        const meta = {
-            FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
-            ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
-            Type: `Type-${typeLabel}`,
-        };
+            const meta = {
+                FromDate: fromDate ? `FromDate-${fromDate.format("DD MMM YYYY")}` : "",
+                ToDate: toDate ? `ToDate-${toDate.format("DD MMM YYYY")}` : "",
+                Type: `Type-${typeLabel}`,
+            };
 
-        console.log("safe columns in excel", safeColumns);
+            console.log("safe columns in excel", safeColumns);
 
-        let grandTotal = {
-            label: "Total",
-            beat_work: "label",
-            tot_cus: "sum",
-            tot_call: "sum",
-            prod_call: "sum",
-            sec_tgt_val: "sum",
-            sec_ach_val: "sum",
-        };
+            let grandTotal = {
+                label: "Total",
+                beat_work: "label",
+                tot_cus: "sum",
+                tot_call: "sum",
+                prod_call: "sum",
+                sec_tgt_val: "sum",
+                sec_ach_val: "sum",
+            };
 
-        DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
-    } catch (err) {
-        console.log("excelDownload error", err);
-    }
+            DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
+        } catch (err) {
+            console.log("excelDownload error", err);
+        }
     };
     console.log("selected rows", selectedRows)
 
@@ -462,7 +475,7 @@ export default function DailyActivityReport() {
         <Layout
             breadcrumb={[
                 { label: "Home", path: "/" },
-                { label: "Extract", path:URL !== 'getfieldActivity_new'?"/reports/getfieldActivity":"/reports/getfieldActivity_new" },
+                { label: "Extract", path: URL !== 'getfieldActivity_new' ? "/reports/getfieldActivity" : "/reports/getfieldActivity_new" },
                 { label: "Daily Activity", path: "/reports/getfieldActivity_new" }
             ]}
         >
@@ -475,94 +488,94 @@ export default function DailyActivityReport() {
 
                     {/* ── Filters & Actions ── */}
                     <Box sx={{
-                        mb: 0.5, gap: 1,backgroundColor: "#fff", boxShadow:
+                        mb: 0.5, gap: 1, backgroundColor: "#fff", boxShadow:
                             "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         padding: "16px 18px",
                         borderRadius: "10px"
                     }}>
                         <Grid container spacing={0.95}>
-                        <Grid size={{ md:3, lg: 2, xs: 12, sm:6 }}>
-                        <FormControl fullWidth>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="From Date"
-                                    format="DD MMM YYYY"
-                                    value={fromDate}
-                                    onChange={(newVal) => setFromDate(newVal)}
-                                    slotProps={{
-                                        textField: {
-                                            size: "small",
-                                            className: "date-input",
-                                        },
-                                    }}
-                                    maxDate={dayjs()}
-                                />
-                            </LocalizationProvider>
-                        </FormControl>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="From Date"
+                                            format="DD MMM YYYY"
+                                            value={fromDate}
+                                            onChange={(newVal) => setFromDate(newVal)}
+                                            slotProps={{
+                                                textField: {
+                                                    size: "small",
+                                                    className: "date-input",
+                                                },
+                                            }}
+                                            maxDate={dayjs()}
+                                        />
+                                    </LocalizationProvider>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="To Date"
+                                            format="DD MMM YYYY"
+                                            value={toDate}
+                                            onChange={(newVal) => setToDate(newVal)}
+                                            slotProps={{
+                                                textField: {
+                                                    size: "small",
+                                                    className: "date-input",
+                                                },
+                                            }}
+                                            maxDate={dayjs()}
+                                        />
+                                    </LocalizationProvider>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth>
+                                    <Select
+                                        value={reportStat}
+                                        onChange={(e) => setReportStat(e.target.value)}
+                                        size="small"
+                                    >
+                                        <MenuItem value="0">All</MenuItem>
+                                        <MenuItem value="1">Reported</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
+                                <FormControl fullWidth >
+                                    <InputLabel id='type'>Type</InputLabel>
+                                    <Select
+                                        value={typeStat}
+                                        onChange={(e) => setTypeStat(e.target.value)}
+                                        labelId="type"
+                                        label="Type"
+                                        size="small"
+                                    >
+                                        <MenuItem value="0">Approved</MenuItem>
+                                        <MenuItem value="1">Pending</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ md: 1, lg: 0.5, xs: 3, sm: 2 }}>
+                                {progress ? (
+                                    <CircularProgress progress={progress} />
+                                ) : (
+                                    <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
+                                        <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
+                                    </span>
+                                )}
+                            </Grid>
+                            <Grid size={{ md: 3, lg: 2, xs: 12, sm: 3 }}>
+                                {URL !== 'getfieldActivity_new' && (
+                                    <Button sx={{ mt: 0.2 }} variant="contained" onClick={() => setMapOpen(true)}>
+                                        View all Location
+                                    </Button>
+                                )}
+                            </Grid>
                         </Grid>
-                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="To Date"
-                                    format="DD MMM YYYY"
-                                    value={toDate}
-                                    onChange={(newVal) => setToDate(newVal)}
-                                    slotProps={{
-                                        textField: {
-                                            size: "small",
-                                            className: "date-input",
-                                        },
-                                    }}
-                                    maxDate={dayjs()}
-                                />
-                            </LocalizationProvider>
-                        </FormControl>
-                        </Grid>
-                        <Grid  size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth>
-                            <Select
-                                value={reportStat}
-                                onChange={(e) => setReportStat(e.target.value)}
-                                size="small"
-                            >
-                                <MenuItem value="0">All</MenuItem>
-                                <MenuItem value="1">Reported</MenuItem>
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs: 12,sm:6 }}>
-                        <FormControl fullWidth >
-                            <InputLabel id='type'>Type</InputLabel>
-                            <Select
-                                value={typeStat}
-                                onChange={(e) => setTypeStat(e.target.value)}
-                                labelId="type"
-                                label="Type"
-                                size="small"
-                            >
-                                <MenuItem value="0">Approved</MenuItem>
-                                <MenuItem value="1">Pending</MenuItem>
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid size={{ md:1, lg: 0.5, xs: 3,sm:2  }}>
-                          {progress ? (
-                        <CircularProgress progress={progress} />
-                    ) : (
-                        <span onClick={handleDownloadExcel} style={{ cursor: 'pointer' }}>
-                            <AiOutlineFileExcel style={{ color: "green", height: "30px", width: "30px" }} />
-                        </span>
-                    )}
-                        </Grid>
-                        <Grid size={{ md:3, lg: 2, xs:12,sm:3 }}>
-                        {URL !== 'getfieldActivity_new' && (
-                            <Button sx={{mt:0.2}} variant="contained" onClick={() => setMapOpen(true)}>
-                                View all Location
-                            </Button>
-                        )}
-                        </Grid>
-                      </Grid>
                     </Box>
                 </Box>
 

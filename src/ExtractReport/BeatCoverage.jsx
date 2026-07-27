@@ -14,6 +14,7 @@ import { DownloadCSV } from '../utils/Download CSV/DownloadCSV';
 import BeatCoverageTable from '../components/BeatCoverageTable';
 import { useSnackbar } from 'notistack';
 import { buildExportRows, buildMonthNames, buildGrandTotalRow } from '../utils/beatCoverageHelpers';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -72,6 +73,23 @@ const BeatCoverage = () => {
     const [tableData, settableData] = useState([]);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const handleChange = (name, val) => {
         setFormData((prev) => ({
@@ -220,8 +238,8 @@ const BeatCoverage = () => {
     const exportColumns = [
         { field: 'sr_name', headerName: 'Sales Person' },
         { field: 'hq_name', headerName: 'HQ' },
-        { field: 'area_name', headerName: 'Area' },
-        { field: 'beat_name', headerName: 'Beat' },
+        { field: 'area_name', headerName: areaLabel },
+        { field: 'beat_name', headerName: beatLabel },
         ...Object.values(buildMonthNames(month ? month.format('YYYY') : dayjs().format('YYYY')))
             .map((label) => ({ field: label, headerName: label })),
     ];
@@ -242,7 +260,7 @@ const BeatCoverage = () => {
                 setProgress,
                 enqueueSnackbar,
                 {},
-                false 
+                false
             );
         } catch (err) {
             if (err?.response?.status === 404) {
@@ -258,11 +276,11 @@ const BeatCoverage = () => {
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
             { label: "Report", path: location.pathname },
-            { label: "Beat Coverage" },
+            { label: `${beatLabel} Coverage` },
         ]}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
-                    <h1 className="mainTitle">Beat Coverage</h1>
+                    <h1 className="mainTitle">{beatLabel} Coverage</h1>
                 </Box>
             </Box>
             <Box sx={headContainer}>
@@ -281,12 +299,12 @@ const BeatCoverage = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="zone">Zone</InputLabel>
+                            <InputLabel id="zone">{zoneLabel}</InputLabel>
                             <Select value={formData.zone} onChange={(e) => {
                                 handleChange("region", "0")
                                 handleChange("zone", e.target.value)
                             }}
-                                id='zone' label="Zone" MenuProps={menuStyle} labelId="zone" variant="outlined" >
+                                id='zone' label={zoneLabel} MenuProps={menuStyle} labelId="zone" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
@@ -296,8 +314,8 @@ const BeatCoverage = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Region">Region</InputLabel>
-                            <Select id='Region' label="Region" MenuProps={menuStyle}
+                            <InputLabel id="Region">{regionLabel}</InputLabel>
+                            <Select id='Region' label={regionLabel} MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
                                 labelId="Region" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -316,7 +334,7 @@ const BeatCoverage = () => {
                                 handleChange("User", newValue ?? { id: 0, u_name: "All" })
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} label="User" size="small" />
+                                <TextField {...params} label={userLabel} size="small" />
                             )}
                             isOptionEqualToValue={(option, value) => option.id === value?.id}
                         />
@@ -336,11 +354,13 @@ const BeatCoverage = () => {
                 </Grid>
             </Box>
             {(decodedYr || decodedZone || decodedRegion || decodedUser) && (
-                <Box p={1.5}>
+                <Box p={1.5} sx={headContainer}>
                     <BeatCoverageTable
                         rawData={tableData}
                         yr={month ? month.format('YYYY') : dayjs().format('YYYY')}
                         loading={loading}
+                        areaLabel={areaLabel}
+                        beatLabel={beatLabel}
                     />
                 </Box>
             )}

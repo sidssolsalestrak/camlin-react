@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
 import { Box } from '@mui/material'
 import CircularProgress from '../utils/CircularProgressLoading';
@@ -12,6 +12,7 @@ import { useSnackbar } from 'notistack';
 import { DownloadCSV } from '../utils/Download CSV/DownloadCSV';
 import axios from "../services/api";
 import useToast from '../utils/useToast';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -28,6 +29,23 @@ const StockAndSalesDetails = () => {
   const [fromDate, setFromDate] = useState(dayjs().subtract(2, "month").startOf("month"));
   const [toDate, settoDate] = useState(dayjs().endOf("month"));
   const showAlert = useToast();
+  const [masterPanel, setMasterPanel] = useState({});
+
+  // labels derived from masterPanel with fallbacks
+  const zoneLabel = masterPanel["ZONE"] || "Zone";
+  const areaLabel = masterPanel["AREA"] || "Area";
+  const regionLabel = masterPanel["REGN"] || "Region";
+  const userLabel = masterPanel["USER"] || "Users";
+  const stkLabel = masterPanel["STKS"] || "Distributor";
+  const catLabel = masterPanel["PCAT"] || "Category";
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   /*----------------- handle download xl --------*/
   const handleDownloadExcel = async () => {
@@ -60,14 +78,14 @@ const StockAndSalesDetails = () => {
       };
 
       const columns = [
-        { field: "sale_month1", headerName: "Month",},
-        { field: "zone_name", headerName: "Zone" },
-        { field: "reg_name", headerName: "Region" },
-        { field: "stk_code", headerName: "Distributor Code" },
-        { field: "stk_name", headerName: "Distributor Name" },
+        { field: "sale_month1", headerName: "Month", },
+        { field: "zone_name", headerName: zoneLabel },
+        { field: "reg_name", headerName: regionLabel },
+        { field: "stk_code", headerName: `${stkLabel} Code` },
+        { field: "stk_name", headerName: `${stkLabel} Name` },
         { field: "city_name", headerName: "City" },
         { field: "state_name", headerName: "State" },
-        { field: "cat_name", headerName: "Category" },
+        { field: "cat_name", headerName: catLabel },
         { field: "sub_name", headerName: "Range" },
         { field: "code", headerName: "SKU Code" },
         { field: "prod_name", headerName: "SKU Name" },
@@ -83,7 +101,7 @@ const StockAndSalesDetails = () => {
         { field: "cls_val", headerName: "Closing Stock Value" },
       ]
 
-      let formattedData=tableData.map((val)=>({...val,sale_month1:val.sale_month?dayjs(val.sale_month).format('DD-MMM-YYYY'):''}))
+      let formattedData = tableData.map((val) => ({ ...val, sale_month1: val.sale_month ? dayjs(val.sale_month).format('DD-MMM-YYYY') : '' }))
 
       DownloadCSV(
         formattedData,

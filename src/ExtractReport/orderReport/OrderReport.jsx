@@ -14,6 +14,7 @@ import useToast from '../../utils/useToast'
 import FormatCurrency from '../../utils/formatCurrency';
 import { DownloadCSV } from '../../utils/Download CSV/DownloadCSV';
 import { useSnackbar } from 'notistack'
+import { getMasterPanel } from "../../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -87,6 +88,27 @@ const OrderReport = () => {
         Stockist: "0",
         Status: "1"
     })
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+    const distributorLabel = masterPanel["STKS"] || "Distributor";
+    const prodLabel = masterPanel["PROD"] || "Product";
+    const psmLabel = masterPanel["PSM"] || "PSM";
+    const kamLabel = masterPanel["KAM"] || "KAM";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     /*------------ get zone data ---------- */
     const fetchZone = async () => {
@@ -215,7 +237,7 @@ const OrderReport = () => {
         ) ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -223,18 +245,18 @@ const OrderReport = () => {
             },
             {
                 field: "psm_kam",
-                headerName: "PSM/KAM",
+                headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
-                width:100,
+                width: 150,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
             },
             {
                 field: "stk_name",
-                headerName: "STOCKIEST",
+                headerName: distributorLabel,
                 filterable: true,
-                width:100,
+                width: 100,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -267,14 +289,14 @@ const OrderReport = () => {
                 field: "cus_name",
                 headerName: "CUSTOMER",
                 filterable: true,
-                width:100,
+                width: 100,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
             },
             {
                 field: "beat_name",
-                headerName: "BEAT",
+                headerName: beatLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -309,7 +331,7 @@ const OrderReport = () => {
                 field: "create_dt",
                 headerName: "Ord. Time",
                 filterable: true,
-                width:100,
+                width: 100,
                 renderCell: (params) => (
                     <span>
                         {params?.row?.__isFirstOrder ? dayjs(params.value).format("DD MMM YYYY HH:mm a") : ""}
@@ -339,7 +361,7 @@ const OrderReport = () => {
         ...((extractPath ? formData.groupBy === "2" : decodedGrpBy === "2") ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -349,7 +371,7 @@ const OrderReport = () => {
         ...((extractPath ? formData.groupBy === "3" : decodedGrpBy === "3") ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -357,14 +379,14 @@ const OrderReport = () => {
             },
             {
                 field: "area_name",
-                headerName: "Area",
+                headerName: areaLabel,
                 filterable: true,
             },
         ] : []),
         ...((extractPath ? formData.groupBy === "4" : decodedGrpBy === "4") ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -372,7 +394,7 @@ const OrderReport = () => {
             },
             {
                 field: "stk_name",
-                headerName: "STOCKIEST",
+                headerName: distributorLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -382,7 +404,7 @@ const OrderReport = () => {
         ...((extractPath ? formData.groupBy === "5" : decodedGrpBy === "5") ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -390,8 +412,9 @@ const OrderReport = () => {
             },
             {
                 field: "psm_kam",
-                headerName: "PSM/KAM",
+                headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
+                 width: 150,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -400,7 +423,7 @@ const OrderReport = () => {
         ...((extractPath ? formData.groupBy === "6" : decodedGrpBy === "6") ? [
             {
                 field: "reg_name",
-                headerName: "Region",
+                headerName: regionLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -408,8 +431,9 @@ const OrderReport = () => {
             },
             {
                 field: "psm_kam",
-                headerName: "PSM/KAM",
+                headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
+                 width: 150,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -448,7 +472,7 @@ const OrderReport = () => {
             },
             {
                 field: "beat_name",
-                headerName: "BEAT",
+                headerName: beatLabel,
                 filterable: true,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
@@ -637,6 +661,7 @@ const OrderReport = () => {
             showAlert.error("Excel export is allowed only for a maximum of one month.");
             return;
         }
+          setProgress("0%");
         try {
             const res = await axios.post("/getPcmKam", {
                 frm: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
@@ -672,13 +697,13 @@ const OrderReport = () => {
                 ] : []),
             ]
             const exportColumns = [...addColumn, ...columns.map(({ renderCell, ...col }) => col)];
-            console.log("export columns in order report",exportColumns)
-            console.log("source data in excel",sourceData)
+            console.log("export columns in order report", exportColumns)
+            console.log("source data in excel", sourceData)
             DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, {
                 label: "Total",
-                reg_name:formData?.groupBy !=="1"?"label":'',
-                sub_name:"label",
-                prod_name:"label",
+                reg_name: formData?.groupBy !== "1" ? "label" : '',
+                sub_name: "label",
+                prod_name: "label",
                 disc_value: "sum",
                 ord_value: "sum",
                 retail_price: "sum",
@@ -693,6 +718,8 @@ const OrderReport = () => {
                 console.error(err);
                 showAlert.error("Failed to Export Excel")
             }
+        }finally{
+              setProgress(null);
         }
     };
 
@@ -751,10 +778,10 @@ const OrderReport = () => {
                             <Select value={formData.groupBy} onChange={(e) => handleChange("groupBy", e.target.value)} id='groupBy' label="Group By" MenuProps={menuStyle}
                                 labelId="groupBy" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="1">Order wise</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="2">Region</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="3">Area</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="4">Stockist</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="5">PSM/KAM</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="2">{regionLabel}</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="3">{areaLabel}</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="4">{distributorLabel}</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="5">{psmLabel}/{kamLabel}</MenuItem>
                                 <MenuItem style={{ fontSize: "11px" }} value="6">Customer</MenuItem>
                                 <MenuItem style={{ fontSize: "11px" }} value="7">Range</MenuItem>
                                 <MenuItem style={{ fontSize: "11px" }} value="8">SKU</MenuItem>
@@ -764,8 +791,8 @@ const OrderReport = () => {
 
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth >
-                            <InputLabel id="zone">Zone</InputLabel>
-                            <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label="Zone" MenuProps={menuStyle}
+                            <InputLabel id="zone">{zoneLabel}</InputLabel>
+                            <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label={zoneLabel} MenuProps={menuStyle}
                                 labelId="zone" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
@@ -777,8 +804,8 @@ const OrderReport = () => {
 
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Region">Region</InputLabel>
-                            <Select id='Region' label="Region" MenuProps={menuStyle}
+                            <InputLabel id="Region">{regionLabel}</InputLabel>
+                            <Select id='Region' label={regionLabel} MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
                                 labelId="Region" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -791,8 +818,8 @@ const OrderReport = () => {
 
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Area">Area</InputLabel>
-                            <Select id='Area' label="Area" MenuProps={menuStyle}
+                            <InputLabel id="Area">{areaLabel}</InputLabel>
+                            <Select id='Area' label={areaLabel} MenuProps={menuStyle}
                                 value={formData.area} onChange={(e) => handleChange("area", e.target.value)}
                                 labelId="Area" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -804,8 +831,8 @@ const OrderReport = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="PSM">PSM</InputLabel>
-                            <Select value={formData.PSM} onChange={(e) => handleChange("PSM", e.target.value)} id='PSM' label="PSM" MenuProps={menuStyle}
+                            <InputLabel id="PSM">{psmLabel}</InputLabel>
+                            <Select value={formData.PSM} onChange={(e) => handleChange("PSM", e.target.value)} id='PSM' label={psmLabel} MenuProps={menuStyle}
                                 labelId="PSM" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                             </Select>
@@ -814,8 +841,8 @@ const OrderReport = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Stockist">Stockist</InputLabel>
-                            <Select value={formData.Stockist} onChange={(e) => handleChange("Stockist", e.target.value)} id='Stockist' label="Stockist" MenuProps={menuStyle}
+                            <InputLabel id="Stockist">{distributorLabel}</InputLabel>
+                            <Select value={formData.Stockist} onChange={(e) => handleChange("Stockist", e.target.value)} id='Stockist' label={distributorLabel} MenuProps={menuStyle}
                                 labelId="Stockist" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {stkData?.map((val) => (
