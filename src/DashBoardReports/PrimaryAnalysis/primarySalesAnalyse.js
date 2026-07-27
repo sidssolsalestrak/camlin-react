@@ -33,6 +33,7 @@ function PrimarySalesAnalze() {
     const [allGraphData, setAllGraphData] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
     const [showTable, setShowTable] = useState(false)
+    const [loading, setLoading] = useState(false)
     var now=dayjs()
     var dateLabel=''
     const toast = useToast()
@@ -102,6 +103,7 @@ function PrimarySalesAnalze() {
 
     const fetchSaleAnalysisData = async () => {
         try {
+            setLoading(true)
             const payload = { month: selMonth, selType, groupName: selTypeName };
             const response = await api.post("/monthlySalesDashboard", payload);
             const primaryres = Array.isArray(response.data.primarydata)
@@ -167,6 +169,8 @@ function PrimarySalesAnalze() {
 
         } catch (err) {
             console.log("sales Analysis Err", err);
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -500,6 +504,7 @@ function PrimarySalesAnalze() {
                                     showHeader={false}
                                     noDataMessage={`No Data Available for ${selectedMonth.format('MMM YYYY')}`}
                                     getRowClassName={(row) => row.isTotal ? "total-row" : ""}
+                                    loading={loading}
                                 />
                             </Box>
                         )}
