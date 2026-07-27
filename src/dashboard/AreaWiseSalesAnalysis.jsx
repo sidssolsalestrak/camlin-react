@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Layout from '../layout'
 import { useLocation } from 'react-router-dom'
 import { Box, Button } from '@mui/material';
@@ -14,6 +14,7 @@ import FormatCurrency from "../utils/formatCurrency";
 import { areaWiseSubTot } from './areaWiseSubTot';
 import useToast from '../utils/useToast';
 import { excelWithFilters } from '../utils/ExcelWithFilters';
+import { getMasterPanel } from "../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -32,6 +33,16 @@ const AreaWiseSalesAnalysis = () => {
     const [loading, setloading] = useState(false)
     const showAlert = useToast();
     const [showTable, setshowTable] = useState(false);
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const handleDownloadExcel = async () => {
         if (!tableData.length) {
@@ -60,10 +71,10 @@ const AreaWiseSalesAnalysis = () => {
             });
 
             const filters = [
-                { label: `Area Wise Primary Sales Review`, bold: false, sz: 11 },
+                { label: `${masterPanel["AREA"] || "Area"} Wise Primary Sales Review`, bold: false, sz: 11 },
             ];
             let type = 1;
-            await excelWithFilters(excelData, excelColumns, `Area Wise`, filters, setProgress, type);
+            await excelWithFilters(excelData, excelColumns, `${masterPanel["AREA"] || "Area"} Wise`, filters, setProgress, type);
         } catch (err) {
             console.log(err);
             showAlert.error("failed to download");
@@ -100,7 +111,7 @@ const AreaWiseSalesAnalysis = () => {
     const nextYY = year ? dayjs(year).add(1, "year").format("YY") : "";
 
     const columns = [
-        { field: "area_name", headerName: "Area", filterable: true, },
+        { field: "area_name", headerName: masterPanel["AREA"] || "Area", filterable: true, },
         {
             field: "m1_sale", headerName: `Apr-${yy}`, filterable: true,
             renderCell: (params) => {
@@ -218,11 +229,11 @@ const AreaWiseSalesAnalysis = () => {
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
             { label: "Dashboard", path: location.pathname },
-            { label: "Area Sales Analysis" },
+            { label: `${masterPanel["AREA"] || "Area"} Sales Analysis` },
         ]}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
-                    <h1 className="mainTitle">Area Sales Analysis</h1>
+                    <h1 className="mainTitle">{masterPanel["AREA"] || "Area"} Sales Analysis</h1>
                 </Box>
             </Box>
             <Box sx={headContainer}>
@@ -259,7 +270,7 @@ const AreaWiseSalesAnalysis = () => {
                         pagination={false}
                         showHeader={false}
                         showTableTitle={true}
-                        tableTitle="Area Wise Primary Sales Review"
+                        tableTitle={`${masterPanel["AREA"] || "Area"} Wise Primary Sales Review`}
                         rowStyle={(row) => {
                             if (row._isGroupHeader) return {
                                 "& td": {

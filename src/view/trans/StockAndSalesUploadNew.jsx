@@ -14,6 +14,7 @@ import useToast from '../../utils/useToast';
 import DataTable from '../../utils/dataTable';
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
+import { getMasterPanel } from "../../services/masterPanelService";
 
 const headContainer = {
     background: "#fff",
@@ -68,6 +69,7 @@ const StockAndSalesUploadNew = () => {
     const [modifyLoading, setModifyLoading] = useState(false)
     const [masId, setMasId] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [masterPanel, setMasterPanel] = useState({});
 
     const showToggle = formData.Distributor !== "0" && parseInt(formData.Distributor) > 0;
 
@@ -115,6 +117,14 @@ const StockAndSalesUploadNew = () => {
 
     useEffect(() => { fetchDistributor(); }, []);
 
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     const fetchTableData = async ({ mtd, stkID, val }) => {
         try {
             const res = await axios.post('/stock_sales', { month: mtd, stk_id: stkID, value: val });
@@ -142,7 +152,7 @@ const StockAndSalesUploadNew = () => {
 
     const handleload = () => {
         if (!formData.Distributor || formData.Distributor === "0") {
-            showAlert.warning('Please Select Distributor');
+            showAlert.warning(`Please Select ${masterPanel["STKS"] || "Distributor"}`);
             return;
         }
         const selected = distribute.find(d => String(d.id) === String(formData.Distributor));
@@ -260,7 +270,7 @@ const StockAndSalesUploadNew = () => {
     const columns = [
         {
             field: "prod_code",
-            headerName: "PRODUCT CODE",
+            headerName: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE`,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header"
                     ? <strong>{row.cat_name}</strong>
@@ -398,7 +408,7 @@ const StockAndSalesUploadNew = () => {
 
     const handleExcelExport = async () => {
     if (!formData.Distributor || formData.Distributor === "0") {
-        showAlert.warning('Please Select Distributor');
+        showAlert.warning(`Please Select ${masterPanel["STKS"] || "Distributor"}`);
         return;
     }
     try {
@@ -431,12 +441,12 @@ const StockAndSalesUploadNew = () => {
 
         const filters = [
             { label: `Month - ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
-            { label: `Distributor : ${distLabel}`, bold: false, sz: 10 },
+            { label: `${masterPanel["STKS"] || "Distributor"} : ${distLabel}`, bold: false, sz: 10 },
         ];
 
         // ── 2. Map your columns → { id, label } ─────────────────────────────
         const exportColumns = [
-            { id: "prod_code", label: "PRODUCT CODE" },
+            { id: "prod_code", label: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE` },
             { id: "prod_name", label: "NAME" },
             { id: "prod_uom", label: "UOM" },
             { id: "stk_price", label: "MRP" },
@@ -531,7 +541,7 @@ const StockAndSalesUploadNew = () => {
                             String(option.id) === String(value.id)
                         }
                         renderInput={(params) => (
-                            <TextField {...params} label="Distributor" placeholder='select Distributor' required />
+                            <TextField {...params} label={masterPanel["STKS"] || "Distributor"} placeholder={`select ${masterPanel["STKS"] || "Distributor"}`} required />
                         )}
                         ListboxProps={{ style: { maxHeight: 200 } }}
                     />
@@ -571,7 +581,7 @@ const StockAndSalesUploadNew = () => {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                 "& td": { padding: "6px 8px" },
             }}>
-                <Typography sx={{ px:2,py:1 }} variant="h6">Product View</Typography>
+                <Typography sx={{ px:2,py:1 }} variant="h6">{masterPanel["PROD"] || "Product"} View</Typography>
                 <DataTable loading={loading} columns={columns} data={tableData} rowStyle={rowStyle} />
                 
             </Box>

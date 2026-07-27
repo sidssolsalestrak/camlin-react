@@ -63,6 +63,7 @@ import { FaFile } from "react-icons/fa";
 import FilePreviewModal from "./FilePreviewModal";
 import useToast from "../../utils/useToast";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function UploadClosing() {
   const {
@@ -88,6 +89,16 @@ function UploadClosing() {
   const decodedProcStat = safeDecode(enProcessStat);
   const decodedBtnVal = safeDecode(enProcessDataStat);
   const toast = useToast();
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const [selMonth, setSelMonth] = useState(() => {
     if (decodedMnt) {
@@ -406,7 +417,7 @@ function UploadClosing() {
 
   const handleFileChange = (e, slotIndex) => {
     if (!selDesName || selDesName === "0") {
-      toast.error("Please select a Distributor first.");
+      toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"} first.`);
       e.target.value = "";
       return;
     }
@@ -452,7 +463,7 @@ function UploadClosing() {
 
   const handleImport = async () => {
     if (!selDesName || selDesName === "0") {
-      toast.error("Please select a Distributor.");
+      toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"}.`);
       return;
     }
     if (files.length === 0) {
@@ -496,7 +507,7 @@ function UploadClosing() {
   const handleAddManual = async (overrideTglVal) => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") {
-      toast.error("Please select a Distributor.");
+      toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"}.`);
       return;
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
@@ -614,7 +625,7 @@ function UploadClosing() {
               Code
             </MenuItem>
             <MenuItem value="product_name" sx={{ fontSize: 12 }}>
-              Product Name
+              {masterPanel["PROD"] || "Product"} Name
             </MenuItem>
             <MenuItem value="closing_qty" sx={{ fontSize: 12 }}>
               Closing Qty
@@ -676,7 +687,7 @@ function UploadClosing() {
     for (let p = 0; p < rawPages.length; p++) {
       const mapped = Object.values(rawPages[p].mapping);
       if (!mapped.includes("product_name")) {
-        toast.error(`Please select Product Name in page ${p + 1}`);
+        toast.error(`Please select ${masterPanel["PROD"] || "Product"} Name in page ${p + 1}`);
         return;
       }
       if (!mapped.includes("closing_qty")) {
@@ -900,7 +911,7 @@ function UploadClosing() {
     setMapConfirm({
       open: true,
       title: "Confirmation",
-      message: "Are you sure you want to map this product?",
+      message: `Are you sure you want to map this ${masterPanel["PROD"] || "product"}?`,
       confirmText: "OK",
       cancelText: "Cancel",
       confirmColor: "primary",
@@ -1104,13 +1115,13 @@ function UploadClosing() {
   const handleDeleteSelected = () => {
     const keys = Object.keys(dltChecked).filter((k) => dltChecked[k]);
     if (!keys.length) {
-      toast.error("Please select at least one product.");
+      toast.error(`Please select at least one ${masterPanel["PROD"] || "product"}.`);
       return;
     }
     setConfirm({
       open: true,
       title: "Confirmation",
-      message: `Are you sure you want to delete Selected Product?`,
+      message: `Are you sure you want to delete Selected ${masterPanel["PROD"] || "Product"}?`,
       confirmText: "OK",
       cancelText: "Close",
       confirmColor: "error",
@@ -1498,7 +1509,7 @@ function UploadClosing() {
     },
     {
       field: "prod_name",
-      headerName: "Product Name",
+      headerName: `${masterPanel["PROD"] || "Product"} Name`,
       renderHeader: () => (
         <Box
           sx={{
@@ -1509,7 +1520,7 @@ function UploadClosing() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            Product Name
+            {masterPanel["PROD"] || "Product"} Name
           </Typography>
           <Box
             sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}
@@ -1519,7 +1530,7 @@ function UploadClosing() {
               fontWeight={500}
               sx={{ whiteSpace: "nowrap" }}
             >
-              All Products
+              All {masterPanel["PROD"] || "Product"}s
             </Typography>
             <Switch
               size="small"
@@ -1627,7 +1638,7 @@ function UploadClosing() {
     },
     {
       field: "prod_name",
-      headerName: "Product Name",
+      headerName: `${masterPanel["PROD"] || "Product"} Name`,
       renderHeader: () => (
         <Box
           sx={{
@@ -1638,7 +1649,7 @@ function UploadClosing() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            Product Name
+            {masterPanel["PROD"] || "Product"} Name
           </Typography>
           {isApproved && (
             <Box
@@ -1649,7 +1660,7 @@ function UploadClosing() {
                 fontWeight={500}
                 sx={{ whiteSpace: "nowrap" }}
               >
-                All Products
+                All {masterPanel["PROD"] || "Product"}s
               </Typography>
               <Switch
                 size="small"
@@ -1698,7 +1709,7 @@ function UploadClosing() {
             >
               <MapDot row={row} />
               {!isApproved && (
-                <Tooltip title="Map product">
+                <Tooltip title={`Map ${masterPanel["PROD"] || "product"}`}>
                   <IconButton
                     size="small"
                     onClick={() => handleOpenMapModal(row)}
@@ -2061,8 +2072,8 @@ function UploadClosing() {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Distributor"
-                      placeholder="Search Distributor"
+                      label={masterPanel["STKS"] || "Distributor"}
+                      placeholder={`Search ${masterPanel["STKS"] || "Distributor"}`}
                     />
                   )}
                 />
@@ -2071,7 +2082,7 @@ function UploadClosing() {
                     variant="caption"
                     sx={{ mt: 0.1, color: "#212121", fontSize: "12px" }}
                   >
-                    <strong>Territory:</strong> {territory}
+                    <strong>{masterPanel["TERR"] || "Territory"}:</strong> {territory}
                   </Typography>
                 )}
               </Box>
@@ -2755,7 +2766,7 @@ function UploadClosing() {
       >
         <DialogTitle sx={{ pb: 0 }}>
           <Typography variant="caption" color="text.secondary">
-            Mapping Product
+            Mapping {masterPanel["PROD"] || "Product"}
           </Typography>
           <Typography fontWeight={500} fontSize={15}>
             {mapModal.row?.prod_name}
@@ -2909,7 +2920,7 @@ function UploadClosing() {
                   <TextField
                     {...params}
                     size="small"
-                    placeholder="Search product…"
+                    placeholder={`Search ${masterPanel["PROD"] || "product"}…`}
                     fullWidth
                   />
                 )}
