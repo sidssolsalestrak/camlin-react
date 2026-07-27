@@ -25,7 +25,7 @@ function DataSubmissionLog() {
     const [selRegion, setSelRegion] = useState(0)
     const [progress, setProgress] = useState(null);
     const [allSubmissionLog, setAllSubmissionLog] = useState([])
-
+    const [tableload, settableload] = useState(false)
     const decodedYear = encodeyear ? dayjs(atob(encodeyear), "YYYY") : dayjs()
     const decodedZone = encodezone ? Number(atob(encodezone)) : 0
     const decodedRegion = encoderegion ? Number(atob(encoderegion)) : 0
@@ -131,6 +131,7 @@ function DataSubmissionLog() {
 
     const fetchSubmitlog = async () => {
         try {
+            settableload(true)
             let payload = {
                 year: decodedYearStr,
                 zone_id: decodedZone,
@@ -155,6 +156,8 @@ function DataSubmissionLog() {
         }
         catch (err) {
             console.log(err)
+        } finally {
+            settableload(false)
         }
     }
 
@@ -302,6 +305,7 @@ function DataSubmissionLog() {
                 </Box>
                 <Box sx={{ px: 1.5 }}>
                     <DataTable
+                        loading={tableload}
                         columns={columns}
                         data={allSubmissionLog}
                         sx={{

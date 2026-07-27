@@ -29,6 +29,7 @@ function KPIReport() {
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
     })
+    const [tableload,settableload]=useState(false)
 
     const [masterPanel, setMasterPanel] = useState({});
 
@@ -58,6 +59,7 @@ function KPIReport() {
 
     const fetchKpiReport = async () => {
         try {
+            settableload(true)
             const response = await api.post("/getCapabilityReport", { month: selMonth });
             const raw = Array.isArray(response.data.data) ? response.data.data : [];
             setZoneData(buildZoneData(raw));
@@ -66,6 +68,8 @@ function KPIReport() {
             setReportMonth(selMonth)
         } catch (err) {
             console.error(err);
+        }finally{
+            settableload(false)
         }
     };
 
@@ -490,6 +494,7 @@ function KPIReport() {
                         columns={COLUMNS}
                         searchable={false}
                         showHeader={true}
+                        loading={tableload}
                         hideSubHeader
                         columnBgColors={{
                             "num_dist_per": "#d0e8f5",

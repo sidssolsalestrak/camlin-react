@@ -26,6 +26,7 @@ const StockAndSalesSummary = () => {
     const location = useLocation();
     const { enqueueSnackbar } = useSnackbar();
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
     const [year, setYear] = useState(dayjs());
     const showAlert = useToast();
     const [masterPanel, setMasterPanel] = useState({});
@@ -53,7 +54,7 @@ const StockAndSalesSummary = () => {
     const handleDownloadExcel = async () => {
         try {
             let tableData = [];
-            setProgress("0%");
+            setProgress1("0%");
             try {
                 const payload = { year: year ? dayjs(year).format("YYYY") : "" };
                 const res = await axios.post("/stk_sales_summary_excel", payload);
@@ -61,7 +62,8 @@ const StockAndSalesSummary = () => {
             } catch (err) {
                 console.warn("API unavailable:", err.message);
             }
-
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%");
             const selectedYear = dayjs(year).format("YYYY");
             const currentYear = dayjs().format("YYYY");
             const totalMonths = selectedYear === currentYear ? dayjs().month() + 1 : 12;
@@ -129,11 +131,13 @@ const StockAndSalesSummary = () => {
                 enqueueSnackbar,
                 meta,
             );
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%");
         } catch (error) {
             showAlert.error("Failed to Download")
-            setProgress(null);
+            setProgress1(null);
         } finally {
-            setProgress(null);
+            setProgress1(null);
         }
     };
 
@@ -159,7 +163,7 @@ const StockAndSalesSummary = () => {
                             slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
                         />
                     </LocalizationProvider>
-                    {progress ? <CircularProgress progress={progress} /> :
+                    {progress1 ? <CircularProgress progress={progress1} /> :
                         <span onClick={handleDownloadExcel}>
                             <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                         </span>}

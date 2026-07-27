@@ -72,6 +72,7 @@ const OrderReport = () => {
     const [showTable, setshowTable] = useState(false);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(false);
     const [fromDate, setFromDate] = useState(dayjs());
     const [toDate, settoDate] = useState(dayjs());
     const [zoneData, setzoneData] = useState([]);
@@ -414,7 +415,7 @@ const OrderReport = () => {
                 field: "psm_kam",
                 headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
-                 width: 150,
+                width: 150,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -433,7 +434,7 @@ const OrderReport = () => {
                 field: "psm_kam",
                 headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
-                 width: 150,
+                width: 150,
                 renderCell: (params) => (
                     <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
                 )
@@ -661,7 +662,7 @@ const OrderReport = () => {
             showAlert.error("Excel export is allowed only for a maximum of one month.");
             return;
         }
-          setProgress("0%");
+        setProgress1(true);
         try {
             const res = await axios.post("/getPcmKam", {
                 frm: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
@@ -718,8 +719,8 @@ const OrderReport = () => {
                 console.error(err);
                 showAlert.error("Failed to Export Excel")
             }
-        }finally{
-              setProgress(null);
+        } finally {
+            setProgress1(false);
         }
     };
 
@@ -867,7 +868,9 @@ const OrderReport = () => {
                         )}
                     </Grid>
                     <Grid size={{ xs: 7, sm: 6, md: 2, lg: 2 }}>
-                        <Button disabled={progress ? true : false} variant='contained' color='warning' startIcon={progress ? <CircularProgressLoading progress={progress} /> : <AiOutlineFileExcel />} onClick={handleDownloadExcel}>
+                        <Button disabled={progress1 ? true : false} variant='contained' color='warning'
+                            startIcon={<AiOutlineFileExcel />}
+                            onClick={handleDownloadExcel}>
                             Export to Excel
                         </Button>
                     </Grid>

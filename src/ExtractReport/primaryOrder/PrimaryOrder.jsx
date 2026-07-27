@@ -72,6 +72,7 @@ const PrimaryOrder = () => {
     const location = useLocation();
     const { enqueueSnackbar } = useSnackbar();
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
     const showAlert = useToast();
     const [formData, setformData] = useState({
         zone: "0",
@@ -92,7 +93,7 @@ const PrimaryOrder = () => {
     const userLabel = masterPanel["USER"] || "Users";
     const beatLabel = masterPanel["BEAT"] || "Beat";
     const distributorLabel = masterPanel["STKS"] || "Distributor";
-     const prodLabel = masterPanel["PROD"] || "Product";
+    const prodLabel = masterPanel["PROD"] || "Product";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -364,6 +365,7 @@ const PrimaryOrder = () => {
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
         try {
+            setProgress1("0%")
             const getLabel = (list, selectedId, labelKey, prefix) => {
                 if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
                 const match = list.find((item) => String(item.id) === String(selectedId));
@@ -389,8 +391,12 @@ const PrimaryOrder = () => {
                 });
                 sourceData = newData ?? [];
             }
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("80%");
 
             DownloadCSV(addSubtotalsPrimary(sourceData, false), columnsExcel, `Primary_Order`, setProgress, enqueueSnackbar, meta, false);
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%");
         } catch (err) {
             if (err?.response?.status === 404) {
                 showAlert.error("No Data Available To Export Excel")
@@ -398,6 +404,8 @@ const PrimaryOrder = () => {
                 console.error(err);
                 showAlert.error("Failed to Export Excel")
             }
+        }finally{
+            setProgress1(null)
         }
     };
 
@@ -485,7 +493,7 @@ const PrimaryOrder = () => {
                         )}
                     </Grid>
                     <Grid size={{ xs: 3, sm: 3, md: 1, lg: 1 }}>
-                        {progress ? <CircularProgress progress={progress} /> :
+                        {progress1 ? <CircularProgress progress={progress1} /> :
                             <span onClick={handleDownloadExcel}>
                                 <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                             </span>}

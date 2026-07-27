@@ -56,6 +56,7 @@ const RegionWiseSales = () => {
     const [showTable, setshowTable] = useState(false);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
     const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
     const [toDate, settoDate] = useState(dayjs().endOf("month"));
 
@@ -192,6 +193,7 @@ const RegionWiseSales = () => {
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
         try {
+            setProgress1("0%")
             let grandTotal = {
                 label: "Grand Total",
                 reg_name: "label",      // first col → shows "Grand Total" text
@@ -215,7 +217,8 @@ const RegionWiseSales = () => {
             }
             const res = await axios.post("/getRegionWiseSecSales", payload);
             let excelData = Array.isArray(res?.data?.data) ? res?.data?.data : [];
-
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%")
             DownloadCSV(
                 excelData,
                 columns,
@@ -225,6 +228,8 @@ const RegionWiseSales = () => {
                 meta,
                 grandTotal,
             );
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%")
         }
         catch (err) {
             if (err?.response?.status === 404) {
@@ -233,6 +238,8 @@ const RegionWiseSales = () => {
                 console.error(err);
                 showAlert.error("Failed to Export Excel")
             }
+        } finally {
+            setProgress1(null)
         }
     }
 
@@ -270,7 +277,7 @@ const RegionWiseSales = () => {
                         />
                     </LocalizationProvider>
                     <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
-                    {progress ? <CircularProgress progress={progress} /> :
+                    {progress1 ? <CircularProgress progress={progress1} /> :
                         <span>
                             <AiOutlineFileExcel onClick={handleDownloadExcel} style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
                         </span>}
