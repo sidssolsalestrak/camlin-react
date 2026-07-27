@@ -511,7 +511,7 @@ function PrimarySalesAnalze() {
                     </Box>
                     {showTable && (<Button sx={{ width: '2rem' }} onClick={() => setGraphDialog(true)} variant="contained">Data</Button>)}
 
-                    {showTable && (<Box sx={{
+                    {showTable && !loading && (<Box sx={{
                         width: '95%',
                         backgroundColor: "#fff",
                         borderRadius: "10px",
