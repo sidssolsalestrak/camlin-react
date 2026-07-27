@@ -10,6 +10,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate,useLocation } from "react-router-dom";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import useToast from "../../utils/useToast";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function PreviewStkSales() {
 
@@ -35,6 +36,7 @@ function PreviewStkSales() {
     const toast = useToast()
     const [allPreviewData, setAllPreviewData] = useState([]);
     const location=useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: "",
@@ -64,6 +66,13 @@ function PreviewStkSales() {
         });
     };
 
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         if (!closeDate) return;
@@ -224,7 +233,7 @@ function PreviewStkSales() {
     const column = [
         {
             field: "prod_code",
-            headerName: "PRODUCT CODE",
+            headerName: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE`,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header"
                     ? <strong>{row.cat_name}</strong>
@@ -360,7 +369,7 @@ function PreviewStkSales() {
                         </Grid>
                         <Grid size={{ xs: 12, md: 3, lg: 2.9 }}>
                             <Typography sx={{ fontWeight: 600, textWrap: 'nowrap' }}>
-                                Distributor: <span style={{ fontWeight: 400 }}>{decodedlabel}</span>
+                                {masterPanel["STKS"] || "Distributor"}: <span style={{ fontWeight: 400 }}>{decodedlabel}</span>
                             </Typography>
                         </Grid>
                     </Grid>

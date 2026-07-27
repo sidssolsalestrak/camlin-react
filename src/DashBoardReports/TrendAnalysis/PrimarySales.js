@@ -16,6 +16,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import useToast from "../../utils/useToast";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
 import { FaRegFileExcel } from "react-icons/fa";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -74,6 +75,16 @@ function PrimarySales({ enType }) {
     const [rawData, setRawData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoad,setinitialLoad] =useState(false)
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     // ✅ FIX: useRef instead of useState — no re-render on progress update
     const progressRef = useRef(null);
@@ -509,14 +520,14 @@ function PrimarySales({ enType }) {
 
             const filters = [
                 { label: `Trend Analysis Data FY-${dayjs(selYear).format('YYYY')}`, bold: true, sz: 13 },
-                { label: `Zone : ${getLabel(allZone, selZone, "zone_name", "")}`, bold: false, sz: 10 },
-                { label: `Region : ${getLabel(allRegion, selRegion, "reg_name", "")}`, bold: false, sz: 10 },
-                { label: `Area : ${getLabel(allArea, selArea, 'area_name', "")}`, bold: false, sz: 10 },
-                { label: `Territory : ${getLabel(allTerritory, selTerritory, 'ter_name', "")}`, bold: false, sz: 10 },
-                { label: `Distributor : ${getLabel(allDistributor, selDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`, bold: false, sz: 10 },
-                { label: `Category : ${getLabel(allCatData, selCategory, 'cat_name', "")}`, bold: false, sz: 10 },
-                { label: `Sub Category : ${getLabel(allSubCategory, selSubCategory, 'sub_name', "")}`, bold: false, sz: 10 },
-                { label: `Product : ${getLabel(allProduct, selProduct, 'prod_name', "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["ZONE"] || "Zone"} : ${getLabel(allZone, selZone, "zone_name", "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["REGN"] || "Region"} : ${getLabel(allRegion, selRegion, "reg_name", "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["AREA"] || "Area"} : ${getLabel(allArea, selArea, 'area_name', "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["TERR"] || "Territory"} : ${getLabel(allTerritory, selTerritory, 'ter_name', "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["STKS"] || "Distributor"} : ${getLabel(allDistributor, selDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["PCAT"] || "Category"} : ${getLabel(allCatData, selCategory, 'cat_name', "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["PSUB"] || "Sub Category"} : ${getLabel(allSubCategory, selSubCategory, 'sub_name', "")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["PROD"] || "Product"} : ${getLabel(allProduct, selProduct, 'prod_name', "")}`, bold: false, sz: 10 },
             ];
 
             const filename = `Trend_Analysis_${yr}`;
@@ -630,14 +641,14 @@ function PrimarySales({ enType }) {
                                     size="small"
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                     labelId="grpBy" label="Group By">
-                                    <MenuItem value={1}>Zone</MenuItem>
-                                    <MenuItem value={2}>Region</MenuItem>
-                                    <MenuItem value={3}>Area</MenuItem>
-                                    <MenuItem value={4}>Territory</MenuItem>
-                                    <MenuItem value={5}>Distributor</MenuItem>
-                                    <MenuItem value={6}>Category</MenuItem>
-                                    <MenuItem value={7}>Sub Category</MenuItem>
-                                    <MenuItem value={8}>Product</MenuItem>
+                                    <MenuItem value={1}>{masterPanel["ZONE"] || "Zone"}</MenuItem>
+                                    <MenuItem value={2}>{masterPanel["REGN"] || "Region"}</MenuItem>
+                                    <MenuItem value={3}>{masterPanel["AREA"] || "Area"}</MenuItem>
+                                    <MenuItem value={4}>{masterPanel["TERR"] || "Territory"}</MenuItem>
+                                    <MenuItem value={5}>{masterPanel["STKS"] || "Distributor"}</MenuItem>
+                                    <MenuItem value={6}>{masterPanel["PCAT"] || "Category"}</MenuItem>
+                                    <MenuItem value={7}>{masterPanel["PSUB"] || "Sub Category"}</MenuItem>
+                                    <MenuItem value={8}>{masterPanel["PROD"] || "Product"}</MenuItem>
                                 </Select>
                             </FormControl>
                             </Grid>
@@ -671,14 +682,14 @@ function PrimarySales({ enType }) {
                     </Box>
                     {initialLoad &&
                     <Box sx={{display:'flex',gap:2,ml:2,flexWrap:'wrap'}}>
-                        <Typography sx={{fontWeight:600}}>Zone:<span style={{fontWeight:500}}> {`${getLabel(allZone, decodeZone, "zone_name", "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Region:<span  style={{fontWeight:500}}>{`${getLabel(allRegion, decodeRegion, "reg_name", "")}`}</span></Typography>
-                           <Typography sx={{fontWeight:600}}>Area:<span  style={{fontWeight:500}}>{`${getLabel(allArea, decodeArea, 'area_name', "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Territory:<span  style={{fontWeight:500}}>{`${getLabel(allTerritory, decodeTerritory, 'ter_name', "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Distributor:<span style={{fontWeight:500}}>{`${getLabel(allDistributor, decodeDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Category:<span  style={{fontWeight:500}}>{`${getLabel(allCatData, decodeCategory, 'cat_name', "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Sub Category:<span  style={{fontWeight:500}}>{` ${getLabel(allSubCategory, decodeSubCategory, 'sub_name', "")}`}</span></Typography>
-                        <Typography sx={{fontWeight:600}}>Product:<span  style={{fontWeight:500}}>{` ${getLabel(allProduct, decodeProduct, 'prod_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["ZONE"] || "Zone"}:<span style={{fontWeight:500}}> {`${getLabel(allZone, decodeZone, "zone_name", "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["REGN"] || "Region"}:<span  style={{fontWeight:500}}>{`${getLabel(allRegion, decodeRegion, "reg_name", "")}`}</span></Typography>
+                           <Typography sx={{fontWeight:600}}>{masterPanel["AREA"] || "Area"}:<span  style={{fontWeight:500}}>{`${getLabel(allArea, decodeArea, 'area_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["TERR"] || "Territory"}:<span  style={{fontWeight:500}}>{`${getLabel(allTerritory, decodeTerritory, 'ter_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["STKS"] || "Distributor"}:<span style={{fontWeight:500}}>{`${getLabel(allDistributor, decodeDistributor, (m) => `${m.stk_code}-${m.stk_name}`, "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["PCAT"] || "Category"}:<span  style={{fontWeight:500}}>{`${getLabel(allCatData, decodeCategory, 'cat_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["PSUB"] || "Sub Category"}:<span  style={{fontWeight:500}}>{` ${getLabel(allSubCategory, decodeSubCategory, 'sub_name', "")}`}</span></Typography>
+                        <Typography sx={{fontWeight:600}}>{masterPanel["PROD"] || "Product"}:<span  style={{fontWeight:500}}>{` ${getLabel(allProduct, decodeProduct, 'prod_name', "")}`}</span></Typography>
 
                     </Box>
                      }
@@ -714,13 +725,13 @@ function PrimarySales({ enType }) {
                         <Grid container spacing={0.95}>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="zone">Zone</InputLabel>
+                                    <InputLabel id="zone">{masterPanel["ZONE"] || "Zone"}</InputLabel>
                                     <Select MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         value={selZone} onChange={(e) => {
                                             setSelRegion(0)
                                             setAllRegion([])
                                             setSelZone(e.target.value)}}
-                                        labelId="zone" label="Zone" size="small" fullWidth>
+                                        labelId="zone" label={masterPanel["ZONE"] || "Zone"} size="small" fullWidth>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allZone.map((val) => (<MenuItem key={val.id} value={val.id}>{val.zone_name}</MenuItem>))}
                                     </Select>
@@ -728,10 +739,10 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="region">Region</InputLabel>
+                                    <InputLabel id="region">{masterPanel["REGN"] || "Region"}</InputLabel>
                                     <Select MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         value={selRegion} labelId="region"
-                                        onChange={(e) => setSelRegion(e.target.value)} label="Region" size="small">
+                                        onChange={(e) => setSelRegion(e.target.value)} label={masterPanel["REGN"] || "Region"} size="small">
                                         <MenuItem value={0}>All</MenuItem>
                                         {allRegion.map((val) => (<MenuItem key={val.id} value={val.id}>{val.reg_name}</MenuItem>))}
                                     </Select>
@@ -739,10 +750,10 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="area">Area</InputLabel>
+                                    <InputLabel id="area">{masterPanel["AREA"] || "Area"}</InputLabel>
                                     <Select MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         value={selArea} onChange={(e) => setSelArea(e.target.value)}
-                                        labelId="area" label="Area" size="small">
+                                        labelId="area" label={masterPanel["AREA"] || "Area"} size="small">
                                         <MenuItem value={0}>All</MenuItem>
                                         {allArea.map((val) => (<MenuItem key={val.id} value={val.id}>{val.area_name}</MenuItem>))}
                                     </Select>
@@ -750,11 +761,11 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="territory">Territory</InputLabel>
+                                    <InputLabel id="territory">{masterPanel["TERR"] || "Territory"}</InputLabel>
                                     <Select value={selTerritory}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         onChange={(e) => setSelTerritory(e.target.value)}
-                                        size="small" label="Territory" labelId="territory">
+                                        size="small" label={masterPanel["TERR"] || "Territory"} labelId="territory">
                                         <MenuItem value={0}>All</MenuItem>
                                         {allTerritory.map((val) => (<MenuItem key={val.id} value={val.id}>{val.ter_name}</MenuItem>))}
                                     </Select>
@@ -762,11 +773,11 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="distributor">Distributor</InputLabel>
+                                    <InputLabel id="distributor">{masterPanel["STKS"] || "Distributor"}</InputLabel>
                                     <Select value={selDistributor}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         onChange={(e) => setSelDistributor(e.target.value)}
-                                        size="small" labelId="distributor" label="Distributor">
+                                        size="small" labelId="distributor" label={masterPanel["STKS"] || "Distributor"}>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allDistributor.map((val) => (<MenuItem key={val.id} value={val.id}>{val.stk_code}-{val.stk_name}</MenuItem>))}
                                     </Select>
@@ -774,14 +785,14 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="category">Category</InputLabel>
+                                    <InputLabel id="category">{masterPanel["PCAT"] || "Category"}</InputLabel>
                                     <Select value={selCategory}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         onChange={(e) =>{ 
                                             setSelSubCategory(0)
                                             setAllSubCategory([])
                                             setSelCategory(e.target.value)}}
-                                        size="small" labelId="category" label="Category">
+                                        size="small" labelId="category" label={masterPanel["PCAT"] || "Category"}>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allCatData.map((val) => (<MenuItem key={val.id} value={val.id}>{val.cat_name}</MenuItem>))}
                                     </Select>
@@ -789,14 +800,14 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="sub_category">Sub Category</InputLabel>
+                                    <InputLabel id="sub_category">{masterPanel["PSUB"] || "Sub Category"}</InputLabel>
                                     <Select value={selSubCategory}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         onChange={(e) => {
                                             setSelProduct(0)
                                             setAllProduct([])
                                             setSelSubCategory(e.target.value)}}
-                                        size="small" labelId="sub_category" label="Sub Category">
+                                        size="small" labelId="sub_category" label={masterPanel["PSUB"] || "Sub Category"}>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allSubCategory.map((val) => (<MenuItem key={val.id} value={val.id}>{val.sub_name}</MenuItem>))}
                                     </Select>
@@ -804,11 +815,11 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
-                                    <InputLabel id="product">Product</InputLabel>
+                                    <InputLabel id="product">{masterPanel["PROD"] || "Product"}</InputLabel>
                                     <Select value={selProduct}
                                         MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                         onChange={(e) => setSelProduct(e.target.value)}
-                                        size="small" labelId="product" label="Product">
+                                        size="small" labelId="product" label={masterPanel["PROD"] || "Product"}>
                                         <MenuItem value={0}>All</MenuItem>
                                         {allProduct.map((val) => (<MenuItem key={val.id} value={val.id}>{val.prod_name}</MenuItem>))}
                                     </Select>

@@ -15,6 +15,7 @@ import DataTable from "../../utils/dataTable";
 import dayjs from "dayjs";
 import useToast from "../../utils/useToast";
 import { useParams, useNavigate } from "react-router-dom";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function PrimarySalesTransact() {
 
@@ -37,6 +38,7 @@ function PrimarySalesTransact() {
     const [subCatList, setSubCatList] = useState([]);
     const [salesData,  setSalesData]  = useState([]);
     const [progress,   setProgress]   = useState(null);
+    const [masterPanel, setMasterPanel] = useState({});
     const toast    = useToast();
     const navigate = useNavigate();
 
@@ -58,6 +60,14 @@ function PrimarySalesTransact() {
         const c = btoa(String(cId));
         navigate(`/reports/primary_sale_report/${m}/${s}/${c}`, { replace: true });
     };
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchStkList();
@@ -180,7 +190,7 @@ function PrimarySalesTransact() {
         },
         {
             field:      "prod_name",
-            headerName: "PRODUCT NAME",
+            headerName: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} NAME`,
             flex:       1,
             renderCell: ({ row, value }) => {
                 if (row._rowType === "cat_header") return <strong>{row.cat_name}</strong>;
@@ -216,7 +226,7 @@ function PrimarySalesTransact() {
 
     const handleExcelDownload = async () => {
         if (!stockist || Number(stockist) === 0) {
-            toast.error("Please Select Distributor");
+            toast.error(`Please Select ${masterPanel["STKS"] || "Distributor"}`);
             return;
         }
         try {
@@ -225,12 +235,12 @@ function PrimarySalesTransact() {
 
             const filters = [
                 { label: `Month : ${dayjs(dateselect).format("MMM YYYY")}`, bold: false, sz: 10 },
-                { label: `Distributor : ${stkName}`,                         bold: false, sz: 10 },
+                { label: `${masterPanel["STKS"] || "Distributor"} : ${stkName}`,                         bold: false, sz: 10 },
             ];
 
             const exportColumns = [
                 { id: "sl_no",     label: "#"            },
-                { id: "prod_name", label: "PRODUCT NAME" },
+                { id: "prod_name", label: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} NAME` },
                 { id: "sale_qty",  label: "SALES QTY"    },
                 { id: "sale_val",  label: "SALES VALUE"  },
             ];
@@ -319,19 +329,19 @@ function PrimarySalesTransact() {
                                 isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                                 ListboxProps={{ style: { maxHeight: 250 } }}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Distributor" placeholder="Select Distributor" />
+                                    <TextField {...params} label={masterPanel["STKS"] || "Distributor"} placeholder={`Select ${masterPanel["STKS"] || "Distributor"}`} />
                                 )}
                             />
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 3, lg:2 }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel id="category-label">Category</InputLabel>
+                                <InputLabel id="category-label">{masterPanel["PCAT"] || "Category"}</InputLabel>
                                 <Select
                                     labelId="category-label"
                                     value={catId}
                                     onChange={(e) => setCatId(e.target.value)}
-                                    label="Category"
+                                    label={masterPanel["PCAT"] || "Category"}
                                     MenuProps={menuProps}
                                 >
                                     <MenuItem value={0}>ALL</MenuItem>

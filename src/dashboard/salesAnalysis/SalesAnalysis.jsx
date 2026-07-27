@@ -8,6 +8,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from "dayjs";
 import axios from "../../services/api";
 import SalesAnalysisBody from './SalesAnalysisBody';
+import { getMasterPanel } from "../../services/masterPanelService";
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -38,6 +39,7 @@ const SalesAnalysis = () => {
     const [regionData, setregionData] = useState([]);
     const [area, setarea] = useState([]);
     const [state, setstate] = useState([]);
+    const [masterPanel, setMasterPanel] = useState({});
 
     const handleChange = (name, val) => {
         setFormData((prev) => ({
@@ -96,6 +98,14 @@ const SalesAnalysis = () => {
         }
     }
 
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     // Initial render
     useEffect(() => {
         fetchZone();
@@ -144,10 +154,10 @@ const SalesAnalysis = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="zone">Zone</InputLabel>
+                            <InputLabel id="zone">{masterPanel["ZONE"] || "Zone"}</InputLabel>
                             <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)}
-                                id='zone' label="Zone" MenuProps={menuStyle} labelId="zone" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="0">Select Zone</MenuItem>
+                                id='zone' label={masterPanel["ZONE"] || "Zone"} MenuProps={menuStyle} labelId="zone" variant="outlined" >
+                                <MenuItem style={{ fontSize: "11px" }} value="0">Select {masterPanel["ZONE"] || "Zone"}</MenuItem>
                                 {zoneData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
                                 ))}
@@ -156,11 +166,11 @@ const SalesAnalysis = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Region">Region</InputLabel>
-                            <Select id='Region' label="Region" MenuProps={menuStyle}
+                            <InputLabel id="Region">{masterPanel["REGN"] || "Region"}</InputLabel>
+                            <Select id='Region' label={masterPanel["REGN"] || "Region"} MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
                                 labelId="Region" variant="outlined">
-                                <MenuItem style={{ fontSize: "11px" }} value="0">Select Region</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">Select {masterPanel["REGN"] || "Region"}</MenuItem>
                                 {regionData?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.reg_name}</MenuItem>
                                 ))}
@@ -169,11 +179,11 @@ const SalesAnalysis = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Area">Area</InputLabel>
-                            <Select id='Area' label="Area" MenuProps={menuStyle}
+                            <InputLabel id="Area">{masterPanel["AREA"] || "Area"}</InputLabel>
+                            <Select id='Area' label={masterPanel["AREA"] || "Area"} MenuProps={menuStyle}
                                 value={formData.area} onChange={(e) => handleChange("area", e.target.value)}
                                 labelId="Area" variant="outlined" >
-                                <MenuItem style={{ fontSize: "11px" }} value="0">Select Area</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="0">Select {masterPanel["AREA"] || "Area"}</MenuItem>
                                 {area?.map((val) => (
                                     <MenuItem key={val.id} value={val.id}>{val?.area_name}</MenuItem>
                                 ))}

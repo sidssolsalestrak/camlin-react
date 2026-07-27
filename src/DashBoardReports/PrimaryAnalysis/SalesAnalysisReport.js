@@ -17,6 +17,7 @@ import DataTable from "../../utils/dataTable";
 import SalesAnalysisCharts from "./SalesAnalyzeChart";
 import { Download } from "../../utils/downloadExcel/Download";
 import useToast from "../../utils/useToast";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function SalesAnalysisReport() {
     const [selYear, setSelYear] = useState(dayjs());
@@ -29,11 +30,20 @@ function SalesAnalysisReport() {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [showTable, setShowTable] = useState(false)
+    const [masterPanel, setMasterPanel] = useState({});
     const [tableTitle, setTableTitle] = useState("PRODUCT CATEGORY WISE PRIMARY SALES ANALYSIS");
     const [nameHeader, setNameHeader] = useState("Brand");
     const toast = useToast()
 
     useEffect(() => { fetchSubCats(); }, []);
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const fetchSubCats = async () => {
         try {
@@ -132,7 +142,7 @@ function SalesAnalysisReport() {
     const handleLoad = async () => {
         setShowTable(true)
         setTableTitle(`${selType == 3 ? "SKU WISE" : "PRODUCT CATEGORY WISE"} PRIMARY SALES ANALYSIS`);
-        setNameHeader(selType == 3 ? "SKU" : "Brand");
+        setNameHeader(selType == 3 ? "SKU" : (masterPanel["BRND"] || "Brand"));
         try {
             setLoading(true);
             setTableData([]);
@@ -420,7 +430,7 @@ function SalesAnalysisReport() {
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Type</InputLabel>
                                     <Select label="Type" value={selType} onChange={(e) => setSelType(e.target.value)}>
-                                        <MenuItem value={2}>Brand Wise</MenuItem>
+                                        <MenuItem value={2}>{masterPanel["BRND"] || "Brand"} Wise</MenuItem>
                                         <MenuItem value={3}>SKU Wise</MenuItem>
                                     </Select>
                                 </FormControl>
@@ -428,9 +438,9 @@ function SalesAnalysisReport() {
 
                             <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
                                 <FormControl fullWidth size="small">
-                                    <InputLabel>Sub-Category</InputLabel>
+                                    <InputLabel>{masterPanel["PSUB"] || "Sub-Category"}</InputLabel>
                                     <Select
-                                        label="Sub-Category"
+                                        label={masterPanel["PSUB"] || "Sub-Category"}
                                         value={selSubCat}
                                         onChange={(e) => setSelSubCat(e.target.value)}
                                     >

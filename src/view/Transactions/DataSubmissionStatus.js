@@ -58,17 +58,18 @@ import useToast from "../../utils/useToast";
 import { excelWithFilters } from "../../utils/ExcelWithFilters";
 import CircularProgressLoading from "../../utils/CircularProgressLoading";
 import FilePreviewModal from "./FilePreviewModal";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 // ─── Multi-Checkbox Group-By Dropdown ────────────────────────────────────────
-function GroupByDropdown({ groupChecks, onChange, typeId }) {
+function GroupByDropdown({ groupChecks, onChange, typeId, masterPanel }) {
     const [open, setOpen] = useState(false);
 
     const labels = {
-        zone: "Zone",
-        reg: "Region",
-        area: "Area",
-        ter: "Territory",
-        stk: "Distributor",
+        zone: masterPanel["ZONE"] || "Zone",
+        reg: masterPanel["REGN"] || "Region",
+        area: masterPanel["AREA"] || "Area",
+        ter: masterPanel["TERR"] || "Territory",
+        stk: masterPanel["STKS"] || "Distributor",
     };
 
     const visibleKeys = typeId === 1
@@ -216,6 +217,7 @@ function DataSubmissionStatus() {
         ter: false,
         stk: true,
     });
+    const [masterPanel, setMasterPanel] = useState({});
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -279,6 +281,14 @@ function DataSubmissionStatus() {
     const stkGroup  = committedGroupChecks.stk ? 1 : 0;
 
     // ─── Effects ──────────────────────────────────────────────────────────────
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     useEffect(() => {
         fetchZone();
     }, []);
@@ -431,15 +441,15 @@ function DataSubmissionStatus() {
 
     const filters = [
         { label: `Month - ${dayjs(selMonth).format("MMM YYYY")}`, bold: false, sz: 10 },
-        { label: `Zone : ${getLabel(allZone, selZone, "zone_name")}`, bold: false, sz: 10 },
-        { label: `Region : ${getLabel(allRegion, selRegion, "reg_name")}`, bold: false, sz: 10 },
-        { label: `Area : ${getLabel(allArea, selArea, "area_name")}`, bold: false, sz: 10 },
-        { label: `Territory : ${getLabel(allTerritory, selTerritory, "ter_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["ZONE"] || "Zone"} : ${getLabel(allZone, selZone, "zone_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["REGN"] || "Region"} : ${getLabel(allRegion, selRegion, "reg_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["AREA"] || "Area"} : ${getLabel(allArea, selArea, "area_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["TERR"] || "Territory"} : ${getLabel(allTerritory, selTerritory, "ter_name")}`, bold: false, sz: 10 },
         { label: `RSM : ${getLabel(allRSM, selRSM, "user_name")}`, bold: false, sz: 10 },
         { label: `ZBM : ${getLabel(allZBM, selZBM, "user_name")}`, bold: false, sz: 10 },
         { label: `AM/FSO : ${getLabel(allAMF, selAMF, "user_name")}`, bold: false, sz: 10 },
         { label: `SR: ${getLabel(allSrUser, selSrUser, "user_name")}`, bold: false, sz: 10 },
-        { label: `Distributor : ${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code} - ${v.stk_name}`)}`, bold: false, sz: 10 },
+        { label: `${masterPanel["STKS"] || "Distributor"} : ${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code} - ${v.stk_name}`)}`, bold: false, sz: 10 },
     ];
 
     const lastGroupColId = (() => {
@@ -541,17 +551,17 @@ function DataSubmissionStatus() {
 
     const groupExcelColumns = [];
     if (stkGroup === 1) {
-        if (areaGroup === 1) groupExcelColumns.push({ label: "Area",      id: "area_name" });
-        if (terGroup  === 1) groupExcelColumns.push({ label: "Territory", id: "ter_name"  });
+        if (areaGroup === 1) groupExcelColumns.push({ label: masterPanel["AREA"] || "Area",      id: "area_name" });
+        if (terGroup  === 1) groupExcelColumns.push({ label: masterPanel["TERR"] || "Territory", id: "ter_name"  });
     } else {
         if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0)
-            groupExcelColumns.push({ label: "Zone",      id: "zone_name" });
+            groupExcelColumns.push({ label: masterPanel["ZONE"] || "Zone",      id: "zone_name" });
         if (regGroup === 1 && areaGroup === 0 && terGroup === 0)
-            groupExcelColumns.push({ label: "Region",    id: "reg_name"  });
+            groupExcelColumns.push({ label: masterPanel["REGN"] || "Region",    id: "reg_name"  });
         if (areaGroup === 1)
-            groupExcelColumns.push({ label: "Area",      id: "area_name" });
+            groupExcelColumns.push({ label: masterPanel["AREA"] || "Area",      id: "area_name" });
         if (terGroup === 1)
-            groupExcelColumns.push({ label: "Territory", id: "ter_name"  });
+            groupExcelColumns.push({ label: masterPanel["TERR"] || "Territory", id: "ter_name"  });
     }
 
     const excelColumns = [
@@ -561,9 +571,9 @@ function DataSubmissionStatus() {
             ? [
                 { label: "Month",            id: "close_date" },
                 { label: "Code",              id: "stk_code"   },
-                { label: "Distributor Name",  id: "stk_name"    },
-                { label: "Region", id: "reg_name" },
-                ...(areaGroup === 0 ? [{ label: "Area",   id: "area_name" }] : []),
+                { label: `${masterPanel["STKS"] || "Distributor"} Name`,  id: "stk_name"    },
+                { label: masterPanel["REGN"] || "Region", id: "reg_name" },
+                ...(areaGroup === 0 ? [{ label: masterPanel["AREA"] || "Area",   id: "area_name" }] : []),
                 { label: "Submit Mode",       id: "upl_type_text" },
             ]
             : []
@@ -688,7 +698,7 @@ function DataSubmissionStatus() {
         const monthLabel = dayjs(selMonth).format("MMM YYYY");
         showConfirmationDialog({
             title:        "Confirmation",
-            message:      `Are you sure want Delete Selected Distributor stock & sales for ${monthLabel}?`,
+            message:      `Are you sure want Delete Selected ${masterPanel["STKS"] || "Distributor"} stock & sales for ${monthLabel}?`,
             confirmText:  "Yes! Delete",
             cancelText:   "Cancel",
             confirmColor: "primary",
@@ -740,12 +750,12 @@ function DataSubmissionStatus() {
     const handleProcessSecSales = () => {
         const selectedIds = Object.keys(checkedRows).filter((k) => checkedRows[k]);
         if (selectedIds.length === 0) {
-            toast.error("Select at least 1 Distributor to Continue to Proceed!");
+            toast.error(`Select at least 1 ${masterPanel["STKS"] || "Distributor"} to Continue to Proceed!`);
             return;
         }
         showConfirmationDialog({
             title:        "Confirmation",
-            message:      "Are you sure you want to Update Stock & Sales for Selected Distributor?",
+            message:      `Are you sure you want to Update Stock & Sales for Selected ${masterPanel["STKS"] || "Distributor"}?`,
             confirmText:  "Yes",
             cancelText:   "Cancel",
             confirmColor: "primary",
@@ -1012,7 +1022,7 @@ function DataSubmissionStatus() {
             if (areaGroup === 1) {
                 cols.push({
                     field: "area_name",
-                    headerName: "Area",
+                    headerName: masterPanel["AREA"] || "Area",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.area_name}</Typography>;
@@ -1022,7 +1032,7 @@ function DataSubmissionStatus() {
             if (terGroup === 1) {
                 cols.push({
                     field: "ter_name",
-                    headerName: "Territory",
+                    headerName: masterPanel["TERR"] || "Territory",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.ter_name}</Typography>;
@@ -1033,7 +1043,7 @@ function DataSubmissionStatus() {
             if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0) {
                 cols.push({
                     field: "zone_name",
-                    headerName: "Zone",
+                    headerName: masterPanel["ZONE"] || "Zone",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.zone_name}</Typography>;
@@ -1043,7 +1053,7 @@ function DataSubmissionStatus() {
             if (regGroup === 1 && areaGroup === 0 && terGroup === 0) {
                 cols.push({
                     field: "reg_name",
-                    headerName: "Region",
+                    headerName: masterPanel["REGN"] || "Region",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.reg_name}</Typography>;
@@ -1053,7 +1063,7 @@ function DataSubmissionStatus() {
             if (areaGroup === 1) {
                 cols.push({
                     field: "area_name",
-                    headerName: "Area",
+                    headerName: masterPanel["AREA"] || "Area",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.area_name}</Typography>;
@@ -1063,7 +1073,7 @@ function DataSubmissionStatus() {
             if (terGroup === 1) {
                 cols.push({
                     field: "ter_name",
-                    headerName: "Territory",
+                    headerName: masterPanel["TERR"] || "Territory",
                     renderCell: ({ row }) => {
                         if (row._rowType !== "data") return null;
                         return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.ter_name}</Typography>;
@@ -1073,7 +1083,7 @@ function DataSubmissionStatus() {
         }
 
         return cols;
-    }, [zoneGroup, regGroup, areaGroup, terGroup, stkGroup]);
+    }, [zoneGroup, regGroup, areaGroup, terGroup, stkGroup, masterPanel]);
 
     // ─── Columns ──────────────────────────────────────────────────────────────
     const columns = useMemo(() => {
@@ -1113,7 +1123,7 @@ function DataSubmissionStatus() {
                 },
                 {
                     field: "stk_name",
-                    headerName: "Distributor Name",
+                    headerName: `${masterPanel["STKS"] || "Distributor"} Name`,
                     renderCell: ({ row }) => {
                         if (row._rowType === "grand_total")
                             return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
@@ -1512,7 +1522,7 @@ function DataSubmissionStatus() {
 
         return cols;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [levelColumns, stkGroup, zoneGroup, regGroup, areaGroup, terGroup, checkAll, checkedRows, committedType, selMonth]);
+    }, [levelColumns, stkGroup, zoneGroup, regGroup, areaGroup, terGroup, checkAll, checkedRows, committedType, selMonth, masterPanel]);
 
     // ─── Show "Process" button only when eligible rows exist ──────────────────
     const showProcessButton = processableRows.length > 0 && stkGroup === 1 && committedType === 1;
@@ -1594,7 +1604,7 @@ function DataSubmissionStatus() {
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 3, lg: 1.8 }}>
-                            <GroupByDropdown groupChecks={groupChecks} onChange={setGroupChecks} typeId={type} />
+                            <GroupByDropdown groupChecks={groupChecks} onChange={setGroupChecks} typeId={type} masterPanel={masterPanel} />
                         </Grid>
 
                         <Grid size={{ xs: 4, md: 1.5, lg: 0.9 }}>
@@ -1608,16 +1618,16 @@ function DataSubmissionStatus() {
                                 </Button>
                                 <Typography sx={{ fontSize: "9px", color: "#0000FF", mt: 0.3, pl: 0.5, lineHeight: 1.2, width: "35rem" }}>
                                     {[
-                                        getLabel(allZone,        selZone,        "zone_name") !== "All" ? `Zone:${getLabel(allZone, selZone, "zone_name")}`                                            : null,
-                                        getLabel(allRegion,      selRegion,      "reg_name")  !== "All" ? `Region:${getLabel(allRegion, selRegion, "reg_name")}`                                       : null,
-                                        getLabel(allArea,        selArea,        "area_name") !== "All" ? `Area:${getLabel(allArea, selArea, "area_name")}`                                            : null,
-                                        getLabel(allTerritory,   selTerritory,   "ter_name")  !== "All" ? `Territory:${getLabel(allTerritory, selTerritory, "ter_name")}`                              : null,
+                                        getLabel(allZone,        selZone,        "zone_name") !== "All" ? `${masterPanel["ZONE"] || "Zone"}:${getLabel(allZone, selZone, "zone_name")}`                                            : null,
+                                        getLabel(allRegion,      selRegion,      "reg_name")  !== "All" ? `${masterPanel["REGN"] || "Region"}:${getLabel(allRegion, selRegion, "reg_name")}`                                       : null,
+                                        getLabel(allArea,        selArea,        "area_name") !== "All" ? `${masterPanel["AREA"] || "Area"}:${getLabel(allArea, selArea, "area_name")}`                                            : null,
+                                        getLabel(allTerritory,   selTerritory,   "ter_name")  !== "All" ? `${masterPanel["TERR"] || "Territory"}:${getLabel(allTerritory, selTerritory, "ter_name")}`                              : null,
                                         getLabel(allZBM,         selZBM,         "user_name") !== "All" ? `ZBM:${getLabel(allZBM, selZBM, "user_name")}`                                               : null,
                                         getLabel(allRSM,         selRSM,         "user_name") !== "All" ? `RSM:${getLabel(allRSM, selRSM, "user_name")}`                                               : null,
                                         getLabel(allAMF,         selAMF,         "user_name") !== "All" ? `AM/FSO:${getLabel(allAMF, selAMF, "user_name")}`                                           : null,
                                         getLabel(allSrUser,      selSrUser,      "user_name") !== "All" ? `SR:${getLabel(allSrUser, selSrUser, "user_name")}`                                          : null,
                                         getLabel(allDistributor, selDistributor, (v) => `${v.stk_code}-${v.stk_name}`) !== "All"
-                                            ? `Distributor:${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code}-${v.stk_name}`)}`
+                                            ? `${masterPanel["STKS"] || "Distributor"}:${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code}-${v.stk_name}`)}`
                                             : null,
                                     ].filter(Boolean).join(", ") || "\u00A0"}
                                 </Typography>
@@ -1712,8 +1722,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="zone">Zone</InputLabel>
-                                <Select labelId="zone" label="Zone" size="small" fullWidth value={selZone}
+                                <InputLabel id="zone">{masterPanel["ZONE"] || "Zone"}</InputLabel>
+                                <Select labelId="zone" label={masterPanel["ZONE"] || "Zone"} size="small" fullWidth value={selZone}
                                     onChange={(e) => setSelZone(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1724,8 +1734,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="region">Region</InputLabel>
-                                <Select labelId="region" label="Region" size="small" value={selRegion}
+                                <InputLabel id="region">{masterPanel["REGN"] || "Region"}</InputLabel>
+                                <Select labelId="region" label={masterPanel["REGN"] || "Region"} size="small" value={selRegion}
                                     onChange={(e) => setSelRegion(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1736,8 +1746,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="area">Area</InputLabel>
-                                <Select labelId="area" label="Area" size="small" value={selArea}
+                                <InputLabel id="area">{masterPanel["AREA"] || "Area"}</InputLabel>
+                                <Select labelId="area" label={masterPanel["AREA"] || "Area"} size="small" value={selArea}
                                     onChange={(e) => setSelArea(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1748,8 +1758,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="territory">Territory</InputLabel>
-                                <Select labelId="territory" label="Territory" size="small" value={selTerritory}
+                                <InputLabel id="territory">{masterPanel["TERR"] || "Territory"}</InputLabel>
+                                <Select labelId="territory" label={masterPanel["TERR"] || "Territory"} size="small" value={selTerritory}
                                     onChange={(e) => setSelTerritory(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1808,8 +1818,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="distributor">Distributor</InputLabel>
-                                <Select labelId="distributor" label="Distributor" size="small" value={selDistributor}
+                                <InputLabel id="distributor">{masterPanel["STKS"] || "Distributor"}</InputLabel>
+                                <Select labelId="distributor" label={masterPanel["STKS"] || "Distributor"} size="small" value={selDistributor}
                                     onChange={(e) => setSelDistributor(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>

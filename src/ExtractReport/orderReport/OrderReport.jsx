@@ -91,7 +91,7 @@ const OrderReport = () => {
     /*------------ get zone data ---------- */
     const fetchZone = async () => {
         try {
-            const res = await axios.get("/zoneNames");
+            const res = await axios.post("/getReportsZone");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setzoneData(data);
         } catch (error) {
