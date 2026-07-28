@@ -108,6 +108,29 @@ function Login() {
     }
   };
 
+  const handleForgotSubmit = async () => {
+  if (!email) {
+    toast.error("Please Enter Register Email Id");
+    return;
+  }
+
+  try {
+    const res = await api.post("/check_email_id", {
+      email: email,
+    });
+
+    if (String(res.data).trim() !== "") {
+      toast.success("An email was sent to the Registered email address");
+      navigate("/Auth");
+    } else {
+      toast.error("Email Id Not Registered");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong");
+  }
+};
+
   const handleSendOtp = async () => {
     try {
       if (!emailMob) {
@@ -315,10 +338,7 @@ function Login() {
                 variant="contained"
                 color="success"
                 sx={{ width: "45%" }}
-                onClick={() => {
-                  // call your forgot API here
-                  console.log("Submit forgot password");
-                }}
+                onClick={()=>handleForgotSubmit()}
               >
                 SUBMIT
               </Button>

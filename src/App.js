@@ -70,6 +70,7 @@ import StockAndSalesUploadNew from "./view/trans/StockAndSalesUploadNew";
 import PrimarySalesTransact from "./view/Transactions/PrimarySales";
 import UploadClosing from "./view/Transactions/uploadClosingMain";
 import BeatCoverage from "./ExtractReport/BeatCoverage";
+import ChangePassword from "./dashboard/changePassword";
 
 function App() {
   const ProtectedRoute = () => {
@@ -178,10 +179,6 @@ function App() {
               element={<AccountExtract />}
             />
             <Route
-              path="/Auth/forgot_paswd/:userId?/:userEmail?"
-              element={<ForgotPassword />}
-            />
-            <Route
               path="/customers/account_transfer/"
               element={<AccountTransfer />}
             />
@@ -283,12 +280,17 @@ function App() {
              element={<UploadClosing />} 
              />
              <Route path="/upload_closing" element={<UploadClosing />}  />
+             <Route path="/change_password"  element={<ChangePassword />}  />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
           {/* <Route path="/login" element={<Login />} /> */}
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
+             <Route
+              path="/Auth/forgot_paswd/:userId?/:userEmail?"
+              element={<ForgotPassword />}
+           />
           </Route>
 
           {/* extract and report */}

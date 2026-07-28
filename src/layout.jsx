@@ -35,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { SiChatbot } from "react-icons/si";
 import { getUserFromToken } from "./utils/getUserFromToken";
 import "font-awesome/css/font-awesome.min.css";
+import { MdLock } from "react-icons/md";
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -733,6 +734,12 @@ const Layout = ({ children, breadcrumb = [] }) => {
                       <Typography variant="body2">
                         {userData?.first_name ? userData.first_name : ""}
                       </Typography>
+                    </MenuItem>
+                    <MenuItem onClick={()=>navigate('/change_password')}>
+                    <ListItemIcon>
+                    <MdLock color="#5f6368" />
+                    </ListItemIcon>
+                    <Typography>Change Password</Typography>
                     </MenuItem>
                     <MenuItem
                       onClick={async () => {
