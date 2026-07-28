@@ -937,12 +937,12 @@ const handleRejectAll = () => {
 
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
             <FormControl required fullWidth size="small">
-              <InputLabel id="userType-label">User Type</InputLabel>
+              <InputLabel id="userType-label">{masterPanel["USER"] || "User"} Type</InputLabel>
 
               <Select
                 labelId="userType-label"
                 value={selectedUserType}
-                label="Region"
+                label={`${masterPanel["USER"] || "User"} Type`}
                 onChange={(e) => {
                   setSelectedUserType(e.target.value);
 

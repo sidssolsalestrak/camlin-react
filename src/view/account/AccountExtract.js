@@ -269,11 +269,11 @@ function AccountExtract() {
 
     { field: "reg_name", headerName: masterPanel["REGN"] || "Region", sortable: true, width: 120 },
 
-    { field: "emp_code", headerName: "SO/User Code", sortable: true, width: 120 },
+    { field: "emp_code", headerName: `SO/${masterPanel["USER"] || "User"} Code`, sortable: true, width: 120 },
 
     {
       field: "user_name",
-      headerName: "SO/User Name",
+      headerName: `SO/${masterPanel["USER"] || "User"} Name`,
       sortable: true,
       width: 150,
       renderCell: ({ row }) => `${row.u_fname || ""} ${row.u_lname || ""}`,
@@ -311,7 +311,7 @@ function AccountExtract() {
 
     { field: "area_name", headerName: masterPanel["AREA"] || "Area", sortable: true, width: 150 },
 
-    { field: "beat_name", headerName: "Beat/Territory", sortable: true, width: 150 },
+    { field: "beat_name", headerName: `${masterPanel["BEAT"] || "Beat"}/${masterPanel["TERR"] || "Territory"}`, sortable: true, width: 150 },
 
     { field: "mobile", headerName: "Mobile No", sortable: true, width: 150 },
   ];
@@ -319,8 +319,8 @@ function AccountExtract() {
   const ExcelColumns = [
     { field: "sl", headerName: "SL NO" },
     { field: "reg_name", headerName: masterPanel["REGN"] || "Region" },
-    { field: "emp_code", headerName: "SO/User Code" },
-    { field: "user_name", headerName: "SO/User Name" },
+    { field: "emp_code", headerName: `SO/${masterPanel["USER"] || "User"} Code` },
+    { field: "user_name", headerName: `SO/${masterPanel["USER"] || "User"} Name` },
     { field: "so_hq_name", headerName: "SO/HQ" },
     { field: "id", headerName: "Customer ID" },
     { field: "stk_name", headerName: "WD Name" },
@@ -329,7 +329,7 @@ function AccountExtract() {
     { field: "P_class", headerName: masterPanel["PCLS"] || "Potential Class" },
     { field: "cus_visit_freq", headerName: "Frequency Class" },
     { field: "area_name", headerName: masterPanel["AREA"] || "Area" },
-    { field: "beat_name", headerName: "Beat/Territory" },
+    { field: "beat_name", headerName: `${masterPanel["BEAT"] || "Beat"}/${masterPanel["TERR"] || "Territory"}` },
     { field: "mobile", headerName: "Mobile No" },
     { field: "create_dt", headerName: "Created Date" }
 
@@ -387,10 +387,10 @@ function AccountExtract() {
             {/* ACCOUNT TYPE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Account Type</InputLabel>
+                <InputLabel>{masterPanel["ACCM"] || "Account"} Type</InputLabel>
                 <Select
                   value={selectedAccType}
-                  label="Account Type"
+                  label={`${masterPanel["ACCM"] || "Account"} Type`}
                   onChange={(e) => setSelectedAccType(e.target.value)}
                   MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
@@ -406,10 +406,10 @@ function AccountExtract() {
             {/* USER TYPE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>User Type</InputLabel>
+                <InputLabel>{masterPanel["USER"] || "User"} Type</InputLabel>
                 <Select
                   value={selectedUserType}
-                  label="User Type"
+                  label={`${masterPanel["USER"] || "User"} Type`}
                   onChange={(e) => {
                     setSelectedUserType(e.target.value);
                     setSelectedUser(0);
