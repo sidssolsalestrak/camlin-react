@@ -440,12 +440,12 @@ function AccountTransfer() {
                                 getOptionKey={(option) => option.id}
                                 onChange={(e, newValue) => setSelRegion(newValue)}
                                 renderInput={(params) => (
-                                    <TextField
+                                  <TextField
                                         {...params}
                                         label={`${masterPanel["REGN"] || "Region"} *`}
                                         size="small"
                                         error={!!errors.region}
-                                        helperText={errors.region ? `Please Select ${masterPanel["ZONE"] || "Zone"}` : ""}
+                                        helperText={errors.region ? `Please Select ${masterPanel["REGN"] || "Region"}` : ""}
                                     />
                                 )}
                             />

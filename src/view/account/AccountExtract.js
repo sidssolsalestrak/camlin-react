@@ -250,7 +250,7 @@ function AccountExtract() {
   // ---------------- LOAD BUTTON ----------------
   const handleLoad = () => {
     if ((!selectedRegion || !selectedAccType) && URL !== 'extract_new') {
-      toast.error("Please select Zone and Account Type");
+      toast.error(`Please select ${masterPanel["ZONE"] || "Zone"} and ${masterPanel["ACCM"] || "Account"} Type`);
       return;
     }
 
@@ -323,8 +323,8 @@ function AccountExtract() {
     { field: "user_name", headerName: `SO/${masterPanel["USER"] || "User"} Name` },
     { field: "so_hq_name", headerName: "SO/HQ" },
     { field: "id", headerName: "Customer ID" },
-    { field: "stk_name", headerName: "WD Name" },
-    { field: "sup_name", headerName: masterPanel["STKS"] || "Distributor" },
+    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor" },
+    { field: "sup_name", headerName: "WD Name" },
     { field: "clinic_name", headerName: "Store Name" },
     { field: "P_class", headerName: masterPanel["PCLS"] || "Potential Class" },
     { field: "cus_visit_freq", headerName: "Frequency Class" },
@@ -332,8 +332,7 @@ function AccountExtract() {
     { field: "beat_name", headerName: `${masterPanel["BEAT"] || "Beat"}/${masterPanel["TERR"] || "Territory"}` },
     { field: "mobile", headerName: "Mobile No" },
     { field: "create_dt", headerName: "Created Date" }
-
-  ]
+   ]
 
   return (
     <Layout

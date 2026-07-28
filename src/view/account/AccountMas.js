@@ -175,13 +175,13 @@ function AccountMas() {
       val = reqType;
     } else if (val5 == 1) {
       if (val3 === 0) {
-        toast.error("Please select User!");
+        toast.error(`Please select ${masterPanel["USER"] || "User"}!`);
         return;
       }
     }
 
     if (!(val2 > 0 || val3 > 0)) {
-      toast.error("Please select Region or User");
+      toast.error(`Please select ${masterPanel["REGN"] || "Region"} or ${masterPanel["USER"] || "User"}`);
       return;
     }
 
@@ -799,7 +799,7 @@ function AccountMas() {
 
   const handleApproveAll = () => {
   if (!selectedUser || selectedUser == 0) {
-    toast.warning("Please select User to Approve All");
+    toast.warning(`Please select ${masterPanel["USER"] || "User"} to Approve All`);
     return;
   }
 
@@ -828,7 +828,7 @@ function AccountMas() {
 
 const handleRejectAll = () => {
   if (!selectedUser || selectedUser == 0) {
-    toast.warning("Please select User to Reject All");
+    toast.warning(`Please select ${masterPanel["USER"] || "User"} to Reject All`);
     return;
   }
 
