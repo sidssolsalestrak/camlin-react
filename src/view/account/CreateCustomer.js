@@ -19,6 +19,7 @@ import { useParams,useLocation } from "react-router-dom";
 import AddCompetitor from "./AddCompetitor";
 import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -75,6 +76,17 @@ function CreateCustomer() {
     } catch (err) {
       console.log(err);
     }
+  }, []);
+
+  // ── Master Panel (dynamic labels) ──
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
   }, []);
 
   // ---------------- STATE ---------------------------
@@ -706,13 +718,13 @@ function CreateCustomer() {
   return (
     <Layout
       breadcrumb={[{ label: "Home", path: "/" }, 
-        { label: "Account Master", path:location.pathname },
+        { label: `${masterPanel["ACCM"] || "Account"} Master`, path:location.pathname },
         {label: "Add New Request", path:location.pathname}
       ]}
     >
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <Box sx={{ ml: 1.5, mt: 1.5 }}>
-          <h1 className="mainTitle">Account Master</h1>
+          <h2>{masterPanel["ACCM"] || "Account"} Master</h2>
         </Box>
         <Box sx={{ display: "flex", gap: 1, mt: 1.5, mr: 1.5 }}>
           {/* Only show for allowed user types */}
@@ -768,7 +780,7 @@ function CreateCustomer() {
           {/* Account Type */}
           <Grid size={{ xs: 12, md: 3, lg: 3 }}>
             <CommonAppSelect
-              label="Account Type"
+              label={`${masterPanel["ACCM"] || "Account"} Type`}
               value={form.cusType}
               onChange={handleAccTypeChange}
               options={dropdowns.cusTypeMas}
