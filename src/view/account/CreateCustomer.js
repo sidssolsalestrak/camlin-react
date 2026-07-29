@@ -760,7 +760,7 @@ function CreateCustomer() {
           )}
 
           {/* Add New Request — Maker / All only */}
-          {!decodedID && [0, 1].includes(Number(accStat)) && (
+          {!decodedID && [0, 1, 2].includes(Number(accStat)) && (
             <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>
           )}
 

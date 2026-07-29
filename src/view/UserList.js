@@ -384,12 +384,14 @@ function UserList() {
       field: "ter_name",
       headerName: `${territoryLabel} Details`,
       sortable: true,
-      width:200
+      width: 200,
+      truncateTooltip:true
     },
     {
       field: "reporting",
       headerName: "Reporting To",
       sortable: true,
+      truncateTooltip:true,
       renderCell: ({ row }) =>
         `${row.repto_fname || ""} ${row.repto_lname || ""}`,
     },

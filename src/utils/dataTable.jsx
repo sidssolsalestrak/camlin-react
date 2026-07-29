@@ -1030,7 +1030,8 @@ const DataTable = ({
                             ) : col.headerName === "Customer Name" ||
                               col.headerName === "Territory Details" ||
                               col.headerName === "Invoice Remark" ||
-                              col.headerName === "Reporting To" ? (
+                              col.headerName === "Reporting To" ||
+                              col.truncateTooltip ? (
                               (() => {
                                 const showTooltip =
                                   typeof rawContent === "string" &&
