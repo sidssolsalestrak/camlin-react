@@ -264,7 +264,7 @@ function AccountMas() {
           </div>
         );
       },
-      width: 150,
+      width: 175,
     },
 
       {
@@ -298,7 +298,7 @@ function AccountMas() {
           </div>
         );
       },
-      width: decodedParams.cusReq == 2 ? 200 : 500,
+      width: decodedParams.cusReq == 2 ? 200 : 540,
     },
 
     {
@@ -321,7 +321,7 @@ function AccountMas() {
           );
         }
       },
-      width: 130,
+      width: 65,
     },
 
     ...(decodedParams.cusReq == 2
@@ -473,6 +473,7 @@ function AccountMas() {
               />
             </div>
           ),
+          width:60
         },
       ]
       : []),
@@ -491,6 +492,7 @@ function AccountMas() {
               />
             </div>
           ),
+          width:60
         },
       ]
       : []),
@@ -508,6 +510,7 @@ function AccountMas() {
               View Logs
             </span>
           ),
+          width:80
         },
       ]
       : []),

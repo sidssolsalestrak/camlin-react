@@ -245,9 +245,11 @@ const showSubmitConfirmation = () => {
       filterable: false,
       renderCell: (row) => (
         <>
-          <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
-            <MdOutlineEdit size={15} />
-          </IconButton>
+          {[0, 2].includes(Number(accStat)) &&
+            <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
+              <MdOutlineEdit size={15} />
+            </IconButton>
+          }
           {[0, 2].includes(Number(accStat)) &&
             <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
               <DeleteIcon size={15} />
@@ -318,7 +320,7 @@ const showSubmitConfirmation = () => {
                 error={!!zoneError}
                 helperText={zoneError ? zoneErrorMsg : ""}
               />
-              {(!editId && [0, 1].includes(Number(accStat))) && (
+              {(!editId && [0, 1, 2].includes(Number(accStat))) && (
                 <Button
                   sx={{ ml: 1, width: "2rem" }}
                   variant="contained"

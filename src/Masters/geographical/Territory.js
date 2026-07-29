@@ -253,9 +253,10 @@ export default function Territory() {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
                 <>
+                    { [0,2].includes(Number(accStat)) &&
                     <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.id)}>
                         <MdOutlineEdit size={15} />
-                    </IconButton>
+                    </IconButton>}
                     { [0,2].includes(Number(accStat)) &&
                     <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.id)}>
                         <DeleteIcon size={15} />
@@ -326,7 +327,7 @@ export default function Territory() {
                                 required
                                 helperText={terError ? terErrorMsg : ""}
                             />
-                            {!decodedEditTerritoryId && [0,1].includes(Number(accStat)) &&
+                            {!decodedEditTerritoryId && [0,1,2].includes(Number(accStat)) &&
                              <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
                                 onClick={() => { if (validateTerritoryFields()) showSubmitConfirmation() }}>
                                 Create
