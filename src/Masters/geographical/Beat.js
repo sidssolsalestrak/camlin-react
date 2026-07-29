@@ -314,9 +314,10 @@ export default function Beat() {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
                 <>
-                    <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.beatID)}>
-                        <MdOutlineEdit size={15} />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) &&
+                        <IconButton className='updateBtn' size="small" onClick={() => handleEdit(row.row.beatID)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>}
                     {[0, 2].includes(Number(accStat)) &&
                         <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row.row.beatID)}>
                             <DeleteIcon size={15} />
@@ -413,7 +414,7 @@ export default function Beat() {
                                 required
                                 helperText={beatError ? beatErrorMsg : ""}
                             />
-                            {!decodedEditBeatId && [0,1].includes(Number(accStat)) &&
+                            {!decodedEditBeatId && [0, 1, 2].includes(Number(accStat)) &&
                                 <Button
                                     variant="contained"
                                     sx={{ width: '2rem', textTransform: 'none' }}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Box, Card, TextField, Button, Typography } from "@mui/material";
 import useToast from "../utils/useToast";
+import api from "../services/api";
 
 const ForgotPassword = () => {
   const { userId, userEmail } = useParams();
@@ -22,7 +23,7 @@ const ForgotPassword = () => {
     if (password !== confirmPassword) return setError("Passwords do not match");
 
     try {
-      const res = await axios.post("/forgot_pass", {
+      const res = await api.post("/forgot_pass", {
         identity: userEmail,
         password,
         id: userId,

@@ -384,6 +384,7 @@ function UserList() {
       field: "ter_name",
       headerName: `${territoryLabel} Details`,
       sortable: true,
+      width:200
     },
     {
       field: "reporting",
