@@ -315,6 +315,8 @@ function AccountMas() {
         const type = row.cus_type_id == 1 ? "HCP" : "Retailer";
 
         const handleClick = () => {
+          if (![0, 2].includes(Number(accStat))) return;
+
           if (decodedParams.cusReq == 2) {
             navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
           } else {

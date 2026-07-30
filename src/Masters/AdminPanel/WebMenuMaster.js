@@ -214,7 +214,7 @@ export default function WebMenuMaster() {
             title: `${decodedWebMenuId ? "Edit" : "Add"} Web Menu Master`,
             message: !decodedWebMenuId
                 ? `Are you sure ? If Data for ${selUserName} exist, it will be overridden..!`
-                : `Are you sure want to edit this Menu`,
+                : `Are you sure want to edit this Menu?`,
             confirmText: decodedWebMenuId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
