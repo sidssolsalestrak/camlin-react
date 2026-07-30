@@ -65,6 +65,7 @@ const AddProduct = () => {
     const location = useLocation();
     const [subCat, setSubCat] = useState([]);
     const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
 
     // labels derived from masterPanel with fallbacks
     const prodLabel = masterPanel["PROD"] || "Product";
@@ -77,6 +78,16 @@ const AddProduct = () => {
             setMasterPanel(data);
         };
         loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
     }, []);
 
     /*---------- decode params ---------*/
@@ -467,7 +478,25 @@ const AddProduct = () => {
                     </Grid>
                 </Grid>
                 <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" } }}>
-                    <Button onClick={() => showSubmitConfirmation()} startIcon={<ImDownload3 style={{ height: "15px" }} />} variant='contained' color="primary">{decodedId ? "Update" : "Create"}</Button>
+                    <Button onClick={() => showSubmitConfirmation()}
+                        startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                        variant='contained' color="primary">
+                        {decodedId ? "Update" : "Create"}
+                    </Button>
+                    {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                        <Button onClick={() => showSubmitConfirmation()}
+                            startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                            variant='contained' color="primary">
+                            Create
+                        </Button>
+                    )}
+                    {(decodedId && [0, 2].includes(Number(accStat))) && (
+                        <Button onClick={() => showSubmitConfirmation()}
+                            startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                            variant='contained' color="primary">
+                            Update
+                        </Button>
+                    )}
                 </Box>
             </Box>
             <ConfirmationDialog

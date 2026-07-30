@@ -43,6 +43,7 @@ const Stockist = () => {
     })
     const [formError, setFormError] = useState(false);
     const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
 
     // labels derived from masterPanel with fallbacks
     const stkLabel = masterPanel["STKS"] || "Stockist";
@@ -56,6 +57,16 @@ const Stockist = () => {
             setMasterPanel(data);
         };
         loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
     }, []);
 
     /*---------- decode params ---------*/
@@ -204,7 +215,7 @@ const Stockist = () => {
                 const status = (row?.row?.status || "").toString().trim().toLowerCase();
                 const isInactive = status === "in active" || status === "inactive";
 
-                if (isInactive) {
+                if (isInactive && [0].includes(Number(accStat))) {
                     return (
                         <Button
                             size="small"
@@ -220,12 +231,16 @@ const Stockist = () => {
 
                 return (
                     <>
-                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                            <MdOutlineEdit size={15} />
-                        </IconButton>
-                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
-                            <DeleteIcon size={15} />
-                        </IconButton>
+                        {[0, 2].includes(Number(accStat)) && (
+                            <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                                <MdOutlineEdit size={15} />
+                            </IconButton>
+                        )}
+                        {[0, 2].includes(Number(accStat)) && (
+                            <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                                <DeleteIcon size={15} />
+                            </IconButton>
+                        )}
                     </>
                 );
             }

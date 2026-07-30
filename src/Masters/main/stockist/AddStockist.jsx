@@ -31,6 +31,7 @@ const AddStockist = () => {
     const [formData, setFormData] = useState(INITIAL_FORM_STATE)
     const [defaultUserId, setDefaultUserId] = useState(null);
     const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
 
     // label derived from masterPanel with fallback
     const stkLabel = masterPanel["STKS"] || "Stockist";
@@ -42,6 +43,16 @@ const AddStockist = () => {
             setMasterPanel(data);
         };
         loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
     }, []);
 
     /*---------- original cat code and name for edit---------*/
@@ -368,10 +379,22 @@ const AddStockist = () => {
                         </Box>
                         {/* submit */}
                         <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" }, mt: 3 }}>
-                            <Button startIcon={<ImDownload3 style={{ height: "15px" }} />}
-                                variant='contained' color="primary" onClick={() => showSubmitConfirmation()}>
-                                {decodedId ? "Update" : "Create"}
-                            </Button>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button
+                                    startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                                    onClick={() => showSubmitConfirmation()}
+                                    sx={{ mt: 2 }} color="primary" variant='contained'>
+                                    Create
+                                </Button>
+                            )}
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button
+                                    startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                                    onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }}
+                                    color="primary" variant='contained'>
+                                    Update
+                                </Button>
+                            )}
                         </Box>
                     </Box>
                 </Grid>
