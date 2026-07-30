@@ -121,6 +121,13 @@ function AccountMas() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
+  // ── Submit (Approve/Reject) confirmation dialog state ──
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState(
+    "Are you sure you want to Approve requests?",
+  );
+
   const [logOpen, setLogOpen] = useState(false);
   const [logData, setLogData] = useState([]);
   const [logLoading, setLogLoading] = useState(false);
@@ -199,6 +206,39 @@ function AccountMas() {
     borderRadius: "4px",
     fontSize: "12px",
   });
+
+  // ── Shared eligibility check — same rule used by per-row Approve/Reject,
+  //     Approve All, Reject All, and the Submit button visibility. ──
+  // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+  //
+  // Two distinct approval stages share this data:
+  //  - Manager-level approval: identified by hierarchy membership
+  //    (am_user_id / zbm_user_id / rsm_user_id / sh_user_id === loggedInUserId).
+  //    This is the FIRST approval step.
+  //  - Final approval: identified by loggedInUserType 2 or 3 (admin roles).
+  //    This step is independent of whether manager approval has happened yet.
+  const isRowActionAllowed = (row) => {
+    const isManagerLevelApprover =
+      row.am_user_id == loggedInUserId ||
+      row.zbm_user_id == loggedInUserId ||
+      row.rsm_user_id == loggedInUserId ||
+      row.sh_user_id == loggedInUserId;
+
+    const isFinalApprover = loggedInUserType == 2 || loggedInUserType == 3;
+
+    if (Number(accStat) === 2) {
+      // Checker → manager-level approval only, and only while it's still pending
+      return isManagerLevelApprover && row.mgr_approved_stat == 0;
+    }
+
+    if (Number(accStat) === 0) {
+      // All → final approval, regardless of whether manager approval is done or not
+      return isManagerLevelApprover || isFinalApprover;
+    }
+
+    // Maker / View Only never get approve-reject rights
+    return false;
+  };
 
   useEffect(() => {
     fetchRegionData();
@@ -385,7 +425,7 @@ function AccountMas() {
       ]
       : []),
 
-    // ── APPROVE — restricted to Checker / All ──
+    // ── APPROVE — Checker: manager-level approval only (pending). All: final approval ──
     ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
       ? [
         {
@@ -393,16 +433,8 @@ function AccountMas() {
           headerName: "APPROVE",
           renderCell: ({ row }) => {
             const state = approvalState[row.id] || 0;
-            const isAllowed =
-              row.mgr_approved_stat == 0 &&
-              (row.am_user_id == loggedInUserId ||
-                row.zbm_user_id == loggedInUserId ||
-                row.rsm_user_id == loggedInUserId ||
-                row.sh_user_id == loggedInUserId ||
-                loggedInUserType == 2 ||
-                loggedInUserType == 3);
 
-            if (!isAllowed) return <span>-</span>;
+            if (!isRowActionAllowed(row)) return <span>-</span>;
 
             return (
               <span
@@ -422,7 +454,7 @@ function AccountMas() {
       ]
       : []),
 
-    // ── REJECT — restricted to Checker / All ──
+    // ── REJECT — Checker: manager-level approval only (pending). All: final approval ──
     ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
       ? [
         {
@@ -430,16 +462,8 @@ function AccountMas() {
           headerName: "REJECT",
           renderCell: ({ row }) => {
             const state = approvalState[row.id] || 0;
-            const isAllowed =
-              row.mgr_approved_stat == 0 &&
-              (row.am_user_id == loggedInUserId ||
-                row.zbm_user_id == loggedInUserId ||
-                row.rsm_user_id == loggedInUserId ||
-                row.sh_user_id == loggedInUserId ||
-                loggedInUserType == 2 ||
-                loggedInUserType == 3);
 
-            if (!isAllowed) return <span>-</span>;
+            if (!isRowActionAllowed(row)) return <span>-</span>;
 
             return (
               <span
@@ -763,7 +787,8 @@ function AccountMas() {
     });
   };
 
-  const handleSubmitAll = async () => {
+  // ── Step 1: validate selection, then open confirmation dialog ──
+  const handleSubmitAllClick = () => {
     let approveRows = [];
     let rejectRows = [];
 
@@ -778,8 +803,37 @@ function AccountMas() {
       toast.warning("Please Approve or Reject at least one Request");
       return;
     }
-    // console.log("approveRows", approveRows);
-    // return;
+
+    if (approveRows.length > 0 && rejectRows.length > 0) {
+      setSubmitMessage("Are you sure you want to Approve/Reject these requests?");
+    } else if (rejectRows.length > 0) {
+      setSubmitMessage("Are you sure you want to reject request?");
+    } else {
+      setSubmitMessage("Are you sure you want to Approve requests?");
+    }
+
+    setSubmitConfirmOpen(true);
+  };
+
+  // ── Step 2: actual submit, called after user confirms in the dialog ──
+  const handleSubmitAll = async () => {
+    let approveRows = [];
+    let rejectRows = [];
+
+    tableData.forEach((row) => {
+      const state = approvalState[row.id];
+
+      if (state === 1) approveRows.push(row);
+      if (state === 2) rejectRows.push(row);
+    });
+
+    if (approveRows.length === 0 && rejectRows.length === 0) {
+      toast.warning("Please Approve or Reject at least one Request");
+      setSubmitConfirmOpen(false);
+      return;
+    }
+
+    setSubmitLoading(true);
     try {
       // APPROVE API
       if (approveRows.length > 0) {
@@ -797,6 +851,9 @@ function AccountMas() {
     } catch (err) {
       console.error(err);
       toast.error("Unable to update, please try again");
+    } finally {
+      setSubmitLoading(false);
+      setSubmitConfirmOpen(false);
     }
   };
 
@@ -806,16 +863,7 @@ function AccountMas() {
     return;
   }
 
-  const eligibleRows = tableData.filter(
-    (row) =>
-      row.mgr_approved_stat == 0 &&
-      (row.am_user_id == loggedInUserId ||
-        row.zbm_user_id == loggedInUserId ||
-        row.rsm_user_id == loggedInUserId ||
-        row.sh_user_id == loggedInUserId ||
-        loggedInUserType == 2 ||
-        loggedInUserType == 3),
-  );
+  const eligibleRows = tableData.filter((row) => isRowActionAllowed(row));
 
   const allApproved = eligibleRows.every(
     (row) => approvalState[row.id] === 1,
@@ -835,16 +883,7 @@ const handleRejectAll = () => {
     return;
   }
 
-  const eligibleRows = tableData.filter(
-    (row) =>
-      row.mgr_approved_stat == 0 &&
-      (row.am_user_id == loggedInUserId ||
-        row.zbm_user_id == loggedInUserId ||
-        row.rsm_user_id == loggedInUserId ||
-        row.sh_user_id == loggedInUserId ||
-        loggedInUserType == 2 ||
-        loggedInUserType == 3),
-  );
+  const eligibleRows = tableData.filter((row) => isRowActionAllowed(row));
 
   const allRejected = eligibleRows.every(
     (row) => approvalState[row.id] === 2,
@@ -1080,32 +1119,14 @@ const handleRejectAll = () => {
         >
          {decodedParams.cusReq == 2 &&
   [0, 2].includes(Number(accStat)) &&
-  tableData.some(
-    (row) =>
-      row.mgr_approved_stat == 0 &&
-      (row.am_user_id == loggedInUserId ||
-        row.zbm_user_id == loggedInUserId ||
-        row.rsm_user_id == loggedInUserId ||
-        row.sh_user_id == loggedInUserId ||
-        loggedInUserType == 2 ||
-        loggedInUserType == 3),
-  ) && (
+  tableData.some((row) => isRowActionAllowed(row)) && (
     <Box display="flex" justifyContent="flex-end" gap={3} px={4} pt={2}>
       <span
         onClick={handleApproveAll}
         style={{
           fontSize: "15px",
           color: tableData
-            .filter(
-              (row) =>
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3),
-            )
+            .filter((row) => isRowActionAllowed(row))
             .every((row) => approvalState[row.id] === 1)
             ? "#0bd00b"   // all approved → green
             : "#a5a0a0",  // not all approved → grey
@@ -1123,16 +1144,7 @@ const handleRejectAll = () => {
         style={{
           fontSize: "15px",
           color: tableData
-            .filter(
-              (row) =>
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3),
-            )
+            .filter((row) => isRowActionAllowed(row))
             .every((row) => approvalState[row.id] === 2)
             ? "red"       // all rejected → red
             : "#a5a0a0",  // not all rejected → grey
@@ -1158,19 +1170,10 @@ const handleRejectAll = () => {
 
         {decodedParams.cusReq == 2 &&
           [0, 2].includes(Number(accStat)) &&
-          tableData.some(
-            (row) =>
-              row.mgr_approved_stat == 0 &&
-              (row.am_user_id == loggedInUserId ||
-                row.zbm_user_id == loggedInUserId ||
-                row.rsm_user_id == loggedInUserId ||
-                row.sh_user_id == loggedInUserId ||
-                loggedInUserType == 2 ||
-                loggedInUserType == 3),
-          ) && (
+          tableData.some((row) => isRowActionAllowed(row)) && (
             <Box mt={2} display="flex" justifyContent="center">
               <button
-                onClick={handleSubmitAll}
+                onClick={handleSubmitAllClick}
                 style={{
                   padding: "8px 20px",
                   background: "#17a2b8",
@@ -1194,6 +1197,19 @@ const handleRejectAll = () => {
           confirmText="Delete"
           confirmColor="error"
           loading={loadingDelete}
+        />
+
+        {/* ── Submit (Approve/Reject) confirmation dialog ── */}
+        <ConfirmationDialog
+          open={submitConfirmOpen}
+          onClose={() => setSubmitConfirmOpen(false)}
+          onConfirm={handleSubmitAll}
+          title="Confirmation"
+          message={submitMessage}
+          confirmText="Submit"
+          cancelText="Cancel"
+          confirmColor="primary"
+          loading={submitLoading}
         />
 
         <Dialog

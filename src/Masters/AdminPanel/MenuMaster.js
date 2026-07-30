@@ -15,6 +15,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import './AdminPanel.css'
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function MenuMaster() {
 
@@ -35,6 +36,15 @@ export default function MenuMaster() {
     const [modifyLoading, setModifyLoading] = useState(false)
     const toast = useToast()
     const location = useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchMenuData()
@@ -68,10 +78,10 @@ export default function MenuMaster() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedmenuId ? "Edit" : "Add"} Menu Master`,
+            title: `${decodedmenuId ? "Edit" : "Add"} ${masterPanel["MMAS"] || "Menu Master"}`,
             message: !decodedmenuId
                 ? `Are you sure ? If Data for ${selUserMasName} exist, it will be overridden..!`
-                : `Are you sure want to edit this Menu`,
+                : `Are you sure want to edit this ${masterPanel["MMAS"] || "Menu"}`,
             confirmText: decodedmenuId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -107,7 +117,7 @@ export default function MenuMaster() {
             return isValid
         }
         if (selRepData.length === 0) {
-            toast.error("Please Select atleast one Menu option !")
+            toast.error(`Please Select atleast one ${masterPanel["MMAS"] || "Menu"} option !`)
             setMenuCheckErr(true)
             isValid = false
         }
@@ -141,7 +151,7 @@ export default function MenuMaster() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "user_name", headerName: "USER TYPE", filterable: true, sortable: true },
+        { field: "user_name", headerName: `${(masterPanel["USER"] || "USER").toUpperCase()} TYPE`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -173,7 +183,7 @@ export default function MenuMaster() {
             }
             let response = await api.post("/menuMasterCreate", addPayLoad)
             if (response.data.success) {
-                toast.success(decodedmenuId ? "Menu Updated successfully" : response.data.message)
+                toast.success(decodedmenuId ? `${masterPanel["MMAS"] || "Menu"} Updated successfully` : response.data.message)
                 if (decodedmenuId) {
                     fetchMenuData()
                     navigate("/masters/menuMaster")
@@ -235,7 +245,7 @@ export default function MenuMaster() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: "/masters/menuMaster" },
                 { label: "Admin Panel", path: "/masters/menuMaster" },
-                { label: "Menu Master", path: "/masters/menuMaster" },
+                { label: masterPanel["MMAS"] || "Menu Master", path: "/masters/menuMaster" },
             ]}
 
         >
@@ -247,7 +257,7 @@ export default function MenuMaster() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Menu Master</h1>
+                    <h1 className="mainTitle">{masterPanel["MMAS"] || "Menu Master"}</h1>
                 </Box>
 
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
@@ -258,14 +268,14 @@ export default function MenuMaster() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Menu Master</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["MMAS"] || "Menu Master"}</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
                             {/* ✅ Autocomplete replacing Select */}
                             <Autocomplete
-                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
+                                options={[{ id: "0", client_alias: `Select ${masterPanel["USER"] || "User"} Type` }, ...allUserInputData]}
                                 getOptionLabel={(option) => option.client_alias || ""}
                                 value={selUserInputData}
                                 onChange={(e, newValue) => {
@@ -278,11 +288,11 @@ export default function MenuMaster() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="User Type"
+                                        label={`${masterPanel["USER"] || "User"} Type`}
                                         size="small"
                                         error={userTypeErr}
                                         required
-                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        helperText={userTypeErr ? `${masterPanel["USER"] || "User"} Type not Selected !` : ""}
                                         sx={{ backgroundColor: decodedmenuId ? '#EEEEEE' : undefined }}
                                     />
                                 )}

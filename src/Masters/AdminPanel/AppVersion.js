@@ -12,6 +12,7 @@ import { FaPencilAlt } from "react-icons/fa";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 import { MdOutlineEdit } from "react-icons/md";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function AppVersion() {
     const { editappvid } = useParams()
@@ -25,9 +26,19 @@ export default function AppVersion() {
     const [apptypeErr,setAppTypeErr]=useState(false)
     const [buildTypeErr,setBuildTypeErr]=useState(false)
     const [versionTypeErr,setVersionTypeErr]=useState(false)
+    const [modifyLoading, setModifyLoading] = useState(false)
     const navigate=useNavigate()
     const toast=useToast()
     const location=useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchAppversionData()
@@ -95,8 +106,8 @@ export default function AppVersion() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedAppEditId ? "Edit" : "Add"} App Version`,
-            message:`Are you sure you want to ${decodedAppEditId ? "Edit" : "Add"} this App Version?` ,
+            title: `${decodedAppEditId ? "Edit" : "Add"} ${masterPanel["APVR"] || "App Version"}`,
+            message:`Are you sure you want to ${decodedAppEditId ? "Edit" : "Add"} this ${masterPanel["APVR"] || "App Version"}?` ,
             confirmText: decodedAppEditId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -110,6 +121,7 @@ export default function AppVersion() {
     }
 
     const  handleSubmit=async()=>{
+            setModifyLoading(true)
             try{
                 let Payload={
                     os_type:selOs,
@@ -140,6 +152,7 @@ export default function AppVersion() {
                 console.log(err)
             }
             finally{
+                setModifyLoading(false)
                 closeConfirmationDialog()
             }
     }
@@ -176,7 +189,7 @@ export default function AppVersion() {
                 <Typography>{row.row.app_type === 1 ? "Andriod" : row.row.app_type === 2 ? "IOS" : null}</Typography>
             )
         },
-        { field: "ver_code", headerName: "APP VERSION", filterable: true, sortable: true },
+        { field: "ver_code", headerName: `${(masterPanel["APVR"] || "APP VERSION").toUpperCase()}`, filterable: true, sortable: true },
         { field: "ver_name", headerName: "APP BUILD", filterable: true, sortable: true },
         {
             field: "ACTION", headerName: "ACTION", filterable: false,
@@ -198,7 +211,7 @@ export default function AppVersion() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
                 { label: "Admin Panel", path:location.pathname },
-                { label: "App Version", path: location.pathname },
+                { label: masterPanel["APVR"] || "App Version", path: location.pathname },
                
             ]}
         >
@@ -210,7 +223,7 @@ export default function AppVersion() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">App Version</h1>
+                    <h1 className="mainTitle">{masterPanel["APVR"] || "App Version"}</h1>
                 </Box>
 
             <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
@@ -221,7 +234,7 @@ export default function AppVersion() {
                             <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                         </Tabs>
                     </Box> :
-                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit App Version</Typography>
+                    <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["APVR"] || "App Version"}</Typography>
                 }
                 {tabValue === 0 && (
                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
@@ -242,8 +255,8 @@ export default function AppVersion() {
                         
                         </FormControl>
                         <FormControl>
-                            <TextField label="Version" value={appVersion} placeholder="App Version" size="small" required onChange={(e)=>setAppVersion(e.target.value)} error={!!versionTypeErr}
-                             helperText={versionTypeErr?"The App version field is required":''} />
+                            <TextField label="Version" value={appVersion} placeholder={`${masterPanel["APVR"] || "App Version"}`} size="small" required onChange={(e)=>setAppVersion(e.target.value)} error={!!versionTypeErr}
+                             helperText={versionTypeErr?`The ${masterPanel["APVR"] || "App Version"} field is required`:''} />
                         </FormControl>
                         <FormControl>
                             <TextField label="Build" value={appBuild} placeholder="Build" size="small" required onChange={(e)=>setAppBuild(e.target.value)} error={!!buildTypeErr}
@@ -273,7 +286,7 @@ export default function AppVersion() {
                             message={confirmationDialog.message}
                             confirmText={confirmationDialog.confirmText}
                             cancelText={confirmationDialog.cancelText}
-                            // loading={modifyLoading}
+                            loading={modifyLoading}
                             confirmColor={confirmationDialog.confirmColor}
              />
              </Box>

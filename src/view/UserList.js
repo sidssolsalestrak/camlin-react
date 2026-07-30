@@ -49,6 +49,11 @@ function UserList() {
   const [previewImage, setPreviewImage] = useState(profile);
   const [dialogData, setDialogData] = useState([])
   const [dialogActiveStat, setDialogActiveStat] = useState(0)
+  // Tracks the user's actual current status as fetched from the server —
+  // kept separate from dialogActiveStat, which is just the Status select's
+  // (user-changeable) value. Used to hide "Deactivate User" once the account
+  // is already inactive, even if the select itself is showing "In Active".
+  const [currentAccStat, setCurrentAccStat] = useState(0)
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
   const toast = useToast()
@@ -73,6 +78,12 @@ function UserList() {
   const regLabel = masterPanel["REGN"] || "Region";
   const areaLabel = masterPanel["AREA"] || "Area";
   const territoryLabel = masterPanel["TERR"] || "Territory";
+
+  // ── Deactivation form state (controlled — mirrors AddUser.jsx) ──
+  const [relievingDate, setRelievingDate] = useState("");
+  const [deactivateType, setDeactivateType] = useState("0");
+  const [deactivateRemarks, setDeactivateRemarks] = useState("");
+  const [deactivateErrors, setDeactivateErrors] = useState({});
 
   useEffect(() => {
     const loadMasterPanel = async () => {
@@ -330,6 +341,20 @@ function UserList() {
 
   };
 
+  // Re-fetch the table using the currently decoded route params (used after
+  // deactivate/delete so the row's status updates without a manual reload).
+  const refreshTable = () => {
+    fetchTable({
+      userType: decodedParams.userType || 0,
+      dept: decodedParams.dept || 0,
+      zone: decodedParams.zone || 0,
+      region: decodedParams.region || 0,
+      area: decodedParams.area || 0,
+      territory: decodedParams.territory || 0,
+      channel: decodedParams.channel || 0,
+    });
+  };
+
   // ---------------- TABLE ----------------
   const formatDate = (date) => {
     if (!date) return "-";
@@ -545,17 +570,36 @@ function UserList() {
       setDialogData([]);
       setPreviewImage(profile);
       setUserDialog(true);
-      setDialogActiveStat(0)
+      setDialogActiveStat(0);
+      setDeactivateErrors({});
+
       let response = await api.post('/getUserData', { id: row.user_id });
       let resUserData = Array.isArray(response.data.data) ? response.data.data : [];
       setDialogData(resUserData);
 
-      const imageUpl = resUserData[0]?.image_upl;
+      const d = resUserData[0];
+
+      const imageUpl = d?.image_upl;
       setPreviewImage(
         imageUpl
           ? `${process.env.REACT_APP_PROFILE_URL}/${imageUpl}`
           : profile
       );
+
+      // ── Prefill Status + deactivation fields from fetched user data ──
+      const fetchedStat = Number(d?.acc_stat) === 1 ? 1 : 0;
+      setDialogActiveStat(fetchedStat);
+      setCurrentAccStat(fetchedStat);
+
+      const invalidDates = ['1900-01-01', '1970-01-01', '0000-00-00', '1899-12-31'];
+      const relievingDateStr = d?.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "";
+      setRelievingDate(
+        relievingDateStr && !invalidDates.includes(relievingDateStr)
+          ? relievingDateStr
+          : ""
+      );
+      setDeactivateType(String(d?.deact_type || "0"));
+      setDeactivateRemarks(d?.deact_rem || "");
     } catch (err) {
       console.log("fetch user DialogData err", err);
     }
@@ -588,6 +632,106 @@ function UserList() {
     finally {
       setModifyLoading(false)
       closeConfirmationDialog()
+    }
+  };
+
+  // ── Deactivate user (from the user detail dialog) ──
+  const validateDeactivation = () => {
+    let temp = {};
+
+    if (!relievingDate) temp.relievingDate = "Date of Relieving is required";
+    if (!deactivateType || deactivateType === "0")
+      temp.deactivateType = "Please select deactivation type";
+    if (!deactivateRemarks.trim())
+      temp.deactivateRemarks = "Remarks are required";
+
+    setDeactivateErrors(temp);
+
+    return Object.keys(temp).length === 0;
+  };
+
+  const handleDeactivateClick = () => {
+    if (!validateDeactivation()) return;
+
+    const name = `${dialogData[0]?.first_name || ""} ${dialogData[0]?.last_name || ""}`.trim();
+
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: `Are you sure you want to Deactivate ${name}?`,
+      confirmText: "Yes, Deactivate",
+      cancelText: "Cancel",
+      confirmColor: "error",
+      onConfirm: handleConfirmDeactivate,
+    });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    try {
+      setModifyLoading(true);
+
+      const payload = {
+        user_id: dialogData[0]?.id,
+        dor: relievingDate,
+        deact_type: deactivateType,
+        deactRemarks: deactivateRemarks,
+      };
+
+      const res = await api.post("/userDeactivate", payload);
+
+      if (res.data.status === 200) {
+        toast.success(res.data.message || "User deactivated successfully");
+        setCurrentAccStat(1);
+        setUserDialog(false);
+        refreshTable();
+      } else {
+        toast.error(res.data.message || "Failed to deactivate user");
+      }
+    } catch (err) {
+      console.log("deactivate Error", err);
+      toast.error("Server error while deactivating user");
+    } finally {
+      setModifyLoading(false);
+      closeConfirmationDialog();
+    }
+  };
+
+  // ── Logout user from the App (from the user detail dialog) ──
+  const showLogoutConfirmation = () => {
+    const name = `${dialogData[0]?.first_name || ""} ${dialogData[0]?.last_name || ""}`.trim();
+
+    showConfirmationDialog({
+      title: "Confirmation",
+      message: `Are you sure you want ${name} to Logout from app?`,
+      confirmText: "OK",
+      cancelText: "Close",
+      confirmColor: "primary",
+      onConfirm: handleAppLogout,
+    });
+  };
+
+  const handleAppLogout = async () => {
+    try {
+      setModifyLoading(true);
+
+      const res = await api.post("/logoutApp", { user_id: dialogData[0]?.id });
+
+      if (res.data.success) {
+        const name = `${dialogData[0]?.first_name || ""} ${dialogData[0]?.last_name || ""}`.trim();
+        toast.success(`${name} has been Logged Out!`);
+
+        // Refresh dialog data to reflect updated app_stat
+        const response = await api.post('/getUserData', { id: dialogData[0]?.user_id });
+        const resUserData = Array.isArray(response.data.data) ? response.data.data : [];
+        setDialogData(resUserData);
+      } else {
+        toast.error(res.data.message || "Logout failed");
+      }
+    } catch (err) {
+      console.log("logout Error", err);
+      toast.error("Server error during logout");
+    } finally {
+      setModifyLoading(false);
+      closeConfirmationDialog();
     }
   };
 
@@ -987,7 +1131,12 @@ function UserList() {
                       {dialogData[0]?.app_stat === 1 && (
                         <tr style={{ fontSize: '16px', borderTop: '1px solid #c7c7c7' }}>
                           <td colSpan={4} align="center" className="tdstyle" style={{ padding: '7px 8px' }}>
-                            <Button variant="contained" color="error" sx={{ mt: 1 }} id="logout_user">
+                            <Button
+                              variant="contained"
+                              color="error"
+                              sx={{ mt: 1 }}
+                              onClick={showLogoutConfirmation}
+                            >
                               Logout from the App
                             </Button>
                           </td>
@@ -1013,18 +1162,20 @@ function UserList() {
                             label="Date Of Relieving"
                             format="DD MMM YYYY"
                             maxDate={dayjs()}
-                            value={
-                              dialogData[0]?.emp_reliev_dt &&
-                                !dayjs(dialogData[0]?.emp_reliev_dt).isSame('1900-01-01', 'day')
-                                ? dayjs(dialogData[0]?.emp_reliev_dt)
-                                : null
-                            }
+                            value={relievingDate ? dayjs(relievingDate) : null}
                             defaultCalendarMonth={dayjs()}
                             placeholder="Select Date of Relieving"
+                            onChange={(newValue) => {
+                              setRelievingDate(
+                                newValue ? newValue.format("YYYY-MM-DD") : "",
+                              );
+                            }}
                             slotProps={{
                               textField: {
                                 size: 'small',
-                                sx: { width: 200 }
+                                sx: { width: 200 },
+                                error: Boolean(deactivateErrors.relievingDate),
+                                helperText: deactivateErrors.relievingDate,
                               }
                             }}
                           />
@@ -1033,18 +1184,37 @@ function UserList() {
                       </FormControl>
                       <FormControl sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
                         <InputLabel id="deact">Deactivation Type</InputLabel>
-                        <Select label="Deactivation Type" labelId="deact" size="small" sx={{ width: 200 }} value={Number(dialogData[0]?.deact_type)}>
+                        <Select
+                          label="Deactivation Type"
+                          labelId="deact"
+                          size="small"
+                          sx={{ width: 200 }}
+                          value={deactivateType}
+                          onChange={(e) => setDeactivateType(e.target.value)}
+                          error={Boolean(deactivateErrors.deactivateType)}
+                        >
                           <MenuItem value={1}>Resigned</MenuItem>
                           <MenuItem value={2}>Terminated</MenuItem>
                           <MenuItem value={3}>Absconded</MenuItem>
                         </Select>
+                        {deactivateErrors.deactivateType && (
+                          <Typography sx={{ color: "#d32f2f", fontSize: "12px", ml: 1 }}>
+                            {deactivateErrors.deactivateType}
+                          </Typography>
+                        )}
                       </FormControl>
                       <FormControl sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
                         <TextField
                           multiline
                           placeholder="Enter Remarks"
                           size="small"
-                          value={dialogData[0]?.deact_rem}
+                          value={deactivateRemarks}
+                          onChange={(e) => {
+                            const onlyText = e.target.value.replace(/^\s+/, "");
+                            setDeactivateRemarks(onlyText);
+                          }}
+                          error={Boolean(deactivateErrors.deactivateRemarks)}
+                          helperText={deactivateErrors.deactivateRemarks}
                           sx={{
                             width: 200,
                             '& .MuiInputBase-root': {
@@ -1057,9 +1227,16 @@ function UserList() {
                           }}
                         />
                       </FormControl>
-                      {[0, 2].includes(Number(accStat)) && (
+                      {Number(currentAccStat) !== 1 && [0, 2].includes(Number(accStat)) && (
                         <Box sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
-                          <Button sx={{ width: '15rem' }} variant="contained" color="error">Deactivate User</Button>
+                          <Button
+                            sx={{ width: '15rem' }}
+                            variant="contained"
+                            color="error"
+                            onClick={handleDeactivateClick}
+                          >
+                            Deactivate User
+                          </Button>
                         </Box>
                       )}
                     </Box>

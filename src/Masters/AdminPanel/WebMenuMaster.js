@@ -13,6 +13,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
+import { getMasterPanel } from "../../services/masterPanelService";
 
 
 const ROLES = [
@@ -190,6 +191,7 @@ export default function WebMenuMaster() {
     const [checked, setChecked] = useState({})
     const [roles, setRoles] = useState({})
     const [tableDataLoading, setTableDataLoading] = useState(false)
+    const [masterPanel, setMasterPanel] = useState({});
 
     const toast = useToast()
     const navigate = useNavigate()
@@ -235,6 +237,14 @@ export default function WebMenuMaster() {
         fetchInputData()
         // eslint-disable-next-line
     }, [])
+
+    useEffect(() => {
+    const loadMasterPanel = async () => {
+        const data = await getMasterPanel();
+        setMasterPanel(data);
+    };
+    loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         if (!decodedWebMenuId) {
@@ -506,7 +516,7 @@ export default function WebMenuMaster() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "user_name", headerName: "USER TYPE", filterable: true, sortable: true },
+        { field: "user_name", headerName: `${(masterPanel["USER"] || "User").toUpperCase()} TYPE`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -580,10 +590,10 @@ export default function WebMenuMaster() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="User Type*"
+                                        label={`${masterPanel["USER"] || "User"} Type*`}
                                         size="small"
                                         error={userTypeErr}
-                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        helperText={userTypeErr ? `${masterPanel["USER"] || "User"} Type not Selected !` : ""}
                                         sx={{ backgroundColor: decodedWebMenuId ? "#EEEEEE" : undefined }}
                                     />
                                 )}

@@ -15,6 +15,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function AppWidgetMaster() {
 
@@ -35,6 +36,15 @@ export default function AppWidgetMaster() {
     const toast = useToast()
     const navigate = useNavigate()
     const location = useLocation()
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         fetchAppWidgetData()
@@ -92,7 +102,7 @@ export default function AppWidgetMaster() {
             return isValid
         }
         if (selWidgetMenu.length === 0) {
-            toast.error("Please Select atleast one Menu option !")
+            toast.error(`Please Select atleast one ${masterPanel["AWMS"] || "Menu"} option !`)
             setMenuCheckErr(true)
             isValid = false
         }
@@ -109,7 +119,7 @@ export default function AppWidgetMaster() {
             }
             let response = await api.post("/appWidgetCreate", addPayload)
             if (response.data.success) {
-                toast.success(decodedWidgetId ? "App Widget Menu Updated successfully" : response.data.message)
+                toast.success(decodedWidgetId ? `${masterPanel["AWMS"] || "App Widget Menu"} Updated successfully` : response.data.message)
                 if (decodedWidgetId) {
                     fetchAppWidgetData()
                     navigate("/masters/dashboardmaster")
@@ -138,7 +148,7 @@ export default function AppWidgetMaster() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "user_name", headerName: "USER TYPE", filterable: true, sortable: true },
+        { field: "user_name", headerName: `${(masterPanel["USER"] || "USER").toUpperCase()} TYPE`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -169,10 +179,10 @@ export default function AppWidgetMaster() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedWidgetId ? "Edit" : "Add"} App Widget Master`,
+            title: `${decodedWidgetId ? "Edit" : "Add"} ${masterPanel["AWMS"] || "App Widget Master"}`,
             message: !decodedWidgetId
                 ? `Are you sure ? If Data for ${userMasName} exist, it will be overridden..!`
-                : `Are you sure want to edit this Menu`,
+                : `Are you sure want to edit this ${masterPanel["AWMS"] || "Menu"}`,
             confirmText: decodedWidgetId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -237,7 +247,7 @@ export default function AppWidgetMaster() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: location.pathname },
                 { label: "Admin Panel", path: location.pathname },
-                { label: "App Widget Master", path: location.pathname },
+                { label: masterPanel["AWMS"] || "App Widget Master", path: location.pathname },
 
             ]}
 
@@ -250,7 +260,7 @@ export default function AppWidgetMaster() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">App Widget Master</h1>
+                    <h1 className="mainTitle">{masterPanel["AWMS"] || "App Widget Master"}</h1>
                 </Box>
 
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
@@ -261,14 +271,14 @@ export default function AppWidgetMaster() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit App Widget</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["AWMS"] || "App Widget"}</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
                             {/* ✅ Autocomplete replaces Select */}
                             <Autocomplete
-                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUserInputData]}
+                                options={[{ id: "0", client_alias: `Select ${masterPanel["USER"] || "User"} Type` }, ...allUserInputData]}
                                 getOptionLabel={(option) => option.client_alias || ""}
                                 value={selUserInput}
                                 readOnly={!!decodedWidgetId}
@@ -280,10 +290,10 @@ export default function AppWidgetMaster() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="User Type*"
+                                        label={`${masterPanel["USER"] || "User"} Type*`}
                                         size="small"
                                         error={userTypeErr}
-                                        helperText={userTypeErr ? "User Type not Selected !" : ""}
+                                        helperText={userTypeErr ? `${masterPanel["USER"] || "User"} Type not Selected !` : ""}
                                         sx={{ backgroundColor: decodedWidgetId ? '#EEEEEE' : undefined }}
                                     />
                                 )}
