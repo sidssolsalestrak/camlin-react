@@ -478,11 +478,6 @@ const AddProduct = () => {
                     </Grid>
                 </Grid>
                 <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" } }}>
-                    <Button onClick={() => showSubmitConfirmation()}
-                        startIcon={<ImDownload3 style={{ height: "15px" }} />}
-                        variant='contained' color="primary">
-                        {decodedId ? "Update" : "Create"}
-                    </Button>
                     {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
                         <Button onClick={() => showSubmitConfirmation()}
                             startIcon={<ImDownload3 style={{ height: "15px" }} />}

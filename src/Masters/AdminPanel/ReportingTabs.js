@@ -13,6 +13,7 @@ import { MdOutlineEdit } from "react-icons/md";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
+import { getMasterPanel } from "../../services/masterPanelService";
 import './AdminPanel.css'
 
 export default function ReportingTabs() {
@@ -38,6 +39,16 @@ export default function ReportingTabs() {
     // eslint-disable-next-line
     const [repInputError, setRepInputError] = useState(false)
     const location = useLocation()
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -142,7 +153,7 @@ export default function ReportingTabs() {
             }
             let response = await api.post("/reportTabCreate", addPayload)
             if (response.data.success) {
-                toast.success(decodedUserId ? "Reporting Tabs Updated successfully" : response.data.message)
+                toast.success(decodedUserId ? `${masterPanel["RTAB"] || "Reporting Tabs"} Updated successfully` : response.data.message)
                 if (decodedUserId) {
                     fetchReportData()
                     navigate("/masters/repTabs")
@@ -197,8 +208,8 @@ export default function ReportingTabs() {
 
     const showSubmitConfirmation = () => {
         showConfirmationDialog({
-            title: `${decodedUserId ? "Edit" : "Add"} Reporting tabs`,
-            message: !decodedUserId ? `Are you sure ? If Data for ${selUserMasName} exist, it will be overridden..!` : `Are you sure want to edit this Reporting tabs`,
+            title: `${decodedUserId ? "Edit" : "Add"} ${masterPanel["RTAB"] || "Reporting Tabs"}`,
+            message: !decodedUserId ? `Are you sure ? If Data for ${selUserMasName} exist, it will be overridden..!` : `Are you sure want to edit this ${masterPanel["RTAB"] || "Reporting Tabs"}`,
             confirmText: decodedUserId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => handleSubmit()
@@ -237,8 +248,8 @@ export default function ReportingTabs() {
 
     const columns = [
         { field: "si_no", headerName: "#", filterable: true, sortable: true },
-        { field: "user_name", headerName: "USER TYPE", filterable: true, sortable: true },
-        { field: "cus_type_name", headerName: "CUSTOMER TYPE", filterable: true, sortable: true },
+        { field: "user_name", headerName: `${(masterPanel["USER"] || "User").toUpperCase()} TYPE`, filterable: true, sortable: true },
+        { field: "cus_type_name", headerName: `${(masterPanel["ACCM"] || "Customer").toUpperCase()} TYPE`, filterable: true, sortable: true },
         {
             field: "action", headerName: "Action", filterable: false,
             renderCell: (row) => (
@@ -260,7 +271,7 @@ export default function ReportingTabs() {
                 { label: "Home", path: "/" },
                 { label: "Master", path: '/masters/repTabs/'},
                 { label: "Admin Panel", path:'/masters/repTabs/' },
-                { label: "Reporting Tabs", path: '/masters/repTabs/' },
+                { label: masterPanel["RTAB"] || "Reporting Tabs", path: '/masters/repTabs/' },
             ]}
         >
             <Box
@@ -271,7 +282,7 @@ export default function ReportingTabs() {
                 gap={2}
             >
                 <Box>
-                    <h1 className="mainTitle">Reporting Tabs</h1>
+                    <h1 className="mainTitle">{masterPanel["RTAB"] || "Reporting Tabs"}</h1>
                 </Box>
                 <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
                     {!decodedUserId ?
@@ -281,14 +292,14 @@ export default function ReportingTabs() {
                                 <Tab sx={{ fontWeight: 600, fontSize: '1.1rem' }} label="VIEW LIST" />
                             </Tabs>
                         </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Reporting Tab</Typography>
+                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["RTAB"] || "Reporting Tab"}</Typography>
                     }
                     {tabValue === 0 && (
                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '90%' }}>
 
                             {/* ✅ User Type — Autocomplete */}
                             <Autocomplete
-                                options={[{ id: "0", client_alias: "Select User Type" }, ...allUsermasType]}
+                                options={[{ id: "0", client_alias: `Select ${masterPanel["USER"] || "User"} Type` }, ...allUsermasType]}
                                 getOptionLabel={(option) => option.client_alias || ""}
                                 value={selUserMasType}
                                 onChange={(e, newValue) => {
@@ -301,11 +312,11 @@ export default function ReportingTabs() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="User Type"
+                                        label={`${masterPanel["USER"] || "User"} Type`}
                                         size="small"
                                         required
                                         error={userMasError}
-                                        helperText={userMasError ? "User Type not Selected !" : ""}
+                                        helperText={userMasError ? `${masterPanel["USER"] || "User"} Type not Selected !` : ""}
                                         sx={{ backgroundColor: decodedUserId ? '#EEEEEE' : undefined }}
                                     />
                                 )}
@@ -313,10 +324,10 @@ export default function ReportingTabs() {
 
                             {/* ✅ Account Type — Select unchanged, fixed height added */}
                             <FormControl>
-                                <InputLabel id="cus_label">Account Type*</InputLabel>
+                                <InputLabel id="cus_label">{masterPanel["ACCM"] || "Account"} Type*</InputLabel>
                                 <Select
                                     labelId="cus_label"
-                                    label="Account Type*"
+                                    label={`${masterPanel["ACCM"] || "Account"} Type*`}
                                     size="small"
                                     onChange={(e) => setSelAccType(e.target.value)}
                                     inputProps={{ readOnly: decodedUserId ? true : false }}
@@ -332,12 +343,12 @@ export default function ReportingTabs() {
                                         }
                                     }}
                                 >
-                                    <MenuItem value="0">Select Account Type</MenuItem>
+                                    <MenuItem value="0">Select {masterPanel["ACCM"] || "Account"} Type</MenuItem>
                                     {allAccType.map((val) => (
                                         <MenuItem key={val.id} value={val.id}>{val.cus_type_name}</MenuItem>
                                     ))}
                                 </Select>
-                                {accError ? <Typography className="selError">Account Type not Selected !</Typography> : null}
+                                {accError ? <Typography className="selError">{masterPanel["ACCM"] || "Account"} Type not Selected !</Typography> : null}
                             </FormControl>
 
                             <FormControl size="small">

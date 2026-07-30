@@ -525,6 +525,7 @@ function AddUser() {
 
     return 1;
   };
+  console.log("manager type",mngType)
 
   const validate = () => {
     let temp = {};
@@ -536,57 +537,49 @@ function AddUser() {
     if (!fullName.trim()) temp.fullName = "First Name is required";
     if (!userId.trim()) temp.userId = "Please Select Mobile No. OR Email ID for username!";
     if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
-    if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number"
+    if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number";
     if (!email.trim()) temp.email = "Email is required";
-    if (email.trim() !== "" && !emailRegex.test(email.trim())) temp.email = "Please Enter a valid Email"
+    if (email.trim() !== "" && !emailRegex.test(email.trim())) temp.email = "Please Enter a valid Email";
     if (!address.trim()) temp.address = "Address is required";
     if (!hq.trim()) temp.hq = "Please Enter HQ";
     if (!dateOfBirth) temp.dateOfBirth = "Date of Birth is required";
     if (!dateOfJoin) temp.dateOfJoin = "Date of Joining is required";
-    if (
-      ["13", "14", "15", "16"].includes(String(selectedType)) &&
-      selectedRegions.length === 0
-    ) {
+    
+    // Only validate region if showRegion is true AND user type > 4
+    if (showRegion && Number(selectedType) > 4 && selectedRegions.length === 0) {
       temp.region = `Please Select ${regLabel}`;
     }
+    
     if (!selectedReportType) temp.reportType = "Please Select Reporting Type";
     if (!selectedReportTo) temp.reportTo = "Please Select Reporting To User";
     if (!employeeType) temp.employeeType = "Select Employee Type";
     if (!employeeStatus) temp.employeeStatus = "Select Employee Status";
-    if (!selectedBU || selectedBU.length === 0) temp.selectBUnit = `Please select ${businessLabel}`
+    if (!selectedBU || selectedBU.length === 0) temp.selectBUnit = `Please select ${businessLabel}`;
     if (grossSalary && (isNaN(Number(grossSalary)) || Number(grossSalary) < 0)) {
       temp.grossSalary = "Enter valid Gross Salary";
     }
 
+    // Territory validation based on visibility flags
     if (Number(selectedType) > 4) {
-      if (mngType === 1 && showZone && selectedZones.length === 0) {
+      // Only validate if the field is shown (showZone, showRegion, etc.)
+      if (showZone && selectedZones.length === 0) {
         temp.zone = `Select ${zonelabel}`;
       }
 
-      if (mngType === 2) {
-        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
-        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
+      if (showRegion && selectedRegions.length === 0) {
+        temp.region = `Select ${regLabel}`;
       }
 
-      if (mngType === 3) {
-        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
-        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
-        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
+      if (showArea && selectedAreas.length === 0) {
+        temp.area = `Select ${areaLabel}`;
       }
 
-      if (mngType === 4) {
-        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
-        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
-        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
-        if (showTerritory && selectedTerritories.length === 0) temp.territory = `Select ${territoryLabel}`;
+      if (showTerritory && selectedTerritories.length === 0) {
+        temp.territory = `Select ${territoryLabel}`;
       }
 
-      if (mngType === 0) {
-        if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
-        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
-        if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
-        if (showTerritory && selectedTerritories.length === 0) temp.territory = `Select ${territoryLabel}`;
-        if (showBeat && selectedBeats.length === 0) temp.beat = "Select Beat";
+      if (showBeat && selectedBeats.length === 0) {
+        temp.beat = "Select Beat";
       }
     }
 
@@ -603,6 +596,7 @@ function AddUser() {
         temp.confirmPassword = "Password & Confirm Password does not match";
       }
     }
+    
     // UPDATE USER
     if (id && (password || confirmPassword)) {
       if (!password || !confirmPassword) {
@@ -616,7 +610,7 @@ function AddUser() {
         }
       }
     }
-    console.log("validation failures", temp)
+    console.log("validation failures", temp);
     setErrors(temp);
 
     const duplicateKeys = ['email', 'mobileNum', 'employeeCode'];
@@ -624,7 +618,6 @@ function AddUser() {
 
     return Object.keys(temp).length === 0 && !hasDuplicateError;
   };
-
   //   if (!useMobile && !useEmail) {
   //     temp.userId = "Select Mobile OR Email for Username";
   //   }

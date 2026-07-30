@@ -17,6 +17,7 @@ import { IoClose } from "react-icons/io5";
 import { FaCheck } from "react-icons/fa";
 import { FaDownload } from "react-icons/fa";
 import './AdminPanel.css'
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function AwsLogs() {
     const { frmDate, processType, userli, processSts } = useParams()
@@ -31,6 +32,7 @@ export default function AwsLogs() {
     const [selProcessSts, setSelProcessSts] = useState(1)
     const [allAwsLogsData, setAllAwsLogsData] = useState([])
     const [loading,setLoading]=useState(true)
+    const [masterPanel, setMasterPanel] = useState({});
     const navigate = useNavigate()
     const toast = useToast()
     const location=useLocation()
@@ -40,6 +42,14 @@ export default function AwsLogs() {
         fetchAwsLogData()
      // eslint-disable-next-line
     }, [])
+
+    useEffect(() => {
+    const loadMasterPanel = async () => {
+        const data = await getMasterPanel();
+        setMasterPanel(data);
+    };
+    loadMasterPanel();
+    }, []);
 
     useEffect(() => {
         if (!decodedFromDate || !decodedUserId || !decodedprocessSts || !decodedprocessType) {
@@ -157,7 +167,7 @@ export default function AwsLogs() {
 
     const columns = [
         { field: "proj_name", headerName: "PROJECT NAME", filterable: true, sortable: true },
-        { field: "user_name", headerName: "USER", filterable: true, sortable: true },
+        { field: "user_name", headerName: (masterPanel["USER"] || "User").toUpperCase(), filterable: true, sortable: true },
         { field: "data_date", headerName: "CALL DATE", filterable: true, sortable: true },
         { field: "type_name", headerName: "TYPE", filterable: true, sortable: true },
         { field: "data_des", headerName: "CUSTOMER", filterable: true, sortable: true },
@@ -210,11 +220,11 @@ export default function AwsLogs() {
 
     return (
         <Layout        
-         breadcrumb={ [
-          { label: "Home", path: "/" },
-          { label: "Master", path: "/Processlist/planprocess" },
-          { label: "Admin Panel", path:"/Processlist/planprocess" },
-          { label: "AWS Log", path:location.pathname}
+        breadcrumb={ [
+        { label: "Home", path: "/" },
+        { label: "Master", path: "/Processlist/planprocess" },
+        { label: "Admin Panel", path: "/Processlist/planprocess" },
+        { label: masterPanel["AWLG"] || "AWS Log", path: location.pathname }
         ]}>
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
@@ -280,15 +290,11 @@ export default function AwsLogs() {
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
-                                    label="Users"
+                                    label={masterPanel["USER"] || "Users"}
                                     size="small"
-                                    // error={userTypeErr}
                                     required
-                                // helperText={userTypeErr ? "User Type not Selected !" : ""}
-                                // sx={{ backgroundColor: decodedmenuId ? '#EEEEEE' : undefined }}
                                 />
                             )}
-
                         />
                     </FormControl>
                     <FormControl sx={{ width: 170 }}>

@@ -10,6 +10,7 @@ import DataTable from "../../utils/dataTable";
 import './AdminPanel.css'
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 export default function ApiProcessing() {
     const [tabValue, setTabValue] = useState(0)
@@ -18,6 +19,7 @@ export default function ApiProcessing() {
     const [modifyLoading, setModifyLoading] = useState(false)
     const [loading,setLoading]=useState(false)
     const [orderDataLoading,setOrderDataLoading]=useState(false)
+    const [masterPanel, setMasterPanel] = useState({});
     const toast = useToast()
     const location=useLocation()
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -37,6 +39,14 @@ export default function ApiProcessing() {
         fetchReportUnprocessData()
         fetchPrimaryOrderData()
     }, [])
+
+    useEffect(() => {
+    const loadMasterPanel = async () => {
+        const data = await getMasterPanel();
+        setMasterPanel(data);
+    };
+    loadMasterPanel();
+    }, []);
 
     const fetchReportUnprocessData = async () => {
         setLoading(true)
@@ -243,17 +253,17 @@ export default function ApiProcessing() {
 
     return (
         <Layout
-         breadcrumb={ [
-          { label: "Home", path: "/" },
-          { label: "Master", path: "/AdminPanel/ApiProcessing" },
-          { label: "Admin Panel", path:"/AdminPanel/ApiProcessing" },
-          { label: "Api Processing ", path:location.pathname}
-        ]}  
+         breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Master", path: "/AdminPanel/ApiProcessing" },
+        { label: "Admin Panel", path: "/AdminPanel/ApiProcessing" },
+        { label: masterPanel["APPR"] || "Api Processing", path: location.pathname }
+        ]} 
         >
             <Box sx={{ backgroundColor: 'white', pt: 2, minHeight: '30vh', pl: 3 }}>
                 <Box>
                     <Typography sx={{ fontWeight: 600, color: '#000000', fontSize: '1.5rem' }}>
-                        {`Api Processing (Unprocessed Data)`}
+                        {`${masterPanel["APPR"] || "Api Processing"} (Unprocessed Data)`}
                     </Typography>
                 </Box>
 
