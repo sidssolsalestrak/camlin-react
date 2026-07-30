@@ -406,7 +406,7 @@ const AddProduct = () => {
                         <TextField required fullWidth size='small' variant='outlined' label="Code" error={!!validation.code} helperText={validation.code ? validation.code : null}
                             value={formData.code}
                             onChange={(e) => {
-                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                 handleChange("code", onlyText)
                             }}
                             placeholder='Enter Code' />
@@ -428,7 +428,7 @@ const AddProduct = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField required fullWidth size='small' value={formData.productName} error={!!validation.productName} helperText={validation.productName ? validation.productName : null}
                             onChange={(e) => {
-                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                 handleChange("productName", onlyText)
                             }} variant='outlined' label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} />
                     </Grid>
@@ -441,7 +441,7 @@ const AddProduct = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField fullWidth size='small' variant='outlined' label="UOM" value={formData.uom}
                             onChange={(e) => {
-                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                 handleChange("uom", onlyText)
                             }} placeholder='Enter UOM' />
                     </Grid>
@@ -449,7 +449,7 @@ const AddProduct = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                         <TextField required fullWidth size='small' variant='outlined' value={formData.shortName} error={!!validation.shortName} helperText={validation.shortName ? validation.shortName : null}
                             onChange={(e) => {
-                                const onlyText = e.target.value.replace(/^\s+/, "")
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                 handleChange("shortName", onlyText)
                             }} label="Short Name" placeholder='Enter Short Name' />
                     </Grid>

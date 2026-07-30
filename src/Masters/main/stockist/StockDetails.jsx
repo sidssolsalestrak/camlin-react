@@ -69,7 +69,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     }, [])
 
     const validateEmail = (value) => {
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+         const emailRegex = /^[a-zA-Z0-9._%+$/-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         return emailRegex.test(value);
     };
 
@@ -89,7 +89,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
             </FormControl>
             <TextField value={formData.code} required
                 onChange={(e) => {
-                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                     handleChangeForm("code", onlyText)
                 }}
                 size='small' placeholder='Enter Code'
@@ -111,7 +111,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                         slotProps={tooltipSx}
                     >
                         <TextField value={formData.name} onClick={handleTooltipOpen}
-                            onChange={(e) => handleChangeForm("name", e.target.value)}
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                handleChangeForm("name", onlyText)
+                            }}
                             required size='small' placeholder='Enter Name'
                             variant='outlined' label="Name" fullWidth
                             error={!!errors.name}
@@ -123,7 +126,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
 
             <TextField value={formData.contactPerson}
                 onChange={(e) => {
-                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                     handleChangeForm("contactPerson", onlyText)
                 }}
                 size='small' placeholder='Enter Contact Person'
@@ -134,7 +137,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 multiline
                 value={formData.Address}
                 onChange={(e) => {
-                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                     handleChangeForm('Address', onlyText)
                 }}
                 rows={3}
@@ -170,7 +173,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
             />
             <TextField value={formData.email}
                 onChange={(e) => {
-                    const onlyText = e.target.value.replace(/^\s+/, "")
+                    const onlyText = e.target.value.replace(/\s+/g, "");
                     handleChangeForm("email", onlyText)
                 }}
                 onBlur={(e) => {

@@ -34,6 +34,7 @@ const ProductCategory = () => {
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
     const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
 
     const brandLabel = masterPanel["BRND"] || "Brand";
 
@@ -43,6 +44,16 @@ const ProductCategory = () => {
             setMasterPanel(data);
         };
         loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
     }, []);
 
     /*---------- form fields ---------*/
@@ -320,12 +331,16 @@ const ProductCategory = () => {
             sortable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                        <MdOutlineEdit size={15} />
-                    </IconButton>
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                    )}
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    )}
                 </>
             )
         },
@@ -443,7 +458,12 @@ const ProductCategory = () => {
                                     error={!!validation.categoryName}
                                     helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
                             </Box>
-                            <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Submit</Button>
+                            )}
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Update</Button>
+                            )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}
                         <TabPanel value="2" sx={{ padding: 0 }}>

@@ -8,14 +8,14 @@ const style = {
     fontWeight: 500,
 }
 
-const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, original }) => {
-    const validateUser = (value) => {
-        const regex = /^[a-zA-Z0-9_]*$/;
-        return regex.test(value);
-    };
+const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, original ,userLabel}) => {
+    // const validateUser = (value) => {
+    //     const regex = /^[a-zA-Z0-9_]*$/;
+    //     return regex.test(value);
+    // };
 
     const validatePassword = (value) => {
-        const regex = /^[^\s]{8,}$/;
+        const regex = /^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}$/;
         return regex.test(value);
     };
 
@@ -27,23 +27,23 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                     const onlyText = e.target.value.replace(/\s+/g, "");
                     handleChangeForm("userID", onlyText)
                 }}
-                size='small' placeholder='Enter User ID' required
-                variant='outlined' label="User ID" fullWidth
+                size='small' placeholder={`Enter ${userLabel} ID`} required
+                variant='outlined' label={`${userLabel} ID`} fullWidth
                 error={!!errors.userID}
                 helperText={errors.userID}
-                onBlur={(e) => {
-                    if (!validateUser(e.target.value)) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            userID: "Invalid User Name"
-                        }));
-                    } else {
-                        setErrors((prev) => ({
-                            ...prev,
-                            userID: ""
-                        }));
-                    }
-                }}
+            // onBlur={(e) => {
+            //     if (!validateUser(e.target.value)) {
+            //         setErrors((prev) => ({
+            //             ...prev,
+            //             userID: "Invalid User Name"
+            //         }));
+            //     } else {
+            //         setErrors((prev) => ({
+            //             ...prev,
+            //             userID: ""
+            //         }));
+            //     }
+            // }}
             />
             <TextField value={formData.password} type='password' required
                 onChange={(e) => {
@@ -59,7 +59,7 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                         if (!validatePassword(e.target.value)) {
                             setErrors((prev) => ({
                                 ...prev,
-                                password: "Should be Min 8 Characters"
+                                password: "Min 8 chars, 2 lowercase, 2 uppercase, 1 digit, 1 special char required"
                             }));
                         } else {
                             setErrors((prev) => ({

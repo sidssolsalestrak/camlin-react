@@ -45,6 +45,7 @@ function AddUser() {
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [titles, setTitles] = useState([]);
+  const [accStat, setAccStat] = useState(null);
 
   const [selectedType, setSelectedType] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
@@ -138,7 +139,7 @@ function AddUser() {
   const [selfie, setSelfie] = useState("0");
   const [attendance, setAttendance] = useState("0");
 
-  const [weeklyOff, setWeeklyOff] = useState([1]);
+  const [weeklyOff, setWeeklyOff] = useState(["1"]);
   const [weekDays, setWeekDays] = useState([]);
   const [flag, setFlag] = useState(0)
   const [oldProfileImage, setOldProfileImage] = useState("")
@@ -160,6 +161,7 @@ function AddUser() {
   const areaLabel = masterPanel["AREA"] || "Area";
   const territoryLabel = masterPanel["TERR"] || "Territory";
   const desigLabel = masterPanel["DESI"] || "Designation";
+  const businessLabel = masterPanel["BUNT"] || "Business Unit";
 
   useEffect(() => {
     const loadMasterPanel = async () => {
@@ -167,6 +169,16 @@ function AddUser() {
       setMasterPanel(data);
     };
     loadMasterPanel();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const accStat = localStorage.getItem("acc_stat");
+      setAccStat(accStat);
+      console.log("Acc Stat", accStat)
+    } catch (err) {
+      console.log(err);
+    }
   }, []);
 
   const [toast, setToast] = useState({
@@ -481,34 +493,34 @@ function AddUser() {
   };
 
   const checkPasswordValidation = (value) => {
-    const isWhitespace = /^(?=.*\s)/;
+    const isWhitespace = /\s/;
     if (isWhitespace.test(value)) {
       return "Password must not contain Whitespaces.";
     }
 
-    const isContainsUppercase = /^(?=.*[A-Z])/;
-    if (!isContainsUppercase.test(value)) {
-      return "Password must have at least one Uppercase Character.";
+    const isValidLength = /^.{8,}$/;
+    if (!isValidLength.test(value)) {
+      return "Password must be at least 8 Characters Long.";
     }
 
-    const isContainsLowercase = /^(?=.*[a-z])/;
-    if (!isContainsLowercase.test(value)) {
-      return "Password must have at least one Lowercase Character.";
+    const hasTwoLowercase = /(?:.*[a-z]){2,}/;
+    if (!hasTwoLowercase.test(value)) {
+      return "Password must have at least 2 Lowercase Characters.";
     }
 
-    const isContainsNumber = /^(?=.*[0-9])/;
+    const hasTwoUppercase = /(?:.*[A-Z]){2,}/;
+    if (!hasTwoUppercase.test(value)) {
+      return "Password must have at least 2 Uppercase Characters.";
+    }
+
+    const isContainsNumber = /[0-9]/;
     if (!isContainsNumber.test(value)) {
       return "Password must contain at least one Digit.";
     }
 
-    const isContainsSymbol = /^(?=.*[~`!@#$%^&*()--+={}\[\]|\\:;"'<>,.?/_₹])/;
+    const isContainsSymbol = /[~`!@#$%^&*()--+={}\[\]|\\:;"'<>,.?/_₹]/;
     if (!isContainsSymbol.test(value)) {
       return "Password must contain at least one Special Symbol.";
-    }
-
-    const isValidLength = /^.{6,16}$/;
-    if (!isValidLength.test(value)) {
-      return "Password must be 6-16 Characters Long.";
     }
 
     return 1;
@@ -541,7 +553,7 @@ function AddUser() {
     if (!selectedReportTo) temp.reportTo = "Please Select Reporting To User";
     if (!employeeType) temp.employeeType = "Select Employee Type";
     if (!employeeStatus) temp.employeeStatus = "Select Employee Status";
-    if (!selectedBU || selectedBU.length === 0) temp.selectBUnit = "Please select Business Unit"
+    if (!selectedBU || selectedBU.length === 0) temp.selectBUnit = `Please select ${businessLabel}`
     if (grossSalary && (isNaN(Number(grossSalary)) || Number(grossSalary) < 0)) {
       temp.grossSalary = "Enter valid Gross Salary";
     }
@@ -571,7 +583,7 @@ function AddUser() {
 
       if (mngType === 0) {
         if (showZone && selectedZones.length === 0) temp.zone = `Select ${zonelabel}`;
-        if (showRegion && selectedRegions.length === 0) temp.region =`Select ${regLabel}`;
+        if (showRegion && selectedRegions.length === 0) temp.region = `Select ${regLabel}`;
         if (showArea && selectedAreas.length === 0) temp.area = `Select ${areaLabel}`;
         if (showTerritory && selectedTerritories.length === 0) temp.territory = `Select ${territoryLabel}`;
         if (showBeat && selectedBeats.length === 0) temp.beat = "Select Beat";
@@ -1183,7 +1195,7 @@ function AddUser() {
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <CommonAppSelect
-                  label="Business Unit"
+                  label={businessLabel}
                   value={selectedBU}
                   onChange={(e) => setSelectedBU(e.target.value)}
                   options={businessUnits}
@@ -1660,7 +1672,7 @@ function AddUser() {
                 )}
               </Grid>
             </Grid>
-            {Number(flag) === 0 &&
+            {(Number(flag) === 0 && [0, 1, 2].includes(Number(accStat))) && (
               <Button
                 variant="contained"
                 sx={{ mt: 2 }}
@@ -1677,8 +1689,9 @@ function AddUser() {
                 }}
               >
                 Add User
-              </Button>}
-            {Number(flag) === 1 && Number(accStatus) === 0 && Number(sessionId) !== id &&
+              </Button>
+            )}
+            {(Number(flag) === 1 && Number(accStatus) === 0 && Number(sessionId) !== id && [0, 2].includes(Number(accStat))) && (
               <Button variant="contained"
                 sx={{ mt: 2 }}
                 onClick={() => {
@@ -1694,7 +1707,7 @@ function AddUser() {
                 }}>
                 Update User
               </Button>
-            }
+            )}
           </Box>
         </Grid>
 
@@ -1961,7 +1974,7 @@ function AddUser() {
                     </Box>
 
                     {/* Deactivate button */}
-                    {accStatus === 0 && delFlag === 0 && (
+                    {(accStatus === 0 && delFlag === 0 && [0,2].includes(Number(accStat))) &&  (
                       <Button
                         variant="contained"
                         color="error"
