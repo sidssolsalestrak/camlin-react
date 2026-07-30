@@ -135,10 +135,12 @@ const Stockist = () => {
             [name]: val
         }))
     }
-    const editdata = (row) => {
+
+    const editdata = (row, isReactivate = false) => {
         let encodeId = row?.row?.id
         setValue('1');
-        navigate(`/masters/stockist/${btoa(encodeId)}`)
+        const query = isReactivate ? '?reactivate=1' : ''
+        navigate(`/masters/stockist/${btoa(encodeId)}${query}`)
     }
 
     /*----------table columns---------*/
@@ -198,16 +200,35 @@ const Stockist = () => {
             headerName: "ACTION",
             filterable: true,
             width: 100,
-            renderCell: (row) => (
-                <>
-                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                        <MdOutlineEdit size={15} />
-                    </IconButton>
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
-                </>
-            )
+            renderCell: (row) => {
+                const status = (row?.row?.status || "").toString().trim().toLowerCase();
+                const isInactive = status === "in active" || status === "inactive";
+
+                if (isInactive) {
+                    return (
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => editdata(row, true)}
+                            sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
+                        >
+                            Reactivate
+                        </Button>
+                    );
+                }
+
+                return (
+                    <>
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    </>
+                );
+            }
         },
     ]
 

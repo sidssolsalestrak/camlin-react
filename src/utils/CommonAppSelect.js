@@ -39,7 +39,7 @@ export default function CommonAppSelect({
           color: "#d32f2f !important",
         },
         "& .MuiFormLabel-asterisk": {
-        color: Boolean(error) ? "#d32f2f !important" : "inherit",
+          color: Boolean(error) ? "#d32f2f !important" : "inherit",
         },
         ...sx,
       }}
@@ -51,7 +51,14 @@ export default function CommonAppSelect({
         multiple={multiple}
         value={value}
         label={label}
-        onChange={onChange}
+        onChange={(e) => {
+          if (multiple && Array.isArray(e.target.value)) {
+            const normalized = [...new Set(e.target.value.map(String))];
+            onChange({ target: { value: normalized } });
+          } else {
+            onChange(e);
+          }
+        }}
         // SHOW CHIPS
         renderValue={(selected) =>
           multiple ? (

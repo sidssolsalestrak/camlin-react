@@ -53,7 +53,8 @@ const ViewProduct = () => {
     const [progress, setProgress] = useState(null);
     const [formData, setFormdata] = useState({
         productName: "",
-        subCatName: ""
+        subCatName: "",
+        status: "1"
     })
     const [masterPanel, setMasterPanel] = useState({});
 
@@ -73,6 +74,7 @@ const ViewProduct = () => {
     /*---------- decode values  ---------*/
     const decodedProductName = safeAtob(searchParams.get('product'));
     const decodedSubCategory = safeAtob(searchParams.get('subcat'));
+    const decodedStatus = safeAtob(searchParams.get('status'));
 
     /*---------- handleChange  ---------*/
     const handleChange = (name, val) => {
@@ -120,6 +122,33 @@ const ViewProduct = () => {
             onConfirm: () => deleteCat(row),
         });
     };
+
+    const showReactivateConfirmation = (row) => {
+        showConfirmationDialog({
+            title: `Reactivate ${prodLabel}`,
+            message: `Are you sure you want to reactivate this ${prodLabel}?`,
+            confirmText: "Yes",
+            confirmColor: "primary",
+            onConfirm: () => reactivateProduct(row),
+        });
+    };
+
+    const reactivateProduct = async (row) => {
+        let id = row?.row?.prodid
+        try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
+            const res = await axios.post(`/prod_reactivate/${id}`);
+            if (res?.data?.success) {
+                showAlert.success(`Successfully Reactivated ${prodLabel}`)
+                fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert.error("failed to reactivate")
+        } finally {
+            closeConfirmationDialog();
+        }
+    }
 
     /* ---------- edit product ---------- */
     const editdata = (row) => {
@@ -185,20 +214,44 @@ const ViewProduct = () => {
             filterable: true,
         },
         {
+            field: "prod_stat",
+            headerName: "STATUS",
+            filterable: true,
+        },
+        {
             field: "",
             headerName: "Action",
             filterable: true,
             width: 100,
-            renderCell: (row) => (
-                <>
-                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                        <MdOutlineEdit size={15} />
-                    </IconButton>
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
-                </>
-            )
+            renderCell: (row) => {
+                const status = (row?.row?.prod_stat || "").toString().trim().toLowerCase();
+                const isInactive = status === "in active" || status === "inactive";
+
+                if (isInactive) {
+                    return (
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => showReactivateConfirmation(row)}
+                            sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
+                        >
+                            Reactivate
+                        </Button>
+                    );
+                }
+
+                return (
+                    <>
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    </>
+                );
+            }
         },
     ]
 
@@ -253,10 +306,15 @@ const ViewProduct = () => {
             headerName: "MRP",
             filterable: true,
         },
+        {
+            field: "prod_stat",
+            headerName: "STATUS",
+            filterable: true,
+        },
     ]
 
     /* ---------- table data & sub cat data---------- */
-    const fetchData = async ({ name, cat }) => {
+    const fetchData = async ({ name, cat, status }) => {
         try {
             setloading(true)
             //fetch sub data
@@ -266,7 +324,8 @@ const ViewProduct = () => {
             try {
                 let payload = {
                     pd_name: name ? name.trim() : "",
-                    subcatname: cat || ""
+                    subcatname: cat || "",
+                    status: status
                 }
                 const res = await axios.post("/prodview", payload);
                 const data = Array.isArray(res?.data?.data) ? res?.data?.data.map((row, index) => ({
@@ -295,20 +354,22 @@ const ViewProduct = () => {
     useEffect(() => {
         setFormdata({
             productName: decodedProductName || "",
-            subCatName: decodedSubCategory || ""
+            subCatName: decodedSubCategory || "",
+            status: decodedStatus || "1"
         })
-    }, [decodedProductName, decodedSubCategory])
+    }, [decodedProductName, decodedSubCategory, decodedStatus])
 
     /* ---------- initial render ---------- */
     useEffect(() => {
-        fetchData({ name: decodedProductName, cat: decodedSubCategory });
-    }, [decodedProductName, decodedSubCategory])
+        fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
+    }, [decodedProductName, decodedSubCategory, decodedStatus])
 
     /* ---------- on search ---------- */
     const onSearch = () => {
         const params = new URLSearchParams();
         if (formData.productName) params.append('product', btoa(formData.productName));
         if (formData.subCatName) params.append('subcat', btoa(formData.subCatName));
+        if (formData.status) params.append('status', btoa(formData.status));
         navigate(`/masters/prodview?${params.toString()}`);
     }
 
@@ -321,7 +382,7 @@ const ViewProduct = () => {
             //console.log("delete res:", res);
             if (res?.data?.success) {
                 showAlert.success(`Successfully Deleted ${prodLabel}`)
-                fetchData({ name: decodedProductName, cat: decodedSubCategory });
+                fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
             }
         } catch (error) {
             console.error(error);
@@ -369,6 +430,15 @@ const ViewProduct = () => {
                             {subCat?.map((item, index) => (
                                 <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.sub_name}</MenuItem>
                             ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl sx={{ width: "200px" }} size="small" >
+                        <InputLabel id="status">Status</InputLabel>
+                        <Select value={formData.status} id='status' label="Status"
+                            labelId="status" variant="outlined" onChange={(e) => handleChange("status", e.target.value)}>
+                            <MenuItem style={{ fontSize: "11px" }} value="3">All</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="1">Active</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="2">In Active</MenuItem>
                         </Select>
                     </FormControl>
                     <Button onClick={onSearch} variant='contained' color="primary">Search</Button>

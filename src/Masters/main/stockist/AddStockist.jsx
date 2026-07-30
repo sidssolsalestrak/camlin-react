@@ -7,7 +7,7 @@ import OtherDetails from './OtherDetails';
 import { ImDownload3 } from "react-icons/im";
 import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getMasterPanel } from "../../../services/masterPanelService";
 
 const boxStyle = { border: 1, borderColor: "divider", borderRadius: "5px", minHeight: "20vh", p: 1 }
@@ -24,6 +24,7 @@ const INITIAL_FORM_STATE = {
 
 const AddStockist = () => {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const showAlert = useToast();
     const [loading, setloading] = useState(false);
@@ -33,6 +34,7 @@ const AddStockist = () => {
 
     // label derived from masterPanel with fallback
     const stkLabel = masterPanel["STKS"] || "Stockist";
+    const userLabel = masterPanel["USER"] || "Users";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -50,17 +52,12 @@ const AddStockist = () => {
     const [errors, setErrors] = useState({});
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
+    const isReactivate = searchParams.get('reactivate') === '1';
 
     /*------------ handle form change ------------*/
     const handleChangeForm = (field, value) => {
-        // Regex: allows only alphabets and numbers
-        const regex = /^[a-zA-Z][a-zA-Z ]*$|^$/;
         //allow only numbers
         const numRegex = /^[0-9]*$/;
-
-        if (field === "name") {
-            if (!regex.test(value)) return; // stop if special char entered
-        }
 
         //allow only numbers
         if (["pin", "phone", "mobile"].includes(field)) {
@@ -116,9 +113,11 @@ const AddStockist = () => {
             return;
         }
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} ${stkLabel}`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
-            confirmText: decodedId ? "Update" : "Add",
+            title: isReactivate ? `Reactivate ${stkLabel}` : `${decodedId ? "Edit" : "Add"} ${stkLabel}`,
+            message: isReactivate
+                ? `Are you sure you want to reactivate this ${stkLabel}?`
+                : `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
+            confirmText: isReactivate ? "Reactivate" : (decodedId ? "Update" : "Add"),
             confirmColor: "primary",
             onConfirm: () => !decodedId ? handleFormSubmit() : onEdit(),
         });
@@ -184,15 +183,17 @@ const AddStockist = () => {
     const validateForm = () => {
         const newErrors = {};
         const validateEmail = (value) => {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+            const emailRegex = /^[a-zA-Z0-9._%+$/-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
             return emailRegex.test(value);
         };
+
         const validateUser = (value) => {
             const regex = /^[a-zA-Z0-9_]*$/;
             return regex.test(value);
         };
+
         const validatePassword = (value) => {
-            const regex = /^[^\s]{8,}$/;
+            const regex = /^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}$/;
             return regex.test(value);
         };
 
@@ -209,11 +210,10 @@ const AddStockist = () => {
 
         // SalestrakCredential validation
         if (!formData.userID || formData.userID.trim() === "") newErrors.userID = "The Username Name field is required.";
-        else if (!validateUser(formData.userID)) newErrors.userID = "Invalid User Name";
 
         if (!original.password) {
             if (!formData.password) newErrors.password = "The Password field is required.";
-            else if (!validatePassword(formData.password)) newErrors.password = "Should be Min 8 Characters";
+            else if (!validatePassword(formData.password)) newErrors.password = "Min 8 chars, 2 lowercase, 2 uppercase, 1 digit, 1 special character";
 
             if (!formData.confirmPassword) newErrors.confirmPassword = "The Confirm Password field is required.";
             else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Password didn't Match";
@@ -261,6 +261,7 @@ const AddStockist = () => {
         user: formData.user ? formData.user.map(u => u.id).join(",") : "",
         password: formData.password ? formData.password.trim() : original.password,
         confpassword: formData.confirmPassword,
+        reactivate: isReactivate,
     }
 
     /*------------ form submit ------------*/
@@ -349,7 +350,8 @@ const AddStockist = () => {
                                 handleChangeForm={handleChangeForm}
                                 errors={errors}
                                 setErrors={setErrors}
-                                original={original} />
+                                original={original}
+                                userLabel={userLabel} />
                         </Box>
                     </Box>
                 </Grid>

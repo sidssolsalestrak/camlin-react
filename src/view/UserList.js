@@ -64,6 +64,7 @@ function UserList() {
   });
 
   const [masterPanel, setMasterPanel] = useState({});
+  const [accStat, setAccStat] = useState(null);
 
   // labels derived from masterPanel with fallbacks
   const userLabel = masterPanel["USER"] || "Users";
@@ -71,7 +72,7 @@ function UserList() {
   const zonelabel = masterPanel["ZONE"] || "Zone";
   const regLabel = masterPanel["REGN"] || "Region";
   const areaLabel = masterPanel["AREA"] || "Area";
-    const territoryLabel = masterPanel["TERR"] || "Territory";
+  const territoryLabel = masterPanel["TERR"] || "Territory";
 
   useEffect(() => {
     const loadMasterPanel = async () => {
@@ -79,6 +80,16 @@ function UserList() {
       setMasterPanel(data);
     };
     loadMasterPanel();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const accStat = localStorage.getItem("acc_stat");
+      setAccStat(accStat);
+      console.log("Acc Stat", accStat)
+    } catch (err) {
+      console.log(err);
+    }
   }, []);
 
   const [confirmationDialog, setConfirmationDialog] = useState({
@@ -385,13 +396,13 @@ function UserList() {
       headerName: `${territoryLabel} Details`,
       sortable: true,
       width: 200,
-      truncateTooltip:true
+      truncateTooltip: true
     },
     {
       field: "reporting",
       headerName: "Reporting To",
       sortable: true,
-      truncateTooltip:true,
+      truncateTooltip: true,
       renderCell: ({ row }) =>
         `${row.repto_fname || ""} ${row.repto_lname || ""}`,
     },
@@ -447,19 +458,22 @@ function UserList() {
       width: 50,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", gap: 12 }}>
-          <div className="editBtn actionBtn">
-            <FaEdit
-              style={{ cursor: "pointer" }}
-              onClick={() => handleEdit(row)}
-            />
-          </div>
-
-          <div className="dltBtn actionBtn">
-            <FaTrash
-              style={{ cursor: "pointer", color: "red" }}
-              onClick={() => showDeleteConfirmation(row)}
-            />
-          </div>
+          {[0, 2].includes(Number(accStat)) && (
+            <div className="editBtn actionBtn">
+              <FaEdit
+                style={{ cursor: "pointer" }}
+                onClick={() => handleEdit(row)}
+              />
+            </div>
+          )}
+          {[0, 2].includes(Number(accStat)) && (
+            <div className="dltBtn actionBtn">
+              <FaTrash
+                style={{ cursor: "pointer", color: "red" }}
+                onClick={() => showDeleteConfirmation(row)}
+              />
+            </div>
+          )}
         </div>
       ),
     },
@@ -776,16 +790,18 @@ function UserList() {
             </Button>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 1, lg: 1 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={handleAddNew}
-              sx={{ whiteSpace: "nowrap" }}
-            >
-              Add New
-            </Button>
-          </Grid>
+          {[0, 1, 2].includes(Number(accStat)) && (
+            <Grid size={{ xs: 12, md: 1, lg: 1 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleAddNew}
+                sx={{ whiteSpace: "nowrap" }}
+              >
+                Add New
+              </Button>
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12, md: 1, lg: 1 }}>
             <Button
@@ -1041,9 +1057,11 @@ function UserList() {
                           }}
                         />
                       </FormControl>
-                      <Box sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
-                        <Button sx={{ width: '15rem' }} variant="contained" color="error">Deactivate User</Button>
-                      </Box>
+                      {[0, 2].includes(Number(accStat)) && (
+                        <Box sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
+                          <Button sx={{ width: '15rem' }} variant="contained" color="error">Deactivate User</Button>
+                        </Box>
+                      )}
                     </Box>
                   )
                   }

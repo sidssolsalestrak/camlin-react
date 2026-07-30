@@ -38,6 +38,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     const regionLabel = masterPanel["REGN"] || "Region";
     const areaLabel = masterPanel["AREA"] || "Area";
     const territoryLabel = masterPanel["TERR"] || "Territory";
+    const userLabel = masterPanel["USER"] || "Users";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -322,7 +323,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
                     renderInput={(params) => (
                         <TextField
                             {...params}
-                            label="User *"
+                            label={`${userLabel} *`}
                             size="small"
                             error={!!errors.user}
                             helperText={errors?.user}

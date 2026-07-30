@@ -31,6 +31,7 @@ const ProductCategory = () => {
     const [state, setState] = useState([])
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
+    const [accStat, setAccStat] = useState(null);
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         stateName: "",
@@ -121,7 +122,7 @@ const ProductCategory = () => {
         if (!formData.cityName || formData.cityName.trim() === "") {
             newValidations.cityName = "The City Name field is required.";
             isValid = false;
-        }  else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.cityName)) {
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.cityName)) {
             newValidations.cityName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
@@ -246,12 +247,16 @@ const ProductCategory = () => {
             sortable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
-                        <MdOutlineEdit size={15} />
-                    </IconButton>
-                    <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon size={15} />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                    )}
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    )}
                 </>
             )
         },
@@ -313,6 +318,16 @@ const ProductCategory = () => {
             showAlert.error("failed to edit")
         }
     }
+
+    useEffect(() => {
+        try {
+            const accStat = localStorage.getItem("acc_stat");
+            setAccStat(accStat);
+            console.log("Acc Stat", accStat)
+        } catch (err) {
+            console.log(err);
+        }
+    }, []);
 
     /*---------- Fetch table data ---------*/
     useEffect(() => {
@@ -376,7 +391,7 @@ const ProductCategory = () => {
                                     </Select>
                                     {validation.stateName && <span style={{ color: "#d32f2f", fontSize: "9px", padding: "5px 0px 0px 12px" }}>{validation.stateName}</span>}
                                 </FormControl>
-                               <TextField value={formData.cityName}
+                                <TextField value={formData.cityName}
                                     onChange={(e) => {
                                         const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
                                         formDataChange("cityName", onlyText)
@@ -385,7 +400,12 @@ const ProductCategory = () => {
                                     variant='outlined' label="City Name" error={!!validation.cityName}
                                     helperText={validation.cityName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.cityName}</span>} />
                             </Box>
-                            <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Submit</Button>
+                            )}
+                             {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Update</Button>
+                            )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}
                         <TabPanel value="2" sx={{ padding: 0 }}>
