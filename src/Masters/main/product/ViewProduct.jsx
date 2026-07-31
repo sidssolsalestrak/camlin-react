@@ -385,7 +385,8 @@ const ViewProduct = () => {
     /* ---------- on search ---------- */
     const onSearch = () => {
         const params = new URLSearchParams();
-        if (formData.productName) params.append('product', btoa(formData.productName));
+        const trimmedProductName = formData.productName.trim();
+        if (trimmedProductName) params.append('product', btoa(trimmedProductName));
         if (formData.subCatName) params.append('subcat', btoa(formData.subCatName));
         if (formData.status) params.append('status', btoa(formData.status));
         navigate(`/masters/prodview?${params.toString()}`);
@@ -439,7 +440,10 @@ const ViewProduct = () => {
                 </Box>
                 <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap" }}>
                     <TextField value={formData.productName} sx={{ width: "200px" }} size='small' variant='outlined'
-                        label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} onChange={(e) => handleChange("productName", e.target.value)} />
+                        label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} onChange={(e) => {
+                            const onlyText = e.target.value.replace(/^\s+/, "");
+                            handleChange("productName", onlyText)
+                        }} />
                     <FormControl sx={{ width: "200px" }} size="small" >
                         <InputLabel id="SubCategoryName">{subCatLabel} Name</InputLabel>
                         <Select value={formData.subCatName} id='SubCategoryName' label={`${subCatLabel} Name`} MenuProps={menuStyle}
