@@ -36,6 +36,10 @@ const AddStockist = () => {
     // label derived from masterPanel with fallback
     const stkLabel = masterPanel["STKS"] || "Stockist";
     const userLabel = masterPanel["USER"] || "Users";
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -194,7 +198,7 @@ const AddStockist = () => {
     const validateForm = () => {
         const newErrors = {};
         const validateEmail = (value) => {
-            const emailRegex = /^[a-zA-Z0-9._%+$/-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+            const emailRegex = /^[^\s@A-Z]+@[^\s@A-Z]+\.[^\s@A-Z]+$/;
             return emailRegex.test(value);
         };
 
@@ -220,7 +224,7 @@ const AddStockist = () => {
         else if (formData.mobile.length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
 
         // SalestrakCredential validation
-        if (!formData.userID || formData.userID.trim() === "") newErrors.userID = "The Username Name field is required.";
+        if (!formData.userID || formData.userID.trim() === "") newErrors.userID = `The ${userLabel} ID field is required.`;
 
         if (!original.password) {
             if (!formData.password) newErrors.password = "The Password field is required.";
@@ -231,11 +235,11 @@ const AddStockist = () => {
         }
 
         // OtherDetails validation
-        if (!formData.zone) newErrors.zone = "The Zone field is required.";
-        if (!formData.region) newErrors.region = "The Region field is required.";
-        if (!formData.area) newErrors.area = "The Area field is required.";
-        if (!formData.teritory) newErrors.teritory = "The Territory field is required.";
-        if (!formData.user.length > 0) newErrors.user = "The Users field is required.";
+        if (!formData.zone) newErrors.zone = `The ${zoneLabel} field is required.`;
+        if (!formData.region) newErrors.region = `The ${regionLabel} field is required.`;
+        if (!formData.area) newErrors.area = `The ${areaLabel} field is required.`;
+        if (!formData.teritory) newErrors.teritory = `The ${territoryLabel} field is required.`;
+        if (!formData.user.length > 0) newErrors.user = `The ${userLabel} field is required.`;
         if (!formData.supplied_Type) newErrors.supplied_Type = "The Supplied Type field is required.";
         if (!formData.supplied_By) newErrors.supplied_By = "The Supplied By field is required.";
         if (!formData.state) newErrors.state = "The State field is required.";
