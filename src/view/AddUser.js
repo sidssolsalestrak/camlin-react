@@ -1028,6 +1028,7 @@ function AddUser() {
 
   const checkMobileDuplicate = async (mobileVal) => {
     if (!mobileVal || mobileVal.length < 10) return;
+    console.log("mobile")
     try {
       const res = await axios.post("/checkMobileNumber", { mobile: mobileVal, id: id || null });
       if (res.data.status === 400) {
