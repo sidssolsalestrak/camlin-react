@@ -214,29 +214,33 @@ const Stockist = () => {
             renderCell: (row) => {
                 const status = (row?.row?.status || "").toString().trim().toLowerCase();
                 const isInactive = status === "in active" || status === "inactive";
+                const role = Number(accStat);
 
-                if (isInactive && [0].includes(Number(accStat))) {
-                    return (
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => editdata(row, true)}
-                            sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
-                        >
-                            Reactivate
-                        </Button>
-                    );
+                if (isInactive) {
+                    if (role === 0) {
+                        return (
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => editdata(row, true)}
+                                sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
+                            >
+                                Reactivate
+                            </Button>
+                        );
+                    }
+                    return null;
                 }
 
                 return (
                     <>
-                        {[0, 2].includes(Number(accStat)) && (
+                        {[0, 2].includes(role) && (
                             <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
                                 <MdOutlineEdit size={15} />
                             </IconButton>
                         )}
-                        {[0, 2].includes(Number(accStat)) && (
+                        {[0, 2].includes(role) && (
                             <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
                                 <DeleteIcon size={15} />
                             </IconButton>

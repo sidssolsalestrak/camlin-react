@@ -238,18 +238,21 @@ const ViewProduct = () => {
                 const status = (row?.row?.prod_stat || "").toString().trim().toLowerCase();
                 const isInactive = status === "in active" || status === "inactive";
 
-                if (isInactive && [0].includes(Number(accStat))) {
-                    return (
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => showReactivateConfirmation(row)}
-                            sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
-                        >
-                            Reactivate
-                        </Button>
-                    );
+                if (isInactive) {
+                    if (Number(accStat) === 0) {
+                        return (
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => showReactivateConfirmation(row)}
+                                sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
+                            >
+                                Reactivate
+                            </Button>
+                        );
+                    }
+                    return null;
                 }
 
                 return (
