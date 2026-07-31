@@ -339,9 +339,11 @@ const AddStockist = () => {
         if (!decodedId) {
             setFormData(INITIAL_FORM_STATE)
             setDefaultUserId(null)
+            setErrors({})
             return;
         }
         getEditData(decodedId);
+        setErrors({})
     }, [decodedId]);
 
     return (
