@@ -217,7 +217,6 @@ const ChangePassword = () => {
           </Box>
         </Card>
       </Box>
-
       <ConfirmationDialog
         open={confirmationDialog.open}
         onClose={closeConfirmationDialog}
