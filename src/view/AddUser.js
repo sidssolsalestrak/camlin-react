@@ -192,13 +192,21 @@ function AddUser() {
   const [duplicateErrors, setDuplicateErrors] = useState({});
 
   const getBusinessUnit = async () => {
-    const res = await axios.post("/bussUint");
-    if (res.data.status === 200) setBusinessUnits(res.data.data);
+    try {
+      const res = await axios.post("/bussUint");
+      if (res.data.status === 200) setBusinessUnits(res.data.data);
+    } catch (err) {
+      console.error("Business Unit API error:", err.response?.data || err.message);
+    }
   };
 
   const getUserTypes = async () => {
-    const res = await axios.post("/getUserTypeMas");
-    if (res.data.status === 200) setUserTypes(res.data.data);
+    try {
+      const res = await axios.post("/getUserTypeMas");
+      if (res.data.status === 200) setUserTypes(res.data.data);
+    } catch (err) {
+      console.error("User Types API error:", err.response?.data || err.message);
+    }
   };
 
   const getUserDropdown = async () => {
@@ -216,9 +224,13 @@ function AddUser() {
   };
 
   const getZoneMas = async () => {
-    const res = await axios.post("/getZoneMasData");
-    if (res.data.status === 200) {
-      setZones(res.data.data || []);
+    try {
+      const res = await axios.post("/getZoneMasData");
+      if (res.data.status === 200) {
+        setZones(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Zone Master API error:", err.response?.data || err.message);
     }
   };
 
@@ -246,12 +258,16 @@ function AddUser() {
   };
 
   const getEmpDropdowns = async () => {
-    const typeRes = await axios.post("/getEmpType");
-    const statusRes = await axios.post("/getEmpStatus");
+    try {
+      const typeRes = await axios.post("/getEmpType");
+      const statusRes = await axios.post("/getEmpStatus");
 
-    if (typeRes.data.status === 200) setEmpTypes(typeRes.data.data || []);
-    if (statusRes.data.status === 200)
-      setEmpStatusList(statusRes.data.data || []);
+      if (typeRes.data.status === 200) setEmpTypes(typeRes.data.data || []);
+      if (statusRes.data.status === 200)
+        setEmpStatusList(statusRes.data.data || []);
+    } catch (err) {
+      console.error("Emp Dropdowns API error:", err.response?.data || err.message);
+    }
   };
 
   const getWeekDays = async () => {
@@ -949,11 +965,16 @@ function AddUser() {
     setSelectedTerritories([])
     setSelectedBeats([])
     if (val.length > 0) {
-      const res = await axios.post("/getRegion", {
-        zone: val,
-      });
+      try {
+        const res = await axios.post("/getRegion", {
+          zone: val,
+        });
 
-      setRegions(res.data.data || []);
+        setRegions(res.data.data || []);
+      } catch (err) {
+        console.error("Get Region API error:", err.response?.data || err.message);
+        setRegions([]);
+      }
     } else {
       setRegions([]);
       setAreas([]);
@@ -969,11 +990,16 @@ function AddUser() {
     setSelectedTerritories([])
     setSelectedBeats([])
     if (val.length > 0) {
-      const res = await axios.post("/getAreaData", {
-        reg: val,
-      });
+      try {
+        const res = await axios.post("/getAreaData", {
+          reg: val,
+        });
 
-      setAreas(res.data.data || []);
+        setAreas(res.data.data || []);
+      } catch (err) {
+        console.error("Get Area API error:", err.response?.data || err.message);
+        setAreas([]);
+      }
     } else {
       setAreas([]);
       setTerritories([]);
@@ -1002,6 +1028,7 @@ function AddUser() {
 
   const checkMobileDuplicate = async (mobileVal) => {
     if (!mobileVal || mobileVal.length < 10) return;
+    console.log("mobile")
     try {
       const res = await axios.post("/checkMobileNumber", { mobile: mobileVal, id: id || null });
       if (res.data.status === 400) {
@@ -1034,11 +1061,16 @@ function AddUser() {
     setSelectedTerritories([])
     setSelectedBeats([])
     if (val.length > 0) {
-      const res = await axios.post("/getTerritory", {
-        area: val,
-      });
+      try {
+        const res = await axios.post("/getTerritory", {
+          area: val,
+        });
 
-      setTerritories(res.data.data || []);
+        setTerritories(res.data.data || []);
+      } catch (err) {
+        console.error("Get Territory API error:", err.response?.data || err.message);
+        setTerritories([]);
+      }
     } else {
       setTerritories([]);
       setBeats([]);
@@ -1051,11 +1083,16 @@ function AddUser() {
     setSelectedTerritories(val);
     setSelectedBeats([])
     if (val.length > 0) {
-      const res = await axios.post("/getBeat", {
-        ter: val,
-      });
+      try {
+        const res = await axios.post("/getBeat", {
+          ter: val,
+        });
 
-      setBeats(res.data.data || []);
+        setBeats(res.data.data || []);
+      } catch (err) {
+        console.error("Get Beat API error:", err.response?.data || err.message);
+        setBeats([]);
+      }
     } else {
       setBeats([]);
     }
