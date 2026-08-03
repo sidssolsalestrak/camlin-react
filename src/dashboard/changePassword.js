@@ -19,16 +19,22 @@ const ChangePassword = () => {
   const [loading, setLoading] = useState(false);
 
   const [confirmationDialog, setConfirmationDialog] = useState({
-    open: false, title: "", message: "", onConfirm: null,
-    loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    loading: false,
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    confirmColor: "primary",
   });
 
   const showConfirmationDialog = (config) => {
-    setConfirmationDialog(prev => ({ ...prev, ...config, open: true }));
+    setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
   };
 
   const closeConfirmationDialog = () => {
-    setConfirmationDialog(prev => ({ ...prev, open: false, loading: false }));
+    setConfirmationDialog((prev) => ({ ...prev, open: false, loading: false }));
   };
 
   const handleLogout = () => {
@@ -60,8 +66,20 @@ const ChangePassword = () => {
     } else if (newPassword.length < 8) {
       setNewPasswordError("Minimum 8 characters required");
       hasError = true;
-    } else if (!/\d/.test(newPassword)) {
-      setNewPasswordError("At least one number required");
+    } else if ((newPassword.match(/[a-z]/g) || []).length < 2) {
+      setNewPasswordError("At least 2 lowercase letters required");
+      hasError = true;
+    } else if ((newPassword.match(/[A-Z]/g) || []).length < 2) {
+      setNewPasswordError("At least 2 uppercase letters required");
+      hasError = true;
+    } else if ((newPassword.match(/\d/g) || []).length < 1) {
+      setNewPasswordError("At least 1 digit required");
+      hasError = true;
+    } else if ((newPassword.match(/[^A-Za-z0-9]/g) || []).length < 1) {
+      setNewPasswordError("At least 1 special character required");
+      hasError = true;
+    } else if (/\s/.test(newPassword)) {
+      setNewPasswordError("Spaces are not allowed");
       hasError = true;
     }
 
@@ -78,7 +96,7 @@ const ChangePassword = () => {
 
   const handleChangePassword = async () => {
     setLoading(true);
-    setConfirmationDialog(prev => ({ ...prev, loading: true }));
+    setConfirmationDialog((prev) => ({ ...prev, loading: true }));
     try {
       const res = await api.post("/change_password", {
         old: oldPassword,
@@ -115,7 +133,7 @@ const ChangePassword = () => {
       confirmText: "Change",
       cancelText: "Cancel",
       confirmColor: "primary",
-      onConfirm: () => handleChangePassword()
+      onConfirm: () => handleChangePassword(),
     });
   };
 
@@ -126,14 +144,15 @@ const ChangePassword = () => {
   };
 
   return (
-    <Layout breadcrumb={[
-      { label: "Home", path: "/" },
-      { label: "Change Password", path: "/change_password" }
-    ]}>
+    <Layout
+      breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: "Change Password", path: "/change_password" },
+      ]}
+    >
       <Box sx={{ p: 3 }}>
-
-        <Card sx={{ p: 3, width: '60%' }}>
-          <Box sx={{ width: '90%' }}>
+        <Card sx={{ p: 3, width: "60%" }}>
+          <Box sx={{ width: "90%" }}>
             <Typography variant="h5" sx={{ mb: 2 }}>
               Change Password
             </Typography>
@@ -144,7 +163,10 @@ const ChangePassword = () => {
               type="password"
               label="Old Password"
               value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
+              onChange={(e) => {
+                const onlyText = e.target.value.replace(/\s+/g, "");
+                setOldPassword(onlyText);
+              }}
               error={!!oldPasswordError}
               helperText={oldPasswordError}
               sx={{ mb: 2 }}
@@ -157,7 +179,10 @@ const ChangePassword = () => {
               type="password"
               label="New Password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e) => {
+                const onlyText = e.target.value.replace(/\s+/g, "");
+                setNewPassword(onlyText);
+              }}
               error={!!newPasswordError}
               helperText={newPasswordError}
               sx={{ mb: 2 }}
@@ -170,7 +195,10 @@ const ChangePassword = () => {
               type="password"
               label="Confirm New Password"
               value={newPasswordConfirm}
-              onChange={(e) => setNewPasswordConfirm(e.target.value)}
+              onChange={(e) => {
+                const onlyText = e.target.value.replace(/\s+/g, "");
+                setNewPasswordConfirm(onlyText);
+              }}
               error={!!newPasswordConfirmError}
               helperText={newPasswordConfirmError}
               sx={{ mb: 2 }}
@@ -178,14 +206,17 @@ const ChangePassword = () => {
             />
 
             <Box sx={{ textAlign: "right" }}>
-              <Button variant="contained" disabled={loading} onClick={handleSubmit}>
+              <Button
+                variant="contained"
+                disabled={loading}
+                onClick={handleSubmit}
+              >
                 {loading ? "Changing..." : "Change"}
               </Button>
             </Box>
           </Box>
         </Card>
       </Box>
-
       <ConfirmationDialog
         open={confirmationDialog.open}
         onClose={closeConfirmationDialog}

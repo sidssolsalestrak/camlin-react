@@ -12,15 +12,67 @@ const ForgotPassword = () => {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState({
+    password: "",
+    confPass: "",
+  });
 
   const handleSubmit = async () => {
-    setError("");
+    setError({
+      password: "",
+      confPass: "",
+    });
 
-    if (!password) return setError("Password required");
-    if (password.length < 8) return setError("Minimum 8 characters required");
-    if (!/\d/.test(password)) return setError("At least one number required");
-    if (password !== confirmPassword) return setError("Passwords do not match");
+    if (!password)
+      return setError((prev) => ({ ...prev, password: "Password required" }));
+
+    if (password.length < 8)
+      return setError((prev) => ({
+        ...prev,
+        password: "Minimum 8 characters required",
+      }));
+
+    if ((password.match(/[a-z]/g) || []).length < 2)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 2 lowercase letters required",
+      }));
+
+    if ((password.match(/[A-Z]/g) || []).length < 2)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 2 uppercase letters required",
+      }));
+
+    if ((password.match(/\d/g) || []).length < 1)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 1 digit required",
+      }));
+
+    if ((password.match(/[^A-Za-z0-9]/g) || []).length < 1)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 1 special character required",
+      }));
+
+    if (/\s/.test(password))
+      return setError((prev) => ({
+        ...prev,
+        password: "Spaces are not allowed",
+      }));
+
+    if (!confirmPassword)
+      return setError((prev) => ({
+        ...prev,
+        confPass: "Confirm Password required",
+      }));
+
+    if (password !== confirmPassword)
+      return setError((prev) => ({
+        ...prev,
+        confPass: "Passwords do not match",
+      }));
 
     try {
       const res = await api.post("/forgot_pass", {
@@ -84,7 +136,11 @@ const ForgotPassword = () => {
         >
           <b>Please Note:</b>
           <br />
-          Password must be 8–32 characters and include at least one number
+          <span style={{ fontSize: "9px" }}>
+            Password must be at least 8 characters and include at least 2
+            lowercase letters, 2 uppercase letters, 1 digit, and 1 special
+            character (no spaces).
+          </span>
         </Typography>
 
         <TextField
@@ -93,7 +149,12 @@ const ForgotPassword = () => {
           type="password"
           label="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            const onlyText = e.target.value.replace(/\s+/g, "");
+            setPassword(onlyText);
+          }}
+          error={!!error.password}
+          helperText={error.password}
           sx={{ mb: 2 }}
         />
 
@@ -103,15 +164,14 @@ const ForgotPassword = () => {
           type="password"
           label="Confirm Password"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) => {
+            const onlyText = e.target.value.replace(/\s+/g, "");
+            setConfirmPassword(onlyText);
+          }}
+          error={!!error.confPass}
+          helperText={error.confPass}
           sx={{ mb: 2 }}
         />
-
-        {error && (
-          <Typography color="error" variant="body2" sx={{ mb: 1 }}>
-            {error}
-          </Typography>
-        )}
 
         <Button
           fullWidth
