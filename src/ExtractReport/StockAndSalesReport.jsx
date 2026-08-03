@@ -123,7 +123,7 @@ const StockAndSalesReport = () => {
     /*------------ get region data ---------- */
     const fetchRegion = async () => {
         try {
-            let response = await axios.post("/getRegionList", { zone_id: formData.zone })
+            let response = await axios.post("/extractRegionList", { zone_id: formData.zone })
             setregionData(Array.isArray(response.data.data) ? response.data.data : [])
         } catch (err) {
             console.log("fetchRegion error", err)
@@ -197,7 +197,7 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
-        if (formData.userType > 0 && (formData.zone > 0 || formData.region > 0)) {
+        if (formData.userType > 0 ) {
             fetchSSUserList();
         } else {
             setuser([])
