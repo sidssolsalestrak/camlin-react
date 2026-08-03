@@ -242,7 +242,10 @@ function Login() {
                 sx={{ mb: 1.5 }}
                 label="User Name"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) =>{
+                  const onlyText = e.target.value.replace(/^\s+/, "");
+                  setEmail(onlyText)
+                }}
               />
 
               <TextField
@@ -253,7 +256,10 @@ function Login() {
                 size="small"
                 sx={{ mb: 1.5 }}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>{
+                  const onlyText = e.target.value.replace(/\s+/g, "");
+                  setPassword(onlyText)
+                }}
               />
             </Box>
 
@@ -321,7 +327,10 @@ function Login() {
               size="small"
               sx={{ mt: 1, mb: 1 }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>{
+                const onlyText = e.target.value.replace(/\s+/g, "");
+                setEmail(onlyText)
+              }}
             />
 
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -358,7 +367,10 @@ function Login() {
                   size="small"
                   sx={{ mt: 1, mb: 1 }}
                   value={emailMob}
-                  onChange={(e) => setEmailMob(e.target.value)}
+                  onChange={(e) =>{
+                     const onlyText = e.target.value.replace(/\s+/g, "");
+                     setEmailMob(onlyText)
+                  }}
                 />
 
                 <Button
@@ -416,9 +428,6 @@ function Login() {
                   <QRCodeCanvas value={sessionId} size={200} />
                 </Box>
                 <Typography mt={2}>Expires in: {timer}s</Typography>
-                <Button sx={{ mt: 2 }} onClick={() => setStep("login")}>
-                  Back
-                </Button>
               </>
             )}
 
