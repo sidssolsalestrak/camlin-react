@@ -167,7 +167,7 @@ function AccountTransfer() {
     const fetchRegion = async () => {
         try {
             let payload = { zone_id: null }
-            let response = await api.post("/getRegionList", payload)
+            let response = await api.post("/getRegionAcctransfer", payload)
             let regionRes = Array.isArray(response.data.data) ? response.data.data : []
             setAllRegion([{ id: 0, reg_name: "Select" }, ...regionRes])
         }
