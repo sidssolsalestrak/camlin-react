@@ -59,6 +59,7 @@ import { excelWithFilters } from "../../utils/ExcelWithFilters";
 import CircularProgressLoading from "../../utils/CircularProgressLoading";
 import FilePreviewModal from "./FilePreviewModal";
 import { getMasterPanel } from "../../services/masterPanelService";
+import { jwtDecode } from "jwt-decode";
 
 // ─── Multi-Checkbox Group-By Dropdown ────────────────────────────────────────
 function GroupByDropdown({ groupChecks, onChange, typeId, masterPanel }) {
@@ -252,6 +253,7 @@ function DataSubmissionStatus() {
     const [checkedRows, setCheckedRows] = useState({});
     const [checkAll, setCheckAll] = useState(false);
     const [modifyLoading, setModifyLoading] = useState(false);
+    const [userType, setUserType] = useState(null);
     const toast = useToast();
 
     // ─── Confirmation Dialog State ────────────────────────────────────────────
@@ -288,6 +290,19 @@ function DataSubmissionStatus() {
         };
         loadMasterPanel();
     }, []);
+
+    useEffect(() => {
+            const token = localStorage.getItem("session-token");
+            if (token) {
+                try {
+                    let decoded = jwtDecode(token);
+                    setUserType(decoded.user_type);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+        }, []);
+
 
     useEffect(() => {
         fetchZone();
@@ -1499,7 +1514,7 @@ function DataSubmissionStatus() {
                     headerAlign: "center",
                     align: "center",
                     renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
+                        if (row._rowType !== "data" || ![2,3].includes(Number(userType))) return null;
                         if (Number(row.base_data_stat) === 1) {
                             return (
                                 <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -1640,11 +1655,12 @@ function DataSubmissionStatus() {
                             </Button>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 2, lg: 1.8 }}>
+                      {[1,2].includes(Number(userType)) && <Grid size={{ xs: 12, md: 2, lg: 1.8 }}>
                             <Button sx={{ textTransform: "none" }} onClick={() => navigate("/reports/email_process_data")} variant="contained">
                                 Email Unprocess Data
                             </Button>
                         </Grid>
+                       } 
 
                         <Grid size={{ xs: 4, md: 2, lg: 0.5 }}>
                             <Box sx={{ mb: "-0.3rem" }}>
