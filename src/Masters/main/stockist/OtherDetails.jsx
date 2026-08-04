@@ -94,7 +94,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     /*---------- fetch teritory---------*/
     const fetchTeritoy = async () => {
         try {
-            const res = await axios.post("/getTerriTb", { area_id: formData.area });
+            const res = await axios.post("/getStockistTerritory", { area_id: formData.area });
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setteritory(data);
         } catch (error) {

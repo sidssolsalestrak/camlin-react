@@ -445,10 +445,10 @@ function DataSubmissionStatus() {
         { label: `${masterPanel["REGN"] || "Region"} : ${getLabel(allRegion, selRegion, "reg_name")}`, bold: false, sz: 10 },
         { label: `${masterPanel["AREA"] || "Area"} : ${getLabel(allArea, selArea, "area_name")}`, bold: false, sz: 10 },
         { label: `${masterPanel["TERR"] || "Territory"} : ${getLabel(allTerritory, selTerritory, "ter_name")}`, bold: false, sz: 10 },
-        { label: `RSM : ${getLabel(allRSM, selRSM, "user_name")}`, bold: false, sz: 10 },
-        { label: `ZBM : ${getLabel(allZBM, selZBM, "user_name")}`, bold: false, sz: 10 },
-        { label: `AM/FSO : ${getLabel(allAMF, selAMF, "user_name")}`, bold: false, sz: 10 },
-        { label: `SR: ${getLabel(allSrUser, selSrUser, "user_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["ZM"] || "RSM"} : ${getLabel(allRSM, selRSM, "user_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["RM"] || "ZBM"} : ${getLabel(allZBM, selZBM, "user_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["ASM"] || "AM/FSO"} : ${getLabel(allAMF, selAMF, "user_name")}`, bold: false, sz: 10 },
+        { label: `${masterPanel["KAM"] || "SR"}: ${getLabel(allSrUser, selSrUser, "user_name")}`, bold: false, sz: 10 },
         { label: `${masterPanel["STKS"] || "Distributor"} : ${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code} - ${v.stk_name}`)}`, bold: false, sz: 10 },
     ];
 
@@ -1622,10 +1622,10 @@ function DataSubmissionStatus() {
                                         getLabel(allRegion,      selRegion,      "reg_name")  !== "All" ? `${masterPanel["REGN"] || "Region"}:${getLabel(allRegion, selRegion, "reg_name")}`                                       : null,
                                         getLabel(allArea,        selArea,        "area_name") !== "All" ? `${masterPanel["AREA"] || "Area"}:${getLabel(allArea, selArea, "area_name")}`                                            : null,
                                         getLabel(allTerritory,   selTerritory,   "ter_name")  !== "All" ? `${masterPanel["TERR"] || "Territory"}:${getLabel(allTerritory, selTerritory, "ter_name")}`                              : null,
-                                        getLabel(allZBM,         selZBM,         "user_name") !== "All" ? `ZBM:${getLabel(allZBM, selZBM, "user_name")}`                                               : null,
-                                        getLabel(allRSM,         selRSM,         "user_name") !== "All" ? `RSM:${getLabel(allRSM, selRSM, "user_name")}`                                               : null,
-                                        getLabel(allAMF,         selAMF,         "user_name") !== "All" ? `AM/FSO:${getLabel(allAMF, selAMF, "user_name")}`                                           : null,
-                                        getLabel(allSrUser,      selSrUser,      "user_name") !== "All" ? `SR:${getLabel(allSrUser, selSrUser, "user_name")}`                                          : null,
+                                        getLabel(allZBM,         selZBM,         "user_name") !== "All" ? `${masterPanel["RM"] || "ZBM"}:${getLabel(allZBM, selZBM, "user_name")}`                                               : null,
+                                        getLabel(allRSM,         selRSM,         "user_name") !== "All" ? `${masterPanel["ZM"] || "RSM"}:${getLabel(allRSM, selRSM, "user_name")}`                                               : null,
+                                        getLabel(allAMF,         selAMF,         "user_name") !== "All" ? `${masterPanel["ASM"] || "AM/FSO"}:${getLabel(allAMF, selAMF, "user_name")}`                                           : null,
+                                        getLabel(allSrUser,      selSrUser,      "user_name") !== "All" ? `${masterPanel["KAM"] || "SR"}:${getLabel(allSrUser, selSrUser, "user_name")}`                                          : null,
                                         getLabel(allDistributor, selDistributor, (v) => `${v.stk_code}-${v.stk_name}`) !== "All"
                                             ? `${masterPanel["STKS"] || "Distributor"}:${getLabel(allDistributor, selDistributor, (v) => `${v.stk_code}-${v.stk_name}`)}`
                                             : null,
@@ -1770,8 +1770,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="zbm">ZBM</InputLabel>
-                                <Select labelId="zbm" label="ZBM" size="small" value={selZBM}
+                                <InputLabel id="zbm">{masterPanel["RM"] || "ZBM"}</InputLabel>
+                                <Select labelId="zbm" label={masterPanel["RM"] || "ZBM"} size="small" value={selZBM}
                                     onChange={(e) => setSelZBM(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1782,8 +1782,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="rsm">RSM</InputLabel>
-                                <Select labelId="rsm" label="RSM" size="small" value={selRSM}
+                                <InputLabel id="rsm">{masterPanel["ZM"] || "RSM"}</InputLabel>
+                                <Select labelId="rsm" label={masterPanel["ZM"] || "RSM"} size="small" value={selRSM}
                                     onChange={(e) => setSelRSM(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1794,8 +1794,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="amf">AMF</InputLabel>
-                                <Select labelId="amf" label="AMF" size="small" value={selAMF}
+                                <InputLabel id="amf">{masterPanel["ASM"] || "AM/FSO"}</InputLabel>
+                                <Select labelId="amf" label={masterPanel["ASM"] || "AM/FSO"} size="small" value={selAMF}
                                     onChange={(e) => setSelAMF(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1806,8 +1806,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="sr-user">SR User</InputLabel>
-                                <Select labelId="sr-user" label="SR User" size="small" value={selSrUser}
+                                <InputLabel id="sr-user">{masterPanel["KAM"] || "SR"} User</InputLabel>
+                                <Select labelId="sr-user" label={`${masterPanel["KAM"] || "SR"} User`} size="small" value={selSrUser}
                                     onChange={(e) => setSelSrUser(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
