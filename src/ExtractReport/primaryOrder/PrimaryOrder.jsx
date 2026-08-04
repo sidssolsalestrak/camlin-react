@@ -83,7 +83,7 @@ const PrimaryOrder = () => {
     const [open, setOpen] = useState(false);
     const [rowData, setRowData] = useState(null);
     const isInitializing = useRef(true);
-
+    const isZoneSelected = decodedZone && decodedZone !== "0";
     const [masterPanel, setMasterPanel] = useState({});
 
     // labels derived from masterPanel with fallbacks
@@ -404,7 +404,7 @@ const PrimaryOrder = () => {
                 console.error(err);
                 showAlert.error("Failed to Export Excel")
             }
-        }finally{
+        } finally {
             setProgress1(null)
         }
     };
@@ -510,7 +510,7 @@ const PrimaryOrder = () => {
                             boxShadow:
                                 "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                         }}
-                        data={addSubtotalsPrimary(tableData)}
+                        data={addSubtotalsPrimary(tableData, true, isZoneSelected)}
                         columns={columns}
                         loading={loading}
                         onRowClick={handleRowClick}
