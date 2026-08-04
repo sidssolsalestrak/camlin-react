@@ -233,6 +233,14 @@ const OrderReport = () => {
             field: "si_no",
             headerName: "SI",
             filterable: true,
+            renderCell: (params) => {
+                const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
+                return (
+                    <span>
+                        {[2, 3, 4, 5, 6, 7, 8].includes(grpBy) ? params?.value : (params?.row?.__isFirstOrder ? params?.value : "")}
+                    </span>
+                );
+            }
         },
         ...((extractPath ? formData.groupBy === "1" : decodedGrpBy === "1"
         ) ? [
@@ -364,9 +372,6 @@ const OrderReport = () => {
                 field: "reg_name",
                 headerName: regionLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
         ] : []),
         ...((extractPath ? formData.groupBy === "3" : decodedGrpBy === "3") ? [
@@ -374,9 +379,6 @@ const OrderReport = () => {
                 field: "reg_name",
                 headerName: regionLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "area_name",
@@ -389,17 +391,11 @@ const OrderReport = () => {
                 field: "reg_name",
                 headerName: regionLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "stk_name",
                 headerName: distributorLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
         ] : []),
         ...((extractPath ? formData.groupBy === "5" : decodedGrpBy === "5") ? [
@@ -407,18 +403,12 @@ const OrderReport = () => {
                 field: "reg_name",
                 headerName: regionLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "psm_kam",
                 headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
                 width: 150,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
         ] : []),
         ...((extractPath ? formData.groupBy === "6" : decodedGrpBy === "6") ? [
@@ -426,66 +416,42 @@ const OrderReport = () => {
                 field: "reg_name",
                 headerName: regionLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "psm_kam",
                 headerName: `${psmLabel}/${kamLabel}`,
                 filterable: true,
                 width: 150,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "ctype",
                 headerName: "TYPE",
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "cusCode",
                 headerName: "CODE",
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "cus_class",
                 headerName: "CLASS",
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "cus_name",
                 headerName: "CUSTOMER",
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "beat_name",
                 headerName: beatLabel,
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
             {
                 field: "city",
                 headerName: "CITY",
                 filterable: true,
-                renderCell: (params) => (
-                    <span>{params?.row?.__isFirstOrder ? params?.value : ""}</span>
-                )
             },
         ] : []),
         ...((extractPath ? formData.groupBy === "7" : decodedGrpBy === "7") ? [
@@ -525,21 +491,33 @@ const OrderReport = () => {
             field: "disc_per",
             headerName: "Disc. %",
             filterable: true,
-            showTotal: true,
             type: "alignCenter",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.disc_per)}</span>
-            )
+            ),
+            footerValue: (data) => {
+                const totalOrdValue = data.reduce((sum, row) => {
+                    if (row._isSubtotal) return sum;
+                    return sum + (Number(row.ord_value) || 0);
+                }, 0);
+                const totalDiscValue = data.reduce((sum, row) => {
+                    if (row._isSubtotal) return sum;
+                    return sum + (Number(row.disc_value) || 0);
+                }, 0);
+                return totalOrdValue
+                    ? ((totalDiscValue * 100) / totalOrdValue).toFixed(2)
+                    : "0.00";
+            },
         },
         {
             field: "retail_price",
             headerName: "Rate",
             filterable: true,
-            showTotal: true,
             type: "alignCenter",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.retail_price)}</span>
-            )
+            ),
+            footerValue: () => "-",
         },
         {
             field: "ord_value",
@@ -594,20 +572,29 @@ const OrderReport = () => {
                 type: type || "0",
             }
             const res = await axios.post("/getPcmKam", payload);
-            let data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row, index) => ({
+            let data = Array.isArray(res?.data?.data) ? res?.data?.data?.map((row) => ({
                 ...row,
-                si_no: index + 1,
                 psm_kam: (row?.emp_code && row.emp_code !== "undefined")
                     ? `${row.emp_code} - ${row.sr_name}`
                     : (row?.sr_name || ""),
                 cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
                 ord_mode: (row?.ord_type === 2 ? "Direct" : "On Call")
             })) : [];
+
             const seenOrders = new Set();
+            let siCounter = 0;
             data = data?.map((row) => {
-                const isFirstOrder = !seenOrders.has(row?.ord_no);
-                if (isFirstOrder) seenOrders.add(row?.ord_no)
-                return ({ ...row, __isFirstOrder: isFirstOrder })
+                const isGroup3 = grp === "3" || grp === "4" || grp === "2" || grp === "5" || grp === "6" || grp === "7" || grp === "8";
+                const isFirstOrder = isGroup3 ? true : !seenOrders.has(row?.ord_no);
+                if (!isGroup3 && isFirstOrder) {
+                    seenOrders.add(row?.ord_no);
+                }
+                siCounter += isGroup3 ? 1 : (isFirstOrder ? 1 : 0);
+                return ({
+                    ...row,
+                    __isFirstOrder: isFirstOrder,
+                    si_no: isGroup3 ? siCounter : (isFirstOrder ? siCounter : ""),
+                });
             })
 
             settableData(data)
@@ -678,15 +665,22 @@ const OrderReport = () => {
             });
 
             let sourceData = Array.isArray(res?.data?.data)
-                ? res?.data?.data?.map((row, index) => ({
-                    ...row,
-                    si_no: index + 1,
-                    psm_kam: (row?.emp_code && row.emp_code !== "undefined")
-                        ? `${row.emp_code} - ${row.sr_name}`
-                        : (row?.sr_name || ""), cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
-                    ord_mode: (row?.ord_type === 2 ? "Direct" : "On Call"),
-                    __isFirstOrder: true
-                }))
+                ? res?.data?.data?.map((row, index) => {
+                    const { del_date, del_user, del_stat, ...rest } = row;
+                    return {
+                        ...rest,
+                        si_no: index + 1,
+                        order_stat: del_stat === 1
+                            ? `${row.order_stat} (${del_date ? dayjs(del_date).format("DD MMM YYYY hh:mm A") : ""} by ${del_user || ""})`
+                            : row.order_stat,
+                        psm_kam: (row?.emp_code && row.emp_code !== "undefined")
+                            ? `${row.emp_code} - ${row.sr_name}`
+                            : (row?.sr_name || ""),
+                        cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
+                        ord_mode: (row?.ord_type === 2 ? "Direct" : "On Call"),
+                        __isFirstOrder: true
+                    };
+                })
                 : [];
 
             let addColumn = [
@@ -707,8 +701,13 @@ const OrderReport = () => {
                 prod_name: "label",
                 disc_value: "sum",
                 ord_value: "sum",
-                retail_price: "sum",
-                disc_per: "sum",
+                retail_price: "none",
+                disc_per: {
+                    type: "ratio",
+                    numerator: "disc_value",
+                    denominator: "ord_value",
+                    multiplier: 100,
+                },
                 prod_free: "sum",
                 prod_qty: "sum",
             });

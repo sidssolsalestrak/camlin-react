@@ -53,30 +53,19 @@ export const groupBeatCoverageRows = (rawRows) => {
     return Object.values(report);
 };
 
-// Groups rows by zone_name, preserving each zone's first-seen order and each
-// row's relative order within its zone. This guarantees all of a zone's rows
-// are contiguous before we walk them to build subtotal rows below — fixes
-// area/zone totals coming out wrong (or split into partial totals) when the
-// raw data isn't already sorted by zone.
-const sortRowsByZoneContiguous = (groupedRows) => {
-    const zoneOrder = [];
-    const zoneBuckets = new Map();
-    groupedRows.forEach((row) => {
-        if (!zoneBuckets.has(row.zone_name)) {
-            zoneBuckets.set(row.zone_name, []);
-            zoneOrder.push(row.zone_name);
-        }
-        zoneBuckets.get(row.zone_name).push(row);
-    });
-    return zoneOrder.flatMap((z) => zoneBuckets.get(z));
-};
+// ── NOTE ──
+// PHP does NOT reorder or group rows by zone before rendering — it walks rows
+// in their natural incoming order and prints a subtotal every time zone_name
+// actually changes from the previous row. If the same zone name appears again
+// later, non-contiguously, it gets its OWN separate subtotal block (not merged
+// with the earlier one) — this is why PHP can show "Total West" and later
+// "Total west" as two distinct rows. So we must NOT reorder/group rows here —
+// just use them in the order groupBeatCoverageRows/Object.values already gives.
 
 export const buildDisplayRows = (groupedRows) => {
-    const sortedRows = sortRowsByZoneContiguous(groupedRows);
-
     const displayRows = [];
 
-    let prevArea = ''; // holds zone_name (see caveat: PHP compares against zone_name, not area_name)
+    let prevArea = ''; // holds zone_name exactly as-is, compared with strict equality — matches PHP's `!=` behavior
     let prevSr = '';
     let counter = 1;
 
@@ -95,7 +84,7 @@ export const buildDisplayRows = (groupedRows) => {
         areaCount = emptyTally();
     };
 
-    sortedRows.forEach((row) => {
+    groupedRows.forEach((row) => {
         if (prevArea !== '' && prevArea !== row.zone_name) {
             pushAreaTotalRow(prevArea);
             prevSr = '';

@@ -27,7 +27,11 @@ self.onmessage = function (e) {
       if (!grandTotal) return null;
 
       // If caller passed an explicit per-field object, use it directly
-      if (typeof grandTotal === "object" && grandTotal !== null && !Array.isArray(grandTotal)) {
+      if (
+        typeof grandTotal === "object" &&
+        grandTotal !== null &&
+        !Array.isArray(grandTotal)
+      ) {
         const { label, ...fieldConfig } = grandTotal;
         return fieldConfig; // strip label, return only field mappings
       }
@@ -60,6 +64,30 @@ self.onmessage = function (e) {
       const totals = {};
       filteredColumns.forEach((col) => {
         const agg = config[col.field] ?? "skip";
+
+        // ── object-based aggregation, e.g. weighted ratio between two other fields ──
+        if (agg && typeof agg === "object") {
+          if (agg.type === "ratio") {
+            const numeratorSum = data.reduce(
+              (acc, row) => acc + toNumber(row[agg.numerator]),
+              0,
+            );
+            const denominatorSum = data.reduce(
+              (acc, row) => acc + toNumber(row[agg.denominator]),
+              0,
+            );
+            const multiplier = agg.multiplier ?? 1;
+            totals[col.field] = denominatorSum
+              ? parseFloat(
+                  ((numeratorSum * multiplier) / denominatorSum).toFixed(2),
+                )
+              : "0.00";
+          } else {
+            totals[col.field] = "-";
+          }
+          return;
+        }
+
         if (agg === "label") {
           totals[col.field] = grandTotalLabel;
           return;
@@ -79,7 +107,7 @@ self.onmessage = function (e) {
           totals[col.field] = parseFloat(sum.toFixed(2));
         } else if (agg === "avg") {
           const avg = numbers.length > 0 ? sum / numbers.length : 0;
-          const rounded = parseFloat(avg.toFixed(2));  // always 2 decimal places
+          const rounded = parseFloat(avg.toFixed(2)); // always 2 decimal places
           totals[col.field] = rounded === 0 ? "-" : rounded;
         }
       });
@@ -135,11 +163,12 @@ self.onmessage = function (e) {
     let csvContent = "";
 
     // ── Dynamic meta header rows ────────────────────────────────────────────────
-    const colCount = filteredColumns.length > 0
-      ? filteredColumns.length
-      : data.length > 0
-        ? Object.keys(data[0]).length  // ✅ count keys from first data row
-        : 10;                          // fallback default if no data either
+    const colCount =
+      filteredColumns.length > 0
+        ? filteredColumns.length
+        : data.length > 0
+          ? Object.keys(data[0]).length // ✅ count keys from first data row
+          : 10; // fallback default if no data either
 
     const padCols = Math.max(0, Math.floor(colCount / 2) - 1);
     const pad = padCols > 0 ? ",".repeat(padCols) : "";
@@ -158,7 +187,7 @@ self.onmessage = function (e) {
     } else {
       // ── Default style: key: value pairs ──
       const metaEntries = Object.entries(meta).filter(
-        ([, v]) => v !== null && v !== undefined && v !== ""
+        ([, v]) => v !== null && v !== undefined && v !== "",
       );
       metaEntries.forEach(([key, value]) => {
         csvContent += `${escapeCSV(value)}\n`;
@@ -175,32 +204,38 @@ self.onmessage = function (e) {
 
       // Row 1: Month names spanning subCount cols each
       const monthRow = meta.monthHeaders
-        .map(m => escapeCSV(m) + (subCount > 1 ? ",".repeat(subCount - 1) : ""))
+        .map(
+          (m) => escapeCSV(m) + (subCount > 1 ? ",".repeat(subCount - 1) : ""),
+        )
         .join(",");
       csvContent += fixedPad + monthRow + "\n";
 
       // Row 2: SubCol names (Opening, Pri.Sales...) each spanning 2 cols + spacer ← NEW
       if (meta?.subColHeaders) {
         const subColRowPerMonth = [
-          ...meta.subColHeaders.flatMap(name => [escapeCSV(name), ""]),
-          "" // spacer col
+          ...meta.subColHeaders.flatMap((name) => [escapeCSV(name), ""]),
+          "", // spacer col
         ].join(",");
-        const subColRow = meta.monthHeaders.map(() => subColRowPerMonth).join(",");
+        const subColRow = meta.monthHeaders
+          .map(() => subColRowPerMonth)
+          .join(",");
         csvContent += fixedPad + subColRow + "\n";
       }
 
       // Row 3: Qty / Value Rs column headers
-      csvContent += filteredColumns.map(col => escapeCSV(col.headerName)).join(",") + "\n";
+      csvContent +=
+        filteredColumns.map((col) => escapeCSV(col.headerName)).join(",") +
+        "\n";
     } else {
       // Normal single header row
-      csvContent += filteredColumns.map(col => escapeCSV(col.headerName)).join(",") + "\n";
+      csvContent +=
+        filteredColumns.map((col) => escapeCSV(col.headerName)).join(",") +
+        "\n";
     }
 
     // Data rows
     formattedData.forEach((row) => {
-      const rowData = filteredColumns.map((col) =>
-        escapeCSV(row[col.field])
-      );
+      const rowData = filteredColumns.map((col) => escapeCSV(row[col.field]));
       csvContent += rowData.join(",") + "\n";
     });
 
@@ -208,7 +243,7 @@ self.onmessage = function (e) {
     if (formattedGrandTotal) {
       csvContent += "\n";
       const gtRow = filteredColumns.map((col) =>
-        escapeCSV(formattedGrandTotal[col.field])
+        escapeCSV(formattedGrandTotal[col.field]),
       );
       csvContent += gtRow.join(",") + "\n";
     }

@@ -212,9 +212,9 @@ const DataTable = ({
       case "currency":
         return typeof value === "number"
           ? value.toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
           : value;
       case "boolean":
         return value ? "Yes" : "No";
@@ -543,9 +543,9 @@ const DataTable = ({
                 >
                   {filteredData.length > 0
                     ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
-                        (page + 1) * rowsPerPage,
-                        filteredData.length,
-                      )} of ${filteredData.length.toLocaleString()} entries`
+                      (page + 1) * rowsPerPage,
+                      filteredData.length,
+                    )} of ${filteredData.length.toLocaleString()} entries`
                     : "Showing 0 to 0 of 0 entries"}
                 </Typography>
               )}
@@ -925,10 +925,10 @@ const DataTable = ({
                               >
                                 {col.renderCell
                                   ? col.renderCell({
-                                      value: row[col.field],
-                                      row,
-                                      isExpanded: false,
-                                    })
+                                    value: row[col.field],
+                                    row,
+                                    isExpanded: false,
+                                  })
                                   : "-"}
                               </TableCell>
                             );
@@ -965,10 +965,10 @@ const DataTable = ({
                                 </Typography>
                                 {col.renderCell
                                   ? col.renderCell({
-                                      value: row[col.field],
-                                      row,
-                                      isExpanded: expandedType === "beat",
-                                    })
+                                    value: row[col.field],
+                                    row,
+                                    isExpanded: expandedType === "beat",
+                                  })
                                   : null}
                               </Box>
                             </TableCell>
@@ -1161,6 +1161,9 @@ const DataTable = ({
                   const avgTotal = col.showAverageTotal
                     ? calcAverageTotal(col.field)
                     : null;
+                  const customValue = col.footerValue
+                    ? col.footerValue(data)
+                    : null;
                   const isNumeric =
                     col.type === "number" || col.type === "currency";
                   return (
@@ -1180,15 +1183,17 @@ const DataTable = ({
                         ...getStickyStyles(i, flatColumns, { isFooter: true }),
                       }}
                     >
-                      {col.showTotal
-                        ? formatTotal(total)
-                        : col.showAverageTotal
-                          ? formatTotal(avgTotal)
-                          : i === firstIdx - 1
-                            ? grandTotal
-                              ? "Grand Total"
-                              : "Total"
-                            : ""}
+                      {col.footerValue
+                        ? customValue
+                        : col.showTotal
+                          ? formatTotal(total)
+                          : col.showAverageTotal
+                            ? formatTotal(avgTotal)
+                            : i === firstIdx - 1
+                              ? grandTotal
+                                ? "Grand Total"
+                                : "Total"
+                              : ""}
                     </TableCell>
                   );
                 })}
