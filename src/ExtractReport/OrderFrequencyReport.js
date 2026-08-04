@@ -26,7 +26,7 @@ const getDataWithZoneTotals = (data) => {
     const zoneOrder = [];
 
     data.forEach((row) => {
-        const key = row.zone_name || "Unknown";
+        const key = row.zone_name ? row.zone_name.toLowerCase() : "Unknown";
         if (!grouped[key]) {
             grouped[key] = [];
             zoneOrder.push(key);
@@ -267,7 +267,7 @@ function OrderFrequencyReport() {
 
 
     const encodeAndNavigate = () => {
-        if (Number(selZone) === 0) {
+        if (Number(selZone) === 0 || Number(selRegion)===0) {
             setZoneNullErr(true);
             setWarningDialog(true);
             return;
@@ -581,7 +581,7 @@ function OrderFrequencyReport() {
                         <PiWarningCircleLight size={80} color="#F8BB86" />
                     </Box>
                     <Typography sx={{ color: '#797979', fontWeight: 500, fontSize: '1.2rem', textAlign: 'center' }}>
-                        You can View Report only {zoneLabel}wise!. Please Select {zoneLabel}. For All Consolidated Report Please Use Excel Export Option.
+                        You can View Report only {regionLabel}wise!. Please Select {regionLabel}. For All Consolidated Report Please Use Excel Export Option.
                     </Typography>
                 </DialogContent>
                 <DialogActions>

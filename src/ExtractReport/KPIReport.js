@@ -14,6 +14,7 @@ import useToast from "../utils/useToast";
 import { MdOutlineLoop } from "react-icons/md";
 import ConfirmationDialog from "../utils/confirmDialog";
 import { getMasterPanel } from "../services/masterPanelService";
+import { jwtDecode } from "jwt-decode";
 
 
 function KPIReport() {
@@ -24,6 +25,7 @@ function KPIReport() {
     const [progress, setProgress] = useState(null);
     const [modifyLoading, setModifyLoading] = useState(false)
     const [reportMonth, setReportMonth] = useState(dayjs());
+    const [userType, setUserType] = useState(null);
     const toast = useToast()
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
@@ -55,6 +57,18 @@ function KPIReport() {
         margin: "0px !important",
         borderRadius: "3px",
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token);
+                setUserType(decoded.user_type);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    }, []);
 
 
     const fetchKpiReport = async () => {
@@ -482,9 +496,9 @@ function KPIReport() {
                         </Box>
 
 
-                        <Button color="warning" variant="contained" onClick={() => showSubmitConfirmation()}>
+                       {[2,3].includes(Number(userType)) && <Button color="warning" variant="contained" onClick={() => showSubmitConfirmation()}>
                             <MdOutlineLoop size={15} /> Render
-                        </Button>
+                        </Button>}
                     </Box>
                 </Box>
 
