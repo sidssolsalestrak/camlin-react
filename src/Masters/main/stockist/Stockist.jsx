@@ -254,7 +254,7 @@ const Stockist = () => {
     /*----------fetch regions---------*/
     const fetchRegions = async () => {
         try {
-            const res = await axios.post("/get_region");
+            const res = await axios.post("/extractRegionList",{zone_id:null});
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setregion(data)
         } catch (error) {
