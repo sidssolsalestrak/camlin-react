@@ -167,7 +167,7 @@ const StockAndSalesReport = () => {
         try {
             let payload = {
                 reg_id: formData.region,
-                user_id: formData.User?.id
+                user_id: formData.User?.id ?? 0
             }
             let response = await axios.post('/getStockstk', payload)
             let distributorres = Array.isArray(response.data.data) ? response.data.data : []
@@ -197,7 +197,7 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
-        if (formData.userType > 0 ) {
+        if (formData.userType > 0) {
             fetchSSUserList();
         } else {
             setuser([])
@@ -207,7 +207,7 @@ const StockAndSalesReport = () => {
 
     // Region or User changes → fetch distributors
     useEffect(() => {
-        if (formData?.region > 0 || formData.User?.id > 0) {
+        if (formData?.region > 0 || (formData.User?.id ?? 0) > 0) {
             fetchDistributor();
         } else {
             setdistribute([])
@@ -222,7 +222,7 @@ const StockAndSalesReport = () => {
             return
         }
         setzoneerror("")
-        if (formData.User?.id === 0 && formData.userType > 0) {
+        if ((formData.User?.id ?? 0) === 0 && formData.userType > 0) {
             setusererror("Please Select User to Load")
             return
         }
@@ -232,7 +232,7 @@ const StockAndSalesReport = () => {
         if (formData.zone > 0) params.append('zone', encode(formData.zone));
         if (formData.region > 0) params.append('reg', encode(formData.region));
         if (formData.userType > 0) params.append('userType', encode(formData.userType));
-        if (formData.User?.id > 0) params.append('user', encode(formData.User.id));
+        if ((formData.User?.id ?? 0) > 0) params.append('user', encode(formData.User.id));
         if (formData.Distributor > 0) params.append('Distributor', encode(formData.Distributor));
         navigate(`/reports/stock_salesReport?${params.toString()}`)
     }
@@ -265,6 +265,14 @@ const StockAndSalesReport = () => {
         }
     }
 
+     // Once user list loads, resolve the decoded user ID into the full object
+    useEffect(() => {
+        if (decodedUser && user.length > 0) {
+            const found = user.find((u) => String(u.id) === String(decodedUser));
+            if (found) handleChange("User", found);
+        }
+    }, [user, decodedUser]);
+
     //fetch table data useeffect
     useEffect(() => {
         setMonth(decodedMonth ? dayjs(decodedMonth) : dayjs().startOf("month"));
@@ -288,14 +296,6 @@ const StockAndSalesReport = () => {
             dist: decodedDistributor
         })
     }, [decodedMonth, decodedZone, decodedRegion, decodedUserType, decodedUser, decodedDistributor])
-
-    // Once user list loads, resolve the decoded user ID into the full object
-    useEffect(() => {
-        if (decodedUser && user.length > 0) {
-            const found = user.find((u) => String(u.id) === String(decodedUser));
-            if (found) handleChange("User", found);
-        }
-    }, [user, decodedUser]);
 
     const columns = [
         { field: "zone_name", headerName: zoneLabel, filterable: true },
@@ -404,7 +404,7 @@ const StockAndSalesReport = () => {
                 { label: `${zoneLabel} : ${getLabel(zoneData, formData.zone, "zone_name", "")}`, bold: false, sz: 10 },
                 { label: `${regionLabel} : ${getLabel(regionData, formData.region, "reg_name", "")}`, bold: false, sz: 10 },
                 { label: `${userLabel}Type : ${getLabel(usertype, formData.userType, "client_alias", "")}`, bold: false, sz: 10 },
-                { label: `${userLabel} : ${formData.User?.u_name}`, bold: false, sz: 10 },
+                { label: `${userLabel} : ${formData.User?.u_name ?? "All"}`, bold: false, sz: 10 },
                 { label: `${stkLabel} : ${getLabel(distribute, formData.Distributor, (item) => `${item.stk_code} - ${item.stk_name}`, "", "stk_id")}`, bold: false, sz: 10 },];
 
             await excelWithFilters(addSubtotalsSales(tableData), excelColumns, `Stock_Sales_Report_${dayjs(month).format("MMM YYYY")}`, filters, setProgress);
@@ -495,7 +495,7 @@ const StockAndSalesReport = () => {
                             value={formData.User}
                             onChange={(event, newValue) => {
                                 handleChange("Distributor", "0")
-                                handleChange("User", newValue ?? { id: 0, u_name: "All" })
+                                handleChange("User", newValue)
                             }}
                             renderInput={(params) => (
                                 <TextField {...params} label={userLabel} size="small" error={!!usererror} helperText={usererror ? usererror : null} />
