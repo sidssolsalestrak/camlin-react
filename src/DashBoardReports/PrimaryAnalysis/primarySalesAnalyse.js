@@ -20,6 +20,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Download } from "../../utils/downloadExcel/Download";
 import { downloadPrimarySalesExcelWithChart } from './DownLoadPrimarySalesExcel'
+import { jwtDecode } from "jwt-decode";
 
 function PrimarySalesAnalze() {
     const { enMonth, enCatType } = useParams()
@@ -33,6 +34,7 @@ function PrimarySalesAnalze() {
     const [allGraphData, setAllGraphData] = useState([])
     const [modifyLoading, setModifyLoading] = useState(false)
     const [showTable, setShowTable] = useState(false)
+    const [userType, setUserType] = useState(null);
     const [loading, setLoading] = useState(false)
     var now=dayjs()
     var dateLabel=''
@@ -91,6 +93,18 @@ function PrimarySalesAnalze() {
             onConfirm: () => renderPrimarySalesAnalyse()
         })
     }
+
+    useEffect(() => {
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token);
+                setUserType(decoded.user_type);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         console.log("fetching Sales Analysis Data")
@@ -479,13 +493,14 @@ function PrimarySalesAnalze() {
                             </Grid>
 
                             {/* Render button */}
+                            {Number(userType)===2 &&
                             <Grid size={{ md: 5, lg: 5, xs: 12, sm: 6 }}>
                                 <Box sx={{ display: "flex", justifyContent: { lg: "end", md: "start", sm: "start", xs: "start" } }}>
                                     <Button variant="contained" color="warning" onClick={() => showSubmitConfirmation()}>
                                         <MdOutlineLoop size={15} /> Render
                                     </Button>
                                 </Box>
-                            </Grid>
+                            </Grid>}
 
                         </Grid>
                     </Box>
