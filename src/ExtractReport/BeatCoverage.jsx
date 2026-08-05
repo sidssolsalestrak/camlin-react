@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField } from '@mui/material';
@@ -32,13 +32,11 @@ const menuStyle = {
     }
 }
 
-// URL-safe encode - replaces + / = with cleaner characters (same as StockAndSalesReport)
 const encode = (val) => btoa(String(val || ""))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "");
 
-// URL-safe decode - restore before atob
 const decode = (str) => {
     if (!str) return "";
     const restored = str
@@ -55,7 +53,6 @@ const BeatCoverage = () => {
     const toast = useToast();
     const { enqueueSnackbar } = useSnackbar();
 
-    // decode the url params (same pattern as StockAndSalesReport)
     let decodedYr = decode(searchParams.get('yr'));
     let decodedZone = decode(searchParams.get('zone'));
     let decodedRegion = decode(searchParams.get('region'));
@@ -77,7 +74,8 @@ const BeatCoverage = () => {
 
     const [masterPanel, setMasterPanel] = useState({});
 
-    // labels derived from masterPanel with fallbacks
+    const isInteractiveChange = useRef(false);
+
     const zoneLabel = masterPanel["ZONE"] || "Zone";
     const areaLabel = masterPanel["AREA"] || "Area";
     const regionLabel = masterPanel["REGN"] || "Region";
@@ -99,7 +97,6 @@ const BeatCoverage = () => {
         }))
     }
 
-    /*------------ get zone data ---------- */
     const fetchZone = async () => {
         try {
             const res = await axios.post("/getReportsZone");
@@ -111,7 +108,6 @@ const BeatCoverage = () => {
         }
     }
 
-    /*------------ get region data ---------- */
     const fetchRegion = async () => {
         try {
             let response = await axios.post("/extractRegionList", { zone_id: formData.zone })
@@ -122,8 +118,6 @@ const BeatCoverage = () => {
         }
     }
 
-    /*------------ get user list ----------
-       PHP hardcodes user_type = 8 for this report (getSSUserList(8)) */
     const fetchSSUserList = async () => {
         try {
             let payload = {
@@ -141,7 +135,6 @@ const BeatCoverage = () => {
         }
     }
 
-    /*------------ get beat coverage report data ---------- */
     const fetchBeatCoverageReport = async ({ yr, zone, reg, usr }) => {
         try {
             setloading(true);
@@ -167,12 +160,10 @@ const BeatCoverage = () => {
         }
     }
 
-    // Initial render
     useEffect(() => {
         fetchZone();
     }, [])
 
-    // Zone changes → fetch regions
     useEffect(() => {
         if (formData?.zone > 0) {
             fetchRegion();
@@ -182,9 +173,9 @@ const BeatCoverage = () => {
         }
     }, [formData?.zone]);
 
-    // Zone/Region changes → fetch users (user_type fixed at 8, same as PHP)
     useEffect(() => {
         if (formData.region > 0 && (formData.zone > 0)) {
+            handleChange("User", { id: 0, u_name: "All" })
             fetchSSUserList();
         } else {
             setuser([])
@@ -192,8 +183,8 @@ const BeatCoverage = () => {
         }
     }, [formData.zone, formData.region]);
 
-    // Read filters from URL + fetch data whenever they change (same pattern as StockAndSalesReport)
     useEffect(() => {
+        isInteractiveChange.current = false;
         setMonth(decodedYr ? dayjs(decodedYr, "YYYY") : dayjs().startOf("year"));
         setFormData((prev) => ({
             zone: decodedZone || "0",
@@ -212,9 +203,8 @@ const BeatCoverage = () => {
         })
     }, [decodedYr, decodedZone, decodedRegion, decodedUser])
 
-    // Once user list loads, resolve the decoded user ID into the full object
     useEffect(() => {
-        if (decodedUser && user.length > 0) {
+        if (decodedUser && user.length > 0 && !isInteractiveChange.current) {
             const found = user.find((u) => String(u.id) === String(decodedUser));
             if (found) handleChange("User", found);
         }
@@ -311,7 +301,9 @@ const BeatCoverage = () => {
                         <FormControl size="small" fullWidth>
                             <InputLabel id="zone">{zoneLabel}</InputLabel>
                             <Select value={formData.zone} onChange={(e) => {
+                                isInteractiveChange.current = true;
                                 handleChange("region", "0")
+                                handleChange("User", { id: 0, u_name: "All" })
                                 handleChange("zone", e.target.value)
                             }}
                                 id='zone' label={zoneLabel} MenuProps={menuStyle} labelId="zone" variant="outlined" >
@@ -326,7 +318,11 @@ const BeatCoverage = () => {
                         <FormControl size="small" fullWidth>
                             <InputLabel id="Region">{regionLabel}</InputLabel>
                             <Select id='Region' label={regionLabel} MenuProps={menuStyle}
-                                value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
+                                value={formData.region} onChange={(e) => {
+                                    isInteractiveChange.current = true;
+                                    handleChange("User", { id: 0, u_name: "All" })
+                                    handleChange("region", e.target.value)
+                                }}
                                 labelId="Region" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {regionData?.map((val) => (
@@ -341,7 +337,8 @@ const BeatCoverage = () => {
                             getOptionLabel={(option) => option.u_name ?? ""}
                             value={formData.User}
                             onChange={(event, newValue) => {
-                                handleChange("User", newValue )
+                                isInteractiveChange.current = true;
+                                handleChange("User", newValue)
                             }}
                             renderInput={(params) => (
                                 <TextField {...params} label={userLabel} size="small" />
