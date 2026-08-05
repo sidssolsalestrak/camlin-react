@@ -270,7 +270,7 @@ const Stockist = () => {
                 reg_id: region,
                 zone_id: null
             }
-            const res = await axios.post("/extractAreaList", payload);
+            const res = await axios.post("/AreaAm", payload);
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setarea(data);
         } catch (error) {
