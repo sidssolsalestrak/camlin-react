@@ -80,9 +80,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
         try {
             let payload = {
                 reg_id: formData.region,
-                zone_id: null
+                zone_id: formData.zone
             }
-            const res = await axios.post("/extractAreaList", payload);
+            const res = await axios.post("/AreaAm", payload);
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setarea(data);
         } catch (error) {
