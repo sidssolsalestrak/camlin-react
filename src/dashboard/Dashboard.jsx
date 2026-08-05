@@ -143,7 +143,6 @@ export default function Dashboard() {
   const [primarySalesWidget, setPrimarySalesWidget] = useState({ pcs: 0, cum: 0, loading: true });
   const [display, setDisplay] = useState({ totalreport: 0, totalimages: 0, avgrating: 0, unrateimages: 0, loading: true });
   const [exporting, setExporting] = useState(false);
-  const BIO_URL = process.env.REACT_APP_API_URL;
 
   const fetchUserTypeOptions = async () => {
     try {
@@ -330,7 +329,7 @@ export default function Dashboard() {
         {/* ↓ Attach ref here so ResizeObserver watches this container */}
         <Box ref={sliderContainerRef}>
           <Slider {...settings}>
-            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}orderApproval/orders/`}>
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `/orderApproval/orders/`}>
               <TopWidget
                 widget={{ widget_id: 1, title: "Secondary Orders", unit: "Pcs", color: "#F57C00" }}
                 salesBooking={{ mtd: secondaryOrders.cum, ytd: secondaryOrders.pcs, loading: secondaryOrders.loading }}
@@ -339,7 +338,7 @@ export default function Dashboard() {
 
             <div style={{ padding: "10px" }} onClick={() => {
               const currentMonth = dayjs().format("MMM YYYY");
-              window.location.href = `${BIO_URL}mobile/Orders/${btoa(0)}/${btoa(0)}/${btoa(currentMonth)}/${btoa(0)}/${btoa(0)}/${btoa(0)}`;
+              window.location.href = `/mobile/Orders/${btoa(0)}/${btoa(0)}/${btoa(currentMonth)}/${btoa(0)}/${btoa(0)}/${btoa(0)}`;
             }}>
               <TopWidget
                 widget={{ widget_id: 2, title: "Primary Orders", unit: "Pcs", color: "#1976D2" }}
@@ -347,7 +346,7 @@ export default function Dashboard() {
               />
             </div>
 
-            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}dashboard/primarysalesview/${btoa(1)}`}>
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `/dashboard/primarysalesview/${btoa(1)}`}>
               <TopWidget
                 widget={{ widget_id: 3, title: "Primary Sales", unit: "Pcs", color: "#2E7D32" }}
                 salesBooking={{ mtd: primarySalesWidget.cum, ytd: primarySalesWidget.pcs, loading: primarySalesWidget.loading }}
