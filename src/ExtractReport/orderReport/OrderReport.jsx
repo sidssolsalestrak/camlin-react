@@ -496,17 +496,19 @@ const OrderReport = () => {
                 <span>{FormatCurrency(params?.row?.disc_per)}</span>
             ),
             footerValue: (data) => {
-                const totalOrdValue = data.reduce((sum, row) => {
-                    if (row._isSubtotal) return sum;
-                    return sum + (Number(row.ord_value) || 0);
-                }, 0);
-                const totalDiscValue = data.reduce((sum, row) => {
-                    if (row._isSubtotal) return sum;
-                    return sum + (Number(row.disc_value) || 0);
-                }, 0);
-                return totalOrdValue
-                    ? ((totalDiscValue * 100) / totalOrdValue).toFixed(2)
-                    : "0.00";
+                const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
+                if (grpBy === "1") {
+                    // sum of raw disc_per values (matches PHP group==1)
+                    const sum = data.reduce((acc, row) => {
+                        if (row._isSubtotal) return acc;
+                        return acc + (Number(row.disc_per) || 0);
+                    }, 0);
+                    return sum.toFixed(2);
+                }
+                // ratio-based (matches PHP group!=1)
+                const totalOrdValue = data.reduce((s, r) => r._isSubtotal ? s : s + (Number(r.ord_value) || 0), 0);
+                const totalDiscValue = data.reduce((s, r) => r._isSubtotal ? s : s + (Number(r.disc_value) || 0), 0);
+                return totalOrdValue ? ((totalDiscValue * 100) / totalOrdValue).toFixed(2) : "0.00";
             },
         },
         {
@@ -517,7 +519,17 @@ const OrderReport = () => {
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.retail_price)}</span>
             ),
-            footerValue: () => "-",
+            footerValue: (data) => {
+                const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
+                if (grpBy === "1") {
+                    const sum = data.reduce((acc, row) => {
+                        if (row._isSubtotal) return acc;
+                        return acc + (Number(row.retail_price) || 0);
+                    }, 0);
+                    return sum.toFixed(2);
+                }
+                return "-";
+            },
         },
         {
             field: "ord_value",
@@ -692,25 +704,49 @@ const OrderReport = () => {
                 ] : []),
             ]
             const exportColumns = [...addColumn, ...columns.map(({ renderCell, ...col }) => col)];
+
+            // Determine active group (extract page uses live formData, report page uses decoded URL param)
+            const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
+
+            // Group 1 ("Order wise") sums raw disc_per / retail_price columns directly,
+            // matching PHP's `if ($group == 1)` branch.
+            // All other groups use the ratio-based disc_per and "-" for retail_price,
+            // matching PHP's `else` branch.
+            const grandTotalConfig = grpBy === "1"
+                ? {
+                    label: "Total",
+                    reg_name: '',
+                    sub_name: "label",
+                    prod_name: "label",
+                    disc_value: "sum",
+                    ord_value: "sum",
+                    retail_price: "sum",
+                    disc_per: "sum",
+                    prod_free: "sum",
+                    prod_qty: "sum",
+                }
+                : {
+                    label: "Total",
+                    reg_name: "label",
+                    sub_name: "label",
+                    prod_name: "label",
+                    disc_value: "sum",
+                    ord_value: "sum",
+                    retail_price: "none",
+                    disc_per: {
+                        type: "ratio",
+                        numerator: "disc_value",
+                        denominator: "ord_value",
+                        multiplier: 100,
+                    },
+                    prod_free: "sum",
+                    prod_qty: "sum",
+                };
+
             console.log("export columns in order report", exportColumns)
             console.log("source data in excel", sourceData)
-            DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, {
-                label: "Total",
-                reg_name: formData?.groupBy !== "1" ? "label" : '',
-                sub_name: "label",
-                prod_name: "label",
-                disc_value: "sum",
-                ord_value: "sum",
-                retail_price: "none",
-                disc_per: {
-                    type: "ratio",
-                    numerator: "disc_value",
-                    denominator: "ord_value",
-                    multiplier: 100,
-                },
-                prod_free: "sum",
-                prod_qty: "sum",
-            });
+
+            DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, grandTotalConfig);
         } catch (err) {
             if (err?.response?.status === 404) {
                 showAlert.error("No Data Available To Export Excel")
