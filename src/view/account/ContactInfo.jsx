@@ -74,7 +74,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 onChange={(e) => handleRepChange(idx, String(e.target.value), true)}
                                                 options={repPOSOptions}
                                                 valueKey="id"
-                                                labelKey="first_name"
+                                                labelKey="full_name"
                                                 required={true}
                                                 error={!!fieldErrors.repIncharge}
                                                 helperText={fieldErrors.repIncharge}
