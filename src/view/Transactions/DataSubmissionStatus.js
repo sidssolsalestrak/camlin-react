@@ -1786,8 +1786,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="zbm">{masterPanel["RM"] || "ZBM"}</InputLabel>
-                                <Select labelId="zbm" label={masterPanel["RM"] || "ZBM"} size="small" value={selZBM}
+                                <InputLabel id="zbm">{masterPanel["ZM"] || "RSM"}</InputLabel>
+                                <Select labelId="zbm" label={masterPanel["ZM"] || "RSM"} size="small" value={selZBM}
                                     onChange={(e) => setSelZBM(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>
@@ -1798,8 +1798,8 @@ function DataSubmissionStatus() {
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>
-                                <InputLabel id="rsm">{masterPanel["ZM"] || "RSM"}</InputLabel>
-                                <Select labelId="rsm" label={masterPanel["ZM"] || "RSM"} size="small" value={selRSM}
+                                <InputLabel id="rsm">{masterPanel["RM"] || "ZBM"}</InputLabel>
+                                <Select labelId="rsm" label={masterPanel["RM"] || "ZBM"} size="small" value={selRSM}
                                     onChange={(e) => setSelRSM(e.target.value)}
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}>
                                     <MenuItem value={0}>All</MenuItem>

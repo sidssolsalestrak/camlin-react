@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Layout from "../layout";
 import api from "../services/api";
 import DataTable from "../utils/dataTable";
@@ -122,6 +122,7 @@ function OrderFrequencyReport() {
     const [loading, setloading] = useState(false)
 
     const [masterPanel, setMasterPanel] = useState({});
+     const didInitUser = useRef(false);
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";
@@ -156,6 +157,8 @@ function OrderFrequencyReport() {
         if (!selZone) {
             setSelRegion(0);
             setAllRegion([]);
+            setSelUsers({ id: 0, u_name: "All" });
+            setAllUsers([])
             return
         }
         if (selZone) fetchRegionList(selZone);
@@ -163,18 +166,25 @@ function OrderFrequencyReport() {
 
     useEffect(() => {
         if (!selZone) {
+            setAllUsers([])
             setSelUsers({ id: 0, u_name: "All" });
+            return
         }
         fetchSSUserList();
     }, [selZone, selRegion]);
 
-    useEffect(() => {
-        if (!decodeUserId && allUsers) return;
-        let UserData = allUsers.find((val) => val.id === Number(decodeUserId)) ?? { id: 0, u_name: "All" };
-        console.log("selc user data", UserData);
-        setSelUsers(UserData);
-    }, [allUsers, decodeUserId]);
+   
 
+    useEffect(() => {
+        if (didInitUser.current) return;
+        if (!allUsers.length) return;
+
+        if (decodeUserId) {
+            const UserData = allUsers.find((val) => val.id === Number(decodeUserId)) ?? { id: 0, u_name: "All" };
+            setSelUsers(UserData);
+        }
+        didInitUser.current = true;
+    }, [allUsers, decodeUserId]);
     const fetchReportZone = async () => {
         try {
             let response = await api.post('/getReportsZone');
@@ -500,7 +510,12 @@ function OrderFrequencyReport() {
                             <InputLabel id='region'>{regionLabel}</InputLabel>
                             <Select
                                 labelId="region"
-                                onChange={(e) => setSelRegion(e.target.value)}
+                                onChange={(e) =>{ 
+                                    setAllUsers([])
+                                    setSelUsers({ id: 0, u_name: "All" });
+                                    setSelRegion(e.target.value)
+                                }
+                                }
                                 label={regionLabel}
                                 size="small"
                                 value={selRegion}

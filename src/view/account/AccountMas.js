@@ -989,7 +989,7 @@ const handleRejectAll = () => {
                 label={`${masterPanel["USER"] || "User"} Type`}
                 onChange={(e) => {
                   setSelectedUserType(e.target.value);
-
+                  setSelectedUser(0)
                   // fetchUsers({
                   //   trigger_type: 2,
                   // });
