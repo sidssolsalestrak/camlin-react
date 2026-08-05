@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField } from '@mui/material';
@@ -84,6 +84,10 @@ const StockAndSalesReport = () => {
     const [usererror, setusererror] = useState("")
 
     const [masterPanel, setMasterPanel] = useState({});
+
+    // tracks whether the decoded (URL) user has already been auto-applied for the
+    // current navigation, so manual userType changes after that don't re-apply it
+    const appliedDecodedUserRef = useRef(false);
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";
@@ -265,11 +269,20 @@ const StockAndSalesReport = () => {
         }
     }
 
-     // Once user list loads, resolve the decoded user ID into the full object
+    // New navigation (Load click / URL change) → allow the decoded user to be
+    // auto-applied again once
     useEffect(() => {
-        if (decodedUser && user.length > 0) {
+        appliedDecodedUserRef.current = false;
+    }, [decodedUser]);
+
+     // Once user list loads, resolve the decoded user ID into the full object.
+     // Only does this once per navigation - manual userType changes afterwards
+     // (e.g. reset to All, then re-pick the same type) won't re-select it.
+    useEffect(() => {
+        if (decodedUser && user.length > 0 && !appliedDecodedUserRef.current) {
             const found = user.find((u) => String(u.id) === String(decodedUser));
             if (found) handleChange("User", found);
+            appliedDecodedUserRef.current = true;
         }
     }, [user, decodedUser]);
 
@@ -479,7 +492,10 @@ const StockAndSalesReport = () => {
                         <FormControl size="small" fullWidth>
                             <InputLabel id="type">{userLabel} Type</InputLabel>
                             <Select id='type' label={`${userLabel} Type`} MenuProps={menuStyle}
-                                value={formData.userType} onChange={(e) => handleChange("userType", e.target.value)}
+                                value={formData.userType} onChange={(e) => {
+                                    handleChange("User", { id: 0, u_name: "All" })
+                                    handleChange("userType", e.target.value)
+                                }}
                                 labelId="type" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {usertype.map((val) => (
