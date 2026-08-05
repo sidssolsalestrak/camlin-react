@@ -286,6 +286,9 @@ const PrimaryOrder = () => {
             field: "ord_id",
             headerName: "Order #",
             filterable: true,
+            renderCell: (params)=>(
+            <span>{params.value ? `#${params.value}` : ''}</span>
+           )
         },
         {
             field: "ord_date",
