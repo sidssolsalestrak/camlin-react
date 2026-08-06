@@ -303,7 +303,7 @@ const PrimaryOrder = () => {
                 <span onClick={() => setOpen(true)}
                     onMouseEnter={(e) => e.currentTarget.style.borderBottom = "1px solid #133bde"}
                     onMouseLeave={(e) => e.currentTarget.style.borderBottom = ""}
-                    style={{ color: "#133bde", cursor: "pointer" }}>{params?.row?.stk_code} - {params?.row?.stk_name}</span>
+                    style={{ color: "#133bde", cursor: "pointer" }}>{params?.row?.stk_code}{ params.row?.stk_name?`-`:'' }{params?.row?.stk_name}</span>
             )
         },
         {
