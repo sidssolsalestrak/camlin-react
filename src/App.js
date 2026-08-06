@@ -72,6 +72,7 @@ import UploadClosing from "./view/Transactions/uploadClosingMain";
 import BeatCoverage from "./ExtractReport/BeatCoverage";
 import ChangePassword from "./dashboard/changePassword";
 import OrderApproval from "./dashboard/OrderApproval";
+import MobileOrders from "./dashboard/MobileOrders";
 
 function App() {
   const ProtectedRoute = () => {
@@ -317,6 +318,7 @@ function App() {
           <Route path="/dashboard/districtsales" element={<AreaWiseSalesAnalysis />} />
 
           <Route path="/orderApproval/orders" element={<OrderApproval />} />
+           <Route path="/mobile/Orders" element={<MobileOrders />} />
 
           {/* TRANSACTIONS */}
           <Route path="/input/stock_sales/:closeDate?/:stkid?/:stkLabel?" element={<StockAndSalesUploadNew  />} />

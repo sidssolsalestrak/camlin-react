@@ -122,6 +122,7 @@ export default function CumulativeDashboard({
   onSalePersonClick,
   onFieldDetailClick,
   onCumCusDetailClick,
+  onProfileWidgetClick,
   activityLoading
 }) {
   const totaldays = useMemo(() => {
@@ -193,7 +194,10 @@ export default function CumulativeDashboard({
     });
 
     if (activityData.length > 0) {
-      out.push(buildRegionRow(regName, regId, tot));
+      // PHP: the LAST region's totals row (built after the loop ends) uses
+      // tot_met - tot_CusMet for Repeat Calls, NOT tot_TotCall - tot_CusMet
+      // (which is what every other region's totals row uses mid-loop).
+      out.push(buildRegionRow(regName, regId, tot, { useTotMetForRepeat: true }));
       out.push(buildGrandTotalRow(gr, tot.tot_call));
     }
 
@@ -284,7 +288,15 @@ export default function CumulativeDashboard({
                 if (row._rowType === "regionTotal") {
                   return (
                     <TableRow key={row.id}>
-                      <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
+                      <TableCell
+                        sx={styles.noborder}
+                        style={{ cursor: "pointer", color: "#1565C0" }}
+                        // onClick={
+                        //   onProfileWidgetClick
+                        //     ? () => onProfileWidgetClick({ srId: "", regId: row.reg_id, name: row.reg_name })
+                        //     : undefined
+                        // }
+                      >
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
                       <TableCell sx={{ ...styles.totTr, maxWidth: 200, textAlign: "left" }}>
@@ -316,7 +328,15 @@ export default function CumulativeDashboard({
                 if (row._rowType === "grandTotal") {
                   return (
                     <TableRow key={row.id}>
-                      <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
+                      <TableCell
+                        sx={styles.noborder}
+                        style={{ cursor: "pointer", color: "#1565C0" }}
+                        // onClick={
+                        //   onProfileWidgetClick
+                        //     ? () => onProfileWidgetClick({ srId: "", regId: "", name: "All India" })
+                        //     : undefined
+                        // }
+                      >
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
                       <TableCell sx={{ ...styles.subHeading, maxWidth: 200 }}>Grand Total</TableCell>
@@ -348,7 +368,7 @@ export default function CumulativeDashboard({
                 // ── data row ──
                 return (
                   <TableRow key={row.id}>
-                    <TableCell sx={styles.noborder} style={{ cursor: "pointer", color: "#1565C0" }}>
+                    <TableCell sx={styles.noborder} style={{ color: "#ccc" }}>
                       <i className="fa fa-line-chart" aria-hidden="true" />
                     </TableCell>
                     <TableCell sx={{ ...styles.dataCell, maxWidth: 200 }}>
@@ -431,8 +451,11 @@ export default function CumulativeDashboard({
   );
 }
 
-function buildRegionRow(regName, regId, t) {
+function buildRegionRow(regName, regId, t, opts = {}) {
   const totalCall = t.call_days + t.oth_call;
+  const repeatCall = opts.useTotMetForRepeat
+    ? t.tot_met - t.cus_met   // PHP: last region row => tot_met - tot_CusMet
+    : t.tot_call - t.cus_met; // PHP: all other region rows => tot_TotCall - tot_CusMet
   return {
     id: `region-${regId}`,
     _rowType: "regionTotal",
@@ -448,7 +471,7 @@ function buildRegionRow(regName, regId, t) {
     prodAvg: t.tot_pc_call ? t.tot_call / t.tot_pc_call : 0,
     tot_cus: t.tot_cus,
     cus_met: t.cus_met,
-    repeatCall: t.tot_call - t.cus_met,
+    repeatCall,
     tot_miss_a: t.tot_miss_a,
     tot_miss_c: t.tot_miss_c,
     tot_miss_b: t.tot_miss_b,

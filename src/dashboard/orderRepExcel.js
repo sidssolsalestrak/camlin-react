@@ -1,7 +1,8 @@
 import XLSX from 'xlsx-js-style';
 
 /**
- * Export order approval data to Excel with full styling and Main Header
+ * Export order approval data to Excel with styling matching the
+ * original PHP-generated "Order approval details" export.
  */
 export const exportOrderApprovalToExcel = (data, options = {}) => {
     const {
@@ -19,14 +20,12 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
             return;
         }
 
-        // 1. Define Column Headers (They were missing before!)
         const columnHeaders = [
-            'Sl', 'Region', 'PSM/KAM', 'Date', 'Customer', 'Stockist', 
-            'Tot qty', 'Tot free', 'Tot Value', 'Tot offer', 'Status', 
+            'Sl', 'Region', 'PSM/KAM', 'Date', 'Customer', 'Stockist',
+            'Tot qty', 'Tot free', 'Tot Value', 'Tot offer', 'Status',
             'Disc. Val.', 'Upload Invoice'
         ];
 
-        // 2. Prepare data for Excel (Data Rows)
         let excelData = data.map((row, index) => ({
             'Sl': index + 1,
             'Region': row.regName || '',
@@ -40,10 +39,11 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
             'Tot offer': Number(row.totOffer) || 0,
             'Status': row.statusname || '',
             'Disc. Val.': Number(row.discount) || 0,
-            'Upload Invoice': row.ordInv ? 'Yes' : 'No'
+            'Upload Invoice': '' // always blank, matches reference export
         }));
 
-        // 3. Prepare Total Row
+        // Total row — "Total" label sits right-aligned under Customer (col index 4),
+        // same position as the reference file
         let totalRowData = null;
         if (grandTotal) {
             totalRowData = {
@@ -51,8 +51,8 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
                 'Region': '',
                 'PSM/KAM': '',
                 'Date': '',
-                'Customer': 'Total',
-                'Stockist': '',
+                'Customer': '',
+                'Stockist': 'Total',
                 'Tot qty': Number(grandTotal.qty) || 0,
                 'Tot free': Number(grandTotal.free) || 0,
                 'Tot Value': Number(grandTotal.val) || 0,
@@ -64,27 +64,20 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
             excelData.push(totalRowData);
         }
 
-        // -----------------------------------------------------
-        // FIX: Build the Matrix MANUALLY to preserve headers
-        // -----------------------------------------------------
         const totalColumns = 13; // A to M
-        
-        // 1. Create Title Row (All empty except first cell)
-        const titleRow = Array(totalColumns).fill(''); 
-        titleRow[0] = 'Order approval details'; 
 
-        // 2. Build the matrix: [Title Row] + [Column Headers] + [Data Rows]
+        const titleRow = Array(totalColumns).fill('');
+        titleRow[0] = 'Order approval details';
+
         const finalMatrix = [
-            titleRow, 
-            columnHeaders, 
+            titleRow,
+            columnHeaders,
             ...excelData.map(row => Object.values(row))
         ];
 
-        // Create workbook and worksheet from the final matrix
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(finalMatrix);
 
-        // 4. Define column widths
         ws['!cols'] = [
             { wch: 5 },   // Sl
             { wch: 12 },  // Region
@@ -101,131 +94,109 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
             { wch: 15 }   // Upload Invoice
         ];
 
-        // -----------------------------------------------------
-        // APPLY STYLES
-        // -----------------------------------------------------
-        
-        // Get ranges (Title = row 0, Headers = row 1, Data starts at row 2)
         const range = XLSX.utils.decode_range(ws['!ref']);
         const titleRowIndex = 0;
         const headerRowIndex = 1;
         const dataStartIndex = 2;
-        const totalRowIndex = excelData.length + 1; // data length + 1 for the header row
+        const totalRowIndex = excelData.length + 1;
 
-        // A. STYLE: MAIN HEADER TITLE
-        // Merge cells A1:M1 for the title
+        const thinBorder = {
+            top: { style: 'thin', color: { rgb: "666666" } },
+            bottom: { style: 'thin', color: { rgb: "666666" } },
+            left: { style: 'thin', color: { rgb: "666666" } },
+            right: { style: 'thin', color: { rgb: "666666" } }
+        };
+
+        // A. TITLE — plain centered heading, matches <h2> in reference (no fill)
         ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } } // Merge row 0, columns 0 to 12
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } }
         ];
-
-        // Style the A1 cell (which represents the whole merged area)
         const titleCell = XLSX.utils.encode_cell({ r: titleRowIndex, c: 0 });
         if (ws[titleCell]) {
             ws[titleCell].s = {
-                font: { 
-                    bold: true, 
-                    sz: 18, 
+                font: {
+                    bold: true,
+                    sz: 16,
                     name: 'Calibri',
-                    color: { rgb: "1E3A5F" } // Dark blue text
+                    color: { rgb: "000000" }
                 },
-                alignment: { 
-                    horizontal: 'center', // Center align
+                alignment: {
+                    horizontal: 'center',
                     vertical: 'center'
-                },
-                fill: { fgColor: { rgb: "F2F2F2" } } // Light gray background for title
-            };
-        }
-
-        // B. STYLE: HEADER ROW (Row 1 now)
-        for (let col = range.s.c; col <= range.e.c; col++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: headerRowIndex, c: col });
-            if (!ws[cellAddress]) continue;
-            
-            ws[cellAddress].s = {
-                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11, name: 'Calibri' },
-                fill: { fgColor: { rgb: "4472C4" } },
-                alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-                border: {
-                    top: { style: 'thin', color: { rgb: "000000" } },
-                    bottom: { style: 'thin', color: { rgb: "000000" } },
-                    left: { style: 'thin', color: { rgb: "000000" } },
-                    right: { style: 'thin', color: { rgb: "000000" } }
                 }
             };
         }
 
-        // C. STYLE: DATA ROWS (Rows 2 to Total-Row-1)
+        // B. HEADER ROW — bg #3464a7, white bold text, thin #666 borders (matches reference)
+        for (let col = range.s.c; col <= range.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: headerRowIndex, c: col });
+            if (!ws[cellAddress]) continue;
+
+            ws[cellAddress].s = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11, name: 'Calibri' },
+                fill: { fgColor: { rgb: "3464A7" } },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+                border: thinBorder
+            };
+        }
+
+        // C. DATA ROWS — thin #666 borders on every cell, matches reference table styling
         for (let row = dataStartIndex; row < totalRowIndex; row++) {
             for (let col = range.s.c; col <= range.e.c; col++) {
                 const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
                 if (!ws[cellAddress]) continue;
-                
+
                 const isNumeric = col >= 6 && col <= 9;
                 const isDiscount = col === 11;
-                
+
                 ws[cellAddress].s = {
                     font: { sz: 10, name: 'Calibri' },
-                    alignment: { 
+                    alignment: {
                         horizontal: isNumeric || isDiscount ? 'right' : 'left',
                         vertical: 'center'
                     },
                     numFmt: (isNumeric || isDiscount) ? '#,##0.00' : undefined,
-                    border: {
-                        bottom: { style: 'thin', color: { rgb: "D0D0D0" } },
-                        left: { style: 'thin', color: { rgb: "D0D0D0" } },
-                        right: { style: 'thin', color: { rgb: "D0D0D0" } }
-                    }
+                    border: thinBorder
                 };
             }
         }
 
-        // D. STYLE: TOTAL ROW
+        // D. TOTAL ROW — bold, "Total" right-aligned under Customer col, same border style
         if (grandTotal) {
             for (let col = range.s.c; col <= range.e.c; col++) {
                 const cellAddress = XLSX.utils.encode_cell({ r: totalRowIndex, c: col });
                 if (!ws[cellAddress]) continue;
 
-                const isNumeric = col >= 6 && col <= 9;
-                const isDiscount = col === 11;
-                
+                const isLabelCol = col === 5;                 // "Total" label (Stockist col)
+                const isSumCol = (col >= 6 && col <= 9) || col === 11; // Tot qty/free/Value/offer + Disc. Val.
+
                 ws[cellAddress].s = {
                     font: { bold: true, sz: 10, name: 'Calibri' },
-                    fill: { fgColor: { rgb: "E8E8E8" } },
-                    alignment: { 
-                        horizontal: col === 4 ? 'left' : (isNumeric || isDiscount ? 'right' : 'center'),
+                    alignment: {
+                        horizontal: isLabelCol || isSumCol ? 'right' : 'left',
                         vertical: 'center'
                     },
-                    numFmt: (isNumeric || isDiscount) ? '#,##0.00' : undefined,
-                    border: {
-                        top: { style: 'medium', color: { rgb: "000000" } },
-                        bottom: { style: 'medium', color: { rgb: "000000" } },
-                        left: { style: 'thin', color: { rgb: "000000" } },
-                        right: { style: 'thin', color: { rgb: "000000" } }
-                    }
+                    numFmt: isSumCol ? '#,##0.00' : undefined,
+                    border: thinBorder
                 };
             }
         }
 
-        // Apply freeze pane (Freezing rows 0 & 1, so data starts at row 2)
         ws['!freeze'] = { xSplit: 0, ySplit: 2 };
 
-        // Add the worksheet to workbook
         XLSX.utils.book_append_sheet(wb, ws, 'OrderApproval');
 
-        // Generate filename
         const statusLabel = status || 'All';
         const from = fromDate || 'start';
         const to = toDate || 'end';
         const filename = `Order_Approval_${statusLabel}_${from}_to_${to}.xlsx`;
 
-        // Write the file
-        const wbout = XLSX.write(wb, { 
-            bookType: 'xlsx', 
+        const wbout = XLSX.write(wb, {
+            bookType: 'xlsx',
             type: 'array',
             bookSST: false
         });
 
-        // Create blob and download
         const blob = new Blob([wbout], { type: 'application/octet-stream' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -234,7 +205,7 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-        
+
         onSuccess('Export completed successfully');
     } catch (error) {
         console.error('Export error:', error);

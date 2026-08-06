@@ -174,6 +174,8 @@ const BeatCoverage = () => {
     }, [formData?.zone]);
 
     useEffect(() => {
+        setuser([]);
+        handleChange("User", { id: 0, u_name: "All" });
         if (formData.region > 0 && (formData.zone > 0)) {
             handleChange("User", { id: 0, u_name: "All" })
             fetchSSUserList();
@@ -267,7 +269,7 @@ const BeatCoverage = () => {
                 console.log("Download excel Error", err);
                 toast.error("Failed to Export Excel")
             }
-        }finally{
+        } finally {
             setProgress1(null)
         }
     };
@@ -334,16 +336,22 @@ const BeatCoverage = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <Autocomplete
                             options={[{ id: 0, u_name: "All" }, ...user]}
-                            getOptionLabel={(option) => option.u_name ?? ""}
-                            value={formData.User}
+                            getOptionLabel={(option) => option?.u_name ?? ""}
+                            value={formData.User || null}  // ← Allow null
                             onChange={(event, newValue) => {
                                 isInteractiveChange.current = true;
                                 handleChange("User", newValue)
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} label={userLabel} size="small" />
+                                <TextField
+                                    {...params}
+                                    label={userLabel}
+                                    size="small"
+                                />
                             )}
-                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                            clearOnBlur={false}  // ← Don't auto-reset on blur
+                            disableClearable={false}  // ← Allow X button
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.8, lg: 0.8 }}>

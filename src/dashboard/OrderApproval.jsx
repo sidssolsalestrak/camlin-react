@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 import {
     Box, FormControl, Grid, InputLabel, MenuItem, Select, Button, Typography,
     Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TextField,
-    Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper
+    Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -35,13 +35,12 @@ const menuStyle = {
 }
 
 const BIO_URL = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
-const b64 = (val) => window.btoa(val ?? "");
-
+// PHP: user_type != 6 && user_type != 8 shows Delete button
 const CAN_DELETE_USER_TYPES_EXCLUDED = [6, 8];
+// PHP: mailstat == 2 || mailstat == 4 || mailstat == 5 -> show FOP/POD block, hide read-only qty/disc only on 2
+const FOP_POD_MAILSTATS = ['2', '4', '5'];
 
 // ---- Region / Rep grouping helper ----
-// API returns flat rows with regId/regName/psmName. We inject synthetic
-// header rows (mirrors PHP's inline <tr> region/rep banners).
 const buildGroupedRows = (rows) => {
     const grouped = [];
     let lastReg = null, lastRep = null;
@@ -64,14 +63,14 @@ const buildGroupedRows = (rows) => {
 const OrderApproval = () => {
     const location = useLocation();
     const showAlert = useToast();
-    const currentUserType = Number(localStorage.getItem('user_type') || 0); // TODO: wire to real auth source
+    const currentUserType = Number(localStorage.getItem('user_type') || 0);
 
     const [formData, setformData] = useState({
         from: dayjs().startOf("month"),
         to: dayjs(),
         type: "0",
         rep: "0",
-        status: "1",     // "1" = New (default), matches API status codes
+        status: "1",
         stockist: "0"
     })
     const [loading, setloading] = useState(false)
@@ -93,6 +92,17 @@ const OrderApproval = () => {
     const [remarkText, setRemarkText] = useState('')
     const [counts, setCounts] = useState({ fopcount: 0, podcount: 0 })
     const [deletedLine, setDeletedLine] = useState('')
+
+    // ---- Summary totals ----
+    const [summaryTotals, setSummaryTotals] = useState({
+        orderValue: 0,
+        gst: 0,
+        offerValue: 0,
+        offerPercent: 0,
+        mrpValue: 0,
+        marginValue: 0,
+        marginPercent: 0
+    })
 
     const [ctx, setCtx] = useState({
         ordType: '', ordNo: '', ordStat: '', nextOrderStat: '',
@@ -152,6 +162,7 @@ const OrderApproval = () => {
         }
     };
 
+    // PHP: $(document).on('change','#psm', ...) reloads stockist list on rep change
     const fetchStockistOptions = async (psmId = "0") => {
         try {
             const res = await api.post('/mobile/getstkonpsm', { psm: psmId });
@@ -171,7 +182,6 @@ const OrderApproval = () => {
     useEffect(() => {
         fetchStockistOptions(formData.rep);
         setformData((prev) => ({ ...prev, stockist: "0" }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.rep]);
 
     // ---------------- Main list search ----------------
@@ -199,18 +209,16 @@ const OrderApproval = () => {
         } finally {
             setloading(false);
         }
-    }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [formData]);
 
     useEffect(() => {
         approvalSearch();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ---------------- Excel Export ----------------
+    // PHP: window.location.href = bioUrl+'mobile/exportApprovalDet/'+btoa(type)+...
     const handleExport = () => {
         setExporting(true);
-
-        // Get flat data from grouped rows
         const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
 
         if (flatData.length === 0) {
@@ -219,7 +227,6 @@ const OrderApproval = () => {
             return;
         }
 
-        // Get status label
         const statusMap = {
             '1': 'New',
             '2': 'Approved',
@@ -231,11 +238,11 @@ const OrderApproval = () => {
         };
         const statusLabel = statusMap[formData.status] || 'All';
 
-        // Call the export function
         exportOrderApprovalToExcel(flatData, {
             fromDate: formData.from.format('DD-MMM-YYYY'),
             toDate: formData.to.format('DD-MMM-YYYY'),
             status: statusLabel,
+            grandTotal: grandTotal,
             onSuccess: (message) => {
                 showAlert.success(message);
                 setExporting(false);
@@ -247,7 +254,36 @@ const OrderApproval = () => {
         });
     };
 
+    // ---------------- Calculate summary totals ----------------
+    const calculateTotals = (lines) => {
+        let orderValue = 0;
+        let offerValue = 0;
+        let mrpValue = 0;
+
+        lines.forEach(line => {
+            const qty = parseFloat(line.prod_qty) || 0;
+            const free = parseFloat(line.prod_free) || 0;
+            const ptr = parseFloat(line.prod_ptr) || 0;
+            const mrp = parseFloat(line.prod_mrp) || 0;
+            const discValue = parseFloat(line.discount_value) || 0;
+
+            orderValue += qty * ptr;
+            offerValue += discValue;
+            mrpValue += (qty + free) * mrp;
+        });
+
+        const gst = orderValue * 0.18;
+        const marginValue = mrpValue - orderValue;
+        const marginPercent = mrpValue > 0 ? (marginValue / mrpValue) * 100 : 0;
+        const offerPercent = orderValue > 0 ? (offerValue / orderValue) * 100 : 0;
+
+        setSummaryTotals({
+            orderValue, gst, offerValue, offerPercent, mrpValue, marginValue, marginPercent
+        });
+    };
+
     // ---------------- Row click -> open Product Summary modal ----------------
+    // Mirrors PHP $(document).on('click', '.cusProd', ...)
     const openProductSummary = async (row) => {
         setDeletedLine('');
         setSummaryLoading(true);
@@ -267,10 +303,13 @@ const OrderApproval = () => {
             stktype: row.stktype,
         });
 
+        // PHP: textStatus=='New' ? textStatus : statusname
+        const statusDisplay = row.textStatus === 'New' ? row.textStatus : row.statusname;
+
         setSummaryHeader({
             orderNumber: row.ordNo,
             customer: row.cusProd,
-            status: row.statusname,
+            status: statusDisplay,
             date: row.ordDt,
             rep: row.psmName,
             stockist: row.stk,
@@ -303,18 +342,24 @@ const OrderApproval = () => {
             });
 
             const data = res.data;
-            setSummaryLines(data.orderConfirm || []);
+            const lines = data.orderConfirm || [];
+            setSummaryLines(lines);
             setSummaryFooter({
                 nextOrderStat: data.nextOrderStat,
                 canApprove: !!data.canApprove,
                 canReject: !!data.canReject,
             });
             setCtx((prev) => ({ ...prev, nextOrderStat: data.nextOrderStat }));
+
+            // PHP: fopcount/podcount fallback to 0 when empty
             setCounts({
                 fopcount: data.fopcount || 0,
                 podcount: data.podcount || 0,
             });
 
+            calculateTotals(lines);
+
+            // PHP: del_stat==5 (Deleted filter) -> show "Deleted" label, hide delete/action controls
             if (formData.status === '-1') {
                 setDeletedLine('Deleted');
             }
@@ -359,6 +404,7 @@ const OrderApproval = () => {
         }
     };
 
+    // PHP: mailstat==2 -> fopcountid>10 warn, else podcountid>2 warn, else generic confirm
     const showApproveConfirmation = () => {
         const fopExceeded = counts.fopcount > 10;
         const podPending = counts.podcount > 2;
@@ -414,6 +460,7 @@ const OrderApproval = () => {
     };
 
     // ---------------- Delete whole order ----------------
+    // PHP: .deleteOrder click -> checks ordStat < 7
     const doDeleteOrder = async () => {
         try {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
@@ -458,7 +505,9 @@ const OrderApproval = () => {
             });
             if (res.data === 1 || res.data?.success) {
                 showAlert.success('Line Item Deleted Successfully');
-                setSummaryLines((prev) => prev.filter((l) => l.prod_id !== line.prod_id));
+                const updatedLines = summaryLines.filter((l) => l.prod_id !== line.prod_id);
+                setSummaryLines(updatedLines);
+                calculateTotals(updatedLines);
             } else {
                 showAlert.error('Failed to delete line item');
             }
@@ -484,7 +533,7 @@ const OrderApproval = () => {
         });
     };
 
-    // ---------------- Add / update discount on a line ----------------
+    // ---------------- Add / update discount on a line (list view) ----------------
     const doAddDiscount = async (line, discountValue) => {
         try {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
@@ -513,6 +562,7 @@ const OrderApproval = () => {
     };
 
     // ---------------- Edit line ----------------
+    // PHP: .EditOrderLine click -> populate fields, mailstat==2 -> Qty/Disc readonly
     const openEditLine = (line) => {
         setEditLine({
             prod_id: line.prod_id,
@@ -554,11 +604,13 @@ const OrderApproval = () => {
             if (res.data === 1 || res.data?.success) {
                 showAlert.success('Product Updated Successfully');
                 closeEditLine();
-                setSummaryLines((prev) => prev.map((l) =>
+                const updatedLines = summaryLines.map((l) =>
                     l.prod_id === editLine.prod_id
                         ? { ...l, prod_qty: editLine.prod_qty, prod_free: editLine.prod_free, prod_disc: editLine.prod_disc }
                         : l
-                ));
+                );
+                setSummaryLines(updatedLines);
+                calculateTotals(updatedLines);
             } else {
                 showAlert.error('Unable to Update. Please Try Again!');
             }
@@ -570,6 +622,7 @@ const OrderApproval = () => {
         }
     };
 
+    // PHP: mailstat != 2 -> Qty required > 0
     const showProdSaveConfirmation = () => {
         setQtyError('');
         if (String(ctx.mailstat) !== '2') {
@@ -588,6 +641,7 @@ const OrderApproval = () => {
     };
 
     // ---------------- Invoice file upload ----------------
+    // PHP: .update_file change -> validates extension, filename, size <=5MB
     const handleInvoiceUpload = async (e, line) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -616,11 +670,15 @@ const OrderApproval = () => {
         form.append('orderNumber', line.ordNo || ctx.ordNo);
 
         try {
-            await api.post('/mobile/orderInvoiceUpload', form, {
+            const res = await api.post('/mobile/orderInvoiceUpload', form, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            showAlert.success('Invoice Uploaded Successfully');
-            approvalSearch();
+            if (res.data?.success) {
+                showAlert.success('Invoice Uploaded Successfully');
+                approvalSearch();
+            } else {
+                showAlert.error('Failed to upload invoice');
+            }
         } catch (err) {
             console.error(err);
             showAlert.error("Couldn't Add! Contact Administrator");
@@ -659,13 +717,6 @@ const OrderApproval = () => {
                 return (row._isRegionHeader || row._isRepHeader) ? '' : row.cusProd;
             }
         },
-        // {
-        //     field: 'psmName', headerName: 'Rep',
-        //     renderCell: (params) => {
-        //         const row = params.row;
-        //         return (row._isRegionHeader || row._isRepHeader) ? '' : row.psmName;
-        //     }
-        // },
         {
             field: 'stk', headerName: 'Stockist',
             renderCell: (params) => {
@@ -743,6 +794,11 @@ const OrderApproval = () => {
             }
         },
     ]
+
+    // PHP: showcount block visible only when mailstat is 2, 4, or 5
+    const showFopPodBlock = FOP_POD_MAILSTATS.includes(String(ctx.mailstat));
+    // PHP: !$this->session->userdata['user_type'] in [6,8]  AND del_stat != 5 (deletedLine empty)
+    const canShowDeleteButton = !CAN_DELETE_USER_TYPES_EXCLUDED.includes(currentUserType) && !deletedLine;
 
     return (
         <Layout breadcrumb={[
@@ -856,7 +912,7 @@ const OrderApproval = () => {
                     loading={loading}
                     defaultPageSize={50}
                     rowStyle={(params) => {
-                        const row = params.row ?? params; // handles either shape, verify against your DataTable source
+                        const row = params.row ?? params;
                         if (row._isRegionHeader) return { "& td": { backgroundColor: "#6290d0", color: "#fff", fontWeight: 700 } };
                         if (row._isRepHeader) return { "& td": { backgroundColor: "#c8ddfb", fontWeight: 600 } };
                         return {};
@@ -873,13 +929,17 @@ const OrderApproval = () => {
                 )}
             </Box>
 
-            {/* ================= Product Summary Modal ================= */}
+            {/* ================= Product Summary Modal — replica of PHP #productSummaryModal ================= */}
             <Dialog open={summaryOpen} onClose={closeSummary} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">Product Breakup</Typography>
+                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>Product Breakup</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {deletedLine && <Typography sx={{ color: 'red', fontWeight: 700 }}>{deletedLine}</Typography>}
-                        {!CAN_DELETE_USER_TYPES_EXCLUDED.includes(currentUserType) && !deletedLine && (
+                        {deletedLine && (
+                            <Typography sx={{ color: 'red', fontWeight: 700, fontSize: '23px' }}>
+                                {deletedLine}
+                            </Typography>
+                        )}
+                        {canShowDeleteButton && (
                             <Button variant="contained" color="error" size="small" onClick={showDeleteOrderConfirmation}>
                                 Delete
                             </Button>
@@ -888,26 +948,28 @@ const OrderApproval = () => {
                     </Box>
                 </DialogTitle>
                 <DialogContent dividers>
+                    {/* ---- Header details block (matches PHP col-md-6 / col-md-6 split) ---- */}
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <Typography>Order number: <b style={{ color: '#1976d2' }}>{summaryHeader.orderNumber}</b></Typography>
-                            <Typography>Customer: <b style={{ color: '#1976d2' }}>{summaryHeader.customer}</b></Typography>
-                            <Typography>Status: <b style={{ color: '#1976d2' }}>{summaryHeader.status}</b></Typography>
-                            <Typography>Date: <b style={{ color: '#1976d2' }}>{summaryHeader.date}</b></Typography>
-                            <Typography>PSM/KAM: <b style={{ color: '#1976d2' }}>{summaryHeader.rep}</b></Typography>
-                            <Typography>Stockist: <b style={{ color: '#1976d2' }}>{summaryHeader.stockist}</b></Typography>
-                            <Typography>Order Mode & Time: <b style={{ color: '#1976d2' }}>{summaryHeader.modeTime}</b></Typography>
-                            <Typography>Order Remarks: <b style={{ color: '#1976d2' }}>{summaryHeader.remarks}</b></Typography>
+                            <Typography>Order number: <b style={{ color: 'blue' }}>{summaryHeader.orderNumber}</b></Typography>
+                            <Typography>Customer : <b style={{ color: 'blue' }}>{summaryHeader.customer}</b></Typography>
+                            <Typography>Status : <b style={{ color: 'blue' }}>{summaryHeader.status}</b></Typography>
+                            <Typography>Date : <b style={{ color: 'blue' }}>{summaryHeader.date}</b></Typography>
+                            <Typography>PSM/KAM : <b style={{ color: 'blue' }}>{summaryHeader.rep}</b></Typography>
+                            <Typography>Stockist : <b style={{ color: 'blue' }}>{summaryHeader.stockist}</b></Typography>
+                            <Typography>Order Mode & Time: <b style={{ color: 'blue' }}>{summaryHeader.modeTime}</b></Typography>
+                            <Typography>Order Remarks : <b style={{ color: 'blue' }}>{summaryHeader.remarks}</b></Typography>
                         </Grid>
-                        {(['2', '4', '5'].includes(String(ctx.mailstat))) && (
+                        {/* PHP: .showcount block — only for mailstat 2/4/5 */}
+                        {showFopPodBlock && (
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Typography>
-                                    POD DUE: <b style={{ color: '#1976d2' }}>{counts.podcount}</b>
+                                    POD DUE: <b style={{ color: 'blue' }}>{counts.podcount}</b>
                                 </Typography>
                                 <Typography>
-                                    FOP: {counts.fopcount > 10
+                                    FOP  : {counts.fopcount > 10
                                         ? <b style={{ color: 'red' }}>{counts.fopcount} Quota Exceeded</b>
-                                        : <b style={{ color: '#1976d2' }}>{counts.fopcount}</b>}
+                                        : <b style={{ color: 'blue' }}>{counts.fopcount}</b>}
                                 </Typography>
                             </Grid>
                         )}
@@ -924,24 +986,30 @@ const OrderApproval = () => {
                         />
                     </Box>
 
-                    <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    {/* ---- Product breakup table ---- */}
+                    <TableContainer component={Paper} sx={{ mt: 2, border: '1px solid #ddd', overflowX: 'auto' }}>
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Product name</TableCell>
-                                    <TableCell>PTR</TableCell>
-                                    <TableCell>MRP</TableCell>
-                                    <TableCell>Qty</TableCell>
-                                    <TableCell>Free</TableCell>
-                                    <TableCell>Offer(%)</TableCell>
-                                    <TableCell>Offer value</TableCell>
-                                    {!deletedLine && <TableCell colSpan={2}>Action</TableCell>}
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Product name</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>PTR</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>MRP</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Qty</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Free</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer(%)</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer value</TableCell>
+                                    {/* PHP: <td class="ordStat" colspan="2">Action</td> — hidden when del_stat==5 */}
+                                    {!deletedLine && (
+                                        <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }} colSpan={2}>
+                                            Action
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {summaryLines.map((line) => (
                                     <TableRow key={line.prod_id}>
-                                        <TableCell>{line.prod_name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>{line.prod_name}</TableCell>
                                         <TableCell>{line.prod_ptr}</TableCell>
                                         <TableCell>{line.prod_mrp}</TableCell>
                                         <TableCell>{line.prod_qty}</TableCell>
@@ -951,10 +1019,10 @@ const OrderApproval = () => {
                                         {!deletedLine && (
                                             <TableCell>
                                                 <IconButton size="small" onClick={() => openEditLine(line)}>
-                                                    <EditIcon fontSize="small" />
+                                                    <EditIcon fontSize="small" sx={{ color: '#2e7d32' }} />
                                                 </IconButton>
                                                 <IconButton size="small" onClick={() => showDeleteLineConfirmation(line)}>
-                                                    <DeleteIcon fontSize="small" />
+                                                    <DeleteIcon fontSize="small" sx={{ color: '#d32f2f' }} />
                                                 </IconButton>
                                             </TableCell>
                                         )}
@@ -967,10 +1035,84 @@ const OrderApproval = () => {
                                         </TableCell>
                                     </TableRow>
                                 )}
+                                {/* Totals row inline in same table, like PHP */}
+                                {summaryLines.length > 0 && (
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 700 }}>Total</TableCell>
+                                        <TableCell />
+                                        <TableCell />
+                                        <TableCell sx={{ fontWeight: 700 }}>
+                                            {summaryLines.reduce((s, l) => s + (parseFloat(l.prod_qty) || 0), 0)}
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700 }}>
+                                            {summaryLines.reduce((s, l) => s + (parseFloat(l.prod_free) || 0), 0)}
+                                        </TableCell>
+                                        <TableCell />
+                                        <TableCell sx={{ fontWeight: 700 }}>
+                                            {summaryLines.reduce((s, l) => s + (parseFloat(l.discount_value) || 0), 0).toFixed(2)}
+                                        </TableCell>
+                                        {!deletedLine && <TableCell colSpan={2} />}
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    {/* ---- Totals summary block ---- */}
+                    {summaryLines.length > 0 && (
+                        <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 480, border: '1px solid #ddd' }}>
+                            <Table size="small">
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 700 }}>Net Order Value (PTR)</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                            {summaryTotals.orderValue.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ color: '#1976d2', fontWeight: 700, fontStyle: 'italic', border: 'none' }}>
+                                            + GST @18%
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow sx={{ bgcolor: '#f0f5fc' }}>
+                                        <TableCell sx={{ fontWeight: 700 }}>Net offer value</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                            {summaryTotals.offerValue.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ border: 'none' }} />
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 700 }}>Net offer %</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: '#1976d2' }}>
+                                            {summaryTotals.offerPercent.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ border: 'none' }} />
+                                    </TableRow>
+                                    <TableRow sx={{ bgcolor: '#dbe9fb' }}>
+                                        <TableCell sx={{ fontWeight: 700 }}>Order MRP Value</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                            {summaryTotals.mrpValue.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ border: 'none' }} />
+                                    </TableRow>
+                                    <TableRow sx={{ bgcolor: '#dbe9fb' }}>
+                                        <TableCell sx={{ fontWeight: 700 }}>Net Margin Value on MRP</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                            {summaryTotals.marginValue.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ border: 'none' }} />
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 700 }}>Net Margin % on MRP</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: '#1976d2' }}>
+                                            {summaryTotals.marginPercent.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell sx={{ border: 'none' }} />
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
                 </DialogContent>
+                {/* PHP: #footerAction rendered server-side with Approve/Reject buttons */}
                 <DialogActions>
                     {summaryFooter.canApprove && (
                         <Button variant="contained" color="success" onClick={showApproveConfirmation}>Approve</Button>
@@ -982,16 +1124,16 @@ const OrderApproval = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* ================= Product Edit Modal ================= */}
+            {/* ================= Product Edit Modal — replica of PHP #productEditModal ================= */}
             <Dialog open={editOpen} onClose={closeEditLine} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">Product Edit</Typography>
+                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>Product Edit</Typography>
                     <IconButton onClick={closeEditLine}><CloseIcon /></IconButton>
                 </DialogTitle>
                 <DialogContent dividers>
                     <Grid container spacing={2}>
                         <Grid size={12}>
-                            <Typography>Product: <b>{editLine.prod_name}</b></Typography>
+                            <Typography>Product : <b>{editLine.prod_name}</b></Typography>
                         </Grid>
                         <Grid size={12}>
                             <TextField label="PTR" fullWidth size="small" value={editLine.prod_ptr} disabled />
@@ -1047,8 +1189,7 @@ const OrderApproval = () => {
     )
 }
 
-// ---- Inline discount cell: local text state + Update button ----
-// Mirrors PHP's <input class="discount"> + <button class="addDiscount"> per row.
+// ---- Inline discount cell (matches PHP .addDiscount row control) ----
 const DiscountCell = ({ row, onUpdate }) => {
     const [value, setValue] = useState(row.ordDiscVal || '');
 
