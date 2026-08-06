@@ -230,7 +230,7 @@ function OrderFrequencyReport() {
                 type: selType,
                 zone_id: selZone,
                 reg_id: selRegion,
-                user_id: selUsers.id,
+                user_id: selUsers?.id ?? 0,
                 month: selMonth,
             };
 
