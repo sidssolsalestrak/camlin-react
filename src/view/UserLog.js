@@ -407,6 +407,7 @@ function UserLog() {
               <Select
                 value={filters.userType}
                 label={`${userLabel} Type`}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 onChange={(e) => handleChange("userType", e.target.value)}
               >
                 {/* ALL */}
