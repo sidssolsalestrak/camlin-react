@@ -106,7 +106,10 @@ export default function DailyActivityReport() {
             let finalactivityRes = activityRes.map((val, index) => ({
                 ...val,
                 app_type: val.app_type === 1 ? 'Android' : 'IOS',
-                sl_no: index + 1
+                sl_no: index + 1,
+                sec_pct: val.sec_tgt_val && val.sec_tgt_val > 0
+                ? Number(((val.sec_ach_val / val.sec_tgt_val) * 100).toFixed(2))
+                : 0
             }));
             setAllReportData(finalactivityRes);
             const coords = activityRes
@@ -363,11 +366,13 @@ export default function DailyActivityReport() {
             )
         },
         {
-            field: "",
+            field: "sec_pct",
             headerName: "%age",
             showTotal: true,
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+                <Typography sx={{ textAlign: 'right' }}>{params.value > 0
+                ? params.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : '-'}</Typography>
             )
         },
         {
