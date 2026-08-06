@@ -816,6 +816,7 @@ function UserList() {
               <Select
                 value={filters.userType || 0}
                 label={`${userLabel} Type`}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 onChange={(e) => handleChange("userType", e.target.value)}
               >
                 <MenuItem value={0}>All</MenuItem>
