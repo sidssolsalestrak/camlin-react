@@ -311,13 +311,24 @@ export default function DailyActivityReport() {
         {
             field: "__expand_beat__",
             headerName: `${beatLabel} Name`,
-            width: 105,
+            width: 60,
             renderCell: (params) => (
                 (params.row.beat_work !== " " && params.row.beat_work) ?
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography><IoLocationSharp size={11} color="green" /></Typography>
-                        <Typography>{params.row.beat_work}</Typography>
-                    </Box> : "-"
+                    <Tooltip title={params.row.beat_work} placement="top">
+                        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                            <IoLocationSharp size={11} color="green" style={{ flexShrink: 0 }} />
+                            <Typography sx={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                ml: 0.5,
+                                width:'105px',
+                            }}>
+                                {params.row.beat_work}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                    : "-"
             )
         },
         {
