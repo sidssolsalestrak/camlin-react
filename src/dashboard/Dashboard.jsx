@@ -26,6 +26,11 @@ import {
   InputLabel,
   Select,
   Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import { FaFileExcel, FaTruck } from "react-icons/fa";
 import { FaCartShopping, FaMoneyBill, FaChartBar } from "react-icons/fa6";
@@ -33,6 +38,13 @@ import { styled } from "@mui/material/styles";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CumulativeDashboard from "./CumulativeDashboard";
+import FieldDetailTable from "./FieldDetailTable";
+import CumCusDetailTable from "./CumCusDetailTable";
+import CallSummaryTable from "./CallSummaryTable";
+import ProfileWidgetGraphs from "./ProfileWidgetGraphs";
+import JointWorkModal from "./JointWorkModal";
+import MarketInputModal from "./MarketInputModal";
+import DeleteCallModal from "./DeleteCallModal";
 
 import dayjs from "dayjs";
 import { Card, CardContent, Divider } from "@mui/material";
@@ -40,9 +52,9 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { CircularProgress } from "@mui/material";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { exportActivityExcel } from "./exportActivityExcel";
+import { jwtDecode } from "jwt-decode";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -143,7 +155,167 @@ export default function Dashboard() {
   const [primarySalesWidget, setPrimarySalesWidget] = useState({ pcs: 0, cum: 0, loading: true });
   const [display, setDisplay] = useState({ totalreport: 0, totalimages: 0, avgrating: 0, unrateimages: 0, loading: true });
   const [exporting, setExporting] = useState(false);
-  const BIO_URL = process.env.REACT_APP_API_URL;
+
+  /* ───────────────────── Logged-in user context (from JWT) ───────────────────── */
+  // Mirrors the pattern used in PrimarySalesAnalze.jsx: decode the session token
+  // to get user_type/user_id, used here to gate the Delete Call icon exactly like
+  // PHP: $this->session->userdata['user_type']==13 || ==12 || user_id < 3.
+  const [sessionUser, setSessionUser] = useState({ userType: null, userId: null });
+
+  useEffect(() => {
+    const token = localStorage.getItem("session-token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setSessionUser({
+          userType: decoded.user_type,
+          userId: decoded.user_id,
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }, []);
+
+  const canDeleteCall =
+    Number(sessionUser.userType) === 12 ||
+    Number(sessionUser.userType) === 13 ||
+    (sessionUser.userId !== null && Number(sessionUser.userId) < 3);
+
+  /* ───────────────────── Detail modal (FieldDetail / cumCusDetail) ───────────────────── */
+  // Mirrors PHP's #cumCusDetailDiv panel — used by both .FieldDetail and .cumCusDetail clicks
+  const [detailModal, setDetailModal] = useState({
+    open: false,
+    loading: false,
+    title: "",
+    kind: "html", // "html" (unused fallback) | "fieldDetail" | "cumCusDetail" — both structured JSON now
+    html: "", // used only if a route ever falls back to an HTML fragment
+    fieldData: null, // { type, cusDetail } used for both fieldDetail and cumCusDetail kinds
+  });
+
+  /* ───────────────────── Call summary panel (.callSummaryDetails) ───────────────────── */
+  // Mirrors PHP's #activity-summary-data — activitySummary rows + profile + (on type change)
+  // a re-fetch that swaps in a fresh activitySummary/profile via callSummaryDetails_new_filters.
+  const [summaryModal, setSummaryModal] = useState({
+    open: false,
+    loading: false,
+    title: "",
+    srId: null,
+    activityType: "2", // '1' day-wise / '2' cumulative — controls the route-map button
+    profile: null,
+    activitySummary: [],
+    userJoint: [], // PSM list for the Joint Work modal, from callSummaryDetails_new
+    getMarketInput: [], // Market Input options, from callSummaryDetails_new
+    getSamples: [], // Sample/purpose options, from callSummaryDetails_new
+  });
+
+  /* ───────────────────── Joint Work modal (+ icon per call row) ───────────────────── */
+  const [jointWorkModal, setJointWorkModal] = useState({
+    open: false,
+    callId: null,
+    cusId: null,
+    mainId: null,
+  });
+  const openJointWorkModal = useCallback((callId, cusId, mainId) => {
+    setJointWorkModal({ open: true, callId, cusId, mainId });
+  }, []);
+  const closeJointWorkModal = () => setJointWorkModal((p) => ({ ...p, open: false }));
+
+  // PHP: $(document).on('click','#addJointWorkSr', ...) -> POST dashboard/addJointWorkSr
+  // Returns "200" on success. Re-fetches the call summary so jnt_user reflects the update.
+  const handleJointWorkSaved = useCallback(async () => {
+    if (summaryModal.srId) {
+      // Re-run the current summary fetch to pick up the new jnt_user value
+      const res = await api.post("/dashboard/callSummaryDetails_new", {
+        srID: summaryModal.srId,
+        dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+        type: "2",
+        frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+        userType: activityBreakUp,
+        cusType: cusType,
+      }).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      if (res) {
+        setSummaryModal((prev) => ({
+          ...prev,
+          profile: res.data?.profile || prev.profile,
+          activitySummary: res.data?.activitySummary || prev.activitySummary,
+          userJoint: res.data?.userJoint || prev.userJoint,
+        }));
+      }
+    }
+  }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
+
+  /* ───────────────────── Market Input modal (+ icon per call row) ───────────────────── */
+  const [marketInputModal, setMarketInputModal] = useState({
+    open: false,
+    callId: null,
+  });
+  const openMarketInputModal = useCallback((callId) => {
+    setMarketInputModal({ open: true, callId });
+  }, []);
+  const closeMarketInputModal = () => setMarketInputModal((p) => ({ ...p, open: false }));
+
+  /* ───────────────────── Delete Call modal (trash icon per call row) ───────────────────── */
+  const [deleteCallModal, setDeleteCallModal] = useState({
+    open: false,
+    callId: null,
+  });
+  const openDeleteCallModal = useCallback((callId) => {
+    setDeleteCallModal({ open: true, callId });
+  }, []);
+  const closeDeleteCallModal = () => setDeleteCallModal((p) => ({ ...p, open: false }));
+
+  // PHP: $(document).on('click','#addMarketInput', ...) -> POST dashboard/addMarketInput
+  // Returns "200" on success. Re-fetches the call summary so market_ip_qty reflects the update.
+  const handleMarketInputSaved = useCallback(async () => {
+    if (summaryModal.srId) {
+      const res = await api.post("/dashboard/callSummaryDetails_new", {
+        srID: summaryModal.srId,
+        dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+        type: "2",
+        frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+        userType: activityBreakUp,
+        cusType: cusType,
+      }).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      if (res) {
+        setSummaryModal((prev) => ({
+          ...prev,
+          profile: res.data?.profile || prev.profile,
+          activitySummary: res.data?.activitySummary || prev.activitySummary,
+          getMarketInput: res.data?.getMarketInput || prev.getMarketInput,
+          getSamples: res.data?.getSamples || prev.getSamples,
+        }));
+      }
+    }
+  }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
+
+  // PHP: $(document).on('click','#delcall', ...) -> POST dashboard/delete_call
+  // On success, simply drop the row from activitySummary (matches PHP's soft-delete then re-render).
+  const handleCallDeleted = useCallback((deletedCallId) => {
+    setSummaryModal((prev) => ({
+      ...prev,
+      activitySummary: prev.activitySummary.filter((row) => row.call_id !== deletedCallId),
+    }));
+  }, []);
+
+  /* ───────────────────── Profile widget graphs (region/grand-total icon) ───────────────────── */
+  const [profileModal, setProfileModal] = useState({
+    open: false,
+    loading: false,
+    title: "",
+    repProfileData: null,
+    coveragePatternData: [],
+  });
+
+  const closeDetailModal = () => setDetailModal((p) => ({ ...p, open: false }));
+  const closeSummaryModal = () => setSummaryModal((p) => ({ ...p, open: false }));
+  const closeProfileModal = () => setProfileModal((p) => ({ ...p, open: false }));
 
   const fetchUserTypeOptions = async () => {
     try {
@@ -308,6 +480,197 @@ export default function Dashboard() {
     setTabIndex(newValue);
   }, []);
 
+  /* ============================================================================================
+   * CLICK HANDLERS — mirror the PHP AJAX calls exactly (same params, same backend routes)
+   * ============================================================================================ */
+
+  // PHP: $(document).on('click','.FieldDetail', ...) -> POST dashboard/FieldDetail
+  // PHP: $(document).on('click','.cumCusDetail', ...) -> POST dashboard/cumCusDetail
+  // Both render into the same #cumCusDetails panel, so we share one handler + one modal.
+  // /dashboard/FieldDetail returns structured JSON: { status, type, cusType, cusDetail: [...] }
+  const handleFieldDetailClick = useCallback(
+    async (cusCat, row) => {
+      setDetailModal({
+        open: true,
+        loading: true,
+        title: row.sr_name || "",
+        kind: "fieldDetail",
+        html: "",
+        fieldData: null,
+      });
+      try {
+        const res = await api.post("/dashboard/FieldDetail", {
+          srId: row.sr_id,
+          type: cusCat,
+          // backend does dayjs(req.body.dt).format('YYYY-MM-DD') — send ISO to avoid ambiguous parsing
+          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          activityBreakUp,
+          cusType,
+          selectFromDate: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+        });
+        setDetailModal((prev) => ({
+          ...prev,
+          loading: false,
+          fieldData: { type: res.data?.type ?? cusCat, cusDetail: res.data?.cusDetail || [] },
+        }));
+      } catch (err) {
+        console.error(err);
+        setDetailModal((prev) => ({
+          ...prev,
+          loading: false,
+          kind: "html",
+          html: "Failed to load details.",
+        }));
+      }
+    },
+    [activityBreakUp, cusType, fromDateValue, toDateValue]
+  );
+
+  // /dashboard/cumCusDetail also returns structured JSON: { status, type, cusDetail: [...] }
+  const handleCumCusDetailClick = useCallback(
+    async (cusCat, row) => {
+      setDetailModal({
+        open: true,
+        loading: true,
+        title: row.sr_name || "",
+        kind: "cumCusDetail",
+        html: "",
+        fieldData: null,
+      });
+      try {
+        const res = await api.post("/dashboard/cumCusDetail", {
+          srId: row.sr_id,
+          type: cusCat,
+          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          activityBreakUp,
+          cusType,
+          selectFromDate: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+        });
+        setDetailModal((prev) => ({
+          ...prev,
+          loading: false,
+          fieldData: { type: res.data?.type ?? cusCat, cusDetail: res.data?.cusDetail || [] },
+        }));
+      } catch (err) {
+        console.error(err);
+        setDetailModal((prev) => ({
+          ...prev,
+          loading: false,
+          kind: "html",
+          html: "Failed to load details.",
+        }));
+      }
+    },
+    [activityBreakUp, cusType, fromDateValue, toDateValue]
+  );
+
+  // PHP: $(document).on('click','.callSummaryDetails', ...) -> POST dashboard/callSummaryDetails_new
+  // Returns structured JSON: { activitySummary, dt, srId, type, profile, userJoint, getMarketInput, getSamples, summaryMap }
+  const handleSalePersonClick = useCallback(
+    async (srId, regId, name) => {
+      setSummaryModal({
+        open: true,
+        loading: true,
+        title: name || "",
+        srId,
+        activityType: "2",
+        profile: null,
+        activitySummary: [],
+        userJoint: [],
+        getMarketInput: [],
+        getSamples: [],
+      });
+      try {
+        const res = await api.post("/dashboard/callSummaryDetails_new", {
+          srID: srId,
+          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          type: "2", // cumulative
+          frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+          userType: activityBreakUp,
+          cusType: cusType,
+        });
+        setSummaryModal((prev) => ({
+          ...prev,
+          loading: false,
+          activityType: String(res.data?.type ?? "2"),
+          profile: res.data?.profile || null,
+          activitySummary: res.data?.activitySummary || [],
+          userJoint: res.data?.userJoint || [],
+          getMarketInput: res.data?.getMarketInput || [],
+          getSamples: res.data?.getSamples || [],
+        }));
+      } catch (err) {
+        console.error(err);
+        setSummaryModal((prev) => ({ ...prev, loading: false, activitySummary: [] }));
+      }
+    },
+    [activityBreakUp, cusType, fromDateValue, toDateValue]
+  );
+
+  // PHP: $(document).on('change','.typewise', ...) -> POST dashboard/callSummaryDetails_new_filters
+  // Only refreshes the table body (profile + activitySummary), not the whole panel.
+  const handleSummaryTypeFilterChange = useCallback(
+    async (custype) => {
+      if (!summaryModal.srId) return;
+      setSummaryModal((prev) => ({ ...prev, loading: true }));
+      try {
+        const res = await api.post("/dashboard/callSummaryDetails_new_filters", {
+          srID: summaryModal.srId,
+          type: summaryModal.activityType,
+          custype,
+          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+        });
+        setSummaryModal((prev) => ({
+          ...prev,
+          loading: false,
+          profile: res.data?.profile ?? prev.profile,
+          activitySummary: res.data?.activitySummary || [],
+        }));
+      } catch (err) {
+        console.error(err);
+        setSummaryModal((prev) => ({ ...prev, loading: false, activitySummary: [] }));
+      }
+    },
+    [summaryModal.srId, summaryModal.activityType, fromDateValue, toDateValue]
+  );
+
+  // PHP: $(document).on('click','.profileWidget', ...) -> POST dashboard/profileWidgetGraphs
+  // Fired from the region-total / grand-total row icon in CumulativeDashboard.
+  // Returns structured JSON: { repProfileData, coveragePatternData }
+  const handleProfileWidgetClick = useCallback(
+    async ({ srId, regId, name }) => {
+      setProfileModal({
+        open: true,
+        loading: true,
+        title: name || "",
+        repProfileData: null,
+        coveragePatternData: [],
+      });
+      try {
+        const res = await api.post("/dashboard/profileWidgetGraphs", {
+          srId: srId || "",
+          regId: regId || "",
+          brkup: activityBreakUp,
+          // backend does dayjs(req.body.crDate/frmDate).format('YYYY-MM-DD') — send ISO
+          crDate: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          frmDate: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
+          activityType: "2", // cumulative
+        });
+        setProfileModal((prev) => ({
+          ...prev,
+          loading: false,
+          repProfileData: res.data?.repProfileData || null,
+          coveragePatternData: res.data?.coveragePatternData || [],
+        }));
+      } catch (err) {
+        console.error(err);
+        setProfileModal((prev) => ({ ...prev, loading: false }));
+      }
+    },
+    [activityBreakUp, fromDateValue, toDateValue]
+  );
+
   // Settings with responsive removed — handled manually via containerWidth
   const settings = {
     dots: false,
@@ -330,7 +693,7 @@ export default function Dashboard() {
         {/* ↓ Attach ref here so ResizeObserver watches this container */}
         <Box ref={sliderContainerRef}>
           <Slider {...settings}>
-            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}orderApproval/orders/`}>
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `/orderApproval/orders/`}>
               <TopWidget
                 widget={{ widget_id: 1, title: "Secondary Orders", unit: "Pcs", color: "#F57C00" }}
                 salesBooking={{ mtd: secondaryOrders.cum, ytd: secondaryOrders.pcs, loading: secondaryOrders.loading }}
@@ -339,7 +702,7 @@ export default function Dashboard() {
 
             <div style={{ padding: "10px" }} onClick={() => {
               const currentMonth = dayjs().format("MMM YYYY");
-              window.location.href = `${BIO_URL}mobile/Orders/${btoa(0)}/${btoa(0)}/${btoa(currentMonth)}/${btoa(0)}/${btoa(0)}/${btoa(0)}`;
+              window.location.href = `/mobile/Orders/${btoa(0)}/${btoa(0)}/${btoa(currentMonth)}/${btoa(0)}/${btoa(0)}/${btoa(0)}`;
             }}>
               <TopWidget
                 widget={{ widget_id: 2, title: "Primary Orders", unit: "Pcs", color: "#1976D2" }}
@@ -347,7 +710,7 @@ export default function Dashboard() {
               />
             </div>
 
-            <div style={{ padding: "10px" }} onClick={() => window.location.href = `${BIO_URL}dashboard/primarysalesview/${btoa(1)}`}>
+            <div style={{ padding: "10px" }} onClick={() => window.location.href = `/dashboard/primarysalesview/${btoa(1)}`}>
               <TopWidget
                 widget={{ widget_id: 3, title: "Primary Sales", unit: "Pcs", color: "#2E7D32" }}
                 salesBooking={{ mtd: primarySalesWidget.cum, ytd: primarySalesWidget.pcs, loading: primarySalesWidget.loading }}
@@ -560,14 +923,124 @@ export default function Dashboard() {
             activityData={activityData}      // your fetched array, same shape as PHP $activityData
             fromDate={fromDateValue}         // 'YYYY-MM-DD'
             toDate={toDateValue}
-            onSalePersonClick={(srId, regId, name) => { /* open callSummaryDetails */ }}
-            onFieldDetailClick={(cusCat, row) => { /* open FieldDetail modal */ }}
-            onCumCusDetailClick={(cusCat, row) => { /* open cumCusDetail modal */ }}
-            onEventClick={(id, row) => { /* open EventCellDetail modal */ }}
+            onSalePersonClick={handleSalePersonClick}
+            onFieldDetailClick={handleFieldDetailClick}
+            onCumCusDetailClick={handleCumCusDetailClick}
+            onProfileWidgetClick={handleProfileWidgetClick}
             activityLoading={activityLoading}
           />
         )}
       </Box>
+
+      {/* Field Detail / Cumulative Customer Detail — mirrors PHP #cumCusDetailDiv */}
+      <Dialog open={detailModal.open} onClose={closeDetailModal} maxWidth="lg" fullWidth>
+        <DialogTitle>{detailModal.title}</DialogTitle>
+        <DialogContent dividers>
+          {detailModal.loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : detailModal.kind === "fieldDetail" && detailModal.fieldData ? (
+            <FieldDetailTable
+              type={detailModal.fieldData.type}
+              cusDetail={detailModal.fieldData.cusDetail}
+            />
+          ) : detailModal.kind === "cumCusDetail" && detailModal.fieldData ? (
+            <CumCusDetailTable
+              type={detailModal.fieldData.type}
+              cusDetail={detailModal.fieldData.cusDetail}
+            />
+          ) : (
+            <Box dangerouslySetInnerHTML={{ __html: detailModal.html }} />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDetailModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Call Summary Details — mirrors PHP .callSummaryDetails / #activity-summary-data */}
+      <Dialog open={summaryModal.open} onClose={closeSummaryModal} maxWidth="xl" fullWidth>
+        <DialogTitle>{summaryModal.title}</DialogTitle>
+        <DialogContent dividers>
+          {summaryModal.loading && summaryModal.activitySummary.length === 0 ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <CallSummaryTable
+              srId={summaryModal.srId}
+              type={summaryModal.activityType}
+              profile={summaryModal.profile}
+              activitySummary={summaryModal.activitySummary}
+              onTypeFilterChange={handleSummaryTypeFilterChange}
+              onAddJointWork={openJointWorkModal}
+              onAddMarketInput={openMarketInputModal}
+              onDeleteCall={canDeleteCall ? openDeleteCallModal : undefined}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeSummaryModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Profile Widget Graphs — mirrors PHP .profileWidget click / #profileWidgetDiv */}
+      <Dialog open={profileModal.open} onClose={closeProfileModal} maxWidth="lg" fullWidth>
+        <DialogTitle>{profileModal.title}</DialogTitle>
+        <DialogContent dividers>
+          {profileModal.loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : profileModal.repProfileData ? (
+            <ProfileWidgetGraphs
+              repProfileData={profileModal.repProfileData}
+              coveragePatternData={profileModal.coveragePatternData}
+            />
+          ) : (
+            <Typography align="center" sx={{ py: 4 }}>
+              No Data
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeProfileModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Joint Work — mirrors PHP #putJointWorkModal */}
+      <JointWorkModal
+        open={jointWorkModal.open}
+        onClose={closeJointWorkModal}
+        callId={jointWorkModal.callId}
+        cusId={jointWorkModal.cusId}
+        mainId={jointWorkModal.mainId}
+        userJoint={summaryModal.userJoint}
+        api={api}
+        onSaved={handleJointWorkSaved}
+      />
+
+      {/* Market Input — mirrors PHP #putMarketInputModal */}
+      <MarketInputModal
+        open={marketInputModal.open}
+        onClose={closeMarketInputModal}
+        callId={marketInputModal.callId}
+        marketInputOptions={summaryModal.getMarketInput}
+        sampleOptions={summaryModal.getSamples}
+        userType={activityBreakUp}
+        api={api}
+        onSaved={handleMarketInputSaved}
+      />
+
+      {/* Delete Call — mirrors PHP #deleteCallModal */}
+      <DeleteCallModal
+        open={deleteCallModal.open}
+        onClose={closeDeleteCallModal}
+        callId={deleteCallModal.callId}
+        api={api}
+        onDeleted={handleCallDeleted}
+      />
     </Layout>
   );
 }

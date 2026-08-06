@@ -201,6 +201,8 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
+        setuser([]);
+        handleChange("User", { id: 0, u_name: "All" });
         if (formData.userType > 0) {
             fetchSSUserList();
         } else {
