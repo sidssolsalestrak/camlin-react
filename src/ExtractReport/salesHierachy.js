@@ -347,6 +347,10 @@ export default function SalesHierachy() {
 
     ]
 
+    // ─── Main fetch used by the visible DataTable ───────────────────────────
+    // Toggles tableloading, which the visible DataTable's `loading` prop is
+    // bound to. Do NOT reuse this for one-off actions like Excel export — it
+    // will flash the on-screen table into a loading state.
     const fetchHierachyData = async (zone, region, usertyp, userid, stkid) => {
         try {
             settableloading(true)
@@ -371,6 +375,32 @@ export default function SalesHierachy() {
         }
     }
 
+    // ─── Export-only fetch ───────────────────────────────────────────────────
+    // Same request/shape as fetchHierachyData, but intentionally does NOT
+    // toggle settableloading, so the visible DataTable is completely
+    // unaffected when the user clicks the Excel download icon.
+    const fetchHierachyDataForExport = async (zone, region, usertyp, userid, stkid) => {
+        try {
+            let payload = {
+                zone_id: zone,
+                reg_id: region,
+                user_type: usertyp,
+                user_id: userid,
+                stk_id: stkid
+            }
+            let response = await api.post("/getSalesHierachy", payload)
+            let hierachyData = Array.isArray(response.data.data) ? response.data.data : []
+            let finalHierachyData = hierachyData.map((val, index) => ({ ...val, sno: index + 1 }))
+            return finalHierachyData
+
+        }
+        catch (err) {
+            console.log("fetching heirachy data for export error", err)
+            return []
+        }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     let handleLoad = () => {
         if (selUsers?.id === 0 && selUserType > 0) {
             setUserError(true)
@@ -391,7 +421,9 @@ export default function SalesHierachy() {
             }
             setUserError(false)
 
-            let finalHierachyData = await fetchHierachyData(selZone, selRegion, selUserType, selUsers.id, selDistributor)
+            // Uses the export-only fetch so the visible DataTable's loading
+            // state / data are never touched by this action.
+            let finalHierachyData = await fetchHierachyDataForExport(selZone, selRegion, selUserType, selUsers.id, selDistributor)
             const safeColumns = columns.map(
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
