@@ -92,6 +92,9 @@ export default function DailyActivityReport() {
         setSelectedRows([]);
     }, [allReportData]);
 
+    // ─── Main fetch used by the visible DataTable ───────────────────────────
+    // Drives allReportData / tableLoad / coordinates. Do NOT reuse this for
+    // one-off actions like Excel export — it will reload the on-screen table.
     const fetchReportData = async () => {
         try {
             setTableLoad(true)
@@ -129,6 +132,36 @@ export default function DailyActivityReport() {
             setTableLoad(false)
         }
     };
+
+    // ─── Export-only fetch ───────────────────────────────────────────────────
+    // Same request/shape as fetchReportData, but intentionally does NOT touch
+    // tableLoad / allReportData / coordinates, so the visible DataTable is
+    // completely unaffected when the user clicks the Excel download icon.
+    const fetchReportDataForExport = async () => {
+        try {
+            let payload = {
+                from_call_date: fromDate.format('YYYY-MM-DD'),
+                to_call_date: toDate.format('YYYY-MM-DD'),
+                report_type: reportStat,
+                order_stat: typeStat
+            };
+            let response = await api.post("/getFieldVisit", payload);
+            let activityRes = Array.isArray(response.data.data) ? response.data.data : [];
+            let finalactivityRes = activityRes.map((val, index) => ({
+                ...val,
+                app_type: val.app_type === 1 ? 'Android' : 'IOS',
+                sl_no: index + 1,
+                sec_pct: val.sec_tgt_val && val.sec_tgt_val > 0
+                    ? Number(((val.sec_ach_val / val.sec_tgt_val) * 100).toFixed(2))
+                    : 0
+            }));
+            return finalactivityRes;
+        } catch (err) {
+            console.log("fetchReportDataForExport error", err);
+            return [];
+        }
+    };
+    // ────────────────────────────────────────────────────────────────────────
 
     const fetchFocusRangeData = async (id) => {
         try {
@@ -443,7 +476,9 @@ export default function DailyActivityReport() {
     const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
-            const freshData = await fetchReportData();
+            // Uses the export-only fetch so the visible DataTable's loading
+            // state / data are never touched by this action.
+            const freshData = await fetchReportDataForExport();
             const dashIfEmptyFields = [
                 "tot_cus",
                 "tot_call",
