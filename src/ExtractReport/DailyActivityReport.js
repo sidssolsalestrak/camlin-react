@@ -92,6 +92,9 @@ export default function DailyActivityReport() {
         setSelectedRows([]);
     }, [allReportData]);
 
+    // ─── Main fetch used by the visible DataTable ───────────────────────────
+    // Drives allReportData / tableLoad / coordinates. Do NOT reuse this for
+    // one-off actions like Excel export — it will reload the on-screen table.
     const fetchReportData = async () => {
         try {
             setTableLoad(true)
@@ -106,7 +109,10 @@ export default function DailyActivityReport() {
             let finalactivityRes = activityRes.map((val, index) => ({
                 ...val,
                 app_type: val.app_type === 1 ? 'Android' : 'IOS',
-                sl_no: index + 1
+                sl_no: index + 1,
+                sec_pct: val.sec_tgt_val && val.sec_tgt_val > 0
+                ? Number(((val.sec_ach_val / val.sec_tgt_val) * 100).toFixed(2))
+                : 0
             }));
             setAllReportData(finalactivityRes);
             const coords = activityRes
@@ -126,6 +132,36 @@ export default function DailyActivityReport() {
             setTableLoad(false)
         }
     };
+
+    // ─── Export-only fetch ───────────────────────────────────────────────────
+    // Same request/shape as fetchReportData, but intentionally does NOT touch
+    // tableLoad / allReportData / coordinates, so the visible DataTable is
+    // completely unaffected when the user clicks the Excel download icon.
+    const fetchReportDataForExport = async () => {
+        try {
+            let payload = {
+                from_call_date: fromDate.format('YYYY-MM-DD'),
+                to_call_date: toDate.format('YYYY-MM-DD'),
+                report_type: reportStat,
+                order_stat: typeStat
+            };
+            let response = await api.post("/getFieldVisit", payload);
+            let activityRes = Array.isArray(response.data.data) ? response.data.data : [];
+            let finalactivityRes = activityRes.map((val, index) => ({
+                ...val,
+                app_type: val.app_type === 1 ? 'Android' : 'IOS',
+                sl_no: index + 1,
+                sec_pct: val.sec_tgt_val && val.sec_tgt_val > 0
+                    ? Number(((val.sec_ach_val / val.sec_tgt_val) * 100).toFixed(2))
+                    : 0
+            }));
+            return finalactivityRes;
+        } catch (err) {
+            console.log("fetchReportDataForExport error", err);
+            return [];
+        }
+    };
+    // ────────────────────────────────────────────────────────────────────────
 
     const fetchFocusRangeData = async (id) => {
         try {
@@ -308,13 +344,24 @@ export default function DailyActivityReport() {
         {
             field: "__expand_beat__",
             headerName: `${beatLabel} Name`,
-            width: 105,
+            width: 60,
             renderCell: (params) => (
                 (params.row.beat_work !== " " && params.row.beat_work) ?
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography><IoLocationSharp size={11} color="green" /></Typography>
-                        <Typography>{params.row.beat_work}</Typography>
-                    </Box> : "-"
+                    <Tooltip title={params.row.beat_work} placement="top">
+                        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                            <IoLocationSharp size={11} color="green" style={{ flexShrink: 0 }} />
+                            <Typography sx={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                ml: 0.5,
+                                width:'105px',
+                            }}>
+                                {params.row.beat_work}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                    : "-"
             )
         },
         {
@@ -363,11 +410,13 @@ export default function DailyActivityReport() {
             )
         },
         {
-            field: "",
+            field: "sec_pct",
             headerName: "%age",
             showTotal: true,
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+                <Typography sx={{ textAlign: 'right' }}>{params.value > 0
+                ? params.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : '-'}</Typography>
             )
         },
         {
@@ -427,7 +476,9 @@ export default function DailyActivityReport() {
     const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
-            const freshData = await fetchReportData();
+            // Uses the export-only fetch so the visible DataTable's loading
+            // state / data are never touched by this action.
+            const freshData = await fetchReportDataForExport();
             const dashIfEmptyFields = [
                 "tot_cus",
                 "tot_call",

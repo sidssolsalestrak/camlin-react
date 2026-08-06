@@ -353,7 +353,9 @@ const Stockist = () => {
                         <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
                             <FormControl sx={{ width: "200px" }} size="small" >
                                 <InputLabel id="region">{regionLabel}</InputLabel>
-                                <Select value={formData.region} id='region' label={regionLabel} error={formError}
+                                <Select value={formData.region} id='region'
+                                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                 label={regionLabel} error={formError}
                                     labelId="region" variant="outlined"
                                     onChange={(e) => {
                                         handleChangeForm("region", e.target.value);
@@ -369,7 +371,9 @@ const Stockist = () => {
                             <FormControl sx={{ width: "200px" }} size="small" >
                                 <InputLabel id="area">{areaLabel}</InputLabel>
                                 <Select value={formData.area} id='area' label={areaLabel}
-                                    labelId="area" variant="outlined" onChange={(e) => handleChangeForm("area", e.target.value)}>
+                                    labelId="area" variant="outlined" 
+                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                    onChange={(e) => handleChangeForm("area", e.target.value)}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                     {area?.map((item, index) => (
                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.area_name}</MenuItem>

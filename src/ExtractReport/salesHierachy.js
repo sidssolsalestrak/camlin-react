@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
@@ -44,6 +44,10 @@ export default function SalesHierachy() {
             : null;
 
     const [masterPanel, setMasterPanel] = useState({});
+
+    // tracks whether the decoded (URL) user has already been auto-applied for the
+    // current navigation, so manual selUserType changes after that don't re-apply it
+    const appliedDecodedUserRef = useRef(false);
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";
@@ -122,11 +126,22 @@ export default function SalesHierachy() {
         }
     }, [zoneid, regionid, usertypeId, userid, distributorid])
 
+    // New navigation (Load click / URL change) → allow the decoded user to be
+    // auto-applied again once
     useEffect(() => {
-        if (!decodeduserId && allUsers) return
+        appliedDecodedUserRef.current = false
+    }, [decodeduserId])
+
+    // Once the user list loads, resolve the decoded user ID into the full object.
+    // Only does this once per navigation - manual selUserType changes afterwards
+    // (e.g. reset to All, then re-pick the same type) won't re-select it.
+    useEffect(() => {
+        if (!decodeduserId || appliedDecodedUserRef.current) return
+        if (!allUsers || allUsers.length === 0) return
         let UserData = allUsers.find((val) => val.id === Number(decodeduserId)) ?? { id: 0, u_name: "All" }
         console.log("selc user data", UserData)
         setSelUsers(UserData)
+        appliedDecodedUserRef.current = true
     }, [allUsers, decodeduserId])
 
 
@@ -332,6 +347,10 @@ export default function SalesHierachy() {
 
     ]
 
+    // ─── Main fetch used by the visible DataTable ───────────────────────────
+    // Toggles tableloading, which the visible DataTable's `loading` prop is
+    // bound to. Do NOT reuse this for one-off actions like Excel export — it
+    // will flash the on-screen table into a loading state.
     const fetchHierachyData = async (zone, region, usertyp, userid, stkid) => {
         try {
             settableloading(true)
@@ -356,6 +375,32 @@ export default function SalesHierachy() {
         }
     }
 
+    // ─── Export-only fetch ───────────────────────────────────────────────────
+    // Same request/shape as fetchHierachyData, but intentionally does NOT
+    // toggle settableloading, so the visible DataTable is completely
+    // unaffected when the user clicks the Excel download icon.
+    const fetchHierachyDataForExport = async (zone, region, usertyp, userid, stkid) => {
+        try {
+            let payload = {
+                zone_id: zone,
+                reg_id: region,
+                user_type: usertyp,
+                user_id: userid,
+                stk_id: stkid
+            }
+            let response = await api.post("/getSalesHierachy", payload)
+            let hierachyData = Array.isArray(response.data.data) ? response.data.data : []
+            let finalHierachyData = hierachyData.map((val, index) => ({ ...val, sno: index + 1 }))
+            return finalHierachyData
+
+        }
+        catch (err) {
+            console.log("fetching heirachy data for export error", err)
+            return []
+        }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     let handleLoad = () => {
         if (selUsers?.id === 0 && selUserType > 0) {
             setUserError(true)
@@ -376,7 +421,9 @@ export default function SalesHierachy() {
             }
             setUserError(false)
 
-            let finalHierachyData = await fetchHierachyData(selZone, selRegion, selUserType, selUsers.id, selDistributor)
+            // Uses the export-only fetch so the visible DataTable's loading
+            // state / data are never touched by this action.
+            let finalHierachyData = await fetchHierachyDataForExport(selZone, selRegion, selUserType, selUsers.id, selDistributor)
             const safeColumns = columns.map(
                 ({ renderCell, renderHeader, ...rest }) => rest,
             );
@@ -510,7 +557,10 @@ export default function SalesHierachy() {
                             <Grid size={{ md: 3, lg: 2, xs: 12, sm: 6 }}>
                                 <FormControl fullWidth sx={{ height: '3rem' }}>
                                     <InputLabel id="usr_type">{userLabel} Type </InputLabel>
-                                    <Select value={selUserType} onChange={(e) => setSelUserType(e.target.value)} labelId="usr_type" label={`${userLabel} Type`} size="small"
+                                    <Select value={selUserType} onChange={(e) => {
+                                        setSelUsers({ id: 0, u_name: "All" })
+                                        setSelUserType(e.target.value)
+                                    }} labelId="usr_type" label={`${userLabel} Type`} size="small"
                                         MenuProps={{
                                             PaperProps: {
                                                 style: {

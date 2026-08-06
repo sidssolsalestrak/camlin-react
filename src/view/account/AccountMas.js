@@ -291,13 +291,9 @@ function AccountMas() {
       field: "user",
       headerName: (masterPanel["USER"] || "User").toUpperCase(),
       renderCell: ({ row }) => {
-        const name = [row.req_first_name, row.req_last_name]
-          .filter(Boolean)
-          .join(" ");
-
         return (
           <div>
-            <div style={{ color: "#666" }}>{name}</div>
+            <div style={{ color: "#666" }}>{row.req_full_name}</div>
             <div style={{ fontSize: "12px" }}>
               {row.usertype} | {row.reg_name}
             </div>
@@ -311,7 +307,7 @@ function AccountMas() {
       field: "account",
       headerName: `${(masterPanel["ACCM"] || "Account").toUpperCase()} DETAILS`,
       renderCell: ({ row }) => {
-        const name = [row.first_name, row.last_name].filter(Boolean).join(" ");
+        const name =  row.full_name;
         const type = row.cus_type_id == 1 ? "HCP" : "Retailer";
 
         const handleClick = () => {
@@ -407,13 +403,9 @@ function AccountMas() {
           headerName: "",
           renderCell: ({ row }) => {
             if (row.mgr_approve_user > 0) {
-              const name = [row.mgr_first_name, row.mgr_last_name]
-                .filter(Boolean)
-                .join(" ");
-
-              return (
+            return (
                 <span>
-                  {name} Approved.
+                  {row.mgr_full_name} Approved.
                   <br />
                   ZM/NSM Pending
                 </span>
@@ -914,11 +906,11 @@ const handleRejectAll = () => {
       sh_user_id: rows[0]?.sh_user_id || 0,
 
       rowId: rows.map((r) => r.id),
-      rowReqName: rows.map((r) => r.req_first_name),
+      rowReqName: rows.map((r) => r.req_full_name),
       rowReqEmail: rows.map((r) => r.req_email),
       rowTerName: rows.map((r) => r.ter_name),
       rowClassName: rows.map((r) => r.cat_type),
-      cusName: rows.map((r) => r.first_name),
+      cusName: rows.map((r) => r.full_name),
       updUserId: rows.map((r) => r.upd_user),
       appStat: rows.map((r) => r.request_type),
       cus_id: rows.map((r) => r.cus_id),
