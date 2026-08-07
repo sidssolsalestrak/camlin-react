@@ -3,7 +3,7 @@ import Layout from "../layout";
 import api from "../services/api";
 import DataTable from "../utils/dataTable";
 import {
-    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, TextField, Autocomplete, Dialog, DialogContent, DialogActions, Grid
+    Box, Button, FormControl, InputLabel, Select, MenuItem, Typography, TextField, Autocomplete, Dialog, DialogContent, DialogActions, Grid,Tooltip
 } from "@mui/material";
 import useToast from "../utils/useToast";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -346,17 +346,21 @@ function OrderFrequencyReport() {
         {
             field: 'beat_name',
             headerName: beatLabel,
-            width: 40,
+            truncateTooltip: true,
             renderCell: (params) => (
-                <Typography sx={{
-                    textWrap: 'nowrap',
-                    fontWeight: params.row._isSubtotal ? 700 : 400,
-                    textAlign: params.row._isSubtotal ? 'right' : 'left',
-                    width: '100%',
-                    color: '#555'
-                }}>
-                    {params.value}
-                </Typography>
+                <Tooltip title={params.value || ''} placement="top">
+                    <Typography sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontWeight: params.row._isSubtotal ? 700 : 400,
+                        textAlign: params.row._isSubtotal ? 'right' : 'left',
+                        width: '140px',
+                        color: '#555'
+                    }}>
+                        {params.value}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
