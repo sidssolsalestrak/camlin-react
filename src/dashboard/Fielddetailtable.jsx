@@ -26,25 +26,30 @@ const num = (v) => {
 
 const styles = {
   theads: {
-    backgroundColor: "#3464a7",
-    color: "#fff",
-    fontWeight: 600,
-    border: "1px solid #ddd",
-    padding: "6px 8px",
-    fontSize: "12px",
+    backgroundColor: "#F6F5F2",
+    color: "#A09D97",
+    fontWeight: 400,
+    fontSize: "11px",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "11px 6px",
   },
   subHeading: {
-    backgroundColor: "#6398c3",
-    color: "#fff",
+    backgroundColor: "#f9fafb",
+    color: "#343A40",
     fontWeight: 600,
     fontSize: "12px",
-    border: "1px solid #6398c3",
+    borderTop: "1px solid #d1d5db",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
     padding: "6px 8px",
   },
   dataCell: {
-    border: "1px solid #ddd",
-    padding: "6px 8px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "4px 6px",
     fontSize: "12px",
+    color: "#343A40",
+    fontWeight: 400,
   },
 };
 

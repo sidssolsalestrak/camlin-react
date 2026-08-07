@@ -48,46 +48,52 @@ function emptyTotals() {
 
 /* ── PHP-equivalent style tokens ─────────────────────────────────────────── */
 const styles = {
-  border: { border: "1px solid #ddd" },
+  border: { border: "1px solid rgba(0,0,0,0.08)" },
   theads: {
-    backgroundColor: "#3464a7",
-    color: "#fff",
-    fontWeight: 600,
-    border: "1px solid #ddd",
-    padding: "6px 8px",
-    fontSize: "12px",
+    backgroundColor: "#F6F5F2",
+    color: "#A09D97",
+    fontWeight: 400,
+    fontSize: "11px",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "11px 6px",
     whiteSpace: "normal",
     maxWidth: 100,
   },
+  // Region subtotal row — a soft neutral band, distinct from data rows
   totTr: {
-    backgroundColor: "#ddd",
+    backgroundColor: "#F6F5F2",
     fontWeight: 600,
-    border: "1px solid #ddd",
-    padding: "6px 8px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "4px 6px",
     fontSize: "12px",
     maxWidth: 100,
-    color: "#000",
+    color: "#343A40",
   },
+  // Grand total row — matches DataTable's footer totals row treatment
   subHeading: {
-    backgroundColor: "#6398c3",
-    color: "#fff",
+    backgroundColor: "#f9fafb",
+    color: "#343A40",
     fontWeight: 600,
     fontSize: "12px",
-    border: "1px solid #6398c3",
+    borderTop: "1px solid #d1d5db",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
     padding: "6px 8px",
     maxWidth: 100,
   },
   dataCell: {
-    border: "1px solid #ddd",
-    padding: "6px 8px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "4px 6px",
     fontSize: "12px",
-    color: "#133bde",
+    color: "#343A40",
+    fontWeight: 400,
     maxWidth: 100,
   },
   noborder: {
-    border: "1px solid #fff",
-    borderRight: "1px solid #ddd",
-    padding: "6px 8px",
+    border: "none",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "4px 6px",
     maxWidth: 100,
   },
   link: {
@@ -97,6 +103,7 @@ const styles = {
   },
   clickable: {
     cursor: "pointer",
+    color:"#133BDE",
     '&:hover': {
       textDecoration: "underline"
     }
@@ -291,11 +298,11 @@ export default function CumulativeDashboard({
                       <TableCell
                         sx={styles.noborder}
                         style={{ cursor: "pointer", color: "#1565C0" }}
-                        // onClick={
-                        //   onProfileWidgetClick
-                        //     ? () => onProfileWidgetClick({ srId: "", regId: row.reg_id, name: row.reg_name })
-                        //     : undefined
-                        // }
+                      // onClick={
+                      //   onProfileWidgetClick
+                      //     ? () => onProfileWidgetClick({ srId: "", regId: row.reg_id, name: row.reg_name })
+                      //     : undefined
+                      // }
                       >
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
@@ -331,11 +338,11 @@ export default function CumulativeDashboard({
                       <TableCell
                         sx={styles.noborder}
                         style={{ cursor: "pointer", color: "#1565C0" }}
-                        // onClick={
-                        //   onProfileWidgetClick
-                        //     ? () => onProfileWidgetClick({ srId: "", regId: "", name: "All India" })
-                        //     : undefined
-                        // }
+                      // onClick={
+                      //   onProfileWidgetClick
+                      //     ? () => onProfileWidgetClick({ srId: "", regId: "", name: "All India" })
+                      //     : undefined
+                      // }
                       >
                         <i className="fa fa-line-chart" aria-hidden="true" />
                       </TableCell>
