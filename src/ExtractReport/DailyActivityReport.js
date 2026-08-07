@@ -254,6 +254,7 @@ export default function DailyActivityReport() {
         { field: "prod_call", headerName: "Productive Calls" },
         { field: "sec_tgt_val", headerName: "Sec. Target Rs." },
         { field: "sec_ach_val", headerName: "Sec. Achieved Rs." },
+        { field: "sec_pct", headerName:""}
     ];
 
     const tableColumns = [
@@ -519,6 +520,7 @@ export default function DailyActivityReport() {
                 prod_call: "sum",
                 sec_tgt_val: "sum",
                 sec_ach_val: "sum",
+                sec_pct: "sum"
             };
 
             DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
