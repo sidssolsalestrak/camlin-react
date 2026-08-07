@@ -78,7 +78,7 @@ export default function DisplayBreakupTable({ displayData = [], onRowClick }) {
               </TableCell>
             </TableRow>
           ) : (
-            displayData.map((key, idx) => {
+            displayData[0].map((key, idx) => {
               const filledStars = Math.round(Number(key.img_rate) || 0);
               const imgCount = Number(key.img_cnt) || 0;
               const clickable = imgCount > 0 && !!onRowClick;
