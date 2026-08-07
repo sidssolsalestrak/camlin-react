@@ -21,6 +21,8 @@ import api from '../services/api';
 import useToast from '../utils/useToast';
 import ConfirmationDialog from '../utils/confirmDialog';
 import { exportOrderApprovalToExcel } from './orderRepExcel';
+import { addSubtotalsOrderApproval } from './addSubtotalsOrderApproval';
+import FormatCurrency from '../utils/formatCurrency';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -40,24 +42,37 @@ const CAN_DELETE_USER_TYPES_EXCLUDED = [6, 8];
 // PHP: mailstat == 2 || mailstat == 4 || mailstat == 5 -> show FOP/POD block, hide read-only qty/disc only on 2
 const FOP_POD_MAILSTATS = ['2', '4', '5'];
 
-// ---- Region / Rep grouping helper ----
-const buildGroupedRows = (rows) => {
-    const grouped = [];
-    let lastReg = null, lastRep = null;
+// Converts "On Call-01 Jul 2026 11:10:39" -> "On Call-01 Jul 2026 11:10 am"
+const formatModeTime = (str) => {
+    if (!str) return str;
 
-    rows.forEach((row, idx) => {
-        if (row.regId !== lastReg) {
-            grouped.push({ _isRegionHeader: true, regName: row.regName, id: `reg-${row.regId}-${idx}` });
-            lastReg = row.regId;
-            lastRep = null;
-        }
-        if (row.psmName !== lastRep) {
-            grouped.push({ _isRepHeader: true, psmName: row.psmName, id: `rep-${row.psmName}-${idx}` });
-            lastRep = row.psmName;
-        }
-        grouped.push({ ...row, id: row.id || `row-${row.ordNo}-${idx}` });
-    });
-    return grouped;
+    // Match a trailing time portion HH:MM:SS at the end of the string
+    const match = str.match(/(\d{1,2}):(\d{2}):(\d{2})\s*$/);
+    if (!match) return str;
+
+    let [full, hh, mm] = match;
+    let hour = parseInt(hh, 10);
+    const ampm = hour >= 12 ? 'pm' : 'am';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+
+    const formattedTime = `${String(hour).padStart(2, '0')}:${mm} ${ampm}`;
+
+    // Replace the matched "HH:MM:SS" (with seconds) with the new formatted time
+    return str.slice(0, match.index) + formattedTime;
+};
+
+// "On Call-01 Jul 2026 11:10:39 - New" -> "On Call- 01 Jul 2026 11:10 am - New"
+const formatStatusName = (str) => {
+    if (!str) return str;
+
+    // format the HH:MM:SS -> hh:mm am/pm part
+    let formatted = formatModeTime(str);
+
+    // add a space right after "On Call-" (only the first hyphen following "On Call")
+    formatted = formatted.replace(/^On Call-/, 'On Call- ');
+
+    return formatted;
 };
 
 const OrderApproval = () => {
@@ -199,7 +214,7 @@ const OrderApproval = () => {
                 stokist: formData.stockist,
                 type: formData.type,
             });
-            setTableData(buildGroupedRows(res.data?.rows || []));
+            setTableData(res.data?.rows || []);
             setGrandTotal(res.data?.grandTotal || null);
         } catch (err) {
             console.error(err);
@@ -273,9 +288,9 @@ const OrderApproval = () => {
         });
 
         const gst = orderValue * 0.18;
-        const marginValue = mrpValue - orderValue;
-        const marginPercent = mrpValue > 0 ? (marginValue / mrpValue) * 100 : 0;
-        const offerPercent = orderValue > 0 ? (offerValue / orderValue) * 100 : 0;
+        const marginValue = mrpValue - (orderValue + gst); // ✅ matches PHP
+        const marginPercent = marginValue > 0 ? (marginValue / mrpValue) * 100 : 0; // see note below
+        const offerPercent = offerValue > 0 ? (offerValue * 100) / (offerValue + orderValue) : 0; // see note below
 
         setSummaryTotals({
             orderValue, gst, offerValue, offerPercent, mrpValue, marginValue, marginPercent
@@ -313,7 +328,7 @@ const OrderApproval = () => {
             date: row.ordDt,
             rep: row.psmName,
             stockist: row.stk,
-            modeTime: row.modname,
+            modeTime: formatModeTime(row.modname),
             remarks: row.callrem,
         });
 
@@ -685,28 +700,56 @@ const OrderApproval = () => {
         }
     };
 
+    // ---------------- Invoice file download ----------------
+const handleInvoiceDownload = async (e, row) => {
+    e.preventDefault();
+    const url = `${BIO_URL}/assets/upload/${row.ordInv}`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            showAlert.error('Invoice file not found on server');
+            return;
+        }
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = row.ordInvName || row.ordInv; // saves with original filename
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        console.error(err);
+        showAlert.error('Failed to download invoice');
+    }
+};
+
     // ---------------- Table columns ----------------
     const columns = [
         {
             field: 'slnum', headerName: 'SL',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.slnum;
+                return (row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.slnum;
             }
         },
         {
-            field: 'ordDt', headerName: 'Date',
+            field: 'ordDt', headerName: 'Date', type: "date",
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.ordDt;
+                return (row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.ordDt;
             }
         },
         {
-            field: 'ordNo', headerName: 'Order No',
+            field: 'ordNo', headerName: 'Order No', width: 150,
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader) return <b style={{ color: '#fff' }}>{row.regName}</b>;
                 if (row._isRepHeader) return <b>{row.psmName}</b>;
+                if (row._isSubtotal) return '';
                 return <Button size="small" onClick={() => openProductSummary(row)}>{row.ordNo}</Button>;
             }
         },
@@ -714,21 +757,24 @@ const OrderApproval = () => {
             field: 'cusProd', headerName: 'Customer',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.cusProd;
+                return (row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd;
             }
         },
         {
             field: 'stk', headerName: 'Stockist',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.stk;
+                if (row._isRegionHeader || row._isRepHeader) return '';
+                if (row._isSubtotal) return <b style={{ display: 'block', textAlign: 'right' }}>{row.statusname}</b>;
+                return row.stk;
             }
         },
         {
             field: 'totQty', headerName: 'Tot Qty',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.totQty;
+                if (row._isRegionHeader || row._isRepHeader) return '';
+                return row.totQty;
             }
         },
         {
@@ -742,21 +788,24 @@ const OrderApproval = () => {
             field: 'totVal', headerName: 'Tot Value',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.totVal;
+                if (row._isRegionHeader || row._isRepHeader) return '';
+                return (Number(row.totVal) || 0).toFixed(2);
             }
         },
         {
             field: 'totOffer', headerName: 'Tot Offer',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.totOffer;
+                if (row._isRegionHeader || row._isRepHeader) return '';
+                return (Number(row.totOffer) || 0).toFixed(2);
             }
         },
         {
             field: 'statusname', headerName: 'Status',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader) ? '' : row.statusname;
+                if (row._isRegionHeader || row._isRepHeader || row._isSubtotal) return '';
+                return formatStatusName(row.statusname);
             }
         },
         {
@@ -764,6 +813,7 @@ const OrderApproval = () => {
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader) return '';
+                if (row._isSubtotal) return (Number(row.ordDiscVal) || 0).toFixed(2);
                 if (Number(row.ordStat) > 2) return null;
                 return <DiscountCell row={row} onUpdate={showAddDiscountConfirmation} />;
             }
@@ -772,24 +822,24 @@ const OrderApproval = () => {
             field: 'invoice', headerName: 'Upload Invoice',
             renderCell: (params) => {
                 const row = params.row;
-                if (row._isRegionHeader || row._isRepHeader) return '';
+                if (row._isRegionHeader || row._isRepHeader || row._isSubtotal) return '';
                 return (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {row.ordInv && (
                             <a
-                                href={`${BIO_URL}/assets/upload/order_invoice/${row.ordInv}`}
-                                target="_blank"
-                                rel="noreferrer"
+                                href={`${BIO_URL}/assets/upload/${row.ordInv}`}
+        onClick={(e) => handleInvoiceDownload(e, row)}
                                 style={{ color: 'green' }}
                             >
                                 {row.ordInvName}
                             </a>
-                        )}
-                        <IconButton size="small" component="label">
-                            <UploadFileIcon fontSize="small" />
+                        )
+                        }
+                        < IconButton size="large" component="label" >
+                            <UploadFileIcon fontSize="large" />
                             <input type="file" hidden onChange={(e) => handleInvoiceUpload(e, row)} />
-                        </IconButton>
-                    </Box>
+                        </IconButton >
+                    </Box >
                 );
             }
         },
@@ -866,12 +916,12 @@ const OrderApproval = () => {
                                 labelId="Status" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
                                 <MenuItem style={{ fontSize: "11px" }} value="1">New</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="2">Approved</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="3">Pending</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="-1">Deleted</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="-3">FOP Request</MenuItem>
+                                {/* <MenuItem style={{ fontSize: "11px" }} value="2">Approved</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="3">Pending</MenuItem> */}
+                                <MenuItem style={{ fontSize: "11px" }} value="5">Deleted</MenuItem>
+                                {/* <MenuItem style={{ fontSize: "11px" }} value="-3">FOP Request</MenuItem>
                                 <MenuItem style={{ fontSize: "11px" }} value="-5">Giveaway FOP</MenuItem>
-                                <MenuItem style={{ fontSize: "11px" }} value="-6">Referral FOP</MenuItem>
+                                <MenuItem style={{ fontSize: "11px" }} value="-6">Referral FOP</MenuItem> */}
                             </Select>
                         </FormControl>
                     </Grid>
@@ -907,7 +957,7 @@ const OrderApproval = () => {
                     </Typography>
                 </Box>
                 <DataTable
-                    data={tableData}
+                    data={addSubtotalsOrderApproval(tableData)}
                     columns={columns}
                     loading={loading}
                     defaultPageSize={50}
@@ -915,18 +965,12 @@ const OrderApproval = () => {
                         const row = params.row ?? params;
                         if (row._isRegionHeader) return { "& td": { backgroundColor: "#6290d0", color: "#fff", fontWeight: 700 } };
                         if (row._isRepHeader) return { "& td": { backgroundColor: "#c8ddfb", fontWeight: 600 } };
+                        if (row._grandTotal) return { "& td": { backgroundColor: "#bdbdbd", fontWeight: 700 } };
+                        if (row._regionTotal) return { "& td": { backgroundColor: "#e0e0e0", fontWeight: 600 } };
+                        if (row._repTotal) return { "& td": { backgroundColor: "#eeeeee", fontWeight: 600 } };
                         return {};
                     }}
                 />
-                {grandTotal && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 3, mt: 1.5, p: 1, fontWeight: 600, borderTop: '1px solid #ddd' }}>
-                        <Typography variant="body2">Total Qty: {grandTotal.qty}</Typography>
-                        <Typography variant="body2">Total Free: {grandTotal.free}</Typography>
-                        <Typography variant="body2">Total Value: {Number(grandTotal.val).toFixed(2)}</Typography>
-                        <Typography variant="body2">Total Offer: {Number(grandTotal.offer).toFixed(2)}</Typography>
-                        <Typography variant="body2">Total Disc: {Number(grandTotal.discVal).toFixed(2)}</Typography>
-                    </Box>
-                )}
             </Box>
 
             {/* ================= Product Summary Modal — replica of PHP #productSummaryModal ================= */}
@@ -1010,12 +1054,12 @@ const OrderApproval = () => {
                                 {summaryLines.map((line) => (
                                     <TableRow key={line.prod_id}>
                                         <TableCell sx={{ fontWeight: 600 }}>{line.prod_name}</TableCell>
-                                        <TableCell>{line.prod_ptr}</TableCell>
-                                        <TableCell>{line.prod_mrp}</TableCell>
-                                        <TableCell>{line.prod_qty}</TableCell>
-                                        <TableCell>{line.prod_free}</TableCell>
-                                        <TableCell>{line.prod_disc}</TableCell>
-                                        <TableCell>{line.discount_value}</TableCell>
+                                        <TableCell>{FormatCurrency(line.prod_ptr)}</TableCell>
+                                        <TableCell>{FormatCurrency(line.prod_mrp)}</TableCell>
+                                        <TableCell>{FormatCurrency(line.prod_qty)}</TableCell>
+                                        <TableCell>{FormatCurrency(line.prod_free)}</TableCell>
+                                        <TableCell>{FormatCurrency(line.prod_disc)}</TableCell>
+                                        <TableCell>{FormatCurrency(line.discount_value)}</TableCell>
                                         {!deletedLine && (
                                             <TableCell>
                                                 <IconButton size="small" onClick={() => openEditLine(line)}>
@@ -1211,7 +1255,7 @@ const DiscountCell = ({ row, onUpdate }) => {
             <Button
                 size="small"
                 variant="contained"
-                color="success"
+                color="primary"
                 onClick={() => onUpdate(row, value)}
             >
                 Update

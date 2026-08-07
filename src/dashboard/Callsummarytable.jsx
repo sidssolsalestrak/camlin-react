@@ -15,6 +15,7 @@ import {
   Button,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { FaFileExcel } from "react-icons/fa";
 
 // PHP zeroTonull(): 0/empty/null -> '-' (same pattern used across the app)
 const zeroTonull = (v) => {
@@ -25,17 +26,21 @@ const zeroTonull = (v) => {
 
 const styles = {
   theads: {
-    backgroundColor: "#3464a7",
-    color: "#fff",
-    fontWeight: 600,
-    border: "1px solid #ddd",
-    padding: "6px 8px",
-    fontSize: "13px",
+    backgroundColor: "#F6F5F2",
+    color: "#A09D97",
+    fontWeight: 400,
+    fontSize: "11px",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "11px 6px",
   },
   dataCell: {
-    border: "1px solid #ddd",
-    padding: "6px 8px",
-    fontSize: "13px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    padding: "4px 6px",
+    fontSize: "12px",
+    color: "#343A40",
+    fontWeight: 400,
     verticalAlign: "top",
   },
   center: { textAlign: "center" },
@@ -61,13 +66,11 @@ export default function CallSummaryTable({
   onAddJointWork, // (callId, cusId, mainId) => void
   onAddMarketInput, // (callId) => void
   onDeleteCall, // (callId) => void — omit to hide the trash icon entirely
+  onViewDisplayBreakup, // (callId) => void
+  custype = "0",
 }) {
-  const [custype, setCustype] = useState("0");
-
   const handleCustypeChange = (e) => {
-    const val = e.target.value;
-    setCustype(val);
-    onTypeFilterChange && onTypeFilterChange(val);
+    onTypeFilterChange && onTypeFilterChange(e.target.value);
   };
 
   return (
@@ -85,6 +88,15 @@ export default function CallSummaryTable({
         <Typography variant="body2">
           <i className="fa fa-circle" aria-hidden="true" style={{ color: "red", fontSize: 10 }} /> Retailer
         </Typography>
+        <Box>
+          <Button
+            variant="contained"
+            color="warning"
+            startIcon={<FaFileExcel />}
+          >
+            Export
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer component={Paper} elevation={0}>
@@ -212,7 +224,12 @@ export default function CallSummaryTable({
                       {zeroTonull(key.samp_qty)}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.call_rem}</TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
+                    <TableCell
+                      sx={{ ...styles.dataCell, ...styles.center, cursor: onViewDisplayBreakup ? "pointer" : "default" }}
+                      onClick={
+                        onViewDisplayBreakup ? () => onViewDisplayBreakup(key.call_id) : undefined
+                      }
+                    >
                       {key.display_count}
                     </TableCell>
                   </TableRow>
