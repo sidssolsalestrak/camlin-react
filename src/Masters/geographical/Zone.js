@@ -322,7 +322,7 @@ const showSubmitConfirmation = () => {
               />
               {(!editId && [0, 1, 2].includes(Number(accStat))) && (
                 <Button
-                  sx={{ ml: 1, width: "2rem" }}
+                  sx={{ ml: 1, width: "2rem",textTransform:'none' }}
                   variant="contained"
                   onClick={() => {
                     if (validateZone()) {
@@ -332,10 +332,10 @@ const showSubmitConfirmation = () => {
                     }
                   }}
                 >
-                  Submit
+                  Create
                 </Button>)}
               {(editId && [0, 2].includes(Number(accStat))) && (<Button
-                sx={{ ml: 1, width: "2rem" }}
+                sx={{ ml: 1, width: "2rem",textTransform:'none' }}
                 variant="contained"
                 onClick={() => {
                   if (validateZone()) {

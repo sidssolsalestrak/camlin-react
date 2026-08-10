@@ -19,6 +19,7 @@ import { Download } from '../utils/downloadExcel/Download'
 import useToast from "../utils/useToast";
 import { DownloadNoCell } from ".././utils/xlsnoCellsDownload/DownloadNoCell";
 import { getMasterPanel } from "../services/masterPanelService";
+import { jwtDecode } from "jwt-decode";
 
 function UserLog() {
   const location = useLocation();
@@ -30,6 +31,7 @@ function UserLog() {
   const [userList, setUserList] = useState([]);
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
+  const [userType, setUserType] = useState(null);
 
   const [filters, setFilters] = useState({
     module: "-1",
@@ -87,6 +89,18 @@ function UserLog() {
       console.log("fetch user type Err", err)
     }
   };
+
+   useEffect(() => {
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token);
+                setUserType(decoded.user_type);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    }, []);
 
   useEffect(() => {
     const now = dayjs();
@@ -414,7 +428,7 @@ function UserLog() {
                 <MenuItem value={0}>All</MenuItem>
 
                 {/* SUPER ADMIN (Manual like PHP) */}
-                <MenuItem value={2}>Super Admin</MenuItem>
+                {Number(userType)===2 && <MenuItem value={2}>Super Admin</MenuItem>}
 
                 {/* OTHER USER TYPES */}
                 {userTypeList
