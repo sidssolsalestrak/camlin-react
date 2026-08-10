@@ -915,7 +915,7 @@ const OrderApproval = () => {
                         {row.ordInv && (
                             <a
                                 href={row.ordInv}
-                                target=""
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: 'green' }}
                             >
