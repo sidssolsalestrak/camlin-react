@@ -1153,9 +1153,11 @@ const OrderApproval = () => {
                                                 <IconButton size="small" onClick={() => openEditLine(line)}>
                                                     <EditIcon fontSize="small" sx={{ color: '#2e7d32' }} />
                                                 </IconButton>
+                                                {![6,8].includes(Number(userType)) && (
                                                 <IconButton size="small" onClick={() => showDeleteLineConfirmation(line)}>
                                                     <DeleteIcon fontSize="small" sx={{ color: '#d32f2f' }} />
                                                 </IconButton>
+                                                )}
                                             </TableCell>
                                         )}
                                     </TableRow>
