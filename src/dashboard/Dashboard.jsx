@@ -59,6 +59,7 @@ import { exportActivityExcel } from "./exportActivityExcel";
 import { jwtDecode } from "jwt-decode";
 import { IoChevronBackCircleOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { getMasterPanel } from "../services/masterPanelService";
 
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
@@ -167,6 +168,26 @@ export default function Dashboard() {
   const [summaryCusType, setSummaryCusType] = useState("0");
   /* ───────────────────── Logged-in user context (from JWT) ───────────────────── */
   const [sessionUser, setSessionUser] = useState({ userType: null, userId: null });
+  const [masterPanel, setMasterPanel] = useState({});
+
+  // labels derived from masterPanel with fallbacks
+  const zoneLabel = masterPanel["ZONE"] || "Zone";
+  const areaLabel = masterPanel["AREA"] || "Area";
+  const regionLabel = masterPanel["REGN"] || "Region";
+  const userLabel = masterPanel["USER"] || "Users";
+  const beatLabel = masterPanel["BEAT"] || "Beat";
+  const distributorLabel = masterPanel["STKS"] || "Distributor";
+  const prodLabel = masterPanel["PROD"] || "Product";
+  const psmLabel = masterPanel["PSM"] || "PSM";
+  const kamLabel = masterPanel["KAM"] || "KAM";
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("session-token");
@@ -957,6 +978,7 @@ export default function Dashboard() {
             <DisplayBreakupTable
               displayData={displayBreakupModal.displayData}
               onRowClick={handleViewPhotoRating}
+              masterPanel={masterPanel}
             />
           )}
         </Box>
@@ -990,6 +1012,7 @@ export default function Dashboard() {
             <CumCusDetailTable
               type={detailModal.fieldData.type}
               cusDetail={detailModal.fieldData.cusDetail}
+              masterPanel={masterPanel}
             />
           ) : (
             <Box dangerouslySetInnerHTML={{ __html: detailModal.html }} />
@@ -1079,10 +1102,10 @@ export default function Dashboard() {
 
                 <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                   <FormControl size="small" fullWidth>
-                    <InputLabel id="Usertype">User Type</InputLabel>
+                    <InputLabel id="Usertype">{userLabel} Type</InputLabel>
                     <Select
                       id="Usertype"
-                      label="User Type"
+                      label={`${userLabel} Type`}
                       MenuProps={menuStyle}
                       labelId="Usertype"
                       variant="outlined"
@@ -1158,7 +1181,8 @@ export default function Dashboard() {
                     await exportActivityExcel(
                       activityData,
                       fromDateValue.format("DD MMM YYYY"),
-                      toDateValue.format("DD MMM YYYY")
+                      toDateValue.format("DD MMM YYYY"),
+                      psmLabel,
                     );
                   } catch (err) {
                     console.error("Export failed:", err);
@@ -1181,6 +1205,7 @@ export default function Dashboard() {
               onCumCusDetailClick={handleCumCusDetailClick}
               onProfileWidgetClick={handleProfileWidgetClick}
               activityLoading={activityLoading}
+              srLabel={psmLabel}
             />
           )}
         </Box>

@@ -24,6 +24,7 @@ import { exportOrderApprovalToExcel } from './orderRepExcel';
 import { addSubtotalsOrderApproval } from './addSubtotalsOrderApproval';
 import FormatCurrency from '../utils/formatCurrency';
 import { jwtDecode } from "jwt-decode";
+import { getMasterPanel } from "../services/masterPanelService";
 
 const encode = (val) => btoa(String(val || ""))
     .replace(/\+/g, "-")
@@ -170,6 +171,26 @@ const OrderApproval = () => {
         cancelText: "Cancel",
         confirmColor: "primary"
     });
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const userLabel = masterPanel["USER"] || "Users";
+    const beatLabel = masterPanel["BEAT"] || "Beat";
+    const distributorLabel = masterPanel["STKS"] || "Distributor";
+    const prodLabel = masterPanel["PROD"] || "Product";
+    const psmLabel = masterPanel["PSM"] || "PSM";
+    const kamLabel = masterPanel["KAM"] || "KAM";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
 
     const showConfirmationDialog = (config) => {
         setConfirmationDialog({
@@ -216,16 +237,16 @@ const OrderApproval = () => {
     };
 
     useEffect(() => {
-            const token = localStorage.getItem("session-token");
-            if (token) {
-                try {
-                    let decoded = jwtDecode(token);
-                    setUserType(decoded.user_type);
-                } catch (err) {
-                    console.log(err);
-                }
+        const token = localStorage.getItem("session-token");
+        if (token) {
+            try {
+                let decoded = jwtDecode(token);
+                setUserType(decoded.user_type);
+            } catch (err) {
+                console.log(err);
             }
-        }, []);
+        }
+    }, []);
 
     useEffect(() => {
         fetchRepOptions();
@@ -297,7 +318,8 @@ const OrderApproval = () => {
 
     // ---------------- Excel Export ----------------
     const handleExport = () => {
-        setExporting(true);
+        try {
+           setExporting(true);
         const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
 
         if (flatData.length === 0) {
@@ -327,16 +349,25 @@ const OrderApproval = () => {
             fromDate: formData.from.format('DD-MMM-YYYY'),
             toDate: formData.to.format('DD-MMM-YYYY'),
             status: statusLabel,
+            kamLabel: kamLabel,
+            psmLabel: psmLabel,
+            distributorLabel: distributorLabel,
+            regionLabel: regionLabel,
             grandTotal: grandTotal,
             onSuccess: (message) => {
-                showAlert.success(message);
+                // showAlert.success(message);
                 setExporting(false);
             },
             onError: (message) => {
                 showAlert.error(message);
                 setExporting(false);
             }
-        });
+        }); 
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setExporting(false);
+        }
     };
 
     // ---------------- Calculate summary totals ----------------
@@ -413,7 +444,7 @@ const OrderApproval = () => {
                 textStatus: row.textStatus,
                 ordNo: row.ordNo,
                 sr_type: row.sr_type,
-                del_stat: formData.status === '5' ? 1 : 0,
+                del_stat: formData.status === '5' ? 5 : 0,
                 ordflag: row.ordflag,
                 orderappname: row.orderappname,
                 orderappid: row.orderappid,
@@ -456,7 +487,7 @@ const OrderApproval = () => {
             setSummaryLoading(false);
         }
     };
-    console.log("summary footer canApprove values",summaryFooter.canApprove)
+    console.log("summary footer canApprove values", summaryFooter.canApprove)
 
     const closeSummary = () => {
         setSummaryOpen(false);
@@ -687,7 +718,7 @@ const OrderApproval = () => {
                 stktypeid: editLine.stktypeid,
             });
             if (res.data === 1 || res.data?.success) {
-                showAlert.success('Product Updated Successfully');
+                showAlert.success(`${prodLabel} Updated Successfully`);
                 closeEditLine();
                 const updatedLines = summaryLines.map((l) =>
                     l.prod_id === editLine.prod_id
@@ -800,17 +831,17 @@ const OrderApproval = () => {
             field: 'cusProd', headerName: 'Customer',
             renderCell: (params) => {
                 const row = params.row;
-                return <Button size="small"  sx={{
-        textTransform: 'none',
-        '&:hover': {
-        textDecoration: 'underline',
-        },
-    }}
-    onClick={() => openProductSummary(row)}>{(row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd}</Button>;
+                return <Button size="small" sx={{
+                    textTransform: 'none',
+                    '&:hover': {
+                        textDecoration: 'underline',
+                    },
+                }}
+                    onClick={() => openProductSummary(row)}>{(row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd}</Button>;
             }
         },
         {
-            field: 'stk', headerName: 'Stockist',
+            field: 'stk', headerName: distributorLabel,
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader) return '';
@@ -906,7 +937,7 @@ const OrderApproval = () => {
     const showFopPodBlock = FOP_POD_MAILSTATS.includes(String(ctx.mailstat));
     // PHP: !$this->session->userdata['user_type'] in [6,8]  AND del_stat != 5 (deletedLine empty)
     const canShowDeleteButton = !CAN_DELETE_USER_TYPES_EXCLUDED.includes(Number(userType)) && !deletedLine;
-    console.log("can show Del Button", canShowDeleteButton )
+    console.log("can show Del Button", canShowDeleteButton)
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -984,8 +1015,8 @@ const OrderApproval = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="Stockist">Stockist</InputLabel>
-                            <Select value={formData.stockist} onChange={(e) => handleChange("stockist", e.target.value)} id='Stockist' label="Stockist" MenuProps={menuStyle}
+                            <InputLabel id="Stockist">{distributorLabel}</InputLabel>
+                            <Select value={formData.stockist} onChange={(e) => handleChange("stockist", e.target.value)} id='Stockist' label={distributorLabel} MenuProps={menuStyle}
                                 labelId="Stockist" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {stockistOptions.map((val) => (
@@ -1033,7 +1064,7 @@ const OrderApproval = () => {
             {/* ================= Product Summary Modal — replica of PHP #productSummaryModal ================= */}
             <Dialog open={summaryOpen} onClose={closeSummary} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>Product Breakup</Typography>
+                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>{prodLabel} Breakup</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         {deletedLine && (
                             <Typography sx={{ color: 'red', fontWeight: 700, fontSize: '23px' }}>
@@ -1056,9 +1087,9 @@ const OrderApproval = () => {
                             <Typography>Customer : <b style={{ color: 'blue' }}>{summaryHeader.customer}</b></Typography>
                             <Typography>Status : <b style={{ color: 'blue' }}>{summaryHeader.status}</b></Typography>
                             <Typography>Date : <b style={{ color: 'blue' }}>{summaryHeader.date}</b></Typography>
-                            <Typography>PSM/KAM : <b style={{ color: 'blue' }}>{summaryHeader.rep}</b></Typography>
-                            <Typography>Stockist : <b style={{ color: 'blue' }}>{summaryHeader.stockist}</b></Typography>
-                            <Typography>Order Mode & Time: <b style={{ color: 'blue' }}>{summaryHeader.modeTime}</b></Typography>
+                            <Typography>{psmLabel}/{kamLabel} : <b style={{ color: 'blue' }}>{summaryHeader.rep}</b></Typography>
+                            <Typography>{distributorLabel} : <b style={{ color: 'blue' }}>{summaryHeader.stockist}</b></Typography>
+                            <Typography>Order Mode & Time: <b style={{ color: 'blue' }}>{decodedStatus == "5" ? "-" : summaryHeader.modeTime}</b></Typography>
                             <Typography>Order Remarks : <b style={{ color: 'blue' }}>{summaryHeader.remarks}</b></Typography>
                         </Grid>
                         {/* PHP: .showcount block — only for mailstat 2/4/5 */}
@@ -1092,7 +1123,7 @@ const OrderApproval = () => {
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Product name</TableCell>
+                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>{prodLabel} name</TableCell>
                                     <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>PTR</TableCell>
                                     <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>MRP</TableCell>
                                     <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Qty</TableCell>
@@ -1228,13 +1259,13 @@ const OrderApproval = () => {
             {/* ================= Product Edit Modal — replica of PHP #productEditModal ================= */}
             <Dialog open={editOpen} onClose={closeEditLine} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>Product Edit</Typography>
+                    <Typography sx={{ fontSize: '17px', fontWeight: 300 }}>{prodLabel} Edit</Typography>
                     <IconButton onClick={closeEditLine}><CloseIcon /></IconButton>
                 </DialogTitle>
                 <DialogContent dividers>
                     <Grid container spacing={2}>
                         <Grid size={12}>
-                            <Typography>Product : <b>{editLine.prod_name}</b></Typography>
+                            <Typography>{prodLabel} : <b>{editLine.prod_name}</b></Typography>
                         </Grid>
                         <Grid size={12}>
                             <TextField label="PTR" fullWidth size="small" value={editLine.prod_ptr} disabled />
