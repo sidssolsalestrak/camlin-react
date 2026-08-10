@@ -136,17 +136,21 @@ if (noAccountOwner) {
     }
 
     // ── 10. CLINIC CONTACT NO VALIDATION ──────────────────────────────────
-    let contactNumError = "";
-    for (let i = 0; i < clinics.length; i++) {
-      const no = clinics[i].contactNo;
+    // Indexed by clinic position so each accordion only shows its own error.
+    const contactNumErrors = {};
+    let hasContactNumError = false;
+    clinics.forEach((c, i) => {
+      const no = c.contactNo;
       if (no && no.length !== 10) {
-        contactNumError = `Contact No in Contact Info ${i + 1} must be 10 digits`;
-        toastMessages.push(contactNumError);
-        hasError = true;
-        break;
+        contactNumErrors[i] = "Please enter valid 10-digit Contact No";
+        toastMessages.push(`Contact No in Contact Info ${i + 1} must be 10 digits`);
+        hasContactNumError = true;
       }
+    });
+    if (hasContactNumError) {
+      hasError = true;
     }
-    newErrors.contactNum = contactNumError;
+    newErrors.contactNum = contactNumErrors;
 
     // ── SET ALL ERRORS + SHOW ALL MESSAGES, THEN RETURN ONCE ─────────────
     setFieldErrors((prev) => ({ ...prev, ...newErrors }));
