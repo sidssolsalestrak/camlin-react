@@ -69,7 +69,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     }, [])
 
     const validateEmail = (value) => {
-        const emailRegex = /^[^\s@A-Z]+@[^\s@A-Z]+\.[^\s@A-Z]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(value);
     };
 
@@ -173,7 +173,7 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
             />
             <TextField value={formData.email}
                 onChange={(e) => {
-                    const onlyText = e.target.value.replace(/\s+/g, "").toLowerCase();;
+                    const onlyText = e.target.value.replace(/\s+/g, "");
                     handleChangeForm("email", onlyText)
                 }}
                 onBlur={(e) => {

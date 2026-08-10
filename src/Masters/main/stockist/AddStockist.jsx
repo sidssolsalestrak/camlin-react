@@ -198,7 +198,7 @@ const AddStockist = () => {
     const validateForm = () => {
         const newErrors = {};
         const validateEmail = (value) => {
-            const emailRegex = /^[^\s@A-Z]+@[^\s@A-Z]+\.[^\s@A-Z]+$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(value);
         };
 
