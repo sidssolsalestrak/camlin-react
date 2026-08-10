@@ -394,21 +394,31 @@ export default function DailyActivityReport() {
             field: "sec_tgt_val",
             headerName: "Sec. Target Rs.",
             showTotal: true,
-            renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>
-                    {params.value && params.value > 0
-                        ? params.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '-'}
-                </Typography>
-            )
+            renderCell: (params) => {
+                const num = Number(params.value);
+                return (
+                    <Typography sx={{ textAlign: 'right' }}>
+                        {num > 0
+                            ? num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : '-'}
+                    </Typography>
+                );
+            }
         },
         {
             field: "sec_ach_val",
             headerName: "Sec.Achieved Rs.",
             showTotal: true,
-            renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value && params.value > 0 ? params.value : '-'}</Typography>
-            )
+            renderCell: (params) => {
+                const num = Number(params.value);
+                return (
+                    <Typography sx={{ textAlign: 'right' }}>
+                        {num > 0
+                            ? num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : '-'}
+                    </Typography>
+                );
+            }
         },
         {
             field: "sec_pct",
