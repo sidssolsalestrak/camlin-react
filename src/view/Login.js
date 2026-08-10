@@ -36,6 +36,21 @@ function Login() {
   const [emailMob, setEmailMob] = useState("");
   const [otpSent, setOtpSent] = useState(false);
 
+  const resetFields = () => {
+    setEmail("");
+    setPassword("");
+    setEmailMob("");
+    setOtpInput("");
+    setOtpSent(false);
+    setUserId("");
+    setSessionId("");
+  };
+
+  const goToStep = (newStep) => {
+    resetFields();
+    setStep(newStep);
+  };
+
   const createQr = async () => {
     const res = await api.post("/createQrSession");
     setSessionId(res.data.sessionId);
@@ -109,27 +124,27 @@ function Login() {
   };
 
   const handleForgotSubmit = async () => {
-  if (!email) {
-    toast.error("Please Enter Register Email Id");
-    return;
-  }
-
-  try {
-    const res = await api.post("/check_email_id", {
-      email: email,
-    });
-
-    if (String(res.data).trim() !== "") {
-      toast.success("An email was sent to the Registered email address");
-      navigate("/Auth");
-    } else {
-      toast.error("Email Id Not Registered");
+    if (!email) {
+      toast.error("Please Enter Register Email Id");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong");
-  }
-};
+
+    try {
+      const res = await api.post("/check_email_id", {
+        email: email,
+      });
+
+      if (String(res.data).trim() !== "") {
+        toast.success("An email was sent to the Registered email address");
+        navigate("/Auth");
+      } else {
+        toast.error("Email Id Not Registered");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+  };
 
   const handleSendOtp = async () => {
     try {
@@ -242,9 +257,9 @@ function Login() {
                 sx={{ mb: 1.5 }}
                 label="User Name"
                 value={email}
-                onChange={(e) =>{
+                onChange={(e) => {
                   const onlyText = e.target.value.replace(/^\s+/, "");
-                  setEmail(onlyText)
+                  setEmail(onlyText);
                 }}
               />
 
@@ -256,9 +271,9 @@ function Login() {
                 size="small"
                 sx={{ mb: 1.5 }}
                 value={password}
-                onChange={(e) =>{
+                onChange={(e) => {
                   const onlyText = e.target.value.replace(/\s+/g, "");
-                  setPassword(onlyText)
+                  setPassword(onlyText);
                 }}
               />
             </Box>
@@ -275,7 +290,7 @@ function Login() {
             <Link
               component="button"
               sx={{ display: "block", mt: 0.5 }}
-              onClick={() => setStep("forgot")}
+              onClick={() => goToStep("forgot")}
             >
               Forgot Password
             </Link>
@@ -284,7 +299,8 @@ function Login() {
               sx={{ display: "flex", mt: 2, justifyContent: "space-around" }}
             >
               <Typography>
-                <Link component="button" onClick={() => setStep("otp")}>
+                <Link component="button" 
+                onClick={() => goToStep("otp")}>
                   Log in via OTP
                   {/* <Box
                     component="img"
@@ -298,7 +314,7 @@ function Login() {
               <Typography>
                 <Link
                   component="button"
-                  onClick={() => setStep("qr")}
+                  onClick={() => goToStep("qr")}
                   sx={{ display: "flex" }}
                 >
                   Login via QR
@@ -327,9 +343,9 @@ function Login() {
               size="small"
               sx={{ mt: 1, mb: 1 }}
               value={email}
-              onChange={(e) =>{
+              onChange={(e) => {
                 const onlyText = e.target.value.replace(/\s+/g, "");
-                setEmail(onlyText)
+                setEmail(onlyText);
               }}
             />
 
@@ -338,7 +354,7 @@ function Login() {
                 variant="contained"
                 color="success"
                 sx={{ width: "45%" }}
-                onClick={() => setStep("login")}
+                onClick={() => goToStep("login")}
               >
                 BACK
               </Button>
@@ -347,7 +363,7 @@ function Login() {
                 variant="contained"
                 color="success"
                 sx={{ width: "45%" }}
-                onClick={()=>handleForgotSubmit()}
+                onClick={() => handleForgotSubmit()}
               >
                 SUBMIT
               </Button>
@@ -367,9 +383,9 @@ function Login() {
                   size="small"
                   sx={{ mt: 1, mb: 1 }}
                   value={emailMob}
-                  onChange={(e) =>{
-                     const onlyText = e.target.value.replace(/\s+/g, "");
-                     setEmailMob(onlyText)
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    setEmailMob(onlyText);
                   }}
                 />
 
@@ -407,7 +423,7 @@ function Login() {
               </>
             )}
 
-            <Button sx={{ mt: 1 }} onClick={() => setStep("login")}>
+            <Button sx={{ mt: 1 }} onClick={() => goToStep("login")}>
               Back
             </Button>
           </>
@@ -431,7 +447,7 @@ function Login() {
               </>
             )}
 
-            <Button sx={{ mt: 2 }} onClick={() => setStep("login")}>
+            <Button sx={{ mt: 2 }} onClick={() => goToStep("login")}>
               Back
             </Button>
           </>
