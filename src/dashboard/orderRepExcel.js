@@ -217,7 +217,7 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 
-    // onSuccess("Export completed successfully");
+    onSuccess("Export completed successfully");
   } catch (error) {
     console.error("Export error:", error);
     onError("Failed to export data: " + error.message);
