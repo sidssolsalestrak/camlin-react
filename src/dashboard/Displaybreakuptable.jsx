@@ -56,7 +56,9 @@ function toolsImplemented(key) {
  *  - Clicking a rated row opens the photo detail breakup (PHP: .sumMer_rate ->
  *    getSummary_mer_breakUpRate), wired via onRowClick.
  */
-export default function DisplayBreakupTable({ displayData = [], onRowClick }) {
+export default function DisplayBreakupTable({ displayData = [], onRowClick,masterPanel = {} }) {
+  const accLabel = masterPanel["ACCM"] || "Account";
+
   return (
     <TableContainer component={Paper} elevation={0}>
       <Table size="small" sx={{ borderCollapse: "collapse" }}>
@@ -64,7 +66,7 @@ export default function DisplayBreakupTable({ displayData = [], onRowClick }) {
           <TableRow>
             <TableCell sx={styles.theads} align="center">Sl</TableCell>
             <TableCell sx={styles.theads}>Name</TableCell>
-            <TableCell sx={styles.theads} align="center">Account Owner</TableCell>
+            <TableCell sx={styles.theads} align="center">{accLabel} Owner</TableCell>
             <TableCell sx={styles.theads} align="center">Call Date</TableCell>
             <TableCell sx={styles.theads}>Tools Implemented</TableCell>
             <TableCell sx={styles.theads} align="center">Image Rating</TableCell>

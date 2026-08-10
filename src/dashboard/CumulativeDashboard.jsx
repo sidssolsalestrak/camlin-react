@@ -130,7 +130,8 @@ export default function CumulativeDashboard({
   onFieldDetailClick,
   onCumCusDetailClick,
   onProfileWidgetClick,
-  activityLoading
+  activityLoading,
+  srLabel = "PSM", 
 }) {
   const totaldays = useMemo(() => {
     if (!fromDate || !toDate) return 0;
@@ -245,7 +246,7 @@ export default function CumulativeDashboard({
             <TableRow>
               <TableCell sx={{ ...styles.theads, zIndex: 4 }} />
               <TableCell align="left" sx={{ ...styles.theads, maxWidth: 200, zIndex: 4 }}>
-                PSM Name
+                {srLabel} Name
               </TableCell>
               <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Field Days</TableCell>
               <TableCell sx={{ ...styles.theads, zIndex: 4 }}>Other Reporting</TableCell>

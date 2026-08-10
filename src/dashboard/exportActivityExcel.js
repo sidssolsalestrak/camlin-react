@@ -35,7 +35,7 @@ function emptyTotals() {
  * @param {dayjs|string} fromDate
  * @param {dayjs|string} toDate
  */
-export async function exportActivityExcel(activityData, fromDate, toDate) {
+export async function exportActivityExcel(activityData, fromDate, toDate,psmLabel) {
   const totaldays = fromDate && toDate
     ? Math.abs(dayjs(toDate).diff(dayjs(fromDate), "day")) + 1
     : 0;
@@ -116,7 +116,7 @@ export async function exportActivityExcel(activityData, fromDate, toDate) {
   const sheet = workbook.addWorksheet("Activity Dashboard");
 
   const columns = [
-    { header: "PSM Name", key: "name", width: 24 },
+    { header: `${psmLabel} Name`, key: "name", width: 24 },
     { header: "Field Days", key: "fieldDays", width: 11 },
     { header: "Other Reporting", key: "otherReporting", width: 13 },
     { header: "Total Days Reported", key: "totalReported", width: 15 },

@@ -34,22 +34,23 @@ const styles = {
  *    Phone, Email, Potential Class, Bioderma Class
  *  - "No Of Repeated Calls" column only appears when type === 3 (Repeat Call)
  */
-export default function CumCusDetailTable({ type, cusDetail = [] }) {
+export default function CumCusDetailTable({ type, cusDetail = [],masterPanel = {} }) {
   const typeNum = Number(type);
   const showRepeatCol = typeNum === 3;
-
+const beatLabel = masterPanel["BEAT"] || "Beat";
+  const potentialClassLabel = masterPanel["PCLS"] || "Potential Class";
   return (
     <TableContainer component={Paper} elevation={0}>
       <Table size="small" sx={{ borderCollapse: "collapse" }}>
         <TableHead>
           <TableRow>
             <TableCell sx={styles.theads}>Sl No</TableCell>
-            <TableCell sx={styles.theads}>Beat</TableCell>
+            <TableCell sx={styles.theads}>{beatLabel}</TableCell>
             <TableCell sx={styles.theads}>Doctor</TableCell>
             <TableCell sx={styles.theads}>Speciality</TableCell>
             <TableCell sx={styles.theads}>Phone</TableCell>
             <TableCell sx={styles.theads}>Email</TableCell>
-            <TableCell sx={styles.theads} align="center">Potential Class</TableCell>
+            <TableCell sx={styles.theads} align="center">{potentialClassLabel}</TableCell>
             <TableCell sx={styles.theads} align="center">Bioderma Class</TableCell>
             {showRepeatCol && (
               <TableCell sx={styles.theads}>No Of Repeated Calls</TableCell>
