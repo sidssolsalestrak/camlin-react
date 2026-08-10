@@ -186,7 +186,7 @@ function AddUser() {
     message: "",
     severity: "success",
   });
-  const emailRegex = /^[^\s@A-Z]+@[^\s@A-Z]+\.[^\s@A-Z]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const [errors, setErrors] = useState({});
   const [duplicateErrors, setDuplicateErrors] = useState({});

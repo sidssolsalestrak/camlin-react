@@ -200,7 +200,7 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
     const statusLabel = status || "All";
     const from = fromDate || "start";
     const to = toDate || "end";
-    const filename = `Order_Approval_${statusLabel}_${from}_to_${to}.xlsx`;
+    const filename = `Order_Approval_Details.xlsx`;
 
     const wbout = XLSX.write(wb, {
       bookType: "xlsx",
@@ -217,7 +217,7 @@ export const exportOrderApprovalToExcel = (data, options = {}) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 
-    onSuccess("Export completed successfully");
+    // onSuccess("Export completed successfully");
   } catch (error) {
     console.error("Export error:", error);
     onError("Failed to export data: " + error.message);

@@ -23,6 +23,7 @@ import ConfirmationDialog from '../utils/confirmDialog';
 import { exportOrderApprovalToExcel } from './orderRepExcel';
 import { addSubtotalsOrderApproval } from './addSubtotalsOrderApproval';
 import FormatCurrency from '../utils/formatCurrency';
+import { jwtDecode } from "jwt-decode";
 
 const encode = (val) => btoa(String(val || ""))
     .replace(/\+/g, "-")
@@ -95,7 +96,7 @@ const OrderApproval = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const showAlert = useToast();
-    const currentUserType = Number(localStorage.getItem('user_type') || 0);
+    const [userType, setUserType] = useState(null);
 
     // decode the url params
     let decodedFrom = decode(searchParams.get('from'));
@@ -213,6 +214,18 @@ const OrderApproval = () => {
             setStockistOptions([]);
         }
     };
+
+    useEffect(() => {
+            const token = localStorage.getItem("session-token");
+            if (token) {
+                try {
+                    let decoded = jwtDecode(token);
+                    setUserType(decoded.user_type);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+        }, []);
 
     useEffect(() => {
         fetchRepOptions();
@@ -443,6 +456,7 @@ const OrderApproval = () => {
             setSummaryLoading(false);
         }
     };
+    console.log("summary footer canApprove values",summaryFooter.canApprove)
 
     const closeSummary = () => {
         setSummaryOpen(false);
@@ -786,7 +800,13 @@ const OrderApproval = () => {
             field: 'cusProd', headerName: 'Customer',
             renderCell: (params) => {
                 const row = params.row;
-                return <Button size="small" onClick={() => openProductSummary(row)}>{(row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd}</Button>;
+                return <Button size="small"  sx={{
+        textTransform: 'none',
+        '&:hover': {
+        textDecoration: 'underline',
+        },
+    }}
+    onClick={() => openProductSummary(row)}>{(row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd}</Button>;
             }
         },
         {
@@ -864,7 +884,7 @@ const OrderApproval = () => {
                         {row.ordInv && (
                             <a
                                 href={row.ordInv}
-                                target="_blank"
+                                target=""
                                 rel="noopener noreferrer"
                                 style={{ color: 'green' }}
                             >
@@ -885,8 +905,8 @@ const OrderApproval = () => {
     // PHP: showcount block visible only when mailstat is 2, 4, or 5
     const showFopPodBlock = FOP_POD_MAILSTATS.includes(String(ctx.mailstat));
     // PHP: !$this->session->userdata['user_type'] in [6,8]  AND del_stat != 5 (deletedLine empty)
-    const canShowDeleteButton = !CAN_DELETE_USER_TYPES_EXCLUDED.includes(currentUserType) && !deletedLine;
-
+    const canShowDeleteButton = !CAN_DELETE_USER_TYPES_EXCLUDED.includes(Number(userType)) && !deletedLine;
+    console.log("can show Del Button", canShowDeleteButton )
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -1093,7 +1113,7 @@ const OrderApproval = () => {
                                         <TableCell sx={{ fontWeight: 600 }}>{line.code}-{line.prod_name}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_ptr)}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_mrp)}</TableCell>
-                                        <TableCell>{FormatCurrency(line.prod_qty)}</TableCell>
+                                        <TableCell>{line.prod_qty}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_free)}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_disc)}</TableCell>
                                         <TableCell>{FormatCurrency(line.discount_value)}</TableCell>
@@ -1195,12 +1215,12 @@ const OrderApproval = () => {
                 </DialogContent>
                 {/* PHP: #footerAction rendered server-side with Approve/Reject buttons */}
                 <DialogActions>
-                    {summaryFooter.canApprove && (
+                    {/* {summaryFooter.canApprove && (
                         <Button variant="contained" color="success" onClick={showApproveConfirmation}>Approve</Button>
-                    )}
-                    {summaryFooter.canReject && (
+                    )} */}
+                    {/* {summaryFooter.canReject && (
                         <Button variant="contained" color="error" onClick={showRejectConfirmation}>Reject</Button>
-                    )}
+                    )} */}
                     <Button onClick={closeSummary}>Close</Button>
                 </DialogActions>
             </Dialog>
