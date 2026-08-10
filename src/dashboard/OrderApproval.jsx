@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Layout from '../layout'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Box, FormControl, Grid, InputLabel, MenuItem, Select, Button, Typography,
     Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TextField,
@@ -23,6 +23,21 @@ import ConfirmationDialog from '../utils/confirmDialog';
 import { exportOrderApprovalToExcel } from './orderRepExcel';
 import { addSubtotalsOrderApproval } from './addSubtotalsOrderApproval';
 import FormatCurrency from '../utils/formatCurrency';
+
+const encode = (val) => btoa(String(val || ""))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+
+// URL-safe decode - restore before atob
+const decode = (str) => {
+    if (!str) return "";
+    const restored = str
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+    const padded = restored + "==".slice((restored.length % 4) || 4);
+    try { return atob(padded); } catch { return ""; }
+};
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -77,8 +92,18 @@ const formatStatusName = (str) => {
 
 const OrderApproval = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const showAlert = useToast();
     const currentUserType = Number(localStorage.getItem('user_type') || 0);
+
+    // decode the url params
+    let decodedFrom = decode(searchParams.get('from'));
+    let decodedTo = decode(searchParams.get('to'));
+    let decodedType = decode(searchParams.get('type'));
+    let decodedRep = decode(searchParams.get('rep'));
+    let decodedStatus = decode(searchParams.get('status'));
+    let decodedStockist = decode(searchParams.get('stockist'));
 
     const [formData, setformData] = useState({
         from: dayjs().startOf("month"),
@@ -200,19 +225,20 @@ const OrderApproval = () => {
     }, [formData.rep]);
 
     // ---------------- Main list search ----------------
-    const approvalSearch = useCallback(async (clickType = null) => {
+    const approvalSearch = useCallback(async (overrideData = null, clickType = null) => {
+        const data = overrideData || formData;
         setloading(true);
         setDeletedLine('');
         try {
             const res = await api.post('/mobile/getApprovalDet', {
-                psm: formData.rep,
-                orderStats: formData.status,
-                fromDate: formData.from.format('DD MMM YYYY'),
-                toDate: formData.to.format('DD MMM YYYY'),
+                psm: data.rep,
+                orderStats: data.status,
+                fromDate: data.from.format('DD MMM YYYY'),
+                toDate: data.to.format('DD MMM YYYY'),
                 clickType,
-                del_stat: formData.status === '-1' ? 1 : 0,
-                stokist: formData.stockist,
-                type: formData.type,
+                del_stat: data.status === '5' ? 1 : 0,
+                stokist: data.stockist,
+                type: data.type,
             });
             setTableData(res.data?.rows || []);
             setGrandTotal(res.data?.grandTotal || null);
@@ -227,11 +253,36 @@ const OrderApproval = () => {
     }, [formData]);
 
     useEffect(() => {
-        approvalSearch();
-    }, []);
+        setformData((prev) => ({
+            from: decodedFrom ? dayjs(decodedFrom) : dayjs().startOf("month"),
+            to: decodedTo ? dayjs(decodedTo) : dayjs(),
+            type: decodedType || "0",
+            rep: decodedRep || "0",
+            status: decodedStatus || "1",
+            stockist: decodedStockist || "0",
+        }));
+        approvalSearch({
+            from: decodedFrom ? dayjs(decodedFrom) : dayjs().startOf("month"),
+            to: decodedTo ? dayjs(decodedTo) : dayjs(),
+            type: decodedType || "0",
+            rep: decodedRep || "0",
+            status: decodedStatus || "1",
+            stockist: decodedStockist || "0",
+        });
+    }, [decodedFrom, decodedTo, decodedType, decodedRep, decodedStatus, decodedStockist])
+
+    const handleSearchClick = () => {
+        let params = new URLSearchParams();
+        params.append('from', encode(formData.from.format("YYYY-MM-DD")));
+        params.append('to', encode(formData.to.format("YYYY-MM-DD")));
+        if (formData.type > 0) params.append('type', encode(formData.type));
+        if (formData.rep > 0) params.append('rep', encode(formData.rep));
+        if (formData.status > 0) params.append('status', encode(formData.status));
+        if (formData.stockist > 0) params.append('stockist', encode(formData.stockist));
+        navigate(`${location.pathname}?${params.toString()}`);
+    };
 
     // ---------------- Excel Export ----------------
-    // PHP: window.location.href = bioUrl+'mobile/exportApprovalDet/'+btoa(type)+...
     const handleExport = () => {
         setExporting(true);
         const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
@@ -242,18 +293,24 @@ const OrderApproval = () => {
             return;
         }
 
+        // Same override as the grid's Status column: force "Deleted" when that filter is active
+        const isDeletedFilter = formData.status === '5';
+        const exportRows = isDeletedFilter
+            ? flatData.map(row => ({ ...row, statusname: 'Deleted' }))
+            : flatData;
+
         const statusMap = {
             '1': 'New',
             '2': 'Approved',
             '3': 'Pending',
-            '-1': 'Deleted',
+            '5': 'Deleted',
             '-3': 'FOP_Request',
             '-5': 'Giveaway_FOP',
             '-6': 'Referral_FOP'
         };
         const statusLabel = statusMap[formData.status] || 'All';
 
-        exportOrderApprovalToExcel(flatData, {
+        exportOrderApprovalToExcel(exportRows, {
             fromDate: formData.from.format('DD-MMM-YYYY'),
             toDate: formData.to.format('DD-MMM-YYYY'),
             status: statusLabel,
@@ -319,8 +376,7 @@ const OrderApproval = () => {
         });
 
         // PHP: textStatus=='New' ? textStatus : statusname
-        const statusDisplay = row.textStatus === 'New' ? row.textStatus : row.statusname;
-
+        const statusDisplay = formData.status === '5' ? 'Deleted' : (row.textStatus === 'New' ? row.textStatus : row.statusname);
         setSummaryHeader({
             orderNumber: row.ordNo,
             customer: row.cusProd,
@@ -344,7 +400,7 @@ const OrderApproval = () => {
                 textStatus: row.textStatus,
                 ordNo: row.ordNo,
                 sr_type: row.sr_type,
-                del_stat: formData.status === '-1' ? 1 : 0,
+                del_stat: formData.status === '5' ? 1 : 0,
                 ordflag: row.ordflag,
                 orderappname: row.orderappname,
                 orderappid: row.orderappid,
@@ -375,7 +431,7 @@ const OrderApproval = () => {
             calculateTotals(lines);
 
             // PHP: del_stat==5 (Deleted filter) -> show "Deleted" label, hide delete/action controls
-            if (formData.status === '-1') {
+            if (formData.status === '5') {
                 setDeletedLine('Deleted');
             }
 
@@ -700,33 +756,6 @@ const OrderApproval = () => {
         }
     };
 
-    // ---------------- Invoice file download ----------------
-const handleInvoiceDownload = async (e, row) => {
-    e.preventDefault();
-    const url = `${BIO_URL}/assets/upload/${row.ordInv}`;
-    try {
-        const res = await fetch(url);
-        if (!res.ok) {
-            showAlert.error('Invoice file not found on server');
-            return;
-        }
-        const blob = await res.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = row.ordInvName || row.ordInv; // saves with original filename
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-        console.error(err);
-        showAlert.error('Failed to download invoice');
-    }
-};
-
     // ---------------- Table columns ----------------
     const columns = [
         {
@@ -750,14 +779,14 @@ const handleInvoiceDownload = async (e, row) => {
                 if (row._isRegionHeader) return <b style={{ color: '#fff' }}>{row.regName}</b>;
                 if (row._isRepHeader) return <b>{row.psmName}</b>;
                 if (row._isSubtotal) return '';
-                return <Button size="small" onClick={() => openProductSummary(row)}>{row.ordNo}</Button>;
+                return row.ordNo;
             }
         },
         {
             field: 'cusProd', headerName: 'Customer',
             renderCell: (params) => {
                 const row = params.row;
-                return (row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd;
+                return <Button size="small" onClick={() => openProductSummary(row)}>{(row._isRegionHeader || row._isRepHeader || row._isSubtotal) ? '' : row.cusProd}</Button>;
             }
         },
         {
@@ -805,6 +834,13 @@ const handleInvoiceDownload = async (e, row) => {
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader || row._isSubtotal) return '';
+
+                const isDeletedFilter = (decodedStatus || "1") === '5';
+
+                if (isDeletedFilter) {
+                    return <span style={{ color: 'red' }}>-Deleted</span>;
+                }
+
                 return formatStatusName(row.statusname);
             }
         },
@@ -827,8 +863,9 @@ const handleInvoiceDownload = async (e, row) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {row.ordInv && (
                             <a
-                                href={`${BIO_URL}/assets/upload/${row.ordInv}`}
-        onClick={(e) => handleInvoiceDownload(e, row)}
+                                href={row.ordInv}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 style={{ color: 'green' }}
                             >
                                 {row.ordInvName}
@@ -938,7 +975,7 @@ const handleInvoiceDownload = async (e, row) => {
                         </FormControl>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3, md: 1.5, lg: 1.5 }}>
-                        <Button startIcon={<SearchIcon />} variant="contained" color="primary" onClick={() => approvalSearch()} disabled={loading}>
+                        <Button startIcon={<SearchIcon />} variant="contained" color="primary" onClick={handleSearchClick} disabled={loading}>
                             Search
                         </Button>
                     </Grid>
@@ -1053,7 +1090,7 @@ const handleInvoiceDownload = async (e, row) => {
                             <TableBody>
                                 {summaryLines.map((line) => (
                                     <TableRow key={line.prod_id}>
-                                        <TableCell sx={{ fontWeight: 600 }}>{line.prod_name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>{line.code}-{line.prod_name}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_ptr)}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_mrp)}</TableCell>
                                         <TableCell>{FormatCurrency(line.prod_qty)}</TableCell>
