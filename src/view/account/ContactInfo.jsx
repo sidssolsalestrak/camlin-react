@@ -28,6 +28,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
     , repInchargeOptions, repPOSOptions, hospitalOptions, distributorOptions, pharmacyOptions,
     fieldErrors = {},
     handleClinicContactNoChange,
+    handleClinicContactNoBlur,
 }) => {
     const id = React.useId();
     return (
@@ -162,8 +163,9 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 value={clinic.contactNo}
                                                 inputProps={{ maxLength: 10 }}
                                                 onChange={(e) => handleClinicContactNoChange(idx, e.target.value)}
-                                                error={!!fieldErrors.contactNum}
-                                                helperText={fieldErrors.contactNum}
+                                                onBlur={(e) => handleClinicContactNoBlur(idx, e.target.value)}
+                                                error={!!fieldErrors.contactNum?.[idx]}
+                                                helperText={fieldErrors.contactNum?.[idx]}
                                             />
                                         </Grid>
                                     )}
@@ -234,6 +236,13 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 <InputLabel id="Distributor">Distributor</InputLabel>
                                                 <Select value={clinic.stkId} id='Distributor' label="Distributor" 
                                                     labelId="Distributor" variant="outlined"
+                                                      MenuProps={{
+                                                            PaperProps: {
+                                                                style: {
+                                                                    maxHeight: 200
+                                                                }
+                                                            }
+                                                        }}
                                                     onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}>
                                                     {distributorOptions?.map((item, index) => (
                                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>

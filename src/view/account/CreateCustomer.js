@@ -30,6 +30,8 @@ const headContainer = {
 }
 const subHeaderStyle = { textDecoration: "underline", textUnderlineOffset: "5px", textDecorationColor: "#ccc" }
 
+const ALL_REGION_OPTION = { id: "0", reg_name: "All" };
+
 const DEFAULT_CLINIC = {
   repIncharge: "0",
   repInchargePOS: "0",
@@ -142,6 +144,7 @@ function CreateCustomer() {
     marketingTools: [],
     agegroup: "1",
     potentiality: "1",
+    region: "0",
   });
 
   const isHcpField = (form.cusType === "1"); // hcpDiv2 fields only show for HCP
@@ -157,7 +160,7 @@ function CreateCustomer() {
   const [fieldErrors, setFieldErrors] = useState({
     mobile: "",
     email: "",
-    contactNum: ""
+    contactNum: {}   // ← indexed by clinic position: { 0: "error", 1: "" , ... }
   });
 
   const { handleSubmit, handleUpdate } = useSubmitCustomer({
@@ -200,16 +203,27 @@ function CreateCustomer() {
     setForm((f) => ({ ...f, sendEmail: val }));
   };
 
+  // ── Contact No: only clear the error while typing. Never flag an
+  //    incomplete number as invalid mid-keystroke. ──
   const handleClinicContactNoChange = (idx, value) => {
-    const numericValue = value.replace(/\D/g, "");
+    const numericValue = value.replace(/\D/g, "").slice(0, 10);
     updateClinic(idx, "contactNo", numericValue);
 
     setFieldErrors((prev) => ({
       ...prev,
-      contactNum: numericValue && numericValue.length !== 10
-        ? "Please enter valid 10-digit Contact No"
-        : "",
+      contactNum: { ...prev.contactNum, [idx]: "" },
     }));
+  };
+
+  // ── Contact No: validate once the user leaves the field, so a
+  //    still-incomplete number is judged only after they're done typing. ──
+  const handleClinicContactNoBlur = (idx, value) => {
+    if (value && value.length !== 10) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        contactNum: { ...prev.contactNum, [idx]: "Please enter valid 10-digit Contact No" },
+      }));
+    }
   };
 
   // ---------------- GENERIC LOADER ----------------
@@ -399,7 +413,7 @@ function CreateCustomer() {
     loadIfNeeded({
       key: "Region",
       state: regionOptions,
-      setter: setRegionOptions,
+      setter: (data) => setRegionOptions([{ ...ALL_REGION_OPTION }, ...data]),
       apiCall: "/getRegionMas",
     });
 
@@ -556,7 +570,7 @@ function CreateCustomer() {
         let regions = regionOptions;
         if (regions.length === 0) {
           const regRes = await api.post("/getRegionMas");
-          regions = (regRes.data.data || []).map(i => ({ ...i, id: String(i.id) }));
+          regions = [{ ...ALL_REGION_OPTION }, ...(regRes.data.data || []).map(i => ({ ...i, id: String(i.id) }))];
           setRegionOptions(regions);
         }
 
@@ -1116,7 +1130,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3, lg: 3 }} sx={{height:'3rem'}}>
               <CommonAppSelect
                 label={fieldConfig["Region"]?.label || "Region"}
-                value={form.region || ""}
+                value={form.region || "0"}
                 onChange={(e) => handleRegionChange(String(e.target.value))}
                 options={regionOptions}
                 valueKey="id"
@@ -1188,6 +1202,7 @@ function CreateCustomer() {
         distributorOptions={distributorOptions}
         fieldErrors={fieldErrors}
         handleClinicContactNoChange={handleClinicContactNoChange}
+        handleClinicContactNoBlur={handleClinicContactNoBlur}
       />
       {/* ---------------- Map Dialog ------------------------- */}
       <Dialog
