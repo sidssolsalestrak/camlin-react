@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { FaFileExcel } from "react-icons/fa";
+import { exportCallSummaryExcel } from "./Exportcallsummaryexcel";
 
 // PHP zeroTonull(): 0/empty/null -> '-' (same pattern used across the app)
 const zeroTonull = (v) => {
@@ -93,6 +94,7 @@ export default function CallSummaryTable({
             variant="contained"
             color="warning"
             startIcon={<FaFileExcel />}
+            onClick={() => exportCallSummaryExcel(profile, activitySummary)}
           >
             Export
           </Button>
@@ -158,7 +160,7 @@ export default function CallSummaryTable({
                   <TableRow key={key.call_id ?? idx}>
                     <TableCell sx={styles.dataCell}>
                       {idx + 1}
-                      <Box sx={{ mt: 0.5, display: "flex", gap: 1 }}>
+                      <Box sx={{ mt: 0.5, display: "flex", gap: 1, flexDirection: "column" }}>
                         <i
                           className="fa fa-plus-circle"
                           title="Add Joint Work"
