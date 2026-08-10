@@ -375,7 +375,7 @@ export default function ReportingTabs() {
                             <Button onClick={() => {
                                 if (validateReportingFields()) showSubmitConfirmation()
                             }} variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}>
-                                {decodedUserId ? "Update" : "Submit"}
+                                {decodedUserId ? "Update" : "Create"}
                             </Button>
                         </Box>
                     )}

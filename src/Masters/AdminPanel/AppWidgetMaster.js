@@ -318,10 +318,10 @@ export default function AppWidgetMaster() {
                                 ))}
                             </Box>
 
-                            <Button variant="contained" sx={{ width: '2rem', mb: 3 }} onClick={() => {
+                            <Button variant="contained" sx={{ width: '2rem', mb: 3, textTransform:'none' }} onClick={() => {
                                 if (validateFields()) showSubmitConfirmation()
                             }}>
-                                {decodedWidgetId ? "Update" : "Submit"}
+                                {decodedWidgetId ? "Update" : "Create"}
                             </Button>
                         </Box>
                     )}
