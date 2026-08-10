@@ -319,7 +319,7 @@ export default function MenuMaster() {
 
                             <Button variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}
                                 onClick={() => { if (validateFields()) showSubmitConfirmation() }}>
-                                {decodedmenuId ? "Update" : "Submit"}
+                                {decodedmenuId ? "Update" : "Create"}
                             </Button>
                         </Box>
                     )}

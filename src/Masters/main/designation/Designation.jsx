@@ -401,10 +401,10 @@ const Designation = () => {
                                     helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.abbreviation}</span>} />
                             </Box>
                             {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Submit</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
                             )}
                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>Update</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}
