@@ -309,8 +309,11 @@ export default function Dashboard() {
   const [displayToDate, setDisplayToDate] = useState(dayjs().endOf("month"));
   const [displayWithOnly, setDisplayWithOnly] = useState(false); // toggleCheckbox3: unchecked = show all
 
+  const lastDisplayFetchArgs = useRef({ callId: 0, opts: {} });
+
   const fetchDisplayBreakup = useCallback(
     async (callId, { frmDt, toDt, withOnly } = {}) => {
+      lastDisplayFetchArgs.current = { callId, opts: { frmDt, toDt, withOnly } }; // ← remember
       setDetailModal((prev) => ({ ...prev, open: false }));
       setSummaryModal((prev) => ({ ...prev, open: false }));
       setDisplayBreakupModal((prev) => ({ ...prev, open: true, loading: true }));
@@ -387,9 +390,9 @@ export default function Dashboard() {
     setPhotoRatingModal({
       open: true,
       loading: true,
-      title: `${row.cus_name || ""}`,
-      title1: `- ${row.user_name || ""}`,
-      title2: `- ${row.call_date ? dayjs(row.call_date).format("DD MMM YYYY") : ""}`,
+      title: `${row.cus_name || ""}${row.class_name ? ` (${row.class_name})` : ""}`,
+      title1: row.user_name || "",
+      title2: row.call_date ? dayjs(row.call_date).format("DD MMM YYYY, ddd") : "",
       ratedata: null,
     });
     try {
@@ -1270,7 +1273,11 @@ export default function Dashboard() {
 
       {/* Photo Rating Breakup — mirrors PHP .sumMer_rate click / #summaryMer-Modal */}
       <Dialog open={photoRatingModal.open} onClose={closePhotoRatingModal} maxWidth="md" fullWidth>
-        <DialogTitle>Outlet Name:{photoRatingModal.title} - Submitted By:{photoRatingModal.title1} - Call Dated: {photoRatingModal.title2}</DialogTitle>
+        <DialogTitle>
+          Outlet Name: <b>{photoRatingModal.title}</b>&nbsp;&nbsp;
+          Submitted By: <b>{photoRatingModal.title1}</b>&nbsp;&nbsp;
+          Call Dated: <b>{photoRatingModal.title2}</b>
+        </DialogTitle>
         <DialogContent dividers>
           {photoRatingModal.loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -1280,6 +1287,12 @@ export default function Dashboard() {
             <PhotoRatingBreakup
               ratedata={photoRatingModal.ratedata}
               imageBaseUrl={DOCTOR_REPORTING_IMAGE_BASE_URL}
+              api={api}
+              onRatingSaved={() => {
+                handleViewPhotoRating({ id: photoRatingModal.ratedata?.id }); // refresh modal state
+                const { callId, opts } = lastDisplayFetchArgs.current;
+                fetchDisplayBreakup(callId, opts); // refresh table underneath
+              }}
             />
           )}
         </DialogContent>
