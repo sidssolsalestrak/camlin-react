@@ -12,6 +12,9 @@ import ConfirmationDialog from "../../../utils/confirmDialog";
 import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
 import { getMasterPanel } from "../../../services/masterPanelService";
+import FormatCurrency from "../../../utils/formatCurrency";
+
+const renderCellStyle = { width: "100%", display: "flex", justifyContent: "center" }
 
 const menuStyle = {
     PaperProps: {
@@ -208,21 +211,33 @@ const ViewProduct = () => {
             field: "fac_price",
             headerName: "Ex Factory (ASP)",
             filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
         },
         {
             field: "wd_price",
             headerName: `${stkLabel} Price (PTS)`,
             filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
         },
         {
             field: "stk_price",
             headerName: "Retail Price (PTR)",
             filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
         },
         {
             field: "mrp_price",
             headerName: "MRP",
             filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
         },
         {
             field: "prod_stat",
