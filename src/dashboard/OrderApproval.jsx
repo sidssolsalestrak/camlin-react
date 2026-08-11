@@ -1202,7 +1202,7 @@ const OrderApproval = () => {
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700 }}>Net Order Value (PTR)</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                            {summaryTotals.orderValue.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.orderValue)}
                                         </TableCell>
                                         <TableCell sx={{ color: '#1976d2', fontWeight: 700, fontStyle: 'italic', border: 'none' }}>
                                             + GST @18%
@@ -1211,35 +1211,35 @@ const OrderApproval = () => {
                                     <TableRow sx={{ bgcolor: '#f0f5fc' }}>
                                         <TableCell sx={{ fontWeight: 700 }}>Net offer value</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                            {summaryTotals.offerValue.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.offerValue)}
                                         </TableCell>
                                         <TableCell sx={{ border: 'none' }} />
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700 }}>Net offer %</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: '#1976d2' }}>
-                                            {summaryTotals.offerPercent.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.offerPercent)}
                                         </TableCell>
                                         <TableCell sx={{ border: 'none' }} />
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: '#dbe9fb' }}>
                                         <TableCell sx={{ fontWeight: 700 }}>Order MRP Value</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                            {summaryTotals.mrpValue.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.mrpValue)}
                                         </TableCell>
                                         <TableCell sx={{ border: 'none' }} />
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: '#dbe9fb' }}>
                                         <TableCell sx={{ fontWeight: 700 }}>Net Margin Value on MRP</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                            {summaryTotals.marginValue.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.marginValue)}
                                         </TableCell>
                                         <TableCell sx={{ border: 'none' }} />
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700 }}>Net Margin % on MRP</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: '#1976d2' }}>
-                                            {summaryTotals.marginPercent.toFixed(2)}
+                                            {FormatCurrency(summaryTotals.marginPercent)}
                                         </TableCell>
                                         <TableCell sx={{ border: 'none' }} />
                                     </TableRow>
@@ -1327,7 +1327,8 @@ const OrderApproval = () => {
 
 // ---- Inline discount cell (matches PHP .addDiscount row control) ----
 const DiscountCell = ({ row, onUpdate }) => {
-    const [value, setValue] = useState(row.ordDiscVal || '');
+    const discValNew = FormatCurrency(row?.ordDiscVal)
+    const [value, setValue] = useState(discValNew || '');
 
     const handleChange = (e) => {
         const v = e.target.value;
