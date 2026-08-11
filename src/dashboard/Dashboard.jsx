@@ -386,15 +386,22 @@ export default function Dashboard() {
   });
   const closePhotoRatingModal = () => setPhotoRatingModal((p) => ({ ...p, open: false }));
 
-  const handleViewPhotoRating = useCallback(async (row) => {
-    setPhotoRatingModal({
+    const handleViewPhotoRating = useCallback(async (row) => {
+    const hasHeaderInfo = row && (row.cus_name || row.user_name || row.call_date);
+
+    setPhotoRatingModal((prev) => ({
+      ...prev,
       open: true,
       loading: true,
-      title: `${row.cus_name || ""}${row.class_name ? ` (${row.class_name})` : ""}`,
-      title1: row.user_name || "",
-      title2: row.call_date ? dayjs(row.call_date).format("DD MMM YYYY, ddd") : "",
+      title: hasHeaderInfo
+        ? `${row.cus_name || ""}${row.class_name ? ` (${row.class_name})` : ""}`
+        : prev.title,
+      title1: hasHeaderInfo ? (row.user_name || "") : prev.title1,
+      title2: hasHeaderInfo
+        ? (row.call_date ? dayjs(row.call_date).format("DD MMM YYYY, ddd") : "")
+        : prev.title2,
       ratedata: null,
-    });
+    }));
     try {
       const res = await api.post("/dashboard/getSummary_mer_breakUpRate", {
         id: row.id,

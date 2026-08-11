@@ -667,7 +667,7 @@ const OrderApproval = () => {
     };
 
     const showAddDiscountConfirmation = (line, discountValue) => {
-        if (!discountValue || Number(discountValue) <= 0) return;
+        if (!discountValue || Number(discountValue) < 0) return;
         showConfirmationDialog({
             title: "Update Discount",
             message: "Are you sure you want to update this discount?",
@@ -680,14 +680,16 @@ const OrderApproval = () => {
     // ---------------- Edit line ----------------
     // PHP: .EditOrderLine click -> populate fields, mailstat==2 -> Qty/Disc readonly
     const openEditLine = (line) => {
+        const fmt2 = (val) => (val != null && val !== "" && !isNaN(val) ? Number(val).toFixed(2) : val);
+
         setEditLine({
             prod_id: line.prod_id,
             prod_name: line.prod_name,
-            prod_ptr: line.prod_ptr,
-            prod_mrp: line.prod_mrp,
+            prod_ptr: fmt2(line.prod_ptr),
+            prod_mrp: fmt2(line.prod_mrp),
             prod_qty: line.prod_qty,
             prod_free: line.prod_free,
-            prod_disc: line.prod_disc,
+            prod_disc: fmt2(line.prod_disc),
             stktypeid: line.stktypeid,
         });
         setQtyError('');
