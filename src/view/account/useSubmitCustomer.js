@@ -143,7 +143,6 @@ if (noAccountOwner) {
       const no = c.contactNo;
       if (no && no.length !== 10) {
         contactNumErrors[i] = "Please enter valid 10-digit Contact No";
-        toastMessages.push(`Contact No in Contact Info ${i + 1} must be 10 digits`);
         hasContactNumError = true;
       }
     });
