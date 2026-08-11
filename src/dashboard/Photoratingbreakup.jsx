@@ -1,59 +1,115 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Grid, Typography, TextField, IconButton, Dialog } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import useToast from "../../src/utils/useToast";
 
 const STAR_COLOR_FILLED = "#9f931d";
 const STAR_COLOR_EMPTY = "#e1d0d0";
 
-/**
- * Mirrors PHP's getSummary_mer_breakUpRate view: one block per photo slot
- * (1-6) that has a non-empty photo{n}_name — Asset Type, Photo Title, Photo
- * Note, a read-only 5-star display (filled up to round(rate_star{n})),
- * rating comments, rate_desc (or "Unrated" fallback), an Edit/Save icon
- * (label only — PHP's actual save posts to merchandise_rating_save, not yet
- * wired here), and the image thumbnail with click-to-enlarge.
- *
- * imageBaseUrl should be the bucket/CDN root only (PHP's `s3_path3` value) —
- * this component appends the `doctor_reporting/` subfolder itself, matching
- * PHP's `s3_path3 . 'doctor_reporting/' . $ratedata['photo1_name']` exactly.
- */
-export default function PhotoRatingBreakup({ ratedata, imageBaseUrl = "", onSaveRating }) {
-  const [enlargedSrc, setEnlargedSrc] = useState(null);
+export default function PhotoRatingBreakup({ ratedata, imageBaseUrl = "", api ,onRatingSaved}) {
+ const toast = useToast();
+   const [enlargedSrc, setEnlargedSrc] = useState(null);
+   const [edits, setEdits] = useState({});
+   const [savingIdx, setSavingIdx] = useState(null);
 
-  if (!ratedata) {
+  const slots = ratedata
+    ? [1, 2, 3, 4, 5, 6]
+      .map((i) => ({
+        idx: i,
+        id: ratedata.id,
+        photoName: ratedata[`photo${i}_name`],
+        assetType: ratedata[`photo_type_name${i}`],
+        title: ratedata[`photo${i}_title`],
+        note: ratedata[`photo${i}_note`],
+        rateFlag: Number(ratedata[`rate_flag${i}`] || 0),
+        rateStar: Number(ratedata[`rate_star${i}`] || 0),
+        comment: ratedata[`rate_coment${i}`] || "",
+        desc: ratedata[`rate_desc${i}`],
+      }))
+      .filter((s) => s.photoName)
+    : [];
+
+  // seed local edit state whenever a new ratedata record comes in
+  useEffect(() => {
+    if (!slots.length) return;
+    const initial = {};
+    slots.forEach((s) => {
+      initial[s.idx] = { rateStar: s.rateStar, comment: s.comment, hoverStar: 0 };
+    });
+    setEdits(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ratedata]);
+
+  if (!ratedata || slots.length === 0) {
     return <Typography sx={{ py: 4, textAlign: "center" }}>No Data</Typography>;
   }
 
-  const slots = [1, 2, 3, 4, 5, 6]
-    .map((i) => ({
-      idx: i,
-      photoName: ratedata[`photo${i}_name`],
-      assetType: ratedata[`photo_type_name${i}`],
-      title: ratedata[`photo${i}_title`],
-      note: ratedata[`photo${i}_note`],
-      rateFlag: Number(ratedata[`rate_flag${i}`] || 0),
-      rateStar: Number(ratedata[`rate_star${i}`] || 0),
-      comment: ratedata[`rate_coment${i}`] || "",
-      desc: ratedata[`rate_desc${i}`],
-    }))
-    .filter((s) => s.photoName);
+  const setStar = (idx, value) => {
+    setEdits((prev) => ({
+      ...prev,
+      [idx]: { ...prev[idx], rateStar: value },
+    }));
+  };
 
-  if (slots.length === 0) {
-    return <Typography sx={{ py: 4, textAlign: "center" }}>No Data</Typography>;
-  }
+  const setHover = (idx, value) => {
+    setEdits((prev) => ({
+      ...prev,
+      [idx]: { ...prev[idx], hoverStar: value },
+    }));
+  };
+
+  const setComment = (idx, value) => {
+    setEdits((prev) => ({
+      ...prev,
+      [idx]: { ...prev[idx], comment: value },
+    }));
+  };
+
+  const handleSave = async (slot) => {
+     const edit = edits[slot.idx] || {};
+     const rate_star = edit.rateStar ?? slot.rateStar;
+     const comment = edit.comment ?? slot.comment;
+
+    if (!rate_star) {
+     toast.error("Please select a star rating before saving");
+     return;
+   }
+     setSavingIdx(slot.idx);
+     try {
+       const res = await api.post("/merchandiseRatingSave", {
+         dataId: slot.idx,
+         keyid: slot.id,
+         rateComment: comment,
+         rate_flag: 1,
+         rate_star,
+       });
+
+       if (res.status == "200") {
+        toast.success("Rating saved successfully");
+         onRatingSaved && onRatingSaved();
+       } else {
+        console.error("Save failed:", res.data);
+        toast.error("Failed to save rating");
+       }
+     } catch (err) {
+       console.error("merchandiseRatingSave error:", err);
+      toast.error("Something went wrong, Try again!!");
+     } finally {
+       setSavingIdx(null);
+     }
+   };
 
   return (
     <Box>
       {slots.map((slot) => {
-        const filledStars = Math.round(slot.rateStar);
-        // Mirrors PHP: s3_path3 . 'doctor_reporting/' . photo{n}_name
+        const edit = edits[slot.idx] || { rateStar: slot.rateStar, comment: slot.comment, hoverStar: 0 };
+        const displayStars = edit.hoverStar || edit.rateStar || 0;
+
         const base = imageBaseUrl.endsWith("/") ? imageBaseUrl : `${imageBaseUrl}/`;
         const imgSrc = `${base}doctor_reporting/${slot.photoName}`;
-        console.log("imgSrc",imgSrc);
-        
 
         return (
           <Box
@@ -76,9 +132,13 @@ export default function PhotoRatingBreakup({ ratedata, imageBaseUrl = "", onSave
                   {[1, 2, 3, 4, 5].map((n) => (
                     <StarIcon
                       key={n}
+                      onClick={() => setStar(slot.idx, n)}
+                      onMouseEnter={() => setHover(slot.idx, n)}
+                      onMouseLeave={() => setHover(slot.idx, 0)}
                       sx={{
                         fontSize: 28,
-                        color: n <= filledStars ? STAR_COLOR_FILLED : STAR_COLOR_EMPTY,
+                        cursor: "pointer",
+                        color: n <= displayStars ? STAR_COLOR_FILLED : STAR_COLOR_EMPTY,
                       }}
                     />
                   ))}
@@ -90,7 +150,8 @@ export default function PhotoRatingBreakup({ ratedata, imageBaseUrl = "", onSave
                   multiline
                   minRows={2}
                   size="small"
-                  defaultValue={slot.comment}
+                  value={edit.comment}
+                  onChange={(e) => setComment(slot.idx, e.target.value)}
                 />
 
                 <Typography
@@ -113,10 +174,7 @@ export default function PhotoRatingBreakup({ ratedata, imageBaseUrl = "", onSave
                 md={2}
                 sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
               >
-                <IconButton
-                  onClick={() => onSaveRating && onSaveRating(slot)}
-                  sx={{ color: "green" }}
-                >
+                <IconButton onClick={() => handleSave(slot)} sx={{ color: "green" }}>
                   {slot.rateFlag === 1 ? <EditIcon fontSize="large" /> : <SaveIcon fontSize="large" />}
                 </IconButton>
                 <Typography variant="caption">

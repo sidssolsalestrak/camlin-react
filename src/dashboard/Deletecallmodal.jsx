@@ -65,8 +65,9 @@ export default function DeleteCallModal({ open, onClose, callId, api, onDeleted 
           minRows={3}
           value={remarks}
           onChange={(e) => {
-            setRemarks(e.target.value);
-            if (error) setError("");
+            const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+            setRemarks(onlyText);
+            if (error && onlyText.trim()) setError("");
           }}
           error={!!error}
         />
