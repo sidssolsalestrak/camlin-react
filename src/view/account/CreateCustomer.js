@@ -771,7 +771,7 @@ function CreateCustomer() {
                 </Box>
               ) : (
                 // ── No pending request + account is Active → show button (Checker / All only) ──
-                delFlag === 0 && [0, 2].includes(Number(accStat)) && (
+                delFlag === 0 && [0, 2, 1].includes(Number(accStat)) && (
                   <Button
                     variant="contained"
                     onClick={() => handleUpdate(decodedID)}

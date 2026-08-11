@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "react-router-dom";
 import camlinLogo from "./assets/kc.png";
 import {
@@ -36,6 +36,7 @@ import { SiChatbot } from "react-icons/si";
 import { getUserFromToken } from "./utils/getUserFromToken";
 import "font-awesome/css/font-awesome.min.css";
 import { MdLock } from "react-icons/md";
+import { jwtDecode } from "jwt-decode";
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -61,6 +62,9 @@ const Layout = ({ children, breadcrumb = [] }) => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
+  const [profileimg,setProfileimg] =useState(null)
+  const [profileName,setProfileName]=useState('')
+  const fetchedProfileRef = useRef(false);
   // Dynamic menu state (from 2nd file)
   const [menuHtml, setMenuHtml] = useState("");
   const [menuUrls, setMenuUrls] = useState([]);
@@ -94,6 +98,35 @@ const Layout = ({ children, breadcrumb = [] }) => {
       console.log("Menu fetch error:", err);
     }
   };
+
+  useEffect(() => {
+    if (fetchedProfileRef.current) return;
+    fetchedProfileRef.current = true;
+
+    const token = localStorage.getItem("session-token");
+    if (token) {
+        try {
+            let decoded = jwtDecode(token);
+            let fetchUserData = async () => {
+                if (decoded.user_id) {
+                    try {
+                        let res = await api.post('/getUserBasicData', { id: decoded.user_id });
+                        let profdata = Array.isArray(res.data.data) ? res.data.data : [];
+                        setProfileimg(profdata[0]?.image_upl ? `${process.env.REACT_APP_PROFILE_URL}/${profdata[0]?.image_upl}` : null);
+                        setProfileName(profdata[0]?.full_name ? profdata[0].full_name : '');
+                    } catch (err) {
+                        console.log(err);
+                        setProfileimg(null);
+                        setProfileName('');
+                    }
+                }
+            };
+            fetchUserData();
+        } catch (err) {
+            console.log(err);
+        }
+    }
+}, []);
 
   // Wire up treeview toggles after menuHtml renders
   useEffect(() => {
@@ -700,14 +733,9 @@ const Layout = ({ children, breadcrumb = [] }) => {
                         fontWeight: 600,
                         borderRadius: "10px",
                       }}
+                      src={profileimg}
                     >
-                      {userData?.first_name
-                        ? userData.first_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                        : "AD"}
+                    
                     </Avatar>
                   </IconButton>
 
@@ -731,8 +759,8 @@ const Layout = ({ children, breadcrumb = [] }) => {
                     }}
                   >
                     <MenuItem disabled sx={{ opacity: 1 }}>
-                      <Typography variant="body2">
-                        {userData?.first_name ? userData.first_name : ""}
+                      <Typography variant="body1">
+                        {profileName}
                       </Typography>
                     </MenuItem>
                     <MenuItem onClick={()=>navigate('/change_password')}>
