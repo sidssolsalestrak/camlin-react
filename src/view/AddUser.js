@@ -203,10 +203,14 @@ function AddUser() {
   const getUserTypes = async () => {
     try {
       const res = await axios.post("/getUserTypeMas");
-      if (res.data.status === 200) setUserTypes(res.data.data);
+      if (res.data.status === 200) {
+        setUserTypes(res.data.data);
+        return res.data.data;
+      }
     } catch (err) {
       console.error("User Types API error:", err.response?.data || err.message);
     }
+    return [];
   };
 
   const getUserDropdown = async () => {
@@ -282,7 +286,7 @@ function AddUser() {
     }
   };
 
-  const getUserDetails = async () => {
+  const getUserDetails = async (typesList = userTypes) => {
     try {
       const res = await axios.post("/getUserData", { id: id });
       if (res.data.status === 200 && res.data.data?.length > 0) {
@@ -291,9 +295,10 @@ function AddUser() {
         // Primary fields
         // setSelectedType(d.user_type || "");
         setSelectedBU(d.b_unit ? d.b_unit.split(",") : []);
-        handleUserTypeChange({
-          target: { value: d.user_type },
-        });
+        await handleUserTypeChange(
+          { target: { value: d.user_type } },
+          typesList,
+        );
         setSelectedDept(d.dep_id || "");
         setSelectedDesig(d.desig_id || "");
         setSelectedTitle(d.user_sal || "");
@@ -448,15 +453,18 @@ function AddUser() {
   };
 
   useEffect(() => {
-    getBusinessUnit();
-    getUserTypes();
-    getUserDropdown();
-    getZoneMas();
-    getEmpDropdowns();
-    getWeekDays();
-    if (id > 0) {
-      getUserDetails();
-    }
+    const init = async () => {
+      getBusinessUnit();
+      const types = await getUserTypes();
+      getUserDropdown();
+      getZoneMas();
+      getEmpDropdowns();
+      getWeekDays();
+      if (id > 0) {
+        await getUserDetails(types);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -1144,9 +1152,9 @@ function AddUser() {
     }
   };
 
-  const handleUserTypeChange = (e) => {
+  const handleUserTypeChange = (e, typesList = userTypes) => {
     const selected = e.target.value;
-    const selectedObj = userTypes.find(
+    const selectedObj = typesList.find(
       (u) => String(u.id) === String(selected),
     );
     const mng = selectedObj?.mng_type || 0;
@@ -1160,7 +1168,7 @@ function AddUser() {
     setShowTerritory(false);
     setShowBeat(false);
 
-    // ✅ CLEAR ERRORS for all territory fields when user type changes
+    // ✅ CLEAR ERRORS for all territory + report fields when user type changes
     setErrors((prev) => {
       const updated = { ...prev };
       delete updated.selectedType;
@@ -1169,6 +1177,8 @@ function AddUser() {
       delete updated.area;
       delete updated.territory;
       delete updated.beat;
+      delete updated.reportType;
+      delete updated.reportTo;
       return updated;
     });
 
@@ -1179,6 +1189,12 @@ function AddUser() {
     setSelectedTerritories([]);
     setSelectedBeats([]);
 
+    // RESET Report To Type / Report To (their options depend on the user type)
+    setSelectedReportType("");
+    setSelectedReportTo("");
+    setReportToUsers([]);
+
+    console.log("manage type",mng)
     if (selected > 4) {
       if (mng === 1) {
         setShowZone(true);
