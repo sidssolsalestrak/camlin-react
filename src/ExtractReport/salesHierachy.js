@@ -230,7 +230,8 @@ export default function SalesHierachy() {
         },
         {
             field: "city_name",
-            headerName: "City"
+            headerName: "City",
+            truncateTooltip: true,
         },
         {
             field: "state_name",
