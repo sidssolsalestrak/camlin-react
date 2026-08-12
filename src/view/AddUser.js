@@ -942,7 +942,7 @@ function AddUser() {
   };
 
   const handleFirstNameChange = (value) => {
-    const regex = /^[a-zA-Z\s]*$/;
+    const regex = /^[a-zA-Z_][a-zA-Z_\s]*$|^$/;
 
     if (!regex.test(value)) {
       setToast({
@@ -954,6 +954,21 @@ function AddUser() {
     }
 
     setFullName(value);
+  };
+
+    const handleLastNameChange = (value) => {
+    const regex = /^[a-zA-Z_][a-zA-Z_\s]*$|^$/;
+
+    if (!regex.test(value)) {
+      setToast({
+        open: true,
+        message: "Special Characters Not Allowed",
+        severity: "warning",
+      });
+      return;
+    }
+
+    setLastName(value);
   };
 
   const handleZoneChange = async (value) => {
@@ -1356,7 +1371,7 @@ function AddUser() {
                   value={lastName}
                   onChange={(e) => {
                     const onlyText = e.target.value.replace(/^\s+/, "");
-                    setLastName(onlyText)
+                    handleLastNameChange(onlyText);
                   }}
                 />
               </Grid>
