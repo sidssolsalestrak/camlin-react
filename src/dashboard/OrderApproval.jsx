@@ -112,7 +112,7 @@ const OrderApproval = () => {
         to: dayjs(),
         type: "0",
         rep: "0",
-        status: "1",
+        status: "0",
         stockist: "0"
     })
     const [loading, setloading] = useState(false)
@@ -292,7 +292,7 @@ const OrderApproval = () => {
             to: decodedTo ? dayjs(decodedTo) : dayjs(),
             type: decodedType || "0",
             rep: decodedRep || "0",
-            status: decodedStatus || "1",
+            status: decodedStatus || "0",
             stockist: decodedStockist || "0",
         }));
         approvalSearch({
@@ -319,53 +319,53 @@ const OrderApproval = () => {
     // ---------------- Excel Export ----------------
     const handleExport = () => {
         try {
-           setExporting(true);
-        const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
+            setExporting(true);
+            const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
 
-        if (flatData.length === 0) {
-            showAlert.warning('No data to export');
-            setExporting(false);
-            return;
-        }
-
-        // Same override as the grid's Status column: force "Deleted" when that filter is active
-        const isDeletedFilter = formData.status === '5';
-        const exportRows = isDeletedFilter
-            ? flatData.map(row => ({ ...row, statusname: 'Deleted' }))
-            : flatData;
-
-        const statusMap = {
-            '1': 'New',
-            '2': 'Approved',
-            '3': 'Pending',
-            '5': 'Deleted',
-            '-3': 'FOP_Request',
-            '-5': 'Giveaway_FOP',
-            '-6': 'Referral_FOP'
-        };
-        const statusLabel = statusMap[formData.status] || 'All';
-
-        exportOrderApprovalToExcel(exportRows, {
-            fromDate: formData.from.format('DD-MMM-YYYY'),
-            toDate: formData.to.format('DD-MMM-YYYY'),
-            status: statusLabel,
-            kamLabel: kamLabel,
-            psmLabel: psmLabel,
-            distributorLabel: distributorLabel,
-            regionLabel: regionLabel,
-            grandTotal: grandTotal,
-            onSuccess: (message) => {
-                // showAlert.success(message);
+            if (flatData.length === 0) {
+                showAlert.warning('No data to export');
                 setExporting(false);
-            },
-            onError: (message) => {
-                showAlert.error(message);
-                setExporting(false);
+                return;
             }
-        }); 
+
+            // Same override as the grid's Status column: force "Deleted" when that filter is active
+            const isDeletedFilter = formData.status === '5';
+            const exportRows = isDeletedFilter
+                ? flatData.map(row => ({ ...row, statusname: 'Deleted' }))
+                : flatData;
+
+            const statusMap = {
+                '1': 'New',
+                '2': 'Approved',
+                '3': 'Pending',
+                '5': 'Deleted',
+                '-3': 'FOP_Request',
+                '-5': 'Giveaway_FOP',
+                '-6': 'Referral_FOP'
+            };
+            const statusLabel = statusMap[formData.status] || 'All';
+
+            exportOrderApprovalToExcel(exportRows, {
+                fromDate: formData.from.format('DD-MMM-YYYY'),
+                toDate: formData.to.format('DD-MMM-YYYY'),
+                status: statusLabel,
+                kamLabel: kamLabel,
+                psmLabel: psmLabel,
+                distributorLabel: distributorLabel,
+                regionLabel: regionLabel,
+                grandTotal: grandTotal,
+                onSuccess: (message) => {
+                    // showAlert.success(message);
+                    setExporting(false);
+                },
+                onError: (message) => {
+                    showAlert.error(message);
+                    setExporting(false);
+                }
+            });
         } catch (error) {
             console.log(error);
-        }finally{
+        } finally {
             setExporting(false);
         }
     };
@@ -584,15 +584,15 @@ const OrderApproval = () => {
                 orderNo: ctx.ordNo, ordType: ctx.ordType, prod_id: "",
             });
             if (res.data === 1 || res.data?.success) {
-                showAlert.success('Order Deleted Successfully');
+                showAlert.success('Deleted Successfully');
                 closeSummary();
                 approvalSearch();
             } else {
-                showAlert.error('Failed to delete order');
+                showAlert.error('Failed to delete');
             }
         } catch (err) {
             console.error(err);
-            showAlert.error('Failed to delete order');
+            showAlert.error('Failed to delete');
         } finally {
             closeConfirmationDialog();
         }
@@ -605,8 +605,8 @@ const OrderApproval = () => {
         }
         showConfirmationDialog({
             title: "Delete Order",
-            message: "Are you sure you want to delete this order?",
-            confirmText: "Delete",
+            message: "Are you sure?",
+            confirmText: "Yes,Delete it!",
             confirmColor: "error",
             onConfirm: doDeleteOrder,
         });
@@ -620,16 +620,16 @@ const OrderApproval = () => {
                 orderNo: ctx.ordNo, ordType: ctx.ordType, prod_id: line.prod_id,
             });
             if (res.data === 1 || res.data?.success) {
-                showAlert.success('Line Item Deleted Successfully');
+                showAlert.success('Deleted Successfully');
                 const updatedLines = summaryLines.filter((l) => l.prod_id !== line.prod_id);
                 setSummaryLines(updatedLines);
                 calculateTotals(updatedLines);
             } else {
-                showAlert.error('Failed to delete line item');
+                showAlert.error('Failed to delete');
             }
         } catch (err) {
             console.error(err);
-            showAlert.error('Failed to delete line item');
+            showAlert.error('Failed to delete');
         } finally {
             closeConfirmationDialog();
         }
@@ -641,9 +641,9 @@ const OrderApproval = () => {
             return;
         }
         showConfirmationDialog({
-            title: "Delete Line Item",
-            message: "Are you sure you want to delete this line item?",
-            confirmText: "Delete",
+            title: "Delete",
+            message: "Are you sure?",
+            confirmText: "Yes,Delete it!",
             confirmColor: "error",
             onConfirm: () => doDeleteLine(line),
         });
@@ -656,11 +656,11 @@ const OrderApproval = () => {
             await api.post('/mobile/update_discount', {
                 discount: discountValue, ordNo: line.ordNo || ctx.ordNo, ordType: line.ordType || ctx.ordType,
             });
-            showAlert.success('Discount Updated Successfully');
+            showAlert.success('Updated Successfully');
             approvalSearch();
         } catch (err) {
             console.error(err);
-            showAlert.error('Failed to update discount');
+            showAlert.error('Failed to update');
         } finally {
             closeConfirmationDialog();
         }
@@ -670,8 +670,8 @@ const OrderApproval = () => {
         if (!discountValue || Number(discountValue) < 0) return;
         showConfirmationDialog({
             title: "Update Discount",
-            message: "Are you sure you want to update this discount?",
-            confirmText: "Update",
+            message: "Are you sure?",
+            confirmText: "Yes,Update it!",
             confirmColor: "primary",
             onConfirm: () => doAddDiscount(line, discountValue),
         });
@@ -720,7 +720,7 @@ const OrderApproval = () => {
                 stktypeid: editLine.stktypeid,
             });
             if (res.data === 1 || res.data?.success) {
-                showAlert.success(`${prodLabel} Updated Successfully`);
+                showAlert.success(`Updated Successfully`);
                 closeEditLine();
                 const updatedLines = summaryLines.map((l) =>
                     l.prod_id === editLine.prod_id
@@ -734,7 +734,7 @@ const OrderApproval = () => {
             }
         } catch (err) {
             console.error(err);
-            showAlert.error('Failed to update product');
+            showAlert.error('Failed to update');
         } finally {
             closeConfirmationDialog();
         }
@@ -750,9 +750,9 @@ const OrderApproval = () => {
             }
         }
         showConfirmationDialog({
-            title: "Update Product",
-            message: "Are you sure you want to update this product?",
-            confirmText: "Update",
+            title: "Update",
+            message: "Are you sure?",
+            confirmText: "Yes,Update it!",
             confirmColor: "primary",
             onConfirm: doProdSave,
         });
@@ -771,11 +771,16 @@ const OrderApproval = () => {
             e.target.value = '';
             return;
         }
+
         const dotCount = (file.name.split('.').length - 1);
-        if (dotCount > 1 || /[()]/.test(file.name)) {
+        const hasInvalidChars = /[\s()]/.test(file.name); // blocks spaces AND parentheses
+
+        if (dotCount > 1 || hasInvalidChars) {
             showAlert.error('File name is not valid! Please change File name.');
+            e.target.value = '';
             return;
         }
+
         if (file.size > 5000000) {
             showAlert.error('Please reduce size to 5Mb');
             e.target.value = '';
@@ -1155,10 +1160,10 @@ const OrderApproval = () => {
                                                 <IconButton size="small" onClick={() => openEditLine(line)}>
                                                     <EditIcon fontSize="small" sx={{ color: '#2e7d32' }} />
                                                 </IconButton>
-                                                {![6,8].includes(Number(userType)) && (
-                                                <IconButton size="small" onClick={() => showDeleteLineConfirmation(line)}>
-                                                    <DeleteIcon fontSize="small" sx={{ color: '#d32f2f' }} />
-                                                </IconButton>
+                                                {![6, 8].includes(Number(userType)) && (
+                                                    <IconButton size="small" onClick={() => showDeleteLineConfirmation(line)}>
+                                                        <DeleteIcon fontSize="small" sx={{ color: '#d32f2f' }} />
+                                                    </IconButton>
                                                 )}
                                             </TableCell>
                                         )}

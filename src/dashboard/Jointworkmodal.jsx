@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import useToast from '../utils/useToast';
 
 /**
  * Mirrors PHP's #putJointWorkModal:
@@ -34,6 +35,7 @@ export default function JointWorkModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState([]);
+  const showAlert = useToast();
 
   useEffect(() => {
     if (!open || !callId) return;
@@ -77,10 +79,14 @@ export default function JointWorkModal({
         massId: callId,
         mainId,
       });
+      if (res?.data) {
+        showAlert.success("Joint work Updated")
+      }
       onSaved(res.data);
       onClose();
     } catch (err) {
       console.error(err);
+      showAlert.error("Failed to Update")
     }
   };
 
