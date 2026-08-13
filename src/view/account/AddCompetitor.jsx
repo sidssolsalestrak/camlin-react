@@ -19,12 +19,13 @@ const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="down" ref={ref} {...props} />;
 });
 
-const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave, cusId = 0, tempId = 0 }) => {
+const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave, cusId = 0, tempId = 0, existingRows = [] }) => {
 
     const [products, setProducts] = useState([]);
     const [compMas, setCompMas] = useState([]);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [hasServerData, setHasServerData] = useState(false);   // ← does DB already have saved data for this brand
     const toast = useToast();
 
     // Fetch when modal opens
@@ -44,23 +45,37 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                 setProducts(prods);
                 setCompMas(comps);
 
+                // ← check if the DB already has saved data for this brand
+                const serverHasData = prods.some(p =>
+                    Number(p.comp_id_1) > 0 ||
+                    Number(p.comp_id_2) > 0 ||
+                    Number(p.comp_id_3) > 0 ||
+                    Number(p.prod_qty) > 0 ||
+                    Number(p.oth_qty) > 0 ||
+                    (p.other_name && p.other_name.trim() !== '')
+                );
+                setHasServerData(serverHasData);
+
                 // Group rows by pid (one row per product)
                 const grouped = {};
                 prods.forEach((p) => {
                     if (!grouped[p.pid]) {
+                        // ← prefer locally-held unsaved edits over stale/fresh server data
+                        const existing = existingRows.find(e => String(e.pid) === String(p.pid));
+
                         grouped[p.pid] = {
                             pid: p.pid,
                             prod_name: p.prod_name,
                             code: p.code,
-                            prod_qty: p.prod_qty || "",
-                            comp_id_1: p.comp_id_1 ? String(p.comp_id_1) : "0",   // ← force string
-                            comp_id_1_qty: p.comp_id_1_qty || "",
-                            comp_id_2: p.comp_id_2 ? String(p.comp_id_2) : "0",   // ← force string
-                            comp_id_2_qty: p.comp_id_2_qty || "",
-                            comp_id_3: p.comp_id_3 ? String(p.comp_id_3) : "0",   // ← force string
-                            comp_id_3_qty: p.comp_id_3_qty || "",
-                            other_name: p.other_name || "",
-                            oth_qty: p.oth_qty || "",
+                            prod_qty: existing ? (existing.prod_qty ?? "") : (p.prod_qty || ""),
+                            comp_id_1: existing ? String(existing.comp_id_1 || "0") : (p.comp_id_1 ? String(p.comp_id_1) : "0"),   // ← force string
+                            comp_id_1_qty: existing ? (existing.comp_id_1_qty ?? "") : (p.comp_id_1_qty || ""),
+                            comp_id_2: existing ? String(existing.comp_id_2 || "0") : (p.comp_id_2 ? String(p.comp_id_2) : "0"),   // ← force string
+                            comp_id_2_qty: existing ? (existing.comp_id_2_qty ?? "") : (p.comp_id_2_qty || ""),
+                            comp_id_3: existing ? String(existing.comp_id_3 || "0") : (p.comp_id_3 ? String(p.comp_id_3) : "0"),   // ← force string
+                            comp_id_3_qty: existing ? (existing.comp_id_3_qty ?? "") : (p.comp_id_3_qty || ""),
+                            other_name: existing ? (existing.other_name ?? "") : (p.other_name || ""),
+                            oth_qty: existing ? (existing.oth_qty ?? "") : (p.oth_qty || ""),
                         };
                     }
                 });
@@ -74,7 +89,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
         };
 
         fetchData();
-    }, [compModalOpen, selectedBrand, cusId, tempId]);
+    }, [compModalOpen, selectedBrand, cusId, tempId, existingRows]);
 
     // Update a single cell
     const updateRow = useCallback((pid, field, value) => {
@@ -423,11 +438,11 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
             </DialogContent>
 
             <DialogActions>
+                <Button variant="contained" color="primary" onClick={handleSave}>
+                    {hasServerData  ? "Update" : "Save"}
+                </Button>
                 <Button variant="contained" color="error" onClick={() => setCompModalOpen(false)}>
                     Close
-                </Button>
-                <Button variant="contained" color="primary" onClick={handleSave}>
-                    Update
                 </Button>
             </DialogActions>
         </Dialog>

@@ -523,6 +523,7 @@ function CreateCustomer() {
       customerLatitude: String(lat),
       customerLongitude: String(lng),
     }));
+    setFieldErrors((prev) => ({ ...prev, location: "" }));
   };
 
   const checkPendingRequest = async () => {
@@ -882,6 +883,7 @@ function CreateCustomer() {
               }}
               onClick={handleOpenMap}
             />
+            {fieldErrors.location && <Typography sx={{color:'#D32F2F',fontSize:'9px'}}>{fieldErrors.location}</Typography>}
           </Grid>
 
           {/* Gender */}
@@ -1178,7 +1180,8 @@ function CreateCustomer() {
             brandData={brandData}
             setBrandData={setBrandData}
             cusId={decodedID || 0}   
-            tempId={0}              
+            tempId={0}     
+            competitorRows={competitorRows}         
             onOpenCompModal={(brand) => {
               setSelectedBrand(brand);   // track which brand was clicked
               setCompModalOpen(true);
@@ -1249,6 +1252,7 @@ function CreateCustomer() {
   setCompModalOpen={setCompModalOpen}
   cusId={decodedID || 0}
   tempId={0}
+  existingRows={competitorRows.filter(r => r.subcat_id === selectedBrand?.subCatId)}
   onSave={async (saveData) => {
     const editedRows = saveData.rows;
     console.log("Edited rows from Add Competitor:", editedRows);

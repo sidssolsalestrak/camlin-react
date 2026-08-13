@@ -247,10 +247,14 @@ function AccountMas() {
   }, []);
 
   useEffect(() => {
-    if (cusReq !== 2) {
-      setReqType(0);
-    }
-  }, [cusReq]);
+    console.log("cusReq changes run")
+    const newCusReq = decodedParams.cusReq || 1;
+    setCusReq(newCusReq);
+    setReqType(newCusReq === 2 ? (Number(decodedParams.reqType) || 0) : 0);
+    setApprovalState({});      // clear stale approve/reject toggles from the other menu
+    setSelectedUser(Number(decodedParams.user) || 0);
+    setTableData([]);
+  }, [decodedParams.cusReq]);
 
   useEffect(() => {
     if (regionData.length > 0 && decodedParams.country) {
@@ -585,12 +589,16 @@ function AccountMas() {
       const beatId= Number(decodedParams.beatId) || 0;
 
       if (cus_req === 2) {
-        if (!(country || req_type || users || userType)) return;
+        if (!(country || req_type || users || userType)){ 
+          setTableData([]);
+          return
+        };
       }
 
       if (cus_req === 1) {
         if (!(country || userType || users)) {
           console.log("❌ Skipping API (no filters)");
+          setTableData([]);
           return;
         }
       }
