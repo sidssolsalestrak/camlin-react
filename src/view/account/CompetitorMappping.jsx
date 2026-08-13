@@ -22,14 +22,23 @@ const headContainer = {
 
 const subHeaderStyle = { textDecoration: "underline", textUnderlineOffset: "5px", textDecorationColor: "#ccc" };
 
-const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cusId = 0, tempId = 0 }) => {
+const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cusId = 0, tempId = 0, competitorRows = [] }) => {
+
+    // ── subCatIds that already have LOCAL (unsaved-to-DB) edits ──
+    // For these we must never let a server re-fetch overwrite compCount.
+    const locallyEditedSubCatIds = new Set(
+        competitorRows.map(r => String(r.subcat_id))
+    );
 
     // ✅ Fetch compCount for all brands on initial load
     useEffect(() => {
         if (!brandData.length || !cusId || cusId == 0) return;
 
-        // Only fetch for brands that have focus or reminder checked
-        const brandsToFetch = brandData.filter(b => b.focus === 1 || b.reminder === 1);
+        // Only fetch for brands that have focus or reminder checked,
+        // and that don't already have local edits tracked in competitorRows
+        const brandsToFetch = brandData.filter(
+            b => (b.focus === 1 || b.reminder === 1) && !locallyEditedSubCatIds.has(String(b.subCatId))
+        );
         if (brandsToFetch.length === 0) return;
 
         const fetchAllCounts = async () => {
@@ -72,6 +81,7 @@ const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cus
         };
 
         fetchAllCounts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cusId, brandData.length]); // ✅ runs when cusId or brands load
 
     const updateBrand = (subCatId, field, value) => {
@@ -86,6 +96,14 @@ const CompetitorMappping = ({ brandData = [], setBrandData, onOpenCompModal, cus
     };
 
     const handleCompClick = async (brand) => {
+        // ── If this brand already has local (unsaved) edits, DO NOT
+        //     re-fetch and overwrite compCount — the parent already
+        //     keeps it accurate via the AddCompetitor onSave callback. ──
+        if (locallyEditedSubCatIds.has(String(brand.subCatId))) {
+            if (onOpenCompModal) onOpenCompModal(brand);
+            return;
+        }
+
         try {
             const res = await api.post("/getCompModal", {
                 subcat_id: brand.subCatId,

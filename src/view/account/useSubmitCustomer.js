@@ -77,6 +77,16 @@ export function useSubmitCustomer({ form, clinics, brandData = [], competitorBra
     } else {
       newErrors.email = "";
     }
+
+    // ── 5b. LOCATION ─────────────────────────────────────────────────────
+    const lat = Number(form.customerLatitude);
+    const lng = Number(form.customerLongitude);
+    if (!form.customerLatitude || !form.customerLongitude || !lat || !lng) {
+      // toastMessages.push("Please Add Location By Clicking Location Icon!!");
+      newErrors.location="Please Add Location By Clicking Location Icon!!"
+      hasError = true;
+    }
+
     // ── 6. DUPLICATE REP VALIDATION ───────────────────────────────────────
     if (form.cusType === "1") {
       const repIds = clinics.map(c => c.repIncharge).filter(id => id && id !== "0");
