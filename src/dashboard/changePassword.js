@@ -155,8 +155,8 @@ const ChangePassword = () => {
       ]}
     >
       <Box sx={{ p: 3 }}>
-        <Card sx={{ p: 3, width: "60%" }}>
-          <Box sx={{ width: "90%" }}>
+        <Card sx={{ p: 3, width: {xs:"90%",sm:"80%",md:"70%",lg:"50%"} }}>
+          <Box sx={{ width: "90%",p:1 }}>
             <Typography variant="h5" sx={{ mb: 2 }}>
               Change Password
             </Typography>

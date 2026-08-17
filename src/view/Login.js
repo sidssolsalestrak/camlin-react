@@ -35,6 +35,7 @@ function Login() {
   const [userId, setUserId] = useState("");
   const [emailMob, setEmailMob] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [isLoading,setIsLoading] =useState(false)
 
   const resetFields = () => {
     setEmail("");
@@ -190,7 +191,19 @@ function Login() {
     }
   };
 
+  const handleKeyDown = (e) => {
+      if (e.key === "Enter" && otpInput.length === 4 && !isLoading) {
+      handleVerifyOtp();
+  }
+    };
+
   const handleVerifyOtp = async () => {
+    if (otpInput.length !== 4) {
+      toast.error("Please Enter a Valid 4-digit OTP");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const res = await api.post("/verify_otp", {
         user_id: btoa(userId),
@@ -202,14 +215,26 @@ function Login() {
       if (data.stat === 200 && data.success) {
         localStorage.setItem("session-token", data.token);
         navigate("/dashboard");
-      } else {
-        toast.error(data.message);
+        return;
       }
+
+      // account blocked — no point letting them retry here
+      if (data.message?.toLowerCase().includes("blocked")) {
+        toast.error(data.message);
+        goToStep("login");
+        return;
+      }
+
+      // wrong OTP — clear the field so they can re-enter cleanly
+      toast.error(data.message || "Invalid OTP");
+      setOtpInput("");
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong");
+    } finally {
+      setIsLoading(false);
     }
-  };
+};
 
   return (
     <Box
@@ -407,14 +432,53 @@ function Login() {
               </>
             ) : (
               <>
-                <TextField
+               <Typography
+                 color="gray" 
+                 sx={{ paddingTop: "0.5rem", fontSize: "1.1rem", opacity: "0.9"}}
+                >
+                Enter 4 digit Assigned OTP
+                </Typography>
+              <TextField
                   fullWidth
-                  label="Enter OTP"
                   variant="outlined"
                   size="small"
-                  sx={{ mt: 1, mb: 1 }}
+                  inputMode="numeric"
+                  autoFocus
+                  inputProps={{
+                    pattern: "[0-9]*",
+                    maxLength: 4,
+                  }}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      fontSize: "1.5rem",
+                      textAlign: "center",
+                      letterSpacing: "0.5rem",
+                      height: "1.8rem",
+                    },
+                    "& .MuiInputLabel-root": {
+                      fontSize: "1.2rem",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "white",
+                      borderRadius: "0px",
+                      "& fieldset": {
+                        border: "none",
+                      },
+                      "&:hover fieldset": {
+                        border: "none",
+                      },
+                    },
+                    border: "1.5px solid rgba(27, 159, 166, 1)",
+                    mb: 1.5,
+                    mt: 1,
+                    backgroundColor: "white",
+                  }}
                   value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    setOtpInput(value);
+                  }}
+                  onKeyDown={handleKeyDown}
                 />
 
                 <Button
@@ -423,8 +487,9 @@ function Login() {
                   color="success"
                   sx={{ mt: 1 }}
                   onClick={handleVerifyOtp}
+                  disabled={isLoading}
                 >
-                  Verify OTP
+                  {isLoading ? "Verifying..." : "Verify OTP"}
                 </Button>
               </>
             )}
