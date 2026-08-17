@@ -326,13 +326,13 @@ function AccountTransfer() {
             filterable: true,
         },
         {
-            field: "req_first_name",
+            field: "req_full_name",
             headerName: masterPanel["USER"] || "User",
             filterable: true,
             renderCell: (params) => (
                 <Box>
                     <Typography sx={{ color: '#666666', fontSize: '12px',textWrap:'nowrap' }}>
-                        {params.row.req_first_name}
+                        {params.row.req_full_name}
                     </Typography>
                     <Box sx={{ display: 'flex',textWrap:'nowrap' }}>
                         <Typography>{params.row.usertype} |</Typography>
@@ -365,7 +365,7 @@ function AccountTransfer() {
                                     ? "Retailer|"
                                     : null}
                         </Typography>
-                        <Typography sx={{textWrap:'nowrap'}}>{params.row.first_name}</Typography>
+                        <Typography sx={{textWrap:'nowrap'}}>{params.row.full_name}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex' }}>
                         <Typography sx={{textWrap:'nowrap'}}>{params.row.cat_type}-</Typography>
@@ -455,7 +455,7 @@ function AccountTransfer() {
                         <FormControl fullWidth>
                             <Autocomplete
                                 options={allFromTransferList}
-                                getOptionLabel={(option) => option.user_name || ""}
+                                getOptionLabel={(option) => option.full_name || ""}
                                 getOptionKey={(option) => option.id}
                                 onChange={(e, newValue) => setSelFromUser(newValue)}
                                 value={selFromUser}
@@ -503,7 +503,7 @@ function AccountTransfer() {
                         <FormControl fullWidth>
                             <Autocomplete
                                 options={allToTransferList}
-                                getOptionLabel={(option) => option.user_name || ""}
+                                getOptionLabel={(option) => option.full_name || ""}
                                 getOptionKey={(option) => option.id}
                                 onChange={(e, newValue) => setSelToUser(newValue)}
                                 value={selToUser}

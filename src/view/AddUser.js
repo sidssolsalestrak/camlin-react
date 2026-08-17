@@ -559,7 +559,7 @@ function AddUser() {
     if (!selectedTitle) temp.selectedTitle = "Please select title";
     if (!employeeCode.trim()) temp.employeeCode = "Employee Code is required";
     if (!fullName.trim()) temp.fullName = "First Name is required";
-    if (!userId.trim()) temp.userId = "Please Select Mobile No. OR Email ID for username!";
+    if (!String(userId).trim()) temp.userId = "Please Select Mobile No. OR Email ID for username!";
     if (!String(mobileNum).trim()) temp.mobileNum = "Mobile number is required";
     if (String(mobileNum).trim() !== "" && String(mobileNum).trim().length < 10) temp.mobileNum = "Please Enter Valid 10 digit mobile number";
     if (!email.trim()) temp.email = "Email is required";
@@ -810,6 +810,13 @@ function AddUser() {
         setTimeout(() => {
           navigate(-1);
         }, 3000);
+      }
+      if(res.data.status === 400) {
+        setToast({
+          open: true,
+          message: res.data.message,
+          severity: "error",
+        })
       }
     } catch (err) {
       console.error(err);
