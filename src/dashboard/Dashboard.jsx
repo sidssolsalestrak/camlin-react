@@ -605,17 +605,6 @@ export default function Dashboard() {
     ]);
   }, []);
 
-  // useEffect(() => {
-  //   let testbackend = async () => {
-  //     try {
-  //       let response = await api.get("/testres");
-  //       console.log("camlin backend res", response);
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   };
-  //   testbackend();
-  // }, []);
 
   const toggleLogs = useCallback(() => {
     setShowLogs((prev) => !prev);
