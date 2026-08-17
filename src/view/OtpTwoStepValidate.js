@@ -160,7 +160,7 @@ function OtpTwoStepValidate() {
                             },
                         },
                         border: "1.5px solid rgba(27, 159, 166, 1)",
-                        mb: 2,
+                        mb: 1.5,
                         mt: 1,
                         backgroundColor: "white",
                     }}
@@ -180,8 +180,9 @@ function OtpTwoStepValidate() {
                         fontSize: "1.15rem",
                     }}
                 >
-                    {isLoading ? <CircularProgress size={20} color="inherit" /> : "SUBMIT"}
+                    {isLoading ? <CircularProgress size={20} color="inherit" /> : "Verify Otp"}
                 </Button>
+                <Button onClick={()=>navigate('auth/login')}>Back</Button>
 
             </Paper>
 
