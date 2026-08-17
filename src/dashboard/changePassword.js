@@ -113,8 +113,13 @@ const ChangePassword = () => {
         setTimeout(() => {
           handleLogout();
         }, 2000);
-      } else {
-        toast.error(res.data.message);
+      } else if(res.data.stat === 400){
+        toast.error(res.data.message || "something went wrong Try again!")
+        setLoading(false);
+        closeConfirmationDialog();
+      }
+      else{
+        toast.error(res.data.message || "something went wrong Try again!")
         setLoading(false);
         closeConfirmationDialog();
       }
@@ -125,7 +130,6 @@ const ChangePassword = () => {
       closeConfirmationDialog();
     }
   };
-
   const showSubmitConfirmation = () => {
     showConfirmationDialog({
       title: "Change Password",

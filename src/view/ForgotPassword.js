@@ -6,7 +6,7 @@ import useToast from "../utils/useToast";
 import api from "../services/api";
 
 const ForgotPassword = () => {
-  const { userId, userEmail } = useParams();
+  const { resetToken } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -74,22 +74,34 @@ const ForgotPassword = () => {
         confPass: "Passwords do not match",
       }));
 
-    try {
-      const res = await api.post("/forgot_pass", {
-        identity: userEmail,
-        password,
-        id: userId,
-      });
+   try {
+  let payload = { password };
 
-      if (res.data === 1) {
-        toast.success("Password Reset Successfully!");
-        navigate("/Auth");
-      } else {
-        setError("Invalid user");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const res = await fetch(`${process.env.REACT_APP_API_URL}/forgot_pass`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Authorization: `Bearer ${resetToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (data === 1) {
+  toast.success("Password Reset Successfully!");
+  navigate("/Auth");
+  } else if (data && typeof data === "object" && data.success === false) {
+    toast.error(data.message || "Something went wrong");
+  } else if (data === "0") {
+    toast.error("Invalid password format");
+  } else {
+    toast.error("Invalid user or reset link expired");
+  }
+} catch (err) {
+  console.error(err);
+  toast.error("Something went wrong. Please try again.");
+}
   };
 
   return (

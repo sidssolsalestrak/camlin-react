@@ -73,6 +73,8 @@ import BeatCoverage from "./ExtractReport/BeatCoverage";
 import ChangePassword from "./dashboard/changePassword";
 import OrderApproval from "./dashboard/OrderApproval";
 import MobileOrders from "./dashboard/MobileOrders";
+import LoginProjCode from "./view/LoginProjCode";
+import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
 
 function App() {
   const ProtectedRoute = () => {
@@ -95,7 +97,7 @@ function App() {
         <Routes>
           <Route element={<ProtectedRoute />}>
             <Route path="/:token" element={<TokenHandler />} />
-            <Route path="/" element={<Dashboard />} />
+            {/* <Route path="/" element={<Dashboard />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
             <Route path="/masters/region/:editRegionId?" element={<Region />} />
@@ -290,9 +292,11 @@ function App() {
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
              <Route
-              path="/Auth/forgot_paswd/:userId?/:userEmail?"
+              path="/Auth/forgot_paswd/:resetToken"
               element={<ForgotPassword />}
            />
+           <Route path="/" element={<LoginProjCode />} />
+           <Route path="/otp_validate" element={<OtpTwoStepValidate />}   />
           </Route>
 
           {/* extract and report */}

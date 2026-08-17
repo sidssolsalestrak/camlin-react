@@ -111,11 +111,17 @@ function Login() {
           toast.success("Login Successful");
           localStorage.setItem("session-token", data.token || "");
           navigate("/dashboard");
-        } else {
+        } 
+        else if(data.otp_verify){
+         toast.success("Please Enter assigned OTP");
+         localStorage.setItem("otp-token",data.otptoken)
+         navigate('/otp_validate')
+        }
+        else {
           navigate("/dashboard");
         }
       } else {
-        toast.error("Username / Password incorrect!");
+        toast.error(data.message || "Username / Password incorrect!");
       }
     } catch (err) {
       console.error(err);
