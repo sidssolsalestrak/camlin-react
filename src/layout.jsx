@@ -89,7 +89,8 @@ const Layout = ({ children, breadcrumb = [] }) => {
         html = html.replace(/href="(?!\/|http)([^"]+)"/g, 'href="/$1"');
         html = html.replace(/glyphicon glyphicon-book/g, "fa fa-book");
         html = html.replace(/glyphicon glyphicon-file/g, "fa fa-file");
-
+        // after getMenuDetails API call succeeds
+        localStorage.setItem("menu_urls", JSON.stringify(res.data.data.menuurl));
         setMenuHtml(html);
 
         setMenuUrls(data.data.menuurl);

@@ -1,5 +1,5 @@
 import "./App.css";
-import { useEffect } from "react";
+import { useEffect,useRef } from "react";
 import { useLoader } from "./utils/LoaderContext";
 import { setLoader } from "./services/api";
 import Dashboard from "./dashboard/Dashboard";
@@ -11,7 +11,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import TokenHandler from "./services/TokenHandler";
-import { SnackbarProvider } from "notistack";
+import { SnackbarProvider,useSnackbar } from "notistack";
 import { CssBaseline } from "@mui/material";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
@@ -75,12 +75,110 @@ import OrderApproval from "./dashboard/OrderApproval";
 import MobileOrders from "./dashboard/MobileOrders";
 import LoginProjCode from "./view/LoginProjCode";
 import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
+import { useLocation } from "react-router-dom";
 
 function App() {
-  const ProtectedRoute = () => {
-    const token = localStorage.getItem("session-token");
-    return token ? <Outlet /> : <Navigate to="/login" replace />;
+   const relatedRoutes = {
+    "reports/sec_sales_data": [
+      "reports/preview_stk_sales",
+      "reports/primary_sale_report",
+      "/reports/email_process_data"
+    ],
+    "masters/prod_mas":[
+      "masters/prodview"
+    ],
+    "Users/users_list":[
+      "users/adminUserNew"
+    ],
+    "customers/AllDoctors":[
+      "customers/editDoctor"
+    ],
+    "upload_closing":[
+      "upload_closing/index"
+    ]
   };
+
+    const getBasePath = (url) => {
+    // keep segments until we hit one that looks like base64/CI-encoded junk
+    const segments = url.split("/").filter(Boolean);
+    const baseSegments = [];
+    for (const seg of segments) {
+      // stop at first segment that looks like an encoded param (all caps/digits/= or pure "#")
+      if (/^[A-Za-z0-9+/]+=*$/.test(seg) && /[=]/.test(seg)) break;
+      baseSegments.push(seg);
+    }
+    return baseSegments.join("/");
+  };
+
+  const ProtectedRoute = () => {
+  const token = localStorage.getItem("session-token");
+  const location = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
+  const lastWarnedPath = useRef(null);
+
+  const rawMenuUrls = localStorage.getItem("menu_urls");
+  const menuUrls = rawMenuUrls ? JSON.parse(rawMenuUrls) : [];
+
+  const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview"];
+  const currentPath = location.pathname;
+
+  const isAllowed =
+  !token
+    ? false
+    : allowList.includes(currentPath) ||
+      menuUrls.some((url) => {
+        if (!url || url === "#") return false;
+
+        const basePath = getBasePath(url);
+        if (!basePath) return false;
+        const normalizedUrl = "/" + basePath;
+        const segmentCount = basePath.split("/").filter(Boolean).length;
+
+        // exact match always allowed
+        if (currentPath === normalizedUrl) return true;
+
+        // prefix match only for multi-segment base paths (real param-based sub-routes),
+        // NOT for single top-level segments like "dashboard" which would otherwise
+        // whitelist every /dashboard/* page
+        if (
+          segmentCount > 1 &&
+          currentPath.startsWith(normalizedUrl + "/")
+        ) {
+          return true;
+        }
+
+        const children = relatedRoutes[url] || relatedRoutes[basePath] || [];
+        return children.some((childUrl) => {
+          const normalizedChild = "/" + childUrl.replace(/^\/+/, "");
+          return (
+            currentPath === normalizedChild ||
+            currentPath.startsWith(normalizedChild + "/")
+          );
+        });
+      });
+
+  useEffect(() => {
+    if (token && !isAllowed && lastWarnedPath.current !== currentPath) {
+      lastWarnedPath.current = currentPath;
+      enqueueSnackbar("You don't have access to this page", {
+        variant: "warning",
+        preventDuplicate: true,
+        key: `access-denied-${currentPath}`,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath]);
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAllowed) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
 
   const PublicRoute = () => {
     const token = localStorage.getItem("session-token");
@@ -280,7 +378,7 @@ function App() {
             />
             <Route path="/reports/primary_sale_report/:decMonth?/:decStkId?/:decValue?" element={<PrimarySalesTransact />}  />
             <Route 
-             path="/upload_closing/index/:defEncode/:enMonth/:endistributor/:enProcessStat/:enProcessDataStat" 
+             path="/upload_closing/index/:defEncode?/:enMonth?/:endistributor?/:enProcessStat?/:enProcessDataStat?" 
              element={<UploadClosing />} 
              />
              <Route path="/upload_closing" element={<UploadClosing />}  />
@@ -300,6 +398,7 @@ function App() {
           </Route>
 
           {/* extract and report */}
+          <Route element={<ProtectedRoute />}>
           <Route path="/reports/reg_sec_sales" element={<RegionWiseSales />} />
           <Route
             path="/reports/stk_sales_details"
@@ -326,6 +425,7 @@ function App() {
 
           {/* TRANSACTIONS */}
           <Route path="/input/stock_sales/:closeDate?/:stkid?/:stkLabel?" element={<StockAndSalesUploadNew  />} />
+          </Route>
         </Routes>
       </BrowserRouter>
       {/* </SnackbarProvider> */}
