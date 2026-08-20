@@ -94,14 +94,24 @@ function UserList() {
   }, []);
 
   useEffect(() => {
-    try {
-      const accStat = localStorage.getItem("acc_stat");
-      setAccStat(accStat);
-      console.log("Acc Stat", accStat)
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+                const resolveAccStat = async () => {
+                  try {
+                    const res = await api.post("/getAccStat", {
+                      menu_url: "Users/users_list",
+                    });
+            
+                    const stat = res.data?.data?.acc_stat;
+                    if (stat !== null && stat !== undefined) {
+                      localStorage.setItem("acc_stat", stat);
+                      setAccStat(String(stat));
+                    }
+                  } catch (err) {
+                    console.log(err);
+                  }
+                };
+            
+                resolveAccStat();
+        }, []);
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,

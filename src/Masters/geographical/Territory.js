@@ -82,7 +82,10 @@ export default function Territory() {
             let response = await api.post("/readTerritory", { ter_id: null, area_id: null })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllTerData(data.map((item, index) => ({ ...item, si_no: index + 1 })))
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("fetchAllTerritory error", err)
         } finally {
@@ -112,7 +115,10 @@ export default function Territory() {
             setTerError(false)
             setTerErrorMsg("")
             setTabValue(0)
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat)
+            if(response?.data?.acc_stat){
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("collectEditData error", err)
         }

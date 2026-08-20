@@ -47,7 +47,6 @@ export default function Beat() {
     const location = useLocation()
     const [masterPanel, setMasterPanel] = useState({});
 
-    // labels derived from masterPanel with fallbacks
     const beatLabel = masterPanel["BEAT"] || "Beat";
     const areaLabel = masterPanel["AREA"] || "Area";
     const territoryLabel = masterPanel["TERR"] || "Territory";
@@ -66,17 +65,6 @@ export default function Beat() {
     useEffect(() => {
         fetchAllBeat()
     }, [])
-
-    useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-
-    }, []);
 
     useEffect(() => {
         fetchAllArea()
@@ -119,6 +107,10 @@ export default function Beat() {
             let response = await api.post("/readBeat", { beat_id: null, ter_id: null })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllBeatData(data.map((item, index) => ({ ...item, si_no: index + 1 })))
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("fetchAllBeat error", err)
         } finally {
@@ -173,6 +165,10 @@ export default function Beat() {
             await fetchTerritoriesForEdit(data.area_id)
             setSelTerritory(data.ter_id)
             setIsAreaChanged(false)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("collectEditData error", err)
         }
@@ -298,12 +294,10 @@ export default function Beat() {
         })
     }
 
-    // Area options: prepend "Select Area" only when not in edit mode (same as original MenuItem logic)
     const areaOptions = decodedEditBeatId
         ? allArea
         : [DEFAULT_AREA, ...allArea]
 
-    // Territory options: always prepend "Select Territory" (same as original)
     const territoryOptions = [DEFAULT_TERRITORY, ...allTerritory]
 
     const columns = [

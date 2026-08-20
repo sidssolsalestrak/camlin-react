@@ -64,15 +64,6 @@ function AccountMas() {
   // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
   const [accStat, setAccStat] = useState(null);
 
-  useEffect(() => {
-    try {
-      const accStat = localStorage.getItem("acc_stat");
-      setAccStat(accStat);
-      console.log("Acc Stat", accStat);
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
 
   useEffect(() => {
     const generateToken = async () => {
@@ -134,6 +125,32 @@ function AccountMas() {
   const [cusName, setCusName] = useState("");
 
   const [approvalState, setApprovalState] = useState({});
+
+  useEffect(() => {
+  const resolveAccStat = async () => {
+    try {
+      console.log("cus req passes in AccStat",cusReq)
+      const res = await api.post("/getAccStat", {
+        menu_url:
+          Number(decodedParams.cusReq) === 1
+            ? "customers/AllDoctors/NA==/MA==/MA==/MA==/MQ=="
+            : Number(decodedParams.cusReq) === 2
+            ? "customers/AllDoctors/NA==/MA==/MA==/MA==/Mg=="
+            : "customers/AllDoctors/NA==/MA==/MA==/MA==/MQ==",
+      });
+
+      const stat = res.data?.data?.acc_stat;
+      if (stat !== null && stat !== undefined) {
+        localStorage.setItem("acc_stat", stat);
+        setAccStat(String(stat));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  resolveAccStat();
+}, [cusReq]);
 
   const fetchRegionData = async () => {
     try {

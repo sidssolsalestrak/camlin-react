@@ -87,7 +87,10 @@ export default function Area() {
             let response = await api.post("/read_area", { areaId: null, regId: null })
             let areaData = Array.isArray(response.data.data) ? response.data.data : []
             setAllArea(areaData.map((item, index) => ({ ...item, si_no: index + 1 })))
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("fetchArea error", err)
         } finally {
@@ -130,7 +133,10 @@ export default function Area() {
             setAreaError(false)
             setAreaErrorMsg("")
             setTabValue(0)
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("collectEditData error", err)
         }

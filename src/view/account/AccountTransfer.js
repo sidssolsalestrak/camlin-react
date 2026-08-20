@@ -56,13 +56,23 @@ function AccountTransfer() {
     const [accStat, setAccStat] = useState(null);
 
     useEffect(() => {
+    const resolveAccStat = async () => {
         try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat);
-        } catch (err) {
-            console.log(err);
+        const res = await api.post("/getAccStat", {
+            menu_url:'customers/account_transfer/'
+        });
+
+        const stat = res.data?.data?.acc_stat;
+        if (stat !== null && stat !== undefined) {
+            localStorage.setItem("acc_stat", stat);
+            setAccStat(String(stat));
         }
+        } catch (err) {
+        console.log(err);
+        }
+    };
+
+    resolveAccStat();
     }, []);
 
     const canTransfer = [0, 2].includes(Number(accStat));
