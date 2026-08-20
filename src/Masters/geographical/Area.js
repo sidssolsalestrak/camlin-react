@@ -42,10 +42,9 @@ export default function Area() {
     const location = useLocation()
     const [masterPanel, setMasterPanel] = useState({});
 
-    // labels derived from masterPanel with fallbacks
     const areaLabel = masterPanel["AREA"] || "Area";
     const regionLabel = masterPanel["REGN"] || "Region";
-    const stateLabel = "State"; // No STAT tag_id in master_panel - stays static
+    const stateLabel = "State";
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -60,17 +59,6 @@ export default function Area() {
         fetchRegion()
         fetchState()
     }, [])
-
-    useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-
-    }, []);
 
     useEffect(() => {
         if (!decodedAreaId) {
@@ -99,6 +87,7 @@ export default function Area() {
             let response = await api.post("/read_area", { areaId: null, regId: null })
             let areaData = Array.isArray(response.data.data) ? response.data.data : []
             setAllArea(areaData.map((item, index) => ({ ...item, si_no: index + 1 })))
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("fetchArea error", err)
         } finally {
@@ -141,6 +130,7 @@ export default function Area() {
             setAreaError(false)
             setAreaErrorMsg("")
             setTabValue(0)
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("collectEditData error", err)
         }
