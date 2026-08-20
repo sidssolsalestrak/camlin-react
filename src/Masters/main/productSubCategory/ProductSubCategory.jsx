@@ -51,14 +51,24 @@ const ProductSubCategory = () => {
     }, []);
 
     useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-    }, []);
+            const resolveAccStat = async () => {
+              try {
+                const res = await axios.post("/getAccStat", {
+                  menu_url: "masters/catSub",
+                });
+        
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                  localStorage.setItem("acc_stat", stat);
+                  setAccStat(String(stat));
+                }
+              } catch (err) {
+                console.log(err);
+              }
+            };
+        
+            resolveAccStat();
+          }, []);
 
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({

@@ -57,16 +57,6 @@ const Department = () => {
         loadMasterPanel();
     }, []);
 
-    useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-    }, []);
-
     /*---------- re usable toast ---------*/
     const showAlert = useToast();
     const [confirmationDialog, setConfirmationDialog] = useState({
@@ -284,6 +274,10 @@ const Department = () => {
                 index: index + 1
             })) : [];
             settableData(data);
+            setAccStat(res?.data?.acc_stat ?? null);
+            if (res?.data?.acc_stat !== null && res?.data?.acc_stat !== undefined) {
+            localStorage.setItem("acc_stat", res?.data?.acc_stat);
+            }
         } catch (error) {
             console.error(error);
             settableData([]);

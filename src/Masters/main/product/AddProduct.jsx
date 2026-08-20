@@ -80,15 +80,25 @@ const AddProduct = () => {
         loadMasterPanel();
     }, []);
 
-    useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-    }, []);
+     useEffect(() => {
+            const resolveAccStat = async () => {
+              try {
+                const res = await axios.post("/getAccStat", {
+                  menu_url: "masters/prod_mas",
+                });
+        
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                  localStorage.setItem("acc_stat", stat);
+                  setAccStat(String(stat));
+                }
+              } catch (err) {
+                console.log(err);
+              }
+            };
+        
+            resolveAccStat();
+        }, []);
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;

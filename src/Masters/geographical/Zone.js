@@ -84,7 +84,10 @@ export default function Zone() {
         si_no: index + 1,
       }));
       setZoneList(dataWithSiNo);
-      setAccStat(response.data.acc_stat);
+      setAccStat(response?.data?.acc_stat?? null);
+      if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+        localStorage.setItem("acc_stat", response?.data?.acc_stat);
+      }
     } catch (err) {
       console.log("fetchZones error", err);
     } finally {
@@ -163,11 +166,15 @@ export default function Zone() {
       setHdnZoneName(data.zone_name);
       setZoneError(false);
       setTabValue(0);
-      setAccStat(response.data.acc_stat);
+      setAccStat(response?.data?.acc_stat?? null);
+      if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+        localStorage.setItem("acc_stat", response?.data?.acc_stat);
+      }
     } catch (err) {
       console.log(err);
     }
   };
+  console.log("accStat in zone",accStat)
 
   const handleEdit = (zoneId) => {
     navigate(`/masters/zone_mas/${btoa(zoneId)}`);

@@ -278,6 +278,10 @@ const ProductCategory = () => {
                 index: index + 1
             })) : [];
             settableData(data);
+            setAccStat(res?.data?.acc_stat?? null);
+            if (res?.data?.acc_stat !== null && res?.data?.acc_stat !== undefined) {
+            localStorage.setItem("acc_stat", res?.data?.acc_stat);
+            }
         } catch (error) {
             console.error(error);
             settableData([]);
@@ -318,16 +322,6 @@ const ProductCategory = () => {
             showAlert.error("failed to edit")
         }
     }
-
-    useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-    }, []);
 
     /*---------- Fetch table data ---------*/
     useEffect(() => {

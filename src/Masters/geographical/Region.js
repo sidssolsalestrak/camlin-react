@@ -84,7 +84,10 @@ export default function Region() {
             let response = await api.post("/regionData", { reg_id: 0 })
             let regsdata = Array.isArray(response.data.regTabResData) ? response.data.regTabResData : []
             setRegData(regsdata.map((item, index) => ({ ...item, si_no: index + 1 })))
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("fetch Data Error", err)
         } finally {
@@ -104,7 +107,10 @@ export default function Region() {
             setRegionError(false)
             setRegionErrMsg("")
             setTabValue(0)
-            setAccStat(response.data.acc_stat)
+            setAccStat(response?.data?.acc_stat?? null);
+            if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
+                localStorage.setItem("acc_stat", response?.data?.acc_stat);
+            }
         } catch (err) {
             console.log("collectEditData error", err)
         }
