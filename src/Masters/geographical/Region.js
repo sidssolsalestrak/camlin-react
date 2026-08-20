@@ -57,17 +57,6 @@ export default function Region() {
     }, [])
 
     useEffect(() => {
-        try {
-            const accStat = localStorage.getItem("acc_stat");
-            setAccStat(accStat);
-            console.log("Acc Stat", accStat)
-        } catch (err) {
-            console.log(err);
-        }
-
-    }, []);
-
-    useEffect(() => {
         if (!decodedEditRegionId) {
             setRegionName("")
             setSelectedZone("0")
@@ -95,6 +84,7 @@ export default function Region() {
             let response = await api.post("/regionData", { reg_id: 0 })
             let regsdata = Array.isArray(response.data.regTabResData) ? response.data.regTabResData : []
             setRegData(regsdata.map((item, index) => ({ ...item, si_no: index + 1 })))
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("fetch Data Error", err)
         } finally {
@@ -114,12 +104,12 @@ export default function Region() {
             setRegionError(false)
             setRegionErrMsg("")
             setTabValue(0)
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("collectEditData error", err)
         }
     }
 
-    // AFTER
     const validateRegion = () => {
         let isValid = true
         const regLabel = masterPanel["REGN"] || "Region"

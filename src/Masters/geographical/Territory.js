@@ -41,7 +41,6 @@ export default function Territory() {
     const location = useLocation()
     const [masterPanel, setMasterPanel] = useState({});
 
-    // labels derived from masterPanel with fallbacks
     const territoryLabel = masterPanel["TERR"] || "Territory";
     const areaLabel = masterPanel["AREA"] || "Area";
 
@@ -57,17 +56,6 @@ export default function Territory() {
         fetchAllTerritory()
         fetchAllArea()
     }, [])
-
-    useEffect(() => {
-             try {
-               const accStat = localStorage.getItem("acc_stat");
-               setAccStat(accStat);
-               console.log("Acc Stat",accStat)
-             } catch (err) {
-               console.log(err);
-             }
-       
-    }, []);
 
     useEffect(() => {
         if (!decodedEditTerritoryId || allArea.length === 0) {
@@ -94,6 +82,7 @@ export default function Territory() {
             let response = await api.post("/readTerritory", { ter_id: null, area_id: null })
             let data = Array.isArray(response.data.data) ? response.data.data : []
             setAllTerData(data.map((item, index) => ({ ...item, si_no: index + 1 })))
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("fetchAllTerritory error", err)
         } finally {
@@ -103,7 +92,7 @@ export default function Territory() {
 
     const fetchAllArea = async () => {
         try {
-            let response = await api.post("/read_area", { areaId: null, regId: null })
+            let response = await api.post("/areaList", { area_id: null, regId: null })
             let areaData = Array.isArray(response.data.data) ? response.data.data : []
             setAllArea(areaData)
         } catch (err) {
@@ -123,6 +112,7 @@ export default function Territory() {
             setTerError(false)
             setTerErrorMsg("")
             setTabValue(0)
+            setAccStat(response.data.acc_stat)
         } catch (err) {
             console.log("collectEditData error", err)
         }

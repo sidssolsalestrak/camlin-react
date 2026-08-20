@@ -65,17 +65,6 @@ export default function Zone() {
   }, []);
 
   useEffect(() => {
-    try {
-      const accStat = localStorage.getItem("acc_stat");
-      setAccStat(accStat);
-      console.log("Acc Stat", accStat)
-    } catch (err) {
-      console.log(err);
-    }
-
-  }, []);
-
-  useEffect(() => {
     if (!decodedEditZoneid) {
       setZoneName("");
       setHdnZoneName("");
@@ -95,6 +84,7 @@ export default function Zone() {
         si_no: index + 1,
       }));
       setZoneList(dataWithSiNo);
+      setAccStat(response.data.acc_stat);
     } catch (err) {
       console.log("fetchZones error", err);
     } finally {
@@ -173,6 +163,7 @@ export default function Zone() {
       setHdnZoneName(data.zone_name);
       setZoneError(false);
       setTabValue(0);
+      setAccStat(response.data.acc_stat);
     } catch (err) {
       console.log(err);
     }
