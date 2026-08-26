@@ -948,7 +948,7 @@ const OrderApproval = () => {
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
-            { label: "Daywise Log", path: location.pathname },
+            { label: "Daywise Log", path: "/dashboard" },
             { label: "Order approval" },
         ]}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
