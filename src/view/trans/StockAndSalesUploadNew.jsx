@@ -15,6 +15,7 @@ import DataTable from '../../utils/dataTable';
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
 import { getMasterPanel } from "../../services/masterPanelService";
+import FormatCurrency from "../../utils/formatCurrency";
 
 const headContainer = {
     background: "#fff",
@@ -281,7 +282,7 @@ const StockAndSalesUploadNew = () => {
             headerName: "NAME",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <Typography sx={{  whiteSpace: "nowrap", color: '#212121' }}>
+                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
                         {value}
                     </Typography>
                 ),
@@ -291,9 +292,9 @@ const StockAndSalesUploadNew = () => {
             headerName: "UOM",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <TextField size="small" value={value ?? ""} sx={cellSx(true)}
-                        InputProps={{ readOnly: true }}
-                        inputProps={{ style: { textAlign: "center" } }} />
+                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
+                        {value}
+                    </Typography>
                 ),
         },
         {
@@ -301,9 +302,9 @@ const StockAndSalesUploadNew = () => {
             headerName: "MRP",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <TextField size="small" value={value ?? 0} sx={cellSx(true)}
-                        InputProps={{ readOnly: true }}
-                        inputProps={{ style: { textAlign: "center" } }} />
+                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
+                        {FormatCurrency(value)}
+                    </Typography>
                 ),
         },
         {
@@ -407,95 +408,95 @@ const StockAndSalesUploadNew = () => {
     };
 
     const handleExcelExport = async () => {
-    if (!formData.Distributor || formData.Distributor === "0") {
-        showAlert.warning(`Please Select ${masterPanel["STKS"] || "Distributor"}`);
-        return;
-    }
-    try {
-        // ── 0. Always fetch the FULL ("Show All") data set for export,
-        //       regardless of current toggle state ───────────────────────
-        const res = await axios.post('/stock_sales', {
-            month: dayjs(month).format("YYYY-MM-DD"),
-            stk_id: formData.Distributor,
-            value: 0, // 0 = show all products, ignoring current withValues toggle
-        });
-        const resData = res.data?.data || {};
-        const fullRows = Array.isArray(resData.salesdata) ? resData.salesdata : [];
+        if (!formData.Distributor || formData.Distributor === "0") {
+            showAlert.warning(`Please Select ${masterPanel["STKS"] || "Distributor"}`);
+            return;
+        }
+        try {
+            // ── 0. Always fetch the FULL ("Show All") data set for export,
+            //       regardless of current toggle state ───────────────────────
+            const res = await axios.post('/stock_sales', {
+                month: dayjs(month).format("YYYY-MM-DD"),
+                stk_id: formData.Distributor,
+                value: 0, // 0 = show all products, ignoring current withValues toggle
+            });
+            const resData = res.data?.data || {};
+            const fullRows = Array.isArray(resData.salesdata) ? resData.salesdata : [];
 
-        const fullSalesData = fullRows.map(row => ({
-            ...row,
-            open_qty: row.open_qty ?? 0,
-            pur_qty: row.pur_qty ?? 0,
-            tot_qty: row.tot_qty ?? 0,
-            sec_qty: row.sec_qty ?? 0,
-            physical_qty: row.physical_qty ?? 0,
-        }));
+            const fullSalesData = fullRows.map(row => ({
+                ...row,
+                open_qty: row.open_qty ?? 0,
+                pur_qty: row.pur_qty ?? 0,
+                tot_qty: row.tot_qty ?? 0,
+                sec_qty: row.sec_qty ?? 0,
+                physical_qty: row.physical_qty ?? 0,
+            }));
 
-        // ── 1. Build filters (matches excelWithFilters signature) ──────────
-        const selectedDist = distribute.find(
-            d => String(d.id) === String(formData.Distributor)
-        );
-        const distLabel = selectedDist
-            ? `${selectedDist.stk_code} - ${selectedDist.stk_name}`
-            : String(formData.Distributor);
+            // ── 1. Build filters (matches excelWithFilters signature) ──────────
+            const selectedDist = distribute.find(
+                d => String(d.id) === String(formData.Distributor)
+            );
+            const distLabel = selectedDist
+                ? `${selectedDist.stk_code} - ${selectedDist.stk_name}`
+                : String(formData.Distributor);
 
-        const filters = [
-            { label: `Month - ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
-            { label: `${masterPanel["STKS"] || "Distributor"} : ${distLabel}`, bold: false, sz: 10 },
-        ];
+            const filters = [
+                { label: `Month - ${dayjs(month).format("MMM YYYY")}`, bold: false, sz: 10 },
+                { label: `${masterPanel["STKS"] || "Distributor"} : ${distLabel}`, bold: false, sz: 10 },
+            ];
 
-        // ── 2. Map your columns → { id, label } ─────────────────────────────
-        const exportColumns = [
-            { id: "prod_code", label: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE` },
-            { id: "prod_name", label: "NAME" },
-            { id: "prod_uom", label: "UOM" },
-            { id: "stk_price", label: "MRP" },
-            { id: "open_qty", label: "OPENING STOCK (O)" },
-            { id: "pur_qty", label: "PRIMARY QTY (P)" },
-            { id: "tot_qty", label: "TOTAL STOCK (T=O+P)" },
-            { id: "sec_qty", label: "SEC. SALES (S=T-C)" },
-            { id: "physical_qty", label: "CLOSING QTY (C)" },
-        ];
+            // ── 2. Map your columns → { id, label } ─────────────────────────────
+            const exportColumns = [
+                { id: "prod_code", label: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE` },
+                { id: "prod_name", label: "NAME" },
+                { id: "prod_uom", label: "UOM" },
+                { id: "stk_price", label: "MRP" },
+                { id: "open_qty", label: "OPENING STOCK (O)" },
+                { id: "pur_qty", label: "PRIMARY QTY (P)" },
+                { id: "tot_qty", label: "TOTAL STOCK (T=O+P)" },
+                { id: "sec_qty", label: "SEC. SALES (S=T-C)" },
+                { id: "physical_qty", label: "CLOSING QTY (C)" },
+            ];
 
-        // ── 3. Build category-grouped rows from the FULL data set ───────────
-        const groupedForExport = [];
-        let prevCat = null;
-        fullSalesData.forEach((row, idx) => {
-            const cat = row.cat_name || "Uncategorized";
-            if (cat !== prevCat) {
-                groupedForExport.push({
-                    prod_code: cat,
-                    prod_name: "",
-                    prod_uom: "",
-                    stk_price: "",
-                    open_qty: "",
-                    pur_qty: "",
-                    tot_qty: "",
-                    sec_qty: "",
-                    physical_qty: "",
-                    _isGroupHeader: true,
-                    bgcolor: "87CEEB",
-                    color: "000000",
-                });
-                prevCat = cat;
-            }
-            groupedForExport.push(row);
-        });
+            // ── 3. Build category-grouped rows from the FULL data set ───────────
+            const groupedForExport = [];
+            let prevCat = null;
+            fullSalesData.forEach((row, idx) => {
+                const cat = row.cat_name || "Uncategorized";
+                if (cat !== prevCat) {
+                    groupedForExport.push({
+                        prod_code: cat,
+                        prod_name: "",
+                        prod_uom: "",
+                        stk_price: "",
+                        open_qty: "",
+                        pur_qty: "",
+                        tot_qty: "",
+                        sec_qty: "",
+                        physical_qty: "",
+                        _isGroupHeader: true,
+                        bgcolor: "87CEEB",
+                        color: "000000",
+                    });
+                    prevCat = cat;
+                }
+                groupedForExport.push(row);
+            });
 
-        // ── 4. Fire export ─────────────────────────────────────────────────
-        const fileName = `stock_sale_${dayjs(month).format("MMM_YYYY")}`;
+            // ── 4. Fire export ─────────────────────────────────────────────────
+            const fileName = `stock_sale_${dayjs(month).format("MMM_YYYY")}`;
 
-        await excelWithFilters(
-            groupedForExport,
-            exportColumns,
-            fileName,
-            filters,
-            setProgress,
-        );
-    } catch (err) {
-        console.error("Excel export error:", err);
-        showAlert.error("Failed to export Excel");
-    }
+            await excelWithFilters(
+                groupedForExport,
+                exportColumns,
+                fileName,
+                filters,
+                setProgress,
+            );
+        } catch (err) {
+            console.error("Excel export error:", err);
+            showAlert.error("Failed to export Excel");
+        }
     };
     return (
         <Layout breadcrumb={[
@@ -516,7 +517,8 @@ const StockAndSalesUploadNew = () => {
                         <DatePicker
                             label="Month"
                             format="MMM YYYY"
-                            views={["month", "year"]}
+                            views={["year", "month"]}
+                            openTo="month"
                             value={month}
                             onChange={setMonth}
                             slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
@@ -567,7 +569,7 @@ const StockAndSalesUploadNew = () => {
                         : <AiOutlineFileExcel
                             style={{ color: "green", cursor: "pointer", height: 30, width: 30 }}
                             title="Download Excel"
-                            onClick={()=>handleExcelExport()}
+                            onClick={() => handleExcelExport()}
                         />
                     }
                 </Box>
@@ -581,9 +583,9 @@ const StockAndSalesUploadNew = () => {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
                 "& td": { padding: "6px 8px" },
             }}>
-                <Typography sx={{ px:2,py:1 }} variant="h6">{masterPanel["PROD"] || "Product"} View</Typography>
+                <Typography sx={{ px: 2, py: 1 }} variant="h6">{masterPanel["PROD"] || "Product"} View</Typography>
                 <DataTable loading={loading} columns={columns} data={tableData} rowStyle={rowStyle} />
-                
+
             </Box>
 
             {/* Submit / Update */}

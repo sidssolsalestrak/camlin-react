@@ -313,7 +313,8 @@ function PrimarySalesTransact() {
                             <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Month</Typography>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
-                                    views={["month", "year"]}
+                                    views={["year", "month"]}
+                                    openTo="month"
                                     value={dateselect}
                                     onChange={handleMonthChange}
                                     format="MMM YYYY"
