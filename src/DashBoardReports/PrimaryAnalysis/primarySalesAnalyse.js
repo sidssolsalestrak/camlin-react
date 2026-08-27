@@ -435,7 +435,8 @@ function PrimarySalesAnalze() {
                                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                                         <DatePicker
                                             label="Month"
-                                            views={["month", "year"]}
+                                            views={["year", "month"]}
+                                            openTo="month"
                                             format="MMM YYYY"
                                             value={selMonth}
                                             onChange={(v) => setSelMonth(v)}

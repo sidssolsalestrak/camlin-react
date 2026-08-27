@@ -141,7 +141,8 @@ const StockAndSalesDetails = () => {
             <DatePicker
               label="From Date"
               format="MMM YYYY"
-              views={["month", "year"]}
+              views={["year", "month"]}
+              openTo="month"
               value={fromDate}
               onChange={(newValue) => setFromDate(newValue)}
               maxDate={toDate ? toDate : null}
@@ -152,7 +153,8 @@ const StockAndSalesDetails = () => {
             <DatePicker
               label="To Date"
               format="MMM YYYY"
-              views={["month", "year"]}
+              views={["year", "month"]}
+              openTo="month"
               value={toDate}
               onChange={(newValue) => settoDate(newValue)}
               slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}

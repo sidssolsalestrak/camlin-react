@@ -432,7 +432,8 @@ const MobileOrders = () => {
                             <DatePicker
                                 label="Month *"
                                 format="MMM YYYY"
-                                views={["month", "year"]}
+                                views={["year", "month"]}
+                                openTo="month"
                                 value={month}
                                 onChange={(newValue) => setMonth(newValue)}
                                 slotProps={{ textField: { size: "small", fullWidth: true } }}

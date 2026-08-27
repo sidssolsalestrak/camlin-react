@@ -316,17 +316,20 @@ const Stockist = () => {
     /*----------fetch table data---------*/
     const fetchTableData = async () => {
         try {
-            if (!formData.zone || formData.zone === "0") {
-                showAlert.error(`Please select ${zoneLabel}!`);
-                setErrors((prev) => ({ ...prev, zone: `${zoneLabel} is required` }));
+            const missing = [];
+            if (!formData.zone || formData.zone === "0") missing.push(zoneLabel);
+            if (!formData.region || formData.region <= "0") missing.push(regionLabel);
+
+            if (missing.length > 0) {
+                showAlert.error(`Please select ${missing.join(" and ")}!`);
+                setErrors((prev) => ({
+                    ...prev,
+                    zone: !formData.zone || formData.zone === "0" ? `${zoneLabel} is required` : "",
+                    region: !formData.region || formData.region <= "0" ? `${regionLabel} is required` : ""
+                }));
                 return;
             }
-            setErrors((prev) => ({ ...prev, zone: "" }));
-            if (!formData.region || formData.region <= "0") {
-                showAlert.error(`Please select ${regionLabel}!`);
-                setErrors((prev) => ({ ...prev, region: `${regionLabel} is required` }));
-                return;
-            }
+            setErrors((prev) => ({ ...prev, zone: "", region: "" }));
             setLoading(true);
             setshowTable(true);
             let payload = {
@@ -410,7 +413,7 @@ const Stockist = () => {
                     <TabPanel value="2" sx={{ padding: "10px 20px" }}>
                         <Typography sx={style}>{stkLabel} Records</Typography>
                         <Box sx={{ display: "flex", alignContent: "flex-start", gap: 1, flexWrap: "wrap", mb: 2 }}>
-                            <FormControl sx={{ width: "200px" }} size="small">
+                            <FormControl sx={{ width: "200px" }} size="small" required>
                                 <InputLabel id="zone">{zoneLabel}</InputLabel>
                                 <Select value={formData.zone} id='zone' label={zoneLabel} error={!!errors.zone}
                                     labelId="zone" variant="outlined"
@@ -428,7 +431,7 @@ const Stockist = () => {
                                 </Select>
                                 {errors?.zone && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.zone}</span>}
                             </FormControl>
-                            <FormControl sx={{ width: "200px" }} size="small" >
+                            <FormControl sx={{ width: "200px" }} size="small" required>
                                 <InputLabel id="region">{regionLabel}</InputLabel>
                                 <Select value={formData.region} id='region'
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
@@ -452,7 +455,7 @@ const Stockist = () => {
                                     labelId="area" variant="outlined"
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                     onChange={(e) => handleChangeForm("area", e.target.value)}>
-                                    <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
+                                    <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
                                     {area?.map((item, index) => (
                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.area_name}</MenuItem>
                                     ))}
