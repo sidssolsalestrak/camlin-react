@@ -147,6 +147,9 @@ function AddUser() {
   const [sessionId, setSessionId] = useState(null)
   const [modifyLoading, setModifyLoading] = useState(false);
 
+  /* ---------- snapshot of loaded user data, used to detect "no changes" ---------- */
+  const [originalData, setOriginalData] = useState(null);
+
   const showPlanDay = ["3", "4"].includes(planSubCutoff);
   const showWeekend = repSubCutoff === "3";
   const showRsDay = repSubCutoff === "5";
@@ -190,6 +193,18 @@ function AddUser() {
             
                 resolveAccStat();
         }, []);
+
+      useEffect(() => {
+      if (!id && businessUnits.length === 1 && selectedBU.length === 0) {
+        setSelectedBU([String(businessUnits[0].id)]);
+      }
+    } , [businessUnits]);
+
+    useEffect(() => {
+    if (showRsDay && !rsDay) {
+      setRsDay(1);
+    }
+   }, [showRsDay]);
 
   const [toast, setToast] = useState({
     open: false,
@@ -392,6 +407,25 @@ function AddUser() {
         setExistingPass(d.user_pass || null)
         setFlag(d.id > 0 ? 1 : 0)
 
+        // These come from `d` (getUserData response) directly — kept outside
+        // the zone/region/area/territory/beat API block below so they're
+        // always set regardless of whether that block's calls succeed or fail.
+        setPlanSubCutoff(String(d.plan_rule_id || "0"));
+        setPsDay(d.plan_rule_day || "");
+        setPlanApproval(String(d.plan_app_stat || "0")); 
+
+        setRepSubCutoff(String(d.report_rule_id || "0"));
+        setWeekend(d.report_rule_day || ""); // if needed
+        setRsDay(d.report_rule_lag || "");
+
+        setReportType(String(d.rep_type || "0"));
+        setDataMode(String(d.data_mode || "0"));
+        setLocationTracking(String(d.loc_stat || "0"));
+        setSelfie(String(d.selfi_stat || "0"));
+        setAttendance(String(d.att_stat || "0"));
+
+        setWeeklyOff(d.weekly_off ? d.weekly_off.split(",") : []);
+
         // Handle relieving date - filter out invalid default dates
         const relievingDateStr = d.emp_reliev_dt ? d.emp_reliev_dt.split("T")[0] : "";
         const invalidDates = ['1900-01-01', '1970-01-01', '0000-00-00', '1899-12-31'];
@@ -408,68 +442,119 @@ function AddUser() {
             : ""
         );
 
+        /* ---------- build the "original" snapshot straight from `d`
+           (not from state, since state updates above are async) so
+           the Update button can compare against it later ---------- */
+        setOriginalData({
+          selectedBU: d.b_unit ? d.b_unit.split(",") : [],
+          selectedType: d.user_type || "",
+          selectedDept: d.dep_id || "",
+          selectedDesig: d.desig_id || "",
+          selectedTitle: d.user_sal || "",
+          employeeCode: d.emp_code || "",
+          fullName: d.first_name || "",
+          lastName: d.last_name || "",
+          mobileNum: d.mob_no || "",
+          email: d.email_id || "",
+          address: d.user_addr || "",
+          otherRef: d.user_ref || "",
+          dateOfBirth: dobStr && !invalidDates.includes(dobStr) ? dobStr : "",
+          dateOfJoin:
+            d.emp_doj && d.emp_doj !== "1900-01-01T00:00:00.000Z"
+              ? d.emp_doj.split("T")[0]
+              : "",
+          hq: d.hq_name || "",
+          selectedReportType: d.rep_to_type || "",
+          selectedReportTo: d.repto_user_id || "",
+          employeeType: d.emp_type_id || "",
+          employeeStatus: d.emp_stat_id || "",
+          grossSalary:
+            d.sal_amt !== null && d.sal_amt !== undefined ? d.sal_amt : "",
+          userIdStat: d.user_id_stat === 1 ? 1 : 0,
+          userId: d.user_name || "",
+          webAccess: d.web_acc_stat === 0 ? "yes" : "no",
+          appAccess: d.app_acc_stat === 0 ? "yes" : "no",
+          selectedZones: d.zone_id?.split(",") || [],
+          selectedRegions: d.reg_id?.split(",") || [],
+          selectedAreas: d.area_id?.split(",") || [],
+          selectedTerritories: d.ter_id?.split(",") || [],
+          selectedBeats: d.beat_id?.split(",") || [],
+          planSubCutoff: String(d.plan_rule_id || "0"),
+          psDay: d.plan_rule_day || "",
+          planApproval: String(d.plan_app_stat || "0"),
+          repSubCutoff: String(d.report_rule_id || "0"),
+          weekend: d.report_rule_day || "",
+          rsDay: d.report_rule_lag || "",
+          reportType: String(d.rep_type || "0"),
+          dataMode: String(d.data_mode || "0"),
+          locationTracking: String(d.loc_stat || "0"),
+          selfie: String(d.selfi_stat || "0"),
+          attendance: String(d.att_stat || "0"),
+          weeklyOff: d.weekly_off ? d.weekly_off.split(",") : [],
+          relievingDate:
+            relievingDateStr && !invalidDates.includes(relievingDateStr)
+              ? relievingDateStr
+              : "",
+          deactivateType: String(d.deact_type || "0"),
+          deactivateRemarks: d.deact_rem || "",
+        });
+
         if (d.zone_id) {
-          const zoneIds = d.zone_id.split(",");
-          setSelectedZones(zoneIds);
-          const regRes = await axios.post("/getRegion", { zone: zoneIds });
-          const regData = regRes.data.data || [];
-          setRegions(regData);
+          try {
+            const zoneIds = d.zone_id.split(",");
+            setSelectedZones(zoneIds);
+            const regRes = await axios.post("/getRegion", { zone: zoneIds });
+            const regData = regRes.data.data || [];
+            setRegions(regData);
 
-          const regs = d.reg_id?.split(",") || [];
-          setSelectedRegions(regs);
+            const regs = d.reg_id?.split(",") || [];
+            setSelectedRegions(regs);
 
-          if (regs.length) {
-            const areaRes = await axios.post("/getAreaData", { reg: regs });
-            const areaData = areaRes.data.data || [];
-            setAreas(areaData);
+            if (regs.length) {
+              const areaRes = await axios.post("/getAreaData", { reg: regs });
+              const areaData = areaRes.data.data || [];
+              setAreas(areaData);
 
-            const areas = d.area_id?.split(",") || [];
-            setSelectedAreas(areas);
+              const areas = d.area_id?.split(",") || [];
+              setSelectedAreas(areas);
 
-            if (areas.length) {
-              const terRes = await axios.post("/getTerritory", { area: areas });
-              const terData = terRes.data.data || [];
-              setTerritories(terData);
+              if (areas.length) {
+                const terRes = await axios.post("/getTerritory", { area: areas });
+                const terData = terRes.data.data || [];
+                setTerritories(terData);
 
-              const ters = d.ter_id?.split(",") || [];
-              setSelectedTerritories(ters);
+                const ters = d.ter_id?.split(",") || [];
+                setSelectedTerritories(ters);
 
-              if (ters.length) {
-                const beatRes = await axios.post("/getBeat", { ter: ters });
-                setBeats(beatRes.data.data || []);
-                setSelectedBeats(d.beat_id?.split(",") || []);
+                if (ters.length) {
+                  try {
+                    const beatRes = await axios.post("/getBeat", { ter: ters });
+                    setBeats(beatRes.data.data || []);
+                    setSelectedBeats(d.beat_id?.split(",") || []);
+                  } catch (beatErr) {
+                    console.error("Failed to load beat data", beatErr);
+                  }
+                }
               }
             }
+          } catch (terErr) {
+            console.error("Failed to load territory hierarchy", terErr);
           }
         }
-        setPlanSubCutoff(String(d.plan_rule_id || "0"));
-        setPsDay(d.plan_rule_day || "");
-
-        setRepSubCutoff(String(d.report_rule_id || "0"));
-        setWeekend(d.report_rule_day || ""); // if needed
-        setRsDay(d.report_rule_lag || "");
-
-        setReportType(String(d.rep_type || "0"));
-        setDataMode(String(d.data_mode || "0"));
-        setLocationTracking(String(d.loc_stat || "0"));
-        setSelfie(String(d.selfi_stat || "0"));
-        setAttendance(String(d.att_stat || "0"));
-
-        setWeeklyOff(d.weekly_off ? d.weekly_off.split(",") : []);
       }
     } catch (e) {
       console.error("Failed to fetch user", e);
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     const init = async () => {
-      getBusinessUnit();
+      await getBusinessUnit();
       const types = await getUserTypes();
-      getUserDropdown();
-      getZoneMas();
-      getEmpDropdowns();
-      getWeekDays();
+      await getUserDropdown();
+      await getZoneMas();
+      await getEmpDropdowns();
+      await getWeekDays();
       if (id > 0) {
         await getUserDetails(types);
       }
@@ -774,11 +859,11 @@ function AddUser() {
       formData.append("web_access", webAccess === "yes" ? 0 : 1);
       formData.append("app_access", appAccess === "yes" ? 0 : 1);
       formData.append("plan_sub_cutoff", planSubCutoff);
-      formData.append("ps_day", psDay);
+      formData.append("ps_day", showPlanDay?(psDay ? psDay : 0 ): 0 );
       formData.append("plan_approval", planApproval);
       formData.append("rep_sub_cutoff", repSubCutoff);
-      formData.append("weekend", weekend);
-      formData.append("rs_day", rsDay || 0);
+      formData.append("weekend", showWeekend?weekend:"");
+      formData.append("rs_day", showRsDay ? (rsDay ? rsDay : 0) : 0);
       formData.append("data_mode", dataMode);
       formData.append("location_tracking", locationTracking);
       formData.append("selfie", selfie);
@@ -1259,6 +1344,72 @@ function AddUser() {
     if (d.year() === 1900) return "";
 
     return d.format("DD-MMM-YYYY HH:mm:ss");
+  };
+
+  /* ---------- helpers for the "disable Update if nothing changed" check ---------- */
+  const arraysEqualUnordered = (a = [], b = []) => {
+  const normalize = (arr) =>
+    (arr || [])
+      .map((v) => String(v).trim())
+      .filter((v) => v !== "" && v !== "null" && v !== "undefined")
+      .sort();
+  const normA = normalize(a);
+  const normB = normalize(b);
+  if (normA.length !== normB.length) return false;
+  return normA.every((val, idx) => val === normB[idx]);
+  };
+
+  const isUpdateDisabled = () => {
+    // Still loading the original snapshot (or it's an ADD flow) — don't block via this check
+    if (!originalData) return false;
+    // Any of these always count as a change
+    if (selectedFile) return false;
+    if (password || confirmPassword) return false;
+
+    const unchanged =
+      arraysEqualUnordered(selectedBU, originalData?.selectedBU) &&
+      String(selectedType) === String(originalData?.selectedType) &&
+      String(selectedDept) === String(originalData?.selectedDept) &&
+      String(selectedDesig) === String(originalData?.selectedDesig) &&
+      String(selectedTitle) === String(originalData?.selectedTitle) &&
+      String(employeeCode).trim() === String(originalData?.employeeCode) &&
+      fullName.trim() === originalData?.fullName &&
+      lastName.trim() === originalData?.lastName &&
+      Number(mobileNum) === Number(originalData?.mobileNum) &&
+      email.trim() === originalData?.email &&
+      address.trim() === originalData?.address &&
+      otherRef.trim() === originalData?.otherRef &&
+      dateOfBirth === originalData?.dateOfBirth &&
+      dateOfJoin === originalData?.dateOfJoin &&
+      hq.trim() === originalData?.hq &&
+      String(selectedReportType) === String(originalData.selectedReportType) &&
+      String(selectedReportTo) === String(originalData.selectedReportTo) &&
+      String(employeeType) === String(originalData.employeeType) &&
+      String(employeeStatus) === String(originalData.employeeStatus) &&
+      String(grossSalary ?? "") === String(originalData.grossSalary ?? "") &&
+      Number(userIdStat) === Number(originalData.userIdStat) &&
+      userId === originalData.userId &&
+      webAccess === originalData.webAccess &&
+      appAccess === originalData.appAccess &&
+      arraysEqualUnordered(selectedZones, originalData.selectedZones) &&
+      arraysEqualUnordered(selectedRegions, originalData.selectedRegions) &&
+      arraysEqualUnordered(selectedAreas, originalData.selectedAreas) &&
+      arraysEqualUnordered(selectedTerritories, originalData.selectedTerritories) &&
+      arraysEqualUnordered(selectedBeats, originalData.selectedBeats) &&
+      String(planSubCutoff) === String(originalData.planSubCutoff) &&
+      String(psDay || "") === String(originalData.psDay || "") &&
+      String(planApproval) === String(originalData.planApproval) &&  
+      String(repSubCutoff) === String(originalData.repSubCutoff) &&
+      String(weekend || "") === String(originalData.weekend || "") &&
+      String(rsDay || "") === String(originalData.rsDay || "") &&
+      String(reportType) === String(originalData.reportType) &&
+      String(dataMode) === String(originalData.dataMode) &&
+      String(locationTracking) === String(originalData.locationTracking) &&
+      String(selfie) === String(originalData.selfie) &&
+      String(attendance) === String(originalData.attendance) &&
+      arraysEqualUnordered(weeklyOff, originalData.weeklyOff) 
+
+    return unchanged;
   };
 
   console.log("Selected buieness unit", selectedBU)
@@ -1772,6 +1923,7 @@ function AddUser() {
             {(Number(flag) === 1 && Number(accStatus) === 0 && Number(sessionId) !== id && [0, 2].includes(Number(accStat))) && (
               <Button variant="contained"
                 sx={{ mt: 2 }}
+                disabled={isUpdateDisabled()}
                 onClick={() => {
                   if (!validate()) {
                     setToast({
@@ -1818,7 +1970,7 @@ function AddUser() {
                   required
                 />
 
-                <TextField
+               <TextField
                   label="Password"
                   fullWidth
                   size="small"
@@ -1827,6 +1979,36 @@ function AddUser() {
                   onChange={(e) => {
                     const onlyText = e.target.value.replace(/\s+/g, "");
                     setPassword(onlyText)
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+
+                    // No value entered
+                    if (!val) {
+                      if (!id) {
+                        // ADD USER: password is mandatory
+                        setErrors((prev) => ({ ...prev, password: "Password is required" }));
+                      } else {
+                        // UPDATE USER: password optional, clear any stale error
+                        setErrors((prev) => {
+                          const e2 = { ...prev };
+                          delete e2.password;
+                          return e2;
+                        });
+                      }
+                      return;
+                    }
+
+                    const pwdCheck = checkPasswordValidation(val);
+                    setErrors((prev) => {
+                      const e2 = { ...prev };
+                      if (pwdCheck !== 1) {
+                        e2.password = pwdCheck;
+                      } else {
+                        delete e2.password;
+                      }
+                      return e2;
+                    });
                   }}
                   error={Boolean(errors.password)}
                   helperText={errors.password}
@@ -1842,6 +2024,37 @@ function AddUser() {
                   onChange={(e) => {
                     const onlyText = e.target.value.replace(/\s+/g, "");
                     setConfirmPassword(onlyText)
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+
+                    // No value entered
+                    if (!val) {
+                      if (!id) {
+                        // ADD USER: confirm password is mandatory
+                        setErrors((prev) => ({ ...prev, confirmPassword: "Confirm Password is required" }));
+                      } else if (password) {
+                        // UPDATE USER: only required if they've started typing a new password
+                        setErrors((prev) => ({ ...prev, confirmPassword: "Both password fields are required" }));
+                      } else {
+                        setErrors((prev) => {
+                          const e2 = { ...prev };
+                          delete e2.confirmPassword;
+                          return e2;
+                        });
+                      }
+                      return;
+                    }
+
+                    setErrors((prev) => {
+                      const e2 = { ...prev };
+                      if (password !== val) {
+                        e2.confirmPassword = "Password & Confirm Password does not match";
+                      } else {
+                        delete e2.confirmPassword;
+                      }
+                      return e2;
+                    });
                   }}
                   error={Boolean(errors.confirmPassword)}
                   helperText={errors.confirmPassword}
@@ -2096,7 +2309,23 @@ function AddUser() {
                   <TextField
                     label="Date of month"
                     value={psDay}
-                    onChange={(e) => setPsDay(e.target.value)}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "").slice(0, 2);
+                      if (value.startsWith("00")) {
+                        setPsDay("");
+                        return;
+                      }
+                      if (value !== "" && Number(value) > 31) {
+                        setPsDay("");
+                        return;
+                      }
+                      setPsDay(value);
+                    }}
+                    onBlur={() => {
+                      if (psDay === null || psDay === "" || psDay === undefined || Number(psDay) === 0) {
+                        setPsDay("1");
+                      }
+                    }}
                     fullWidth
                     size="small"
                   />
@@ -2124,7 +2353,7 @@ function AddUser() {
                     if (e.target.value === "3" && weekend.length === 0) {
                       setWeekend([1])
                     }
-                    if (e.target.value === "5" && rsDay === "") {
+                    if (e.target.value === "5") {
                       setRsDay(1)
                     }
                   }}
@@ -2154,12 +2383,24 @@ function AddUser() {
                 </Grid>
               )}
 
-              {showRsDay && (
+             {showRsDay && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     label="Standard Lag Day"
                     value={rsDay}
-                    onChange={(e) => setRsDay(e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, ''); // digits only
+                      if (val.startsWith('00')) {
+                        setRsDay(1);
+                        return;
+                      }
+                      setRsDay(val === "" ? "" : Number(val));
+                    }}
+                    onBlur={() => {
+                      if (rsDay === null || rsDay === "" || rsDay === undefined || Number(rsDay) === 0) {
+                        setRsDay(1);
+                      }
+                    }}
                     fullWidth
                     size="small"
                   />
