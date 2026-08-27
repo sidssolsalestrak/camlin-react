@@ -397,8 +397,19 @@ const ProductCategory = () => {
                             {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
                                 <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
                             )}
-                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button
+                                    onClick={() => showSubmitConfirmation()}
+                                    sx={{ mt: 2, textTransform: 'none' }}
+                                    color="primary"
+                                    variant='contained'
+                                    disabled={
+                                        String(original.stateName) === String(formData.stateName) &&
+                                        original.cityName.toLowerCase().trim() === formData.cityName.toLowerCase().trim()
+                                    }
+                                >
+                                    Update
+                                </Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}

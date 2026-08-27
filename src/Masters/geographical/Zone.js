@@ -335,6 +335,7 @@ const showSubmitConfirmation = () => {
               {(editId && [0, 2].includes(Number(accStat))) && (<Button
                 sx={{ ml: 1, width: "2rem",textTransform:'none' }}
                 variant="contained"
+                disabled={hdnZoneName.toLowerCase().trim() === zoneName.toLowerCase().trim()}
                 onClick={() => {
                   if (validateZone()) {
                     showSubmitConfirmation();

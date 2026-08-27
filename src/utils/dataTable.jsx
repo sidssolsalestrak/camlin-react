@@ -144,15 +144,11 @@ const DataTable = ({
 
   // Reset to first page and clear expanded rows whenever data changes
   useEffect(() => {
-    if (
-      !location.pathname.startsWith("/input/stock_sales/") &&
-      !location.pathname.startsWith("/reports/preview_stk_sales/") &&
-      !location.pathname.startsWith("/upload_closing")
-    ) {
-      setPage(0);
-    }
+   
+    setPage(0);
+    
     setExpandedRows({});
-  }, [data]);
+  }, [data.length]);
 
   // ── Stable row key ───────────────────────────────────────────────────────
   const getRowKey = (row, ri) => row.id ?? `row-${ri}`;

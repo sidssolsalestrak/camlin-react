@@ -23,6 +23,7 @@ export default function Region() {
     const [tabValue, setTabValue] = useState(1)
     const [zoneName, setZoneName] = useState([])
     const [selectedZone, setSelectedZone] = useState("0")
+    const [hdnZoneId, setHdnZoneId] = useState("0")
     const [regData, setRegData] = useState([])
     const [regionName, setRegionName] = useState("")
     const [hdnRegionName, setHdnRegionName] = useState("")
@@ -61,6 +62,7 @@ export default function Region() {
             setRegionName("")
             setSelectedZone("0")
             setHdnRegionName("")
+            setHdnZoneId("0")
             setZoneError(false)
             setRegionError(false)
             setEditId(null)
@@ -101,6 +103,7 @@ export default function Region() {
             let data = response.data.regIdres[0]
             setEditId(regId)
             setSelectedZone(data.zone_id)
+            setHdnZoneId(data.zone_id)
             setRegionName(data.reg_name)
             setHdnRegionName(data.reg_name)
             setZoneError(false)
@@ -336,7 +339,13 @@ export default function Region() {
                             </Button>)
                             }
                             {(decodedEditRegionId && [0, 2].includes(Number(accStat))) && (
-                                <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                <Button
+                                    variant="contained"
+                                    sx={{ width: '2rem', textTransform: 'none' }}
+                                    disabled={
+                                        String(hdnZoneId) === String(selectedZone) &&
+                                        hdnRegionName.toLowerCase().trim() === regionName.toLowerCase().trim()
+                                    }
                                     onClick={() => { if (validateRegion()) showSubmitConfirmation() }}>
                                     Update
                                 </Button>

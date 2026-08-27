@@ -33,6 +33,7 @@ export default function ReportingTabs() {
     const [allRepInputData, setAllRepInputData] = useState([])
     const [selAccType, setSelAccType] = useState("0")
     const [selRepInputData, setSelRepInputData] = useState([])
+    const [hdnSelRepInputData, setHdnSelRepInputData] = useState([])
     const [selUserMasName, setSelUserMasName] = useState("")
     const [userMasError, setUserMasError] = useState(false)
     const [accError, setAccError] = useState(false)
@@ -88,6 +89,7 @@ export default function ReportingTabs() {
     const resetFields = () => {
         setSelAccType("0")
         setSelRepInputData([])
+        setHdnSelRepInputData([])
         setSelUserMasType(null)        // ← reset to null
         setSelUserMasName("")
         setAccError(false)
@@ -192,6 +194,7 @@ export default function ReportingTabs() {
             let repeditdata = data[0].rep_form_id.split(',')
             let repnumberdata = repeditdata.map((val) => Number(val))
             setSelRepInputData(repnumberdata || [])
+            setHdnSelRepInputData(repnumberdata || [])
             setTabValue(0)
         } catch (err) {
             console.log(err)
@@ -372,9 +375,18 @@ export default function ReportingTabs() {
                                 ))}
                             </FormControl>
 
-                            <Button onClick={() => {
-                                if (validateReportingFields()) showSubmitConfirmation()
-                            }} variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}>
+                            <Button
+                                onClick={() => {
+                                    if (validateReportingFields()) showSubmitConfirmation()
+                                }}
+                                variant="contained"
+                                sx={{ width: '2rem', textTransform: 'none', mb: 3 }}
+                                disabled={
+                                    decodedUserId
+                                        ? [...selRepInputData].sort().join(",") === [...hdnSelRepInputData].sort().join(",")
+                                        : false
+                                }
+                            >
                                 {decodedUserId ? "Update" : "Create"}
                             </Button>
                         </Box>

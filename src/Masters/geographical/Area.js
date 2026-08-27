@@ -23,6 +23,8 @@ export default function Area() {
     const [tabValue, setTabValue] = useState(1)
     const [selRegion, setSelRegion] = useState(null)
     const [selState, setSelState] = useState(null)
+    const [hdnSelRegionId, setHdnSelRegionId] = useState(null)
+    const [hdnSelStateId, setHdnSelStateId] = useState(null)
     const [areaName, setAreaName] = useState("")
     const [hdnAreaName, setHdnAreaName] = useState("")
     const [allRegion, setAllRegion] = useState([])
@@ -74,6 +76,8 @@ export default function Area() {
     const resetFields = () => {
         setSelRegion(null)
         setSelState(null)
+        setHdnSelRegionId(null)
+        setHdnSelStateId(null)
         setAreaName("")
         setHdnAreaName("")
         setRegionError(false)
@@ -125,6 +129,8 @@ export default function Area() {
             const matchedState = allState.find(s => s.id === data.state_id) || null
             setSelRegion(matchedRegion)
             setSelState(matchedState)
+            setHdnSelRegionId(matchedRegion?.id ?? null)
+            setHdnSelStateId(matchedState?.id ?? null)
 
             setAreaName(data.area_name)
             setHdnAreaName(data.area_name)
@@ -378,7 +384,14 @@ export default function Area() {
                                     {decodedAreaId ? "Update" : "Create"}
                                 </Button>}
                             {(decodedAreaId && [0, 2].includes(Number(accStat))) &&
-                                <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                                <Button
+                                    variant="contained"
+                                    sx={{ width: '2rem', textTransform: 'none' }}
+                                    disabled={
+                                        String(hdnSelRegionId) === String(selRegion?.id) &&
+                                        String(hdnSelStateId) === String(selState?.id) &&
+                                        hdnAreaName.toLowerCase().trim() === areaName.toLowerCase().trim()
+                                    }
                                     onClick={() => { if (validateAreaFields()) showSubmitConfirmation() }}>
                                     Update
                                 </Button>
