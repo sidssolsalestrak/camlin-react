@@ -84,6 +84,7 @@ const ProductSubCategory = () => {
     })
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
+        category: "",
         catcode: "",
         catname: ""
     })
@@ -279,6 +280,7 @@ const ProductSubCategory = () => {
                     categoryName: data[0]?.sub_name || ""
                 });
                 setoriginal({
+                     category: data[0]?.cat_id || "",
                     catcode: data[0]?.sub_code || "",
                     catname: data[0]?.sub_name || ""
                 })
@@ -394,13 +396,18 @@ const ProductSubCategory = () => {
     useEffect(() => {
         if (!decodedId) {
             setFormData({ category: "", categoryCode: "", categoryName: "" });
-            setoriginal({ catcode: "", catname: "" })
+            setoriginal({category:"", catcode: "", catname: "" })
             resetValidations();
             return;
         }
         setValue('1');
         getEditData(decodedId);
     }, [decodedId]);
+
+    const isEdited =
+    String(formData.category) !== String(original.category) ||
+    formData.categoryCode.trim() !== original.catcode.trim() ||
+    formData.categoryName.trim() !== original.catname.trim();
 
     return (
         <Layout breadcrumb={[
@@ -472,7 +479,7 @@ const ProductSubCategory = () => {
                                 <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
                             )}
                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained' disabled={!isEdited}>Update</Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}

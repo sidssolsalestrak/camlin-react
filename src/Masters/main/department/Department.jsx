@@ -322,6 +322,8 @@ const Department = () => {
         getEditData(decodedId);
     }, [decodedId]);
 
+    const isEdited = formData.departmentName.trim() !== original.deptName.trim();
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -366,7 +368,7 @@ const Department = () => {
                                 <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
                             )}
                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'  disabled={!isEdited}>Update</Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}

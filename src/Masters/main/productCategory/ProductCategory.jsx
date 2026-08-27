@@ -46,25 +46,25 @@ const ProductCategory = () => {
         loadMasterPanel();
     }, []);
 
-       useEffect(() => {
+    useEffect(() => {
         const resolveAccStat = async () => {
-          try {
-            const res = await axios.post("/getAccStat", {
-              menu_url: "masters/cat",
-            });
-    
-            const stat = res.data?.data?.acc_stat;
-            if (stat !== null && stat !== undefined) {
-              localStorage.setItem("acc_stat", stat);
-              setAccStat(String(stat));
+            try {
+                const res = await axios.post("/getAccStat", {
+                    menu_url: "masters/cat",
+                });
+
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
+                }
+            } catch (err) {
+                console.log(err);
             }
-          } catch (err) {
-            console.log(err);
-          }
         };
-    
+
         resolveAccStat();
-      }, []);
+    }, []);
     /*---------- form fields ---------*/
     const [formData, setFormData] = useState({
         brand: "",
@@ -73,6 +73,7 @@ const ProductCategory = () => {
     })
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
+        brand: "",
         catcode: "",
         catname: ""
     })
@@ -280,6 +281,7 @@ const ProductCategory = () => {
                     categoryName: data[0]?.cat_name || ""
                 });
                 setoriginal({
+                    brand: data[0]?.brand_id || "",
                     catcode: data[0]?.cat_code || "",
                     catname: data[0]?.cat_name || ""
                 })
@@ -395,13 +397,18 @@ const ProductCategory = () => {
     useEffect(() => {
         if (!decodedId) {
             setFormData({ brand: "", categoryCode: "", categoryName: "" });
-            setoriginal({ catcode: "", catname: "" })
+            setoriginal({ brand: "", catcode: "", catname: "" })
             resetValidations();
             return;
         }
         setValue('1');
         getEditData(decodedId);
     }, [decodedId]);
+
+    const isEdited =
+        String(formData.brand) !== String(original.brand) ||
+        formData.categoryCode.trim() !== original.catcode.trim() ||
+        formData.categoryName.trim() !== original.catname.trim();
 
     return (
         <Layout breadcrumb={[
@@ -468,10 +475,10 @@ const ProductCategory = () => {
                                     helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
                             </Box>
                             {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2, textTransform: 'none' }} color="primary" variant='contained'>Create</Button>
                             )}
                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2, textTransform: 'none' }} color="primary" variant='contained'  disabled={!isEdited}>Update</Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}
