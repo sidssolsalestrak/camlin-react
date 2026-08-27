@@ -150,6 +150,7 @@ const ProductSubCategory = () => {
             onConfirm: () => deleteCat(row),
         });
     };
+    
     /*----------check validations ---------*/
     const validations = () => {
         let isValid = true;
