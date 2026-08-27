@@ -346,6 +346,10 @@ const Designation = () => {
         getEditData(decodedId);
     }, [decodedId]);
 
+    const isEdited =
+    formData.designation.trim() !== original.designation.trim() ||
+    formData.abbreviation.trim() !== original.abbreviation.trim();
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -399,7 +403,7 @@ const Designation = () => {
                                 <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
                             )}
                             {(decodedId && [0, 2].includes(Number(accStat))) && (
-                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Update</Button>
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'  disabled={!isEdited}>Update</Button>
                             )}
                         </TabPanel>
                         {/*---------------- View section--------------- */}

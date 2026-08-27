@@ -16,6 +16,8 @@ import AddStockist from './AddStockist';
 import ConfirmationDialog from '../../../utils/confirmDialog';
 import { MdOutlineEdit } from 'react-icons/md';
 import { getMasterPanel } from "../../../services/masterPanelService";
+import { Download } from '../../../utils/downloadExcel/Download';
+import CircularProgressLoading from '../../../utils/CircularProgressLoading';
 
 const style = {
     color: "#1a1917",
@@ -32,20 +34,25 @@ const Stockist = () => {
     const location = useLocation();
     const [tableData, settableData] = useState([])
     const [showTable, setshowTable] = useState(false)
+    const [zoneData, setzoneData] = useState([]);
     const [region, setregion] = useState([]);
     const [area, setarea] = useState([]);
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(false)
     const [formData, setFormdata] = useState({
+        zone: "0",
         region: "0",
         area: "0",
         status: "1"
     })
+    const [progress, setProgress] = useState(null);
     const [formError, setFormError] = useState(false);
     const [masterPanel, setMasterPanel] = useState({});
     const [accStat, setAccStat] = useState(null);
+    const [errors, setErrors] = useState({});
 
     // labels derived from masterPanel with fallbacks
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
     const stkLabel = masterPanel["STKS"] || "Stockist";
     const regionLabel = masterPanel["REGN"] || "Region";
     const areaLabel = masterPanel["AREA"] || "Area";
@@ -60,24 +67,24 @@ const Stockist = () => {
     }, []);
 
     useEffect(() => {
-                const resolveAccStat = async () => {
-                  try {
-                    const res = await axios.post("/getAccStat", {
-                      menu_url: "masters/stockist",
-                    });
-            
-                    const stat = res.data?.data?.acc_stat;
-                    if (stat !== null && stat !== undefined) {
-                      localStorage.setItem("acc_stat", stat);
-                      setAccStat(String(stat));
-                    }
-                  } catch (err) {
-                    console.log(err);
-                  }
-                };
-            
-                resolveAccStat();
-        }, []);
+        const resolveAccStat = async () => {
+            try {
+                const res = await axios.post("/getAccStat", {
+                    menu_url: "masters/stockist",
+                });
+
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        resolveAccStat();
+    }, []);
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
@@ -143,6 +150,7 @@ const Stockist = () => {
         setshowTable(false);
         settableData([])
         setFormdata({
+            zone: "0",
             region: "0",
             area: "0",
             status: "1"
@@ -261,10 +269,26 @@ const Stockist = () => {
         },
     ]
 
-    /*----------fetch regions---------*/
-    const fetchRegions = async () => {
+    const resetFields = (fields) => {
+        fields.forEach((field) => handleChangeForm(field, field === "user" ? [] : "0"));
+    };
+
+    /*------------ get zone data ---------- */
+    const fetchZone = async () => {
         try {
-            const res = await axios.post("/extractRegionList",{zone_id:null});
+            const res = await axios.post("/getReportsZone");
+            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
+            setzoneData(data);
+        } catch (error) {
+            console.error(error);
+            setzoneData([])
+        }
+    }
+
+    /*----------fetch regions---------*/
+    const fetchRegions = async (zone) => {
+        try {
+            const res = await axios.post("/extractRegionList", { zone_id: zone });
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setregion(data)
         } catch (error) {
@@ -292,12 +316,17 @@ const Stockist = () => {
     /*----------fetch table data---------*/
     const fetchTableData = async () => {
         try {
-            if (!formData.region || formData.region <= "0") {
-                showAlert.error(`Please select ${regionLabel}!`);
-                setFormError(true)
+            if (!formData.zone || formData.zone === "0") {
+                showAlert.error(`Please select ${zoneLabel}!`);
+                setErrors((prev) => ({ ...prev, zone: `${zoneLabel} is required` }));
                 return;
             }
-            setFormError(false)
+            setErrors((prev) => ({ ...prev, zone: "" }));
+            if (!formData.region || formData.region <= "0") {
+                showAlert.error(`Please select ${regionLabel}!`);
+                setErrors((prev) => ({ ...prev, region: `${regionLabel} is required` }));
+                return;
+            }
             setLoading(true);
             setshowTable(true);
             let payload = {
@@ -322,8 +351,16 @@ const Stockist = () => {
 
     /*----------initial render---------*/
     useEffect(() => {
-        fetchRegions();
+        fetchZone();
     }, [])
+
+    /*----------fetch region based on zone---------*/
+    useEffect(() => {
+        if (formData.zone) {
+            let zone = formData.zone;
+            fetchRegions(zone);
+        }
+    }, [formData.zone])
 
     /*----------fetch area based on region---------*/
     useEffect(() => {
@@ -332,6 +369,18 @@ const Stockist = () => {
             fetchArea(region);
         }
     }, [formData.region])
+
+    /*---------- handle excel download ---------*/
+    const download = async () => {
+        Download(
+            tableData,
+            columns,
+            "StockistMaster",
+            setProgress,
+            showAlert,
+            "StockistMaster"
+        )
+    }
 
     return (
         <Layout breadcrumb={[
@@ -360,28 +409,47 @@ const Stockist = () => {
                     {/*---------------- View section--------------- */}
                     <TabPanel value="2" sx={{ padding: "10px 20px" }}>
                         <Typography sx={style}>{stkLabel} Records</Typography>
-                        <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
+                        <Box sx={{ display: "flex", alignContent: "flex-start", gap: 1, flexWrap: "wrap", mb: 2 }}>
+                            <FormControl sx={{ width: "200px" }} size="small">
+                                <InputLabel id="zone">{zoneLabel}</InputLabel>
+                                <Select value={formData.zone} id='zone' label={zoneLabel} error={!!errors.zone}
+                                    labelId="zone" variant="outlined"
+                                    onChange={(e) => {
+                                        handleChangeForm("zone", e.target.value);
+                                        resetFields(["region", "area"]);
+                                        setregion([]);
+                                        setarea([]);
+                                        if (errors.zone) setErrors((prev) => ({ ...prev, zone: "" }));
+                                    }}>
+                                    <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
+                                    {zoneData?.map((val) => (
+                                        <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
+                                    ))}
+                                </Select>
+                                {errors?.zone && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.zone}</span>}
+                            </FormControl>
                             <FormControl sx={{ width: "200px" }} size="small" >
                                 <InputLabel id="region">{regionLabel}</InputLabel>
                                 <Select value={formData.region} id='region'
-                                 MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                                 label={regionLabel} error={formError}
+                                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                    label={regionLabel} error={!!errors.region}
                                     labelId="region" variant="outlined"
                                     onChange={(e) => {
                                         handleChangeForm("region", e.target.value);
                                         handleChangeForm("area", "0");
-                                        if (formError) setFormError(false);
+                                        if (errors.region) setErrors((prev) => ({ ...prev, region: "" }));
                                     }}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">Select</MenuItem>
                                     {region?.map((item, index) => (
                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.reg_name}</MenuItem>
                                     ))}
                                 </Select>
+                                {errors?.region && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.region}</span>}
                             </FormControl>
                             <FormControl sx={{ width: "200px" }} size="small" >
                                 <InputLabel id="area">{areaLabel}</InputLabel>
                                 <Select value={formData.area} id='area' label={areaLabel}
-                                    labelId="area" variant="outlined" 
+                                    labelId="area" variant="outlined"
                                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                                     onChange={(e) => handleChangeForm("area", e.target.value)}>
                                     <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
@@ -399,7 +467,8 @@ const Stockist = () => {
                                     <MenuItem style={{ fontSize: "11px" }} value="2">In Active</MenuItem>
                                 </Select>
                             </FormControl>
-                            <Button onClick={() => fetchTableData()} variant='contained' color="primary">Search</Button>
+                            <Button onClick={() => fetchTableData()} variant='contained' color="primary" sx={{ alignSelf: "flex-start" }}>Search</Button>
+                            {progress ? <CircularProgressLoading progress={progress} /> : <Button onClick={download} variant='contained' color="warning" sx={{ alignSelf: "flex-start" }}>Excel</Button>}
                         </Box>
                         {showTable &&
                             <DataTable

@@ -80,35 +80,32 @@ const AddProduct = () => {
         loadMasterPanel();
     }, []);
 
-     useEffect(() => {
-            const resolveAccStat = async () => {
-              try {
+    useEffect(() => {
+        const resolveAccStat = async () => {
+            try {
                 const res = await axios.post("/getAccStat", {
-                  menu_url: "masters/prod_mas",
+                    menu_url: "masters/prod_mas",
                 });
-        
+
                 const stat = res.data?.data?.acc_stat;
                 if (stat !== null && stat !== undefined) {
-                  localStorage.setItem("acc_stat", stat);
-                  setAccStat(String(stat));
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
                 }
-              } catch (err) {
+            } catch (err) {
                 console.log(err);
-              }
-            };
-        
-            resolveAccStat();
-        }, []);
+            }
+        };
+
+        resolveAccStat();
+    }, []);
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
     /*----------form fields ---------*/
     const [formData, setFormData] = useState(formFields)
     /*---------- original departmentName name for edit---------*/
-    const [original, setoriginal] = useState({
-        prod_name: "",
-        code: "",
-    })
+    const [original, setoriginal] = useState(formFields)
     /*----------form validations ---------*/
     const [validation, setValidations] = useState(validationFields)
 
@@ -270,7 +267,7 @@ const AddProduct = () => {
             const res = await axios.post("/editProductData", { id: decodedId })
             const data = res?.data?.data || [];
             if (data && data.length > 0) {
-                setFormData({
+                const editData = {
                     productType: data[0]?.prod_type ?? "0",
                     productName: data[0]?.prod_name || "",
                     subCatName: data[0]?.subcat_id ?? "",
@@ -286,11 +283,9 @@ const AddProduct = () => {
                     pcsPerCarton: zeroToEmpty(data[0]?.cart_pcs),
                     uom: data[0]?.prod_uom || "",
                     unitConvertion: zeroToEmpty(data[0]?.unit_conv),
-                });
-                setoriginal({
-                    prod_name: data[0]?.prod_name || "",
-                    code: data[0]?.code || "",
-                })
+                };
+                setFormData(editData);
+                setoriginal(editData);
             }
         } catch (error) {
             console.error(error);
@@ -304,7 +299,7 @@ const AddProduct = () => {
             setConfirmationDialog(prev => ({ ...prev, loading: true }));
             if (decodedId) {
                 payload.id = decodedId
-                payload.prodNameNew = original.prod_name.trim()
+                payload.prodNameNew = original.productName.trim()
                 payload.codeOld = original.code
             }
             const res = await axios.post("/prodmas_update", payload)
@@ -352,6 +347,15 @@ const AddProduct = () => {
             e.preventDefault();
         }
     };
+
+    const isEdited = Object.keys(formFields).some((key) => {
+        const currentVal = formData[key];
+        const originalVal = original[key];
+        if (typeof currentVal === "string" && typeof originalVal === "string") {
+            return currentVal.trim() !== originalVal.trim();
+        }
+        return String(currentVal ?? "") !== String(originalVal ?? "");
+    });
 
     return (
         <Layout breadcrumb={[
@@ -498,7 +502,7 @@ const AddProduct = () => {
                     {(decodedId && [0, 2].includes(Number(accStat))) && (
                         <Button onClick={() => showSubmitConfirmation()}
                             startIcon={<ImDownload3 style={{ height: "15px" }} />}
-                            variant='contained' color="primary">
+                            variant='contained' color="primary"  disabled={!isEdited}>
                             Update
                         </Button>
                     )}

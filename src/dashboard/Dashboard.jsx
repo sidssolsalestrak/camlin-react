@@ -156,7 +156,7 @@ export default function Dashboard() {
   const [userTypeOptions, setUserTypeOptions] = useState([]); // from backend, mirrors $user_type_mas
   const [empTypeOptions, setEmpTypeOptions] = useState([]);   // from backend, mirrors $bumas
   const [activityBreakUp, setActivityBreakUp] = useState("2"); // default '2' per PHP ng-init
-  const [cusType, setCusType] = useState("");                  // '' = All, '2' = Retailer
+  const [cusType, setCusType] = useState("0");                  // '' = All, '2' = Retailer
   const [empType, setEmpType] = useState("0");                 // '0' = All
   const [showAllReported, setShowAllReported] = useState(true); // toggleCheckbox4 default checked
 
@@ -1142,7 +1142,7 @@ export default function Dashboard() {
                           value={cusType}
                           onChange={(e) => setCusType(e.target.value)}
                         >
-                          <MenuItem style={{ fontSize: "11px" }} value="">All</MenuItem>
+                          <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                           <MenuItem style={{ fontSize: "11px" }} value="2">Retailer</MenuItem>
                         </Select>
                       </FormControl>

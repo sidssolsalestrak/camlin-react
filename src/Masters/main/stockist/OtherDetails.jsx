@@ -209,6 +209,14 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             fetchRegion();
             fetchState();
             fetchUser();
+        } else {
+            // zone got cleared/reset from outside — wipe all dependents
+            setregionData([]);
+            setarea([]);
+            setteritory([]);
+            setUser([]);
+            setstate([]);
+            setcity([]);
         }
     }, [formData?.zone]);
 
@@ -230,6 +238,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     useEffect(() => {
         if (formData?.supplied_Type > 0) {
             fetchSuppliedTo();
+        } else {
+            setsupplied_by([]);
         }
     }, [formData?.supplied_Type]);
 
@@ -381,7 +391,11 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             <FormControl fullWidth size="small" required>
                 <InputLabel id="City">City</InputLabel>
                 <Select value={formData.city} id='City' label="City" error={!!errors.city} MenuProps={menuStyle}
-                    labelId="City" variant="outlined" onChange={(e) => handleChangeForm("city", e.target.value)}>
+                    labelId="City" variant="outlined" onChange={(e) => {
+                        const selectedCity = city.find((val) => val.id === e.target.value);
+                        handleChangeForm("city", e.target.value);
+                        handleChangeForm("cityName", selectedCity?.city_name || "");
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {city?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.city_name}</MenuItem>

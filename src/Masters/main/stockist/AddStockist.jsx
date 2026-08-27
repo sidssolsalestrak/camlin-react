@@ -19,7 +19,7 @@ const INITIAL_FORM_STATE = {
     userID: "", password: "", confirmPassword: "", blockStatus: "0",
     //other Details
     zone: "", region: "", area: "", teritory: "", user: [], supplied_Type: "", supplied_By: "", state: "",
-    city: "", category: "", matrixGroup: "",
+    city: "", cityName: "", category: "", matrixGroup: "",
 };
 
 const AddStockist = () => {
@@ -50,28 +50,28 @@ const AddStockist = () => {
     }, []);
 
     useEffect(() => {
-                const resolveAccStat = async () => {
-                  try {
-                    const res = await axios.post("/getAccStat", {
-                      menu_url: "masters/stockist",
-                    });
-            
-                    const stat = res.data?.data?.acc_stat;
-                    if (stat !== null && stat !== undefined) {
-                      localStorage.setItem("acc_stat", stat);
-                      setAccStat(String(stat));
-                    }
-                  } catch (err) {
-                    console.log(err);
-                  }
-                };
-            
-                resolveAccStat();
-            }, []);
+        const resolveAccStat = async () => {
+            try {
+                const res = await axios.post("/getAccStat", {
+                    menu_url: "masters/stockist",
+                });
+
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        resolveAccStat();
+    }, []);
 
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
-        userID: "",
+        ...INITIAL_FORM_STATE,
         password: "",
     })
     const [errors, setErrors] = useState({});
@@ -165,7 +165,7 @@ const AddStockist = () => {
                 console.log(error);
             }
 
-            setFormData({
+            const editData = {
                 type: data.stk_type_id || "",
                 code: data.stk_code || "",
                 name: data.stk_name || "",
@@ -177,6 +177,7 @@ const AddStockist = () => {
                 email: data.stk_email || "",
                 state: data.state_id || "",
                 city: data.city_id || "",
+                cityName: data.city_name || "",
                 category: data.stk_cat_id || "",
                 matrixGroup: data.stk_matrix_id || "",
                 zone: data.zone_id || "",
@@ -187,15 +188,19 @@ const AddStockist = () => {
                 supplied_By: data.sup_id || "",
                 supplied_Type: data.sup_type_id || "",
                 blockStatus: String(data.stk_stat) || "",
+            };
+
+            setFormData({
+                ...editData,
                 password: "",
                 confirmPassword: "",
                 user: [],
             });
 
             setoriginal({
-                userID: data.stk_login || "",
-                password: data.stk_pwd || "",
-                code: data.stk_code || "",
+                ...editData,
+                password: data.stk_pwd || "",   // real stored password, for the "did they type a new one" check
+                user: [],                        // placeholder; reconciled once defaultUserId resolves (see step 4)
             });
 
         } catch (error) {
@@ -272,6 +277,7 @@ const AddStockist = () => {
         stk_email: (formData.email || "").trim(),
         state_id: formData.state,
         city_id: formData.city,
+        city_name: formData.cityName || "",
         stk_cat_id: formData.category || 0,
         stk_matrix_id: formData.matrixGroup || 0,
         zone_id: formData.zone,
@@ -356,6 +362,23 @@ const AddStockist = () => {
         setErrors({})
     }, [decodedId]);
 
+    const currentUserIds = (formData.user || []).map(u => u.id).sort().join(",");
+    const originalUserIds = (defaultUserId || []).slice().sort().join(",");
+
+    const isEdited = isReactivate ? true : (decodedId ? (
+    Object.keys(INITIAL_FORM_STATE).some((key) => {
+        if (["password", "confirmPassword", "user", "cityName"].includes(key)) return false;
+        const cur = formData[key];
+        const orig = original[key];
+        if (typeof cur === "string" && typeof orig === "string") {
+            return cur.trim() !== orig.trim();
+        }
+        return String(cur ?? "") !== String(orig ?? "");
+    })
+    || !!formData.password
+    || currentUserIds !== originalUserIds
+) : true);
+
     return (
         <Box>
             <Grid container spacing={2}>
@@ -407,7 +430,7 @@ const AddStockist = () => {
                                 <Button
                                     startIcon={<ImDownload3 style={{ height: "15px" }} />}
                                     onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }}
-                                    color="primary" variant='contained'>
+                                    color="primary" variant='contained' disabled={!isEdited}>
                                     Update
                                 </Button>
                             )}
