@@ -30,8 +30,8 @@ function OtpTwoStepValidate() {
     }, [navigate]);
 
     const handleSubmitOtp = async () => {
-        if (otp.length !== 4) {
-            toast.error("Please enter the 4 digit OTP");
+        if (otp.length !== 6) {
+            toast.error("Please enter the 6 digit OTP");
             return;
         }
 
@@ -79,7 +79,7 @@ function OtpTwoStepValidate() {
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === "Enter" && otp.length === 4 && !isLoading) {
+        if (e.key === "Enter" && otp.length === 6 && !isLoading) {
             handleSubmitOtp();
         }
     };
@@ -120,7 +120,7 @@ function OtpTwoStepValidate() {
                    sx={{ paddingTop: "1rem", fontSize: "1.1rem", opacity: "0.9"}}
 
                 >
-                    Enter 4 digit Assigned OTP
+                    Enter 6 digit Assigned OTP
                 </Typography>
                 <TextField
                     variant="outlined"
@@ -131,11 +131,11 @@ function OtpTwoStepValidate() {
                     autoFocus
                     inputProps={{
                         pattern: "[0-9]*",
-                        maxLength: 4,
+                        maxLength: 6,
                     }}
                     value={otp}
                     onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                         setOtp(value);
                     }}
                     onKeyDown={handleKeyDown}
@@ -171,7 +171,7 @@ function OtpTwoStepValidate() {
                     variant="contained"
                     size="small"
                     color="success"
-                    disabled={isLoading || otp.length !== 4}
+                    disabled={isLoading || otp.length !== 6}
                     onClick={handleSubmitOtp}
                     sx={{
                         marginTop: 3,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FormControl,
   InputLabel,
@@ -23,6 +23,8 @@ export default function CommonAppSelect({
   sx = {},
   required = false
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <FormControl
       fullWidth
@@ -51,6 +53,9 @@ export default function CommonAppSelect({
         multiple={multiple}
         value={value}
         label={label}
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
         onChange={(e) => {
           if (multiple && Array.isArray(e.target.value)) {
             const normalized = [...new Set(e.target.value.map(String))];
@@ -98,7 +103,11 @@ export default function CommonAppSelect({
         }}
       >
         {options.map((item) => (
-          <MenuItem key={item[valueKey]} value={String(item[valueKey])}>
+          <MenuItem
+            key={item[valueKey]}
+            value={String(item[valueKey])}
+            onClick={() => setOpen(false)}
+          >
             <ListItemText primary={item[labelKey]} />
           </MenuItem>
         ))}

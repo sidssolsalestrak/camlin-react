@@ -29,6 +29,7 @@ export default function MenuMaster() {
     const [repData, setRepData] = useState([])
     const [selUserInputData, setSelUserInputData] = useState(null)   // ← null instead of "0"
     const [selRepData, setSelRepData] = useState([])
+    const [hdnSelRepData, setHdnSelRepData] = useState([])
     const [selUserMasName, setSelUserMasName] = useState("")
     const [userTypeErr, setUserTypeErr] = useState(false)
     // eslint-disable-next-line
@@ -101,6 +102,7 @@ export default function MenuMaster() {
 
     const resetFields = () => {
         setSelRepData([])
+        setHdnSelRepData([])
         setSelUserInputData(null)   // ← reset to null
     }
 
@@ -215,6 +217,7 @@ export default function MenuMaster() {
             let repeditdata = data[0].menu_id.split(',')
             let repnumberdata = repeditdata.map((val) => Number(val))
             setSelRepData(repnumberdata || [])
+            setHdnSelRepData(repnumberdata || [])
             setTabValue(0)
         } catch (err) {
             console.log("collect Edit Data err", err)
@@ -317,7 +320,14 @@ export default function MenuMaster() {
                                 ))}
                             </FormControl>
 
-                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none', mb: 3 }}
+                            <Button
+                                variant="contained"
+                                sx={{ width: '2rem', textTransform: 'none', mb: 3 }}
+                                disabled={
+                                    decodedmenuId
+                                        ? [...selRepData].sort().join(",") === [...hdnSelRepData].sort().join(",")
+                                        : false
+                                }
                                 onClick={() => { if (validateFields()) showSubmitConfirmation() }}>
                                 {decodedmenuId ? "Update" : "Create"}
                             </Button>

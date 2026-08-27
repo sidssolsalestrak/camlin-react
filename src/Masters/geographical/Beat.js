@@ -26,6 +26,8 @@ export default function Beat() {
     const [tabValue, setTabValue] = useState(1)
     const [selTerritory, setSelTerritory] = useState("0")
     const [selArea, setSelArea] = useState("0")
+    const [hdnSelTerritory, setHdnSelTerritory] = useState("0")
+    const [hdnSelArea, setHdnSelArea] = useState("0")
     const [beatName, setBeatName] = useState("")
     const [hdnBeatName, setHdnBeatName] = useState("")
     const [allTerritory, setAllTerritory] = useState([])
@@ -93,6 +95,8 @@ export default function Beat() {
         setBeatName("")
         setRegId(null)
         setSelArea("0")
+        setHdnSelTerritory("0")
+        setHdnSelArea("0")
         setHdnBeatName("")
         setAllTerritory([])
         setIsAreaChanged(false)
@@ -155,6 +159,7 @@ export default function Beat() {
             let data = response.data.data[0]
             setRegId(data.reg_id)
             setSelArea(data.area_id)
+            setHdnSelArea(data.area_id)
             setBeatName(data.beat_name)
             setHdnBeatName(data.beat_name)
             setTerritoryError(false)
@@ -164,6 +169,7 @@ export default function Beat() {
             setTabValue(0)
             await fetchTerritoriesForEdit(data.area_id)
             setSelTerritory(data.ter_id)
+            setHdnSelTerritory(data.ter_id)
             setIsAreaChanged(false)
             setAccStat(response?.data?.acc_stat?? null);
             if (response?.data?.acc_stat !== null && response?.data?.acc_stat !== undefined) {
@@ -421,6 +427,10 @@ export default function Beat() {
                                 <Button
                                     variant="contained"
                                     sx={{ width: '2rem', textTransform: 'none' }}
+                                    disabled={
+                                        String(hdnSelTerritory) === String(selTerritory) &&
+                                        hdnBeatName.toLowerCase().trim() === beatName.toLowerCase().trim()
+                                    }
                                     onClick={() => { if (validateBeatFields()) showSubmitConfirmation() }}
                                 >
                                    Update

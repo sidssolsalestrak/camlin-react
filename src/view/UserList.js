@@ -31,6 +31,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { getMasterPanel } from "../services/masterPanelService";
+import { jwtDecode } from 'jwt-decode'
 
 
 function UserList() {
@@ -70,7 +71,7 @@ function UserList() {
 
   const [masterPanel, setMasterPanel] = useState({});
   const [accStat, setAccStat] = useState(null);
-
+  const [userType,setUserType]=useState(null)
   // labels derived from masterPanel with fallbacks
   const userLabel = masterPanel["USER"] || "Users";
   const departmentLabel = masterPanel["DEPT"] || "Department";
@@ -92,6 +93,19 @@ function UserList() {
     };
     loadMasterPanel();
   }, []);
+
+  useEffect(() => {
+      const token = localStorage.getItem("session-token");
+      if (token) {
+        try {
+          let decoded = jwtDecode(token)
+          setUserType(decoded.user_type)
+          console.log("decoded user id", decoded.user_id)
+        } catch (err) {
+          console.log(err)
+        }
+      }
+    }, [])
 
   useEffect(() => {
                 const resolveAccStat = async () => {
@@ -501,7 +515,7 @@ function UserList() {
               />
             </div>
           )}
-          {[0, 2].includes(Number(accStat)) && (
+          { Number(userType)===2 && [0, 2].includes(Number(accStat)) && (
             <div className="dltBtn actionBtn">
               <FaTrash
                 style={{ cursor: "pointer", color: "red" }}

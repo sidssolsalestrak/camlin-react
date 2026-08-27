@@ -25,6 +25,7 @@ export default function Territory() {
     const [accStat, setAccStat] = useState(null)
     const [tabValue, setTabValue] = useState(1)
     const [selArea, setSelArea] = useState(null)
+    const [hdnSelAreaId, setHdnSelAreaId] = useState(null)
     const [terName, setTerName] = useState("")
     const [hdnTerName, setHdnTerName] = useState("")
     const [allArea, setAllArea] = useState([])
@@ -70,6 +71,7 @@ export default function Territory() {
 
     const resetFields = () => {
         setSelArea(null)
+        setHdnSelAreaId(null)
         setTerName("")
         setHdnTerName("")
         setAreaError(false)
@@ -109,6 +111,7 @@ export default function Territory() {
             let data = response.data.data[0]
             const selectedArea = allArea.find(area => area.id === data.area_id)
             setSelArea(selectedArea || null)
+            setHdnSelAreaId(selectedArea?.id ?? null)
             setTerName(data.ter_name)
             setHdnTerName(data.ter_name)
             setAreaError(false)
@@ -330,7 +333,13 @@ export default function Territory() {
                             </Button>
                             }
                             {decodedEditTerritoryId && [0,2].includes(Number(accStat)) &&
-                            <Button variant="contained" sx={{ width: '2rem', textTransform: 'none' }}
+                            <Button
+                                variant="contained"
+                                sx={{ width: '2rem', textTransform: 'none' }}
+                                disabled={
+                                    String(hdnSelAreaId) === String(selArea?.id) &&
+                                    hdnTerName.toLowerCase().trim() === terName.toLowerCase().trim()
+                                }
                                 onClick={() => { if (validateTerritoryFields()) showSubmitConfirmation() }}>
                               Update
                             </Button>
