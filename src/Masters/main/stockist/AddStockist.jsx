@@ -364,20 +364,21 @@ const AddStockist = () => {
 
     const currentUserIds = (formData.user || []).map(u => u.id).sort().join(",");
     const originalUserIds = (defaultUserId || []).slice().sort().join(",");
+    const userChanged = currentUserIds === "" ? false : currentUserIds !== originalUserIds;
 
     const isEdited = isReactivate ? true : (decodedId ? (
-    Object.keys(INITIAL_FORM_STATE).some((key) => {
-        if (["password", "confirmPassword", "user", "cityName"].includes(key)) return false;
-        const cur = formData[key];
-        const orig = original[key];
-        if (typeof cur === "string" && typeof orig === "string") {
-            return cur.trim() !== orig.trim();
-        }
-        return String(cur ?? "") !== String(orig ?? "");
-    })
-    || !!formData.password
-    || currentUserIds !== originalUserIds
-) : true);
+        Object.keys(INITIAL_FORM_STATE).some((key) => {
+            if (["password", "confirmPassword", "user", "cityName"].includes(key)) return false;
+            const cur = formData[key];
+            const orig = original[key];
+            if (typeof cur === "string" && typeof orig === "string") {
+                return cur.trim() !== orig.trim();
+            }
+            return String(cur ?? "") !== String(orig ?? "");
+        })
+        || !!formData.password
+        || userChanged
+    ) : true);
 
     return (
         <Box>
