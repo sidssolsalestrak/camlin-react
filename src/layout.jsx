@@ -51,10 +51,19 @@ const HtmlTooltip = styled(({ className, ...props }) => (
   },
 }));
 
+const getStoredDrawerState = (fallback) => {
+  try {
+    const stored = sessionStorage.getItem("drawerOpen");
+    return stored !== null ? JSON.parse(stored) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 const Layout = ({ children, breadcrumb = [] }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
+  const [drawerOpen, setDrawerOpen] = useState(() => getStoredDrawerState(!isMobile));
   const [anchorEl, setAnchorEl] = useState(null);
   const [anchorEl1, setAnchorEl1] = React.useState(null);
   const open = Boolean(anchorEl1);
@@ -62,8 +71,8 @@ const Layout = ({ children, breadcrumb = [] }) => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [profileimg,setProfileimg] =useState(null)
-  const [profileName,setProfileName]=useState('')
+  const [profileimg, setProfileimg] = useState(null)
+  const [profileName, setProfileName] = useState('')
   const fetchedProfileRef = useRef(false);
   // Dynamic menu state (from 2nd file)
   const [menuHtml, setMenuHtml] = useState("");
@@ -106,28 +115,28 @@ const Layout = ({ children, breadcrumb = [] }) => {
 
     const token = localStorage.getItem("session-token");
     if (token) {
-        try {
-            let decoded = jwtDecode(token);
-            let fetchUserData = async () => {
-                if (decoded.user_id) {
-                    try {
-                        let res = await api.post('/getUserBasicData', { id: decoded.user_id });
-                        let profdata = Array.isArray(res.data.data) ? res.data.data : [];
-                        setProfileimg(profdata[0]?.image_upl ? `${process.env.REACT_APP_PROFILE_URL}/${profdata[0]?.image_upl}` : null);
-                        setProfileName(profdata[0]?.full_name ? profdata[0].full_name : '');
-                    } catch (err) {
-                        console.log(err);
-                        setProfileimg(null);
-                        setProfileName('');
-                    }
-                }
-            };
-            fetchUserData();
-        } catch (err) {
-            console.log(err);
-        }
+      try {
+        let decoded = jwtDecode(token);
+        let fetchUserData = async () => {
+          if (decoded.user_id) {
+            try {
+              let res = await api.post('/getUserBasicData', { id: decoded.user_id });
+              let profdata = Array.isArray(res.data.data) ? res.data.data : [];
+              setProfileimg(profdata[0]?.image_upl ? `${process.env.REACT_APP_PROFILE_URL}/${profdata[0]?.image_upl}` : null);
+              setProfileName(profdata[0]?.full_name ? profdata[0].full_name : '');
+            } catch (err) {
+              console.log(err);
+              setProfileimg(null);
+              setProfileName('');
+            }
+          }
+        };
+        fetchUserData();
+      } catch (err) {
+        console.log(err);
+      }
     }
-}, []);
+  }, []);
 
   // Wire up treeview toggles after menuHtml renders
   useEffect(() => {
@@ -284,15 +293,27 @@ const Layout = ({ children, breadcrumb = [] }) => {
 
   // Sync drawer with mobile breakpoint
   useEffect(() => {
-    let datasubmissionURL =
+    const datasubmissionURL =
       location.pathname.startsWith("/reports/sec_sales_data") ||
       location.pathname.startsWith("/reports/preview_stk_sales/");
-    let restrictDrawer = !isMobile && !datasubmissionURL;
-    setDrawerOpen(restrictDrawer);
+
+    if (isMobile) {
+      setDrawerOpen(false);
+    } else if (datasubmissionURL) {
+      setDrawerOpen(false);
+    } else {
+      setDrawerOpen(getStoredDrawerState(true));
+    }
   }, [isMobile, location.pathname]);
 
   const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
+    const newState = !drawerOpen;
+    setDrawerOpen(newState);
+    try {
+      sessionStorage.setItem("drawerOpen", JSON.stringify(newState));
+    } catch (err) {
+      console.log("sessionStorage error:", err);
+    }
   };
 
   const handleMenuClick = (event) => {
@@ -736,7 +757,7 @@ const Layout = ({ children, breadcrumb = [] }) => {
                       }}
                       src={profileimg}
                     >
-                    
+
                     </Avatar>
                   </IconButton>
 
@@ -764,11 +785,11 @@ const Layout = ({ children, breadcrumb = [] }) => {
                         {profileName}
                       </Typography>
                     </MenuItem>
-                    <MenuItem onClick={()=>navigate('/change_password')}>
-                    <ListItemIcon>
-                    <MdLock color="#5f6368" />
-                    </ListItemIcon>
-                    <Typography>Change Password</Typography>
+                    <MenuItem onClick={() => navigate('/change_password')}>
+                      <ListItemIcon>
+                        <MdLock color="#5f6368" />
+                      </ListItemIcon>
+                      <Typography>Change Password</Typography>
                     </MenuItem>
                     <MenuItem
                       onClick={async () => {
