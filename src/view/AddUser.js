@@ -2291,7 +2291,12 @@ function AddUser() {
                 <CommonAppSelect
                   label="Plan Submission Cutoff"
                   value={planSubCutoff}
-                  onChange={(e) => setPlanSubCutoff(e.target.value)}
+                  onChange={(e) =>{
+                    setPlanSubCutoff(e.target.value)
+                    if(e.target.value !== "3" || e.target.value !== "4"){
+                      setPsDay("")
+                    }
+                  }}
                   options={[
                     { id: "0", name: "No Rules" },
                     { id: "1", name: "End of Previous Month" },
@@ -2349,14 +2354,28 @@ function AddUser() {
                   label="Report Submission Cutoff"
                   value={repSubCutoff}
                   onChange={(e) => {
-                    setRepSubCutoff(e.target.value)
-                    if (e.target.value === "3" && weekend.length === 0) {
-                      setWeekend([1])
+                    const val = e.target.value;
+                    setRepSubCutoff(val);
+
+                    if (val === "3" && weekend.length === 0) {
+                      setWeekend([1]);
                     }
-                    if (e.target.value === "5") {
-                      setRsDay(1)
+                    else{
+                      setWeekend("")
                     }
-                  }}
+
+                    if (val === "5") {
+                      // Restore the original lag day if this field started as "5",
+                      // otherwise this is a genuinely new selection → default to 1
+                      const restoreValue =
+                        originalData && String(originalData.repSubCutoff) === "5" && originalData.rsDay
+                          ? originalData.rsDay
+                          : 1;
+                      setRsDay(restoreValue);
+                    } else {
+                      setRsDay("");
+                    }
+                }}
                   options={[
                     { id: "0", name: "No Rules" },
                     { id: "1", name: "Real Time" },

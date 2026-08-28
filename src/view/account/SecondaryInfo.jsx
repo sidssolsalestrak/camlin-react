@@ -7,15 +7,16 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
         <div>
             <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField
-                        label="Competitor Preference"
-                        fullWidth size="small"
-                        value={form.competitorPref}
-                        InputLabelProps={{ shrink: true }} 
-                        onChange={(e) =>
-                            setForm({ ...form, competitorPref: String(e.target.value) })
-                        }
-                    />
+                  <TextField
+                    label="Competitor Preference"
+                    fullWidth size="small"
+                    value={form.competitorPref}
+                    InputLabelProps={{ shrink: true }} 
+                    onChange={(e) => {
+                        const onlyText = e.target.value.replace(/^\s+/, "");
+                        setForm({ ...form, competitorPref: onlyText });
+                    }}
+                />
                 </Grid>
 
                 {/* Marketing Tools */}
@@ -32,20 +33,21 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                             }
                             options={marketingOptions}
                             valueKey="id"
-                            labelKey="tool_name"
+                            labelKey="marketing_tool_type"
                         />
                     </Grid>
                 )}
 
                 {/* Hobbies & Interests */}
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField
+                   <TextField
                         label="Hobbies & Interests"
                         fullWidth size="small"
                         value={form.hobbies?.toString() || ""}
-                        onChange={(e) =>
-                            setForm({ ...form, hobbies: String(e.target.value) })
-                        }
+                        onChange={(e) => {
+                            const onlyText = e.target.value.replace(/^\s+/, "");
+                            setForm({ ...form, hobbies: onlyText });
+                        }}
                     />
                 </Grid>
 

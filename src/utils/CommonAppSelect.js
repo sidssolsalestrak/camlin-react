@@ -21,7 +21,8 @@ export default function CommonAppSelect({
   multiple = false,
   error = false,
   sx = {},
-  required = false
+  required = false,
+  disabled = false
 }) {
   const [open, setOpen] = useState(false);
 
@@ -30,6 +31,7 @@ export default function CommonAppSelect({
       fullWidth
       size={size}
       error={Boolean(error)}
+      required={required}
       sx={{
         "& .MuiInputLabel-root": {
           color: Boolean(error) ? "#d32f2f" : "inherit",
@@ -43,9 +45,19 @@ export default function CommonAppSelect({
         "& .MuiFormLabel-asterisk": {
           color: Boolean(error) ? "#d32f2f !important" : "inherit",
         },
+        ...(disabled && {
+          "& .MuiOutlinedInput-root": {
+            backgroundColor: "#EEEEEE",
+          },
+          "& .MuiSelect-select": {
+            backgroundColor: "#EEEEEE",
+          },
+          "& .MuiInputLabel-root.Mui-disabled": {
+            color: "rgba(0, 0, 0, 0.6)",
+          },
+        }),
         ...sx,
       }}
-      required={required}
     >
       <InputLabel>{label}</InputLabel>
 
@@ -53,8 +65,9 @@ export default function CommonAppSelect({
         multiple={multiple}
         value={value}
         label={label}
-        open={open}
-        onOpen={() => setOpen(true)}
+        disabled={disabled}
+        open={disabled ? false : open}
+        onOpen={() => !disabled && setOpen(true)}
         onClose={() => setOpen(false)}
         onChange={(e) => {
           if (multiple && Array.isArray(e.target.value)) {
