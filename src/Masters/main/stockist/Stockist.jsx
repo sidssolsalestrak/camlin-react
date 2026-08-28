@@ -375,9 +375,10 @@ const Stockist = () => {
 
     /*---------- handle excel download ---------*/
     const download = async () => {
+        const exportColumns = columns.filter((col) => col.headerName !== "ACTION");
         Download(
             tableData,
-            columns,
+            exportColumns,
             "StockistMaster",
             setProgress,
             showAlert,
