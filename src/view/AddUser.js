@@ -2265,7 +2265,7 @@ function AddUser() {
                     </Box>
 
                     {/* Deactivate button */}
-                    {(accStatus === 0 && delFlag === 0 && [0,2].includes(Number(accStat))) &&  (
+                    {(accStatus === 0 && delFlag === 0 && [0,2].includes(Number(accStat))) && Number(sessionId) !== id  && (
                       <Button
                         variant="contained"
                         color="error"

@@ -151,6 +151,7 @@ function UploadClosing() {
   const [pendingMapRow, setPendingMapRow] = useState(null);
   const [mapActionRowKey, setMapActionRowKey] = useState(null);
   const [rawInvalidCell, setRawInvalidCell] = useState(null);
+  const suppressTglEffect = useRef(false);
 
   const [mapConfirm, setMapConfirm] = useState({
     open: false,
@@ -412,6 +413,10 @@ function UploadClosing() {
   ]);
 
   useEffect(() => {
+    if (suppressTglEffect.current) {
+      suppressTglEffect.current = false;
+      return;
+    }
     if (selDesName && selDesName !== "0") loadDesListData();
   }, [selDesName, selMonth, tglVal]);
 
@@ -511,8 +516,11 @@ function UploadClosing() {
       return;
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
+
+    suppressTglEffect.current = true; // <-- prevents the duplicate getDesList race
     setLoading(true);
     if (overrideTglVal === undefined) setTglVal(0);
+
     try {
       const res = await api.post("/add_manual", {
         des_name_id: desId,
@@ -534,7 +542,7 @@ function UploadClosing() {
     if (manualMode) {
       handleAddManual(newVal);
     }
-  };
+  }
 
   const handleRawMappingChange = (pageIdx, colIdx, value) => {
     setRawPages((prev) =>

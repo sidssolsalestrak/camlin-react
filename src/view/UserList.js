@@ -57,6 +57,7 @@ function UserList() {
   const [currentAccStat, setCurrentAccStat] = useState(0)
   const [tableData, setTableData] = useState([]);
   const [progress, setProgress] = useState(null);
+  const [sesUserId,setSesUserId]=useState(null)
   const toast = useToast()
   const [modifyLoading, setModifyLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -100,6 +101,7 @@ function UserList() {
         try {
           let decoded = jwtDecode(token)
           setUserType(decoded.user_type)
+          setSesUserId(decoded.user_id)
           console.log("decoded user id", decoded.user_id)
         } catch (err) {
           console.log(err)
@@ -802,6 +804,8 @@ function UserList() {
     return dayjs(val).format("DD-MMM-YYYY hh:mm a");
   };
 
+  console.log("Dialog data which is passing", dialogData)
+
   console.log("dialog data in usr", dialogData[0]?.deact_type)
   return (
     <Layout
@@ -1252,7 +1256,7 @@ function UserList() {
                           }}
                         />
                       </FormControl>
-                      {Number(currentAccStat) !== 1 && [0, 2].includes(Number(accStat)) && (
+                      {Number(currentAccStat) !== 1 && [0, 2].includes(Number(accStat)) && Number(sesUserId)!==Number(dialogData[0]?.id) &&  (
                         <Box sx={{ ml: { md: 10, xs: 0 }, mt: { xs: 3, md: 2 } }}>
                           <Button
                             sx={{ width: '15rem' }}

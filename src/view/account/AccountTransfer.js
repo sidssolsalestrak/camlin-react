@@ -33,6 +33,7 @@ function AccountTransfer() {
     const [selBeat, setSelBeat] = useState([])
     const [allCustomerList, setAllCustomerList] = useState([])
     const [selectedRows, setSelectedRows] = useState([])
+    const [transferType,setTransferType]=useState(2)
     const [errors, setErrors] = useState({})
     const [modifyLoading, setModifyLoading] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -280,7 +281,8 @@ function AccountTransfer() {
                 frm_user_id: selFromUser.id,
                 to_user_id: selToUser.id,
                 beat_id: selBeat.join(','),
-                cus_id: selectedRows.join(',')
+                cus_id: selectedRows.join(','),
+                transferType:transferType
             }
             let response = await api.post("/transferCustomerAccount", payload)
             if (response.data.success) {
@@ -442,6 +444,21 @@ function AccountTransfer() {
                         borderRadius: "10px",
                     }}>
                         <Grid container spacing={0.95}>
+                        <Grid size={{ md: 3.3, lg:2.3, xs: 12, sm: 4 }}>
+                        <FormControl fullWidth>
+                        <InputLabel id="transType">Type</InputLabel>
+                        <Select
+                            size="small"
+                            label="Type"
+                            labelId="transType"
+                            value={transferType}
+                            onChange={(e) => setTransferType(e.target.value)}
+                        >
+                            <MenuItem value={1}>Account Share</MenuItem>
+                            <MenuItem value={2}>Account Transfer</MenuItem>
+                        </Select>
+                        </FormControl>
+                        </Grid>
                         <Grid size={{ md: 3.3, lg:2.3, xs: 12, sm: 4 }}>
                         <FormControl fullWidth>
                             <Autocomplete
