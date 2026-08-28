@@ -23,11 +23,12 @@ import { getMasterPanel } from "../../services/masterPanelService";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
-  m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
-    "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-  padding: "16px 18px",
+  m: 1.5, borderRadius: '10px', boxShadow:
+  "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+  padding: '16px 18px',
   width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
 }
+
 const subHeaderStyle = { textDecoration: "underline", textUnderlineOffset: "5px", textDecorationColor: "#ccc" }
 
 const ALL_REGION_OPTION = { id: "0", reg_name: "All" };
@@ -162,6 +163,90 @@ function CreateCustomer() {
     email: "",
     contactNum: {}   // ← indexed by clinic position: { 0: "error", 1: "" , ... }
   });
+
+  // ── Baseline snapshot for "Generate Update Request" change detection ──
+  const [originalSnapshot, setOriginalSnapshot] = useState(null);
+
+  // ── Normalizes only user-editable fields so unrelated noise (beatOptions,
+  //    clinicId, brand names, etc.) never triggers a false "changed" state.
+  const buildComparableSnapshot = (formVal, clinicsVal, brandDataVal, competitorRowsVal) => {
+    const f = {
+      cusType: formVal.cusType || "",
+      retailerType: formVal.retailerType || "",
+      pharmaType: formVal.pharmaType || "",
+      practiseType: formVal.practiseType || "",
+      gender: formVal.gender || "",
+      firstName: (formVal.firstName || "").trim(),
+      lastName: (formVal.lastName || "").trim(),
+      titleQualification: formVal.titleQualification || "",
+      mobile: formVal.mobile || "",
+      sendSms: formVal.sendSms || "0",
+      email: formVal.email || "",
+      sendEmail: formVal.sendEmail || "0",
+      potentiality: formVal.potentiality || "",
+      loyalty: formVal.loyalty || "",
+      loyaltyType: formVal.loyaltyType || "",
+      frequency: formVal.frequency || "48",
+      keyOpinionLeader: formVal.keyOpinionLeader !==null && formVal.keyOpinionLeader!==undefined ? String(formVal.keyOpinionLeader):"0" ,
+      adoption: formVal.adoption || "",
+      region: formVal.region || "",
+      competitorPref: formVal.competitorPref || "",
+      hobbies: formVal.hobbies || "",
+      remarks: formVal.remarks || "",
+      agegroup: formVal.agegroup || "",
+      dob: formVal.dobNA ? "" : (formVal.dob || ""),
+      dobNA: !!formVal.dobNA,
+      anniversary: formVal.anniversaryNA ? "" : (formVal.anniversary || ""),
+      anniversaryNA: !!formVal.anniversaryNA,
+      customerLatitude: String(formVal.customerLatitude || "0"),
+      customerLongitude: String(formVal.customerLongitude || "0"),
+    };
+
+    const c = (clinicsVal || []).map(cl => ({
+      repIncharge: cl.repIncharge || "0",
+      repInchargePOS: cl.repInchargePOS || "0",
+      beat: cl.beat || "",
+      clinicName: cl.clinicName || "",
+      contactName: cl.contactName || "",
+      contactNo: cl.contactNo || "",
+      hospitalAttached: cl.hospitalAttached || "0",
+      pharmacyAttached: cl.pharmacyAttached || "0",
+      meetingDays: [...(cl.meetingDays || [])].sort(),
+      meetingTime: cl.meetingTime || "",
+      address: cl.address || "",
+      city: cl.city || "",
+      zipCode: String(cl.zipCode || ""),
+      stkId: cl.stkId || "0",
+      phChain: cl.phChain || "",
+    }));
+
+    const b = (brandDataVal || [])
+      .map(br => ({ subCatId: br.subCatId, focus: br.focus || 0, reminder: br.reminder || 0 }))
+      .sort((x, y) => String(x.subCatId).localeCompare(String(y.subCatId)));
+
+    const comp = (competitorRowsVal || [])
+      .map(r => ({
+        subcat_id: r.subcat_id,
+        pid: r.pid,
+        prod_qty: r.prod_qty || 0,
+        comp_id_1: r.comp_id_1 || "0",
+        comp_id_1_qty: r.comp_id_1_qty || 0,
+        comp_id_2: r.comp_id_2 || "0",
+        comp_id_2_qty: r.comp_id_2_qty || 0,
+        comp_id_3: r.comp_id_3 || "0",
+        comp_id_3_qty: r.comp_id_3_qty || 0,
+        other_name: r.other_name || "",
+        oth_qty: r.oth_qty || 0,
+      }))
+      .sort((x, y) => String(x.pid).localeCompare(String(y.pid)) || String(x.subcat_id).localeCompare(String(y.subcat_id)));
+
+    return JSON.stringify({ f, c, b, comp });
+  };
+
+  const isUpdateDisabled = () => {
+    if (originalSnapshot === null) return false; // baseline not loaded yet — don't block
+    return buildComparableSnapshot(form, clinics, brandData, competitorRows) === originalSnapshot;
+  };
 
   const { handleSubmit, handleUpdate } = useSubmitCustomer({
     form, clinics, brandData, competitorBrands, competitorRows, setFieldErrors, setForm
@@ -554,6 +639,32 @@ function CreateCustomer() {
 
   //get edit data
   useEffect(() => {
+      setForm({
+      cusType: "2",
+      gender: "1",
+      retailerType: "1",
+      practiseType: "",
+      pharmaType: "1",
+      marketingTools: [],
+      agegroup: "1",
+      potentiality: "1",
+      region: "0",
+    });
+    setClinics([{ ...DEFAULT_CLINIC }]);
+    setBrandData([]);
+    setCompetitorRows([]);
+    setOriginalSnapshot(null);
+    setLocationTagged(false);
+    setSelectedLocation({ latitude: "0", longitude: "0" });
+    setDelFlag(0);
+    setPendingRequest(null);
+    setFieldErrors({ mobile: "", email: "", contactNum: {} });
+
+    // ── reset dependent dropdown lists too, so B doesn't inherit A's
+    //    rep/beat/distributor/brand options while the new fetch is in flight
+    setRepInchargeOptions([]);
+    setRepPOSOptions([]);
+    setDistributorOptions([]);
     if (!decodedID || decodedID === "0") return;
 
     const getEditData = async () => {
@@ -576,7 +687,7 @@ function CreateCustomer() {
         }
 
         // ── 4. Populate primary form fields (no lat/long here)
-        setForm({
+        const loadedForm = {
           cusType: String(d.cus_type_id || "2"),
           retailerType: String(d.retail_type || "1"),
           pharmaType: String(d.pharmacy_type_id || 1),
@@ -593,8 +704,13 @@ function CreateCustomer() {
           loyalty: String(d.l_class_id || "0"),
           loyaltyType: String(d.loyality_id || "0"),
           frequency: String(d.cus_visit_freq || ""),
-          keyOpinionLeader: String(d.kol_stat || "1"),
+          keyOpinionLeader: d.kol_stat !== null && d.kol_stat !== undefined
+          ? String(d.kol_stat)
+          : "0",
           adoption: String(d.adoption_id || "0"),
+          marketingTools: d.marketing_tool_ids
+          ? String(d.marketing_tool_ids).split(",").filter(Boolean)
+          : [],
           region: String(d.reg_id || "0"),
           competitorPref: d.comp_pref || "",
           hobbies: d.hob_intersest || "",
@@ -606,12 +722,14 @@ function CreateCustomer() {
           anniversaryNA: d.wedding_stat === 1,
           customerLatitude: "0",   // ← will be updated from clinic row
           customerLongitude: "0",   // ← will be updated from clinic row
-        });
+        };
+        setForm(loadedForm);
 
         setDelFlag(d.del_flag ?? 0);
         await checkPendingRequest();
 
         // ── 5. Load all dependent dropdowns in parallel
+        let loadedBrandData = [];
         if (d.reg_id) {
           const [repRes, repPosRes, distRes, brandsRes, freqRes] = await Promise.all([
             api.post("/getRepIncharge", { regId: String(d.reg_id), requestType: String(d.cus_type_id) }),
@@ -630,15 +748,72 @@ function CreateCustomer() {
             no_freq_visit: String(i.no_freq_visit),
           })));
           let com_count=0
-          setBrandData((brandsRes.data.data || []).map(b => ({
+          loadedBrandData = (brandsRes.data.data || []).map(b => ({
           subCatId: String(b.id),
           name: b.sub_name,
           focus: b.foc? 1 : 0,
           reminder: b.rem ? 1 : 0,
           competition: 0,
           compCount:b.subcat_id>0?com_count+1:com_count,
-          })));
+          }));
+          setBrandData(loadedBrandData);
         }
+
+        // ── 5b. Load actual competitor rows for EVERY brand so the baseline
+        //        matches exactly what a no-op AddCompetitor save would produce.
+        let loadedCompetitorRows = [];
+        if (loadedBrandData.length > 0) {
+          try {
+            const compRequests = loadedBrandData.map(brand =>
+              api.post("/getCompModal", {
+                subcat_id: brand.subCatId,
+                cus_id: decodedID || 0,
+                temp_id: 0,
+              })
+            );
+            const compResponses = await Promise.all(compRequests);
+
+            compResponses.forEach((cRes, index) => {
+              const brand = loadedBrandData[index];
+              const backendProducts = cRes.data.data?.products || [];
+
+              const rowsForThisBrand = backendProducts
+                .filter(p =>
+                  Number(p.prod_qty) > 0 ||
+                  Number(p.comp_id_1) > 0 ||
+                  Number(p.comp_id_2) > 0 ||
+                  Number(p.comp_id_3) > 0 ||
+                  Number(p.oth_qty) > 0 ||
+                  (p.other_name && p.other_name.trim() !== '')
+                )
+                .map(p => ({
+                  pid: p.pid,
+                  subcat_id: brand.subCatId,
+                  prod_qty: p.prod_qty || 0,
+                  comp_id_1: p.comp_id_1 ? String(p.comp_id_1) : "0",
+                  comp_id_1_qty: p.comp_id_1_qty || 0,
+                  comp_id_2: p.comp_id_2 ? String(p.comp_id_2) : "0",
+                  comp_id_2_qty: p.comp_id_2_qty || 0,
+                  comp_id_3: p.comp_id_3 ? String(p.comp_id_3) : "0",
+                  comp_id_3_qty: p.comp_id_3_qty || 0,
+                  other_name: p.other_name || "",
+                  oth_qty: p.oth_qty || 0,
+                }));
+
+              loadedCompetitorRows = [...loadedCompetitorRows, ...rowsForThisBrand];
+            });
+
+            // ── keep brandData's compCount in sync with actual saved rows ──
+            loadedBrandData = loadedBrandData.map(b => ({
+              ...b,
+              compCount: loadedCompetitorRows.filter(r => r.subcat_id === b.subCatId).length,
+            }));
+            setBrandData(loadedBrandData);
+          } catch (err) {
+            console.error("competitor rows load error", err);
+          }
+        }
+        setCompetitorRows(loadedCompetitorRows);
 
         // ── 6. CLINIC rows — API based on isTemp
         //       isTemp=false → /getcusdetData    → cus_det table
@@ -660,6 +835,8 @@ function CreateCustomer() {
             customerLatitude: String(lat),
             customerLongitude: String(long),
           }));
+          loadedForm.customerLatitude = String(lat);
+          loadedForm.customerLongitude = String(long);
 
           // Replace the existing if block with this:
           const hasLocation = lat && long && String(lat) !== "0" && String(long) !== "0";
@@ -715,8 +892,21 @@ function CreateCustomer() {
           );
 
           setClinics(clinicsWithBeats);
+
+          // ── capture baseline for change detection ──
+          setOriginalSnapshot(
+            buildComparableSnapshot(
+              loadedForm,
+              clinicsWithBeats,
+              loadedBrandData,
+              loadedCompetitorRows
+            )
+          );
         } else {
           setClinics([{ ...DEFAULT_CLINIC }]);
+          setOriginalSnapshot(
+            buildComparableSnapshot(loadedForm, [{ ...DEFAULT_CLINIC }], loadedBrandData, loadedCompetitorRows)
+          );
         }
 
       } catch (error) {
@@ -775,6 +965,7 @@ function CreateCustomer() {
                 delFlag === 0 && [0, 2, 1].includes(Number(accStat)) && (
                   <Button
                     variant="contained"
+                    disabled={isUpdateDisabled()}
                     onClick={() => handleUpdate(decodedID)}
                   >
                     Generate Update Request
@@ -799,19 +990,42 @@ function CreateCustomer() {
         </Box>
       </Box>
       <Box sx={headContainer}>
+       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Typography variant="h6" color="initial" sx={subHeaderStyle}>Primary Details</Typography>
-        <Divider />
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'end' }}>
+          <Box>
+            <LocationOnIcon
+              sx={{
+                color: locationTagged ? "green" : "red",
+                height: "30px",
+                width: "30px",
+                cursor: "pointer",
+                transition: "color 0.3s ease",
+              }}
+              onClick={handleOpenMap}
+            />
+          </Box>
+          {fieldErrors.location && <Typography sx={{color:'#D32F2F',fontSize:'9px'}}>{fieldErrors.location}</Typography>}
+        </Box>
+      </Box>
+      <Divider sx={{ mt: -1.5 }} />
         <Grid container spacing={2} alignItems="center">
           {/* Account Type */}
           <Grid size={{ xs: 12, md: 3, lg: 3 }}>
             <CommonAppSelect
-              label={`${masterPanel["ACCM"] || "Account"} Type`}
+              label={fieldConfig["Customer Type"]?.label || "Type"}
               value={form.cusType}
               onChange={handleAccTypeChange}
               options={dropdowns.cusTypeMas}
               valueKey="id"
               labelKey="cus_type_name"
               required={true}
+              disabled={!!decodedID && decodedID !== "0"}
+              sx={
+                decodedID && decodedID !== "0"
+                  ? { backgroundColor: "#EEEEEE" }
+                  : undefined
+              }
               error={!!fieldErrors.cusType}
               helperText={fieldErrors.cusType}
             />
@@ -871,39 +1085,8 @@ function CreateCustomer() {
               />
             </Grid>
           )}
-
-          <Grid size={{ xs: 12, md: 3, lg: 3 }}>
-            <LocationOnIcon
-              sx={{
-                color: locationTagged ? "green" : "red",   // ← red → green after tagging
-                height: "30px",
-                width: "30px",
-                cursor: "pointer",
-                transition: "color 0.3s ease",
-              }}
-              onClick={handleOpenMap}
-            />
-            {fieldErrors.location && <Typography sx={{color:'#D32F2F',fontSize:'9px'}}>{fieldErrors.location}</Typography>}
-          </Grid>
-
-          {/* Gender */}
-          {fieldConfig["Gender"]?.show && isHcpField && (
-            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
-              <CommonAppSelect
-                label={fieldConfig["Gender"]?.label || "Gender"}
-                value={form.gender}
-                onChange={(e) =>
-                  setForm({ ...form, gender: String(e.target.value) })
-                }
-                options={genderOptions}
-                valueKey="id"
-                labelKey="gender_name"
-              />
-            </Grid>
-          )}
-
           {/* First Name */}
-          {fieldConfig["First Name"]?.show && (
+          {fieldConfig["First Name"]?.show && !isHcpField && (
             <Grid size={{ xs: 12, md: 3, lg: 3 }}>
               <TextField
                 label={fieldConfig["First Name"]?.label || "First Name"}
@@ -920,9 +1103,30 @@ function CreateCustomer() {
                 helperText={fieldErrors.firstName}
               />
             </Grid>
-          )}
-
+           )}
+          </Grid>
+          {isHcpField && <Grid container spacing={2} alignItems="center">
           {/* First Name */}
+          {fieldConfig["First Name"]?.show && isHcpField && (
+            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
+              <TextField
+                label={fieldConfig["First Name"]?.label || "First Name"}
+                fullWidth required
+                size="small"
+                sx={{height:'3rem'}}
+                value={form.firstName || ""}
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, firstName: onlyText })
+                  setFieldErrors((prev) => ({ ...prev, firstName: "" }));
+                }}
+                error={!!fieldErrors.firstName}
+                helperText={fieldErrors.firstName}
+              />
+            </Grid>
+           )}
+
+             {/* Last Name */}
           {fieldConfig["Last Name"]?.show && isHcpField && (
             <Grid size={{ xs: 12, md: 3, lg: 3 }}>
               <TextField
@@ -937,8 +1141,22 @@ function CreateCustomer() {
               />
             </Grid>
           )}
-
-          {/* Title / Qualification – hcpDiv2 */}
+          {/* Gender */}
+          {fieldConfig["Gender"]?.show && isHcpField && (
+            <Grid size={{ xs: 12, md: 3, lg: 3 }}>
+              <CommonAppSelect
+                label={fieldConfig["Gender"]?.label || "Gender"}
+                value={form.gender}
+                onChange={(e) =>
+                  setForm({ ...form, gender: String(e.target.value) })
+                }
+                options={genderOptions}
+                valueKey="id"
+                labelKey="gender_name"
+              />
+            </Grid>
+          )}
+           {/* Title / Qualification – hcpDiv2 */}
           {fieldConfig["Title/Qualification"]?.show && isHcpField && (
             <Grid size={{ xs: 12, md: 3 }}>
               <TextField
@@ -952,8 +1170,11 @@ function CreateCustomer() {
               />
             </Grid>
           )}
+          </Grid> }
 
+     
           {/* Mobile */}
+          <Grid container spacing={2} alignItems="center">
           {fieldConfig["Mobile"]?.show && (
             <Grid size={{ xs: 12, md: 3 }}>
               <TextField
@@ -1023,7 +1244,8 @@ function CreateCustomer() {
               </FormControl>
             </Grid>
           )}
-
+          </Grid>
+          <Grid container spacing={2} alignItems="center">
           {/* Potentiality Class */}
           {fieldConfig["Potentiality Class"]?.show && (
             <Grid size={{ xs: 12, md: 3 }}>
@@ -1049,7 +1271,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Key Opinion Leader"].label || "Key Opinion Leader"}
-                value={form.keyOpinionLeader}
+                value={form.keyOpinionLeader || "0"}
                 onChange={(e) =>
                   setForm({ ...form, keyOpinionLeader: String(e.target.value) })
                 }
@@ -1068,7 +1290,7 @@ function CreateCustomer() {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Loyalty Class"].label || "Loyalty Class"}
-                value={form.loyalty}
+                value={form.loyalty || 1}
                 onChange={(e) =>
                   setForm({ ...form, loyalty: String(e.target.value) })
                 }
@@ -1096,6 +1318,44 @@ function CreateCustomer() {
             </Grid>
           )}
 
+           {/* Region */}
+          {fieldConfig["Region"]?.show && !isHcpField && (
+            <Grid size={{ xs: 12, md: 3, lg: 3 }} sx={{height:'3rem'}}>
+              <CommonAppSelect
+                label={fieldConfig["Region"]?.label || "Region"}
+                value={form.region || "0"}
+                onChange={(e) => handleRegionChange(String(e.target.value))}
+                options={regionOptions}
+                valueKey="id"
+                labelKey="reg_name"
+                required={true}
+                error={!!fieldErrors.region}
+                helperText={fieldErrors.region}
+              />
+              {fieldErrors.region && (
+                <Typography sx={{ color: "#d32f2f", fontSize: "9px", ml: 1 }}>{fieldErrors.region}</Typography>
+              )}
+            </Grid>
+          )}
+
+        
+          {/* Remarks */}
+          {fieldConfig["Remarks"]?.show && !isHcpField && (
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                label={fieldConfig["Remarks"]?.label || "Remarks"}
+                fullWidth size="small" multiline rows={2}
+                value={form.remarks || ""}
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+/, "")
+                  setForm({ ...form, remarks: onlyText })
+                }}
+              />
+            </Grid>
+          )}
+          </Grid>
+
+          <Grid container spacing={2} alignItems="center">
           {fieldConfig["Loyalty Type"]?.show && (
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
@@ -1128,7 +1388,7 @@ function CreateCustomer() {
           )}
 
           {/* Region */}
-          {fieldConfig["Region"]?.show && (
+          {fieldConfig["Region"]?.show && isHcpField && (
             <Grid size={{ xs: 12, md: 3, lg: 3 }} sx={{height:'3rem'}}>
               <CommonAppSelect
                 label={fieldConfig["Region"]?.label || "Region"}
@@ -1148,7 +1408,7 @@ function CreateCustomer() {
           )}
 
           {/* Remarks */}
-          {fieldConfig["Remarks"]?.show && (
+          {fieldConfig["Remarks"]?.show && isHcpField && (
             <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 label={fieldConfig["Remarks"]?.label || "Remarks"}
@@ -1161,7 +1421,7 @@ function CreateCustomer() {
               />
             </Grid>
           )}
-        </Grid>
+          </Grid>
         {/*------------ SecondaryInfo------------------------ */}
         <Typography variant="h6" color="initial" sx={subHeaderStyle}>Secondary Info</Typography>
         <Divider />

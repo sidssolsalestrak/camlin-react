@@ -31,6 +31,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
     handleClinicContactNoBlur,
 }) => {
     const id = React.useId();
+    console.log("field config of meeting time",fieldConfig["Meeting Time"])
     return (
         <div style={{ marginBottom: "10%" }}>
             <Box sx={headContainer}>
@@ -44,7 +45,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                             </AccordionSummary>
                             <Divider />
                             <AccordionDetails sx={{ pt: 2 }}>
-                                <Grid container spacing={2}>
+                                <Grid container spacing={2}  sx={{ mb: 2 }}>
 
                                  {isHcp && (
                                         <Grid size={{ xs: 12, md: 4 }}>
@@ -136,6 +137,26 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                             />
                                         </Grid>
                                     )}
+                                     {/* Clinic Name */}
+                                    {fieldConfig["Clinic Name"]?.show && (
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <TextField
+                                                label={isRetailer ? fieldConfig["Clinic Name"]?.label : "Clinic Name"}
+                                                fullWidth size="small" placeholder='Enter Clinic Name'
+                                                value={clinic.clinicName}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "clinicName", onlyText)
+                                                }}
+                                                required={true}
+                                                error={!!fieldErrors.clinicName}
+                                                helperText={fieldErrors.clinicName}
+                                            />
+                                        </Grid>
+                                    )}
+
+                                  </Grid>
+                                   <Grid container spacing={2} sx={{ mb: 2 }}>
 
                                     {/* Contact Person */}
                                     {fieldConfig["Contact Person"]?.show && (
@@ -185,6 +206,8 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
+                                     </Grid>
+                                     <Grid container spacing={2}  sx={{ mb: 2 }}>
                                     {/* City */}
                                     {fieldConfig["City"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
@@ -229,8 +252,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
-                                    {/* Distributor */}
-                                    {fieldConfig["Distributor"]?.show && (
+                                    {fieldConfig["Distributor"]?.show && !isHcp && (
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
                                                 <InputLabel id="Distributor">Distributor</InputLabel>
@@ -255,6 +277,34 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
+                                    </Grid>
+                                     <Grid container spacing={2}  sx={{ mb: 2 }}>
+                                    
+                                      {/* Distributor */}
+                                    {fieldConfig["Distributor"]?.show && isHcp && (
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
+                                                <InputLabel id="Distributor">Distributor</InputLabel>
+                                                <Select value={clinic.stkId} id='Distributor' label="Distributor" 
+                                                    labelId="Distributor" variant="outlined"
+                                                      MenuProps={{
+                                                            PaperProps: {
+                                                                style: {
+                                                                    maxHeight: 200
+                                                                }
+                                                            }
+                                                        }}
+                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}>
+                                                    {distributorOptions?.map((item, index) => (
+                                                        <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
+                                                            {item?.stk_code} - {item?.stk_name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                                {fieldErrors.stkId && <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.stkId}</Typography>}
+                                            </FormControl>
+                                        </Grid>
+                                    )}
                                     {/* Pharmacy Attached */}
                                     {fieldConfig["Pharmacy Attached"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
@@ -269,6 +319,21 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
+                                     {/* Meeting Timings */}
+                                    {fieldConfig["Meeting Time"]?.show && (
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <TextField
+                                                label={fieldConfig["Meeting Time"]?.label || "Meeting Timings"}
+                                                fullWidth size="small"
+                                                value={clinic.meetingTime}
+                                                onChange={(e) => {
+                                                    const onlyText = e.target.value.replace(/^\s+/, "")
+                                                    updateClinic(idx, "meetingTime", onlyText)
+                                                }}
+                                            />
+                                        </Grid>
+                                    )}
+                                    </Grid>
                                     {/* Meeting Days */}
                                     {fieldConfig["Meeting Days"]?.show && (
                                         <Grid size={{ xs: 12, md: 8 }}>
@@ -293,21 +358,6 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
-                                    {/* Meeting Timings */}
-                                    {fieldConfig["Meeting Time"]?.show && (
-                                        <Grid size={{ xs: 12, md: 4 }}>
-                                            <TextField
-                                                label={fieldConfig["Meeting Time"]?.show || "Meeting Timings"}
-                                                fullWidth size="small"
-                                                value={clinic.meetingTime}
-                                                onChange={(e) => {
-                                                    const onlyText = e.target.value.replace(/^\s+/, "")
-                                                    updateClinic(idx, "meetingTime", onlyText)
-                                                }}
-                                            />
-                                        </Grid>
-                                    )}
-                                </Grid>
                             </AccordionDetails>
                         </Accordion>
                     </Box>
