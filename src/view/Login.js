@@ -366,7 +366,7 @@ function Login() {
                 label="User Name"
                 value={email}
                 onChange={(e) => {
-                  const onlyText = e.target.value.replace(/^\s+/, "");
+                  const onlyText = e.target.value.replace(/^\s+|\s+$/g, "");
                   setEmail(onlyText);
                 }}
               />

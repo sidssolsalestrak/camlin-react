@@ -96,7 +96,7 @@ function PassExpReset() {
                         size="small"
                         sx={{ mb: 1.5 }}
                         label="Enter Email"
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value.replace(/^\s+|\s+$/g, ""))}
                         value={email}
                     />
                     <TextField
