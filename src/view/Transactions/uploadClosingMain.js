@@ -111,13 +111,14 @@ function UploadClosing() {
   const [allDesname, setAllDesName] = useState([]);
 
   const [selDesName, setSelDesName] = useState(() => {
-    if ((Number(checking) === 1 || Number(checking === 2)) && decodedStkId) {
+    if ((Number(checking) === 1 || Number(checking) === 2) && decodedStkId) {
       return decodedStkId;
     }
     return "0";
   });
 
   const fileInputRef = useRef(null);
+  const latestReqRef = useRef(0);
 
   const [loading, setLoading] = useState(false);
   const [tableData, setTableData] = useState([]);
@@ -151,6 +152,7 @@ function UploadClosing() {
   const [pendingMapRow, setPendingMapRow] = useState(null);
   const [mapActionRowKey, setMapActionRowKey] = useState(null);
   const [rawInvalidCell, setRawInvalidCell] = useState(null);
+  const suppressTglEffect = useRef(false);
 
   const [mapConfirm, setMapConfirm] = useState({
     open: false,
@@ -386,15 +388,17 @@ function UploadClosing() {
   const loadDesListData = useCallback(async () => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") return;
+    const reqId = ++latestReqRef.current;   // ① claim this request
     setLoading(true);
     try {
       const res = await api.post("/getDesList", {
         des_name_id: desId,
         selected_mnt: parseMonth(selMonth),
-        pro_status: decodedProcStat ?? 0,
+        pro_status: Number(decodedProcStat) ?? 0,
         btn_val: decodedBtnVal ?? 0,
         tgl_val: tglVal,
       });
+      if (reqId !== latestReqRef.current) return;  // ② drop if stale
       setManualMode(false);
       handleApiResponse(res.data);
     } catch (err) {
@@ -402,18 +406,34 @@ function UploadClosing() {
     } finally {
       setLoading(false);
     }
-  }, [
-    selDesName,
-    selMonth,
-    handleApiResponse,
-    decodedProcStat,
-    decodedBtnVal,
-    tglVal,
-  ]);
+  }, [selDesName, selMonth, handleApiResponse, decodedProcStat, decodedBtnVal, tglVal]);
 
   useEffect(() => {
+    if (suppressTglEffect.current) {
+      suppressTglEffect.current = false;
+      return;
+    }
     if (selDesName && selDesName !== "0") loadDesListData();
   }, [selDesName, selMonth, tglVal]);
+
+  useEffect(() => {
+  const newMonth = decodedMnt
+    ? (() => {
+        const parsed = dayjs(decodedMnt, "MMM YYYY");
+        return parsed.isValid() ? parsed : dayjs();
+      })()
+    : dayjs();
+
+  const newDesName =
+    (Number(checking) === 1 || Number(checking) === 2) && decodedStkId
+      ? decodedStkId
+      : "0";
+
+  suppressTglEffect.current = true; // avoid a double fetch from tglVal reset
+  resetUploadState();
+  setSelMonth(newMonth);
+  setSelDesName(newDesName);
+}, [defEncode, enMonth, endistributor, enProcessStat, enProcessDataStat]);
 
   const handleFileChange = (e, slotIndex) => {
     if (!selDesName || selDesName === "0") {
@@ -499,20 +519,25 @@ function UploadClosing() {
       }
     } catch (err) {
       console.error("import:", err);
+      await loadDesListData();
+      toast.error("something went wrong, Try again!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddManual = async (overrideTglVal) => {
+    const handleAddManual = async (overrideTglVal) => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") {
       toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"}.`);
       return;
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
+
+    suppressTglEffect.current = true;
     setLoading(true);
     if (overrideTglVal === undefined) setTglVal(0);
+
     try {
       const res = await api.post("/add_manual", {
         des_name_id: desId,
@@ -520,7 +545,7 @@ function UploadClosing() {
         add_tgl_val: tglToSend,
       });
       setManualMode(true);
-      handleApiResponse(res.data);
+      handleApiResponse(res.data); // OK now — showTable no longer collapses on empty rows
     } catch (err) {
       console.error("addManual:", err);
     } finally {
@@ -534,7 +559,7 @@ function UploadClosing() {
     if (manualMode) {
       handleAddManual(newVal);
     }
-  };
+  }
 
   const handleRawMappingChange = (pageIdx, colIdx, value) => {
     setRawPages((prev) =>
@@ -1224,6 +1249,7 @@ function UploadClosing() {
           if (response.data.message) {
             toast.success(response.data.message);
           }
+          setActiveFilter("total");
           await loadDesListData();
         } catch (err) {
           console.error(err);
@@ -1401,7 +1427,7 @@ function UploadClosing() {
   const isRawPending = processStat === 4;
   const canUpdateApproved = isApproved && Number(btnVal) !== 1;
   const canEditQty = Number(docType) === 1 || canUpdateApproved;
-  const showTable = tableData.length > 0;
+  const showTable = tableData.length > 0 || manualMode;
   const rawMode = rawPages.length > 0;
   const currentRawPage = rawPages[rawPageIndex] || null;
   const isLastRawPage = rawPageIndex === rawPages.length - 1;
@@ -1425,7 +1451,7 @@ function UploadClosing() {
 
     const numbered = rows.map((r, i) => ({ ...r, _sl: i + 1 }));
 
-    if (isApproved && numbered.length > 0) {
+    if (isApproved || manualMode) {
       const grandTotal = numbered.reduce(
         (sum, r) => sum + (Number(r.prod_qty) || 0),
         0,
@@ -1744,7 +1770,7 @@ function UploadClosing() {
             </Box>
             {!isApproved ? (
               <Box sx={{ ml: 2.5 }}>
-                {row.strak_prod_name ? (
+                {row.strak_prod_name !==null ? (
                   <Typography variant="caption">
                     <Box component="span" color="text.secondary">
                       mapped as:{" "}
@@ -1994,6 +2020,14 @@ function UploadClosing() {
     setSelectAll(false);
     setSelCategory("all");
     setPreviewFile(null);
+    setTableData([]);
+    setMasId(null);
+    setJsonName(null);
+    setDocType(1);
+    setProcessStat(null);
+    setImgData([]);
+    setFileType(null);
+    setBtnVal(Number(decodedBtnVal ?? 0));
   };
 
   return (
@@ -2008,7 +2042,10 @@ function UploadClosing() {
         <Paper
           elevation={0}
           sx={{
-            p: "16px 18px",
+            pt: "16px",
+            pr: "18px",
+            pb: "24px", 
+            pl: "18px",
             borderRadius: "10px",
             boxShadow:
               "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
@@ -2091,7 +2128,13 @@ function UploadClosing() {
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
               <>
                 <Grid size={{ xs: 12, sm: "auto" }}>
-                  <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
+                    }}
+                  >
                     <Typography sx={{ fontWeight: 600 }}>
                       Upload File
                     </Typography>
@@ -2173,7 +2216,9 @@ function UploadClosing() {
                           width: "fit-content",
                           whiteSpace: "nowrap",
                           position: "absolute",
-                          mt: 6,
+                          top: "100%",
+                          left: 0,
+                          mt: 0.5,
                         }}
                       >
                         + ADD MORE
@@ -2261,7 +2306,7 @@ function UploadClosing() {
               </>
             )}
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
-              <Grid size={{ xs: 12, sm: "auto" }}>
+              <Grid size={{ xs: 12, sm: "auto" }} sx={{mt:2}}>
                 <Button
                   variant="contained"
                   onClick={handleImport}
@@ -2409,6 +2454,18 @@ function UploadClosing() {
                       >
                         {processStat}
                       </Typography>
+                    )}
+                    {isRejected && masId &&  tableData.length === 0 && (
+                      <Grid size={{ xs: 12, sm: "auto",ml:2 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          sx={{ backgroundColor: "#F39C12", color: "white" }}
+                          onClick={handleAbort}
+                        >
+                          Abort
+                        </Button>
+                      </Grid>
                     )}
                 </Box>
               </Grid>
@@ -2672,7 +2729,7 @@ function UploadClosing() {
                   Abort
                 </Button>
               )}
-              {availableCategories.length > 0 && isApproved && (
+              {availableCategories.length > 0 && (isApproved || manualMode) && (
                 <FormControl size="small" sx={{ minWidth: 100 }}>
                   <Select
                     value={selCategory}

@@ -7,6 +7,11 @@ import {
   Paper,
   Divider,
   Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -35,7 +40,15 @@ function Login() {
   const [userId, setUserId] = useState("");
   const [emailMob, setEmailMob] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [isLoading,setIsLoading] =useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 🔹 PASSWORD EXPIRY DIALOG STATE
+  const [pwdDialog, setPwdDialog] = useState({
+    open: false,
+    mode: null, // "warning" | "expired"
+    message: "",
+    pendingLogin: null, // holds { token } so we can proceed on "No" for warning mode
+  });
 
   const resetFields = () => {
     setEmail("");
@@ -109,25 +122,64 @@ function Login() {
 
       if (data.success) {
         if (data.success_login) {
+          // 🔹 EXPIRING SOON — ask user, don't navigate yet
+          if (data.password_expiring_soon) {
+            setPwdDialog({
+              open: true,
+              mode: "warning",
+              message:
+                data.message ||
+                "Your password will expire soon. Do you want to reset it now?",
+              pendingLogin: { token: data.token },
+            });
+            return;
+          }
+
           toast.success("Login Successful");
           localStorage.setItem("session-token", data.token || "");
           navigate("/dashboard");
-        } 
-        else if(data.otp_verify){
-         toast.success("Please Enter assigned OTP");
-         localStorage.setItem("otp-token",data.otptoken)
-         navigate('/otp_validate')
-        }
-        else {
+        } else if (data.otp_verify) {
+          toast.success("Please Enter assigned OTP");
+          localStorage.setItem("otp-token", data.otptoken);
+          navigate("/otp_validate");
+        } else {
           navigate("/dashboard");
         }
       } else {
+        // 🔹 HARD EXPIRED — no "No" option, must reset
+        if (data.isPassWordExpired) {
+          setPwdDialog({
+            open: true,
+            mode: "expired",
+            message:
+              data.message ||
+              "Your password has expired. You must reset it to continue.",
+            pendingLogin: null,
+          });
+          return;
+        }
         toast.error(data.message || "Username / Password incorrect!");
       }
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong");
     }
+  };
+
+  // 🔹 DIALOG HANDLERS
+  const handleDialogResetNow = () => {
+    setPwdDialog((prev) => ({ ...prev, open: false }));
+    navigate("/passexpReset", { state: { identity: email } });
+  };
+
+  const handleDialogContinue = () => {
+    // Only reachable in "warning" mode — let them into the app
+    if (pwdDialog.pendingLogin?.token) {
+      localStorage.setItem("session-token", pwdDialog.pendingLogin.token);
+    }
+    setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
+    toast.success("Login Successful");
+    navigate("/dashboard");
   };
 
   const handleForgotSubmit = async () => {
@@ -192,10 +244,10 @@ function Login() {
   };
 
   const handleKeyDown = (e) => {
-      if (e.key === "Enter" && otpInput.length === 4 && !isLoading) {
+    if (e.key === "Enter" && otpInput.length === 4 && !isLoading) {
       handleVerifyOtp();
-  }
-    };
+    }
+  };
 
   const handleVerifyOtp = async () => {
     if (otpInput.length !== 4) {
@@ -213,8 +265,33 @@ function Login() {
       const data = res.data;
 
       if (data.stat === 200 && data.success) {
+        // 🔹 SAME EXPIRY HANDLING FOR OTP PATH
+        if (data.password_expiring_soon) {
+          setPwdDialog({
+            open: true,
+            mode: "warning",
+            message:
+              data.message ||
+              "Your password will expire soon. Do you want to reset it now?",
+            pendingLogin: { token: data.token },
+          });
+          return;
+        }
+
         localStorage.setItem("session-token", data.token);
         navigate("/dashboard");
+        return;
+      }
+
+      if (data.isPassWordExpired) {
+        setPwdDialog({
+          open: true,
+          mode: "expired",
+          message:
+            data.message ||
+            "Your password has expired. You must reset it to continue.",
+          pendingLogin: null,
+        });
         return;
       }
 
@@ -234,7 +311,7 @@ function Login() {
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
   return (
     <Box
@@ -289,7 +366,7 @@ function Login() {
                 label="User Name"
                 value={email}
                 onChange={(e) => {
-                  const onlyText = e.target.value.replace(/^\s+/, "");
+                  const onlyText = e.target.value.replace(/^\s+|\s+$/g, "");
                   setEmail(onlyText);
                 }}
               />
@@ -330,15 +407,8 @@ function Login() {
               sx={{ display: "flex", mt: 2, justifyContent: "space-around" }}
             >
               <Typography>
-                <Link component="button" 
-                onClick={() => goToStep("otp")}>
+                <Link component="button" onClick={() => goToStep("otp")}>
                   Log in via OTP
-                  {/* <Box
-                    component="img"
-                    src={otpIcon}
-                    alt="logo"
-                    sx={{ height: 40 }}
-                  /> */}
                 </Link>
               </Typography>
 
@@ -432,13 +502,13 @@ function Login() {
               </>
             ) : (
               <>
-               <Typography
-                 color="gray" 
-                 sx={{ paddingTop: "0.5rem", fontSize: "1.1rem", opacity: "0.9"}}
+                <Typography
+                  color="gray"
+                  sx={{ paddingTop: "0.5rem", fontSize: "1.1rem", opacity: "0.9" }}
                 >
-                Enter 4 digit Assigned OTP
+                  Enter 4 digit Assigned OTP
                 </Typography>
-              <TextField
+                <TextField
                   fullWidth
                   variant="outlined"
                   size="small"
@@ -524,6 +594,34 @@ function Login() {
           </>
         )}
       </Paper>
+
+      {/* ================= PASSWORD EXPIRY DIALOG ================= */}
+      <Dialog
+        open={pwdDialog.open}
+        onClose={() => {
+          // Block dismiss-by-backdrop when expired (must choose reset)
+          if (pwdDialog.mode !== "expired") {
+            setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
+          }
+        }}
+      >
+        <DialogTitle>
+          {pwdDialog.mode === "expired" ? "Password Expired" : "Password Expiring Soon"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>{pwdDialog.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          {pwdDialog.mode === "warning" && (
+            <Button onClick={handleDialogContinue} color="inherit">
+              No, Later
+            </Button>
+          )}
+          <Button onClick={handleDialogResetNow} variant="contained" color="success" autoFocus>
+            Yes, Reset Now
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
