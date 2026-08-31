@@ -76,6 +76,7 @@ import MobileOrders from "./dashboard/MobileOrders";
 import LoginProjCode from "./view/LoginProjCode";
 import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
 import { useLocation } from "react-router-dom";
+import PassExpReset from "./view/PassExpReset";
 
 function App() {
    const relatedRoutes = {
@@ -394,6 +395,7 @@ function App() {
               element={<ForgotPassword />}
            />
            <Route path="/" element={<LoginProjCode />} />
+           <Route path="/passexpReset" element={<PassExpReset />}   />
            <Route path="/otp_validate" element={<OtpTwoStepValidate />}   />
           </Route>
 

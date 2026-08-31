@@ -118,6 +118,7 @@ function UploadClosing() {
   });
 
   const fileInputRef = useRef(null);
+  const latestReqRef = useRef(0);
 
   const [loading, setLoading] = useState(false);
   const [tableData, setTableData] = useState([]);
@@ -387,6 +388,7 @@ function UploadClosing() {
   const loadDesListData = useCallback(async () => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") return;
+    const reqId = ++latestReqRef.current;   // ① claim this request
     setLoading(true);
     try {
       const res = await api.post("/getDesList", {
@@ -396,6 +398,7 @@ function UploadClosing() {
         btn_val: decodedBtnVal ?? 0,
         tgl_val: tglVal,
       });
+      if (reqId !== latestReqRef.current) return;  // ② drop if stale
       setManualMode(false);
       handleApiResponse(res.data);
     } catch (err) {
@@ -403,14 +406,7 @@ function UploadClosing() {
     } finally {
       setLoading(false);
     }
-  }, [
-    selDesName,
-    selMonth,
-    handleApiResponse,
-    decodedProcStat,
-    decodedBtnVal,
-    tglVal,
-  ]);
+  }, [selDesName, selMonth, handleApiResponse, decodedProcStat, decodedBtnVal, tglVal]);
 
   useEffect(() => {
     if (suppressTglEffect.current) {
@@ -504,6 +500,8 @@ function UploadClosing() {
       }
     } catch (err) {
       console.error("import:", err);
+      await loadDesListData();
+      toast.error("something went wrong, Try again!");
     } finally {
       setLoading(false);
     }
@@ -1232,6 +1230,7 @@ function UploadClosing() {
           if (response.data.message) {
             toast.success(response.data.message);
           }
+          setActiveFilter("total");
           await loadDesListData();
         } catch (err) {
           console.error(err);
@@ -2002,6 +2001,14 @@ function UploadClosing() {
     setSelectAll(false);
     setSelCategory("all");
     setPreviewFile(null);
+    setTableData([]);
+    setMasId(null);
+    setJsonName(null);
+    setDocType(1);
+    setProcessStat(null);
+    setImgData([]);
+    setFileType(null);
+    setBtnVal(Number(decodedBtnVal ?? 0));
   };
 
   return (
@@ -2016,7 +2023,10 @@ function UploadClosing() {
         <Paper
           elevation={0}
           sx={{
-            p: "16px 18px",
+            pt: "16px",
+            pr: "18px",
+            pb: "24px", 
+            pl: "18px",
             borderRadius: "10px",
             boxShadow:
               "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
@@ -2099,7 +2109,13 @@ function UploadClosing() {
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
               <>
                 <Grid size={{ xs: 12, sm: "auto" }}>
-                  <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
+                    }}
+                  >
                     <Typography sx={{ fontWeight: 600 }}>
                       Upload File
                     </Typography>
@@ -2181,7 +2197,9 @@ function UploadClosing() {
                           width: "fit-content",
                           whiteSpace: "nowrap",
                           position: "absolute",
-                          mt: 6,
+                          top: "100%",
+                          left: 0,
+                          mt: 0.5,
                         }}
                       >
                         + ADD MORE
@@ -2269,7 +2287,7 @@ function UploadClosing() {
               </>
             )}
             {Number(checking) !== 2 && !hasExistingData && !manualMode && (
-              <Grid size={{ xs: 12, sm: "auto" }}>
+              <Grid size={{ xs: 12, sm: "auto" }} sx={{mt:2}}>
                 <Button
                   variant="contained"
                   onClick={handleImport}
@@ -2417,6 +2435,18 @@ function UploadClosing() {
                       >
                         {processStat}
                       </Typography>
+                    )}
+                    {isRejected && masId &&  tableData.length === 0 && (
+                      <Grid size={{ xs: 12, sm: "auto",ml:2 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          sx={{ backgroundColor: "#F39C12", color: "white" }}
+                          onClick={handleAbort}
+                        >
+                          Abort
+                        </Button>
+                      </Grid>
                     )}
                 </Box>
               </Grid>
