@@ -111,7 +111,7 @@ function UploadClosing() {
   const [allDesname, setAllDesName] = useState([]);
 
   const [selDesName, setSelDesName] = useState(() => {
-    if ((Number(checking) === 1 || Number(checking === 2)) && decodedStkId) {
+    if ((Number(checking) === 1 || Number(checking) === 2) && decodedStkId) {
       return decodedStkId;
     }
     return "0";
@@ -394,7 +394,7 @@ function UploadClosing() {
       const res = await api.post("/getDesList", {
         des_name_id: desId,
         selected_mnt: parseMonth(selMonth),
-        pro_status: decodedProcStat ?? 0,
+        pro_status: Number(decodedProcStat) ?? 0,
         btn_val: decodedBtnVal ?? 0,
         tgl_val: tglVal,
       });
@@ -415,6 +415,25 @@ function UploadClosing() {
     }
     if (selDesName && selDesName !== "0") loadDesListData();
   }, [selDesName, selMonth, tglVal]);
+
+  useEffect(() => {
+  const newMonth = decodedMnt
+    ? (() => {
+        const parsed = dayjs(decodedMnt, "MMM YYYY");
+        return parsed.isValid() ? parsed : dayjs();
+      })()
+    : dayjs();
+
+  const newDesName =
+    (Number(checking) === 1 || Number(checking) === 2) && decodedStkId
+      ? decodedStkId
+      : "0";
+
+  suppressTglEffect.current = true; // avoid a double fetch from tglVal reset
+  resetUploadState();
+  setSelMonth(newMonth);
+  setSelDesName(newDesName);
+}, [defEncode, enMonth, endistributor, enProcessStat, enProcessDataStat]);
 
   const handleFileChange = (e, slotIndex) => {
     if (!selDesName || selDesName === "0") {
@@ -507,7 +526,7 @@ function UploadClosing() {
     }
   };
 
-  const handleAddManual = async (overrideTglVal) => {
+    const handleAddManual = async (overrideTglVal) => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") {
       toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"}.`);
@@ -515,7 +534,7 @@ function UploadClosing() {
     }
     const tglToSend = overrideTglVal !== undefined ? overrideTglVal : 0;
 
-    suppressTglEffect.current = true; // <-- prevents the duplicate getDesList race
+    suppressTglEffect.current = true;
     setLoading(true);
     if (overrideTglVal === undefined) setTglVal(0);
 
@@ -526,7 +545,7 @@ function UploadClosing() {
         add_tgl_val: tglToSend,
       });
       setManualMode(true);
-      handleApiResponse(res.data);
+      handleApiResponse(res.data); // OK now — showTable no longer collapses on empty rows
     } catch (err) {
       console.error("addManual:", err);
     } finally {
@@ -1408,7 +1427,7 @@ function UploadClosing() {
   const isRawPending = processStat === 4;
   const canUpdateApproved = isApproved && Number(btnVal) !== 1;
   const canEditQty = Number(docType) === 1 || canUpdateApproved;
-  const showTable = tableData.length > 0;
+  const showTable = tableData.length > 0 || manualMode;
   const rawMode = rawPages.length > 0;
   const currentRawPage = rawPages[rawPageIndex] || null;
   const isLastRawPage = rawPageIndex === rawPages.length - 1;
@@ -1432,7 +1451,7 @@ function UploadClosing() {
 
     const numbered = rows.map((r, i) => ({ ...r, _sl: i + 1 }));
 
-    if (isApproved && numbered.length > 0) {
+    if (isApproved || manualMode) {
       const grandTotal = numbered.reduce(
         (sum, r) => sum + (Number(r.prod_qty) || 0),
         0,
@@ -1751,7 +1770,7 @@ function UploadClosing() {
             </Box>
             {!isApproved ? (
               <Box sx={{ ml: 2.5 }}>
-                {row.strak_prod_name ? (
+                {row.strak_prod_name !==null ? (
                   <Typography variant="caption">
                     <Box component="span" color="text.secondary">
                       mapped as:{" "}
@@ -2710,7 +2729,7 @@ function UploadClosing() {
                   Abort
                 </Button>
               )}
-              {availableCategories.length > 0 && isApproved && (
+              {availableCategories.length > 0 && (isApproved || manualMode) && (
                 <FormControl size="small" sx={{ minWidth: 100 }}>
                   <Select
                     value={selCategory}
