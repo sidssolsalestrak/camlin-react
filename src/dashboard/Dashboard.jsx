@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Slider from "react-slick";
 import TopWidget from "../widgets/TopWidget";
 import api from "../services/api";
@@ -31,6 +31,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  TableHead,
 } from "@mui/material";
 import { FaBackward, FaFileExcel, FaTruck } from "react-icons/fa";
 import { FaCartShopping, FaMoneyBill, FaChartBar } from "react-icons/fa6";
@@ -38,6 +39,7 @@ import { styled } from "@mui/material/styles";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CumulativeDashboard from "./CumulativeDashboard";
+import DayWiseDashboard from "./Daywisedashboard";
 import FieldDetailTable from "./Fielddetailtable";
 import CumCusDetailTable from "./Cumcusdetailtable";
 import CallSummaryTable from "./Callsummarytable";
@@ -56,15 +58,24 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { exportActivityExcel } from "./exportActivityExcel";
+import { exportDayWiseExcel } from "./Exportdaywiseexcel";
 import { jwtDecode } from "jwt-decode";
 import { IoChevronBackCircleOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
-
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GOOGLE_MAPS_LIBRARIES } from "../utils/googleMapsConfig";
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
 // matching PHP's `s3_path3 . 'doctor_reporting/' . $photoName` exactly.
 const DOCTOR_REPORTING_IMAGE_BASE_URL = `${process.env.REACT_APP_IMAGE_S3}`;
+
+const DAY_WISE_ENDPOINTS = {
+  routeMap: "/dashboard/activityMAP",
+  jointWork: "/dashboard/getSrJointWork",
+  sample: "/dashboard/activity_summary_sampDetails",
+  order: "/dashboard/activity_summary_prodDetails",
+};
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -123,6 +134,221 @@ const getSlidesToShow = (width) => {
   return 4;
 };
 
+function RouteMapDetail({ data }) {
+  const points = data?.summaryMap || [];
+  const [activeIdx, setActiveIdx] = useState(null);
+  const [markers, setMarkers] = useState([]);
+  const [center, setCenter] = useState({ lat: 19.076090, lng: 72.877426 });
+  const closeTimerRef = useRef(null);
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.REACT_APP_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const scheduleClose = () => {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => setActiveIdx(null), 150);
+  };
+
+  const openMarker = (i) => {
+    clearCloseTimer();
+    setActiveIdx(i);
+  };
+
+  // cleanup on unmount
+  useEffect(() => clearCloseTimer, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (points.length > 0) {
+      const built = points.map((p) => ({
+        lat: parseFloat(p.lat),
+        lng: parseFloat(p.long),
+        det: p.det,
+        mark: p.mark,
+        icon: {
+          url: p.mark === "green"
+            ? "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+            : "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        },
+      }));
+      setMarkers(built);
+      setCenter({ lat: built[0].lat, lng: built[0].lng });
+    } else {
+      setMarkers([]);
+    }
+  }, [isLoaded, data]);
+
+  if (loadError) {
+    return (
+      <Box sx={{ p: 2, color: "red", fontSize: "12px" }}>
+        Failed to load Google Maps: {loadError.message}
+      </Box>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" p={3} gap={1}>
+        <CircularProgress size={20} />
+        <Typography sx={{ fontSize: "12px" }}>Loading map…</Typography>
+      </Box>
+    );
+  }
+
+  if (!points.length) {
+    return <Typography align="center" sx={{ py: 4 }}>No location data for this day</Typography>;
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={{ width: "100%", height: "500px" }}
+      center={center}
+      zoom={13}
+      options={{
+        mapTypeId: "roadmap",
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+      }}
+    >
+      {markers.map((m, i) => (
+        <Marker
+          key={i}
+          position={{ lat: m.lat, lng: m.lng }}
+          icon={m.icon}
+          onMouseOver={() => openMarker(i)}
+          onMouseOut={scheduleClose}
+        />
+      ))}
+
+      {activeIdx !== null && markers[activeIdx] && (
+        <InfoWindow
+          position={{ lat: markers[activeIdx].lat, lng: markers[activeIdx].lng }}
+          onCloseClick={() => setActiveIdx(null)}
+          options={{ disableAutoPan: true }}
+        >
+          {/* wrapper div lets us cancel the pending close while the
+              pointer is over the popup content, and re-arm it on leave */}
+          <div
+            onMouseEnter={clearCloseTimer}
+            onMouseLeave={scheduleClose}
+            dangerouslySetInnerHTML={{ __html: markers[activeIdx].det }}
+          />
+        </InfoWindow>
+      )}
+    </GoogleMap>
+  );
+}
+
+function JointWorkDetail({ data }) {
+  const rows = data?.jointWork || [];
+  if (!rows.length) return <Typography align="center" sx={{ py: 4 }}>No joint work found</Typography>;
+
+  return (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          <TableCell>#</TableCell>
+          <TableCell>Name</TableCell>
+          <TableCell>Customer</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {rows.map((r) => (
+          <TableRow key={r.sl}>
+            <TableCell>{r.sl}</TableCell>
+            <TableCell>{r.jnt_user}</TableCell>
+            <TableCell>{r.cus_name}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function SampleDetailTable({ data }) {
+  const items = data?.items || [];
+  const totQty = data?.totQty ?? 0;
+  const zeroTonull = (v) => {
+    const n = Number(v);
+    return v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0 ? "-" : v;
+  };
+
+  if (!items.length) return <Typography align="center" sx={{ py: 4 }}>No sample data</Typography>;
+
+  return (
+    <Table size="small" sx={{ fontSize: 15 }}>
+      <TableHead>
+        <TableRow>
+          <TableCell>SKU</TableCell>
+          <TableCell align="center">Sample Qty</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.prod_id}>
+            <TableCell>{item.name}</TableCell>
+            <TableCell align="center">{zeroTonull(item.samp_qty)}</TableCell>
+          </TableRow>
+        ))}
+        <TableRow sx={{ backgroundColor: "#D8D8D8", fontWeight: 600 }}>
+          <TableCell align="center">TOTAL</TableCell>
+          <TableCell align="center">{zeroTonull(totQty)}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+}
+
+function OrderDetailTable({ data }) {
+  const items = data?.items || [];
+  const totals = data?.totals || {};
+  const zeroTonull = (v) => {
+    const n = Number(v);
+    return v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0 ? "-" : v;
+  };
+
+  if (!items.length) return <Typography align="center" sx={{ py: 4 }}>No order data</Typography>;
+
+  return (
+    <Table size="small" sx={{ fontSize: 15 }}>
+      <TableHead>
+        <TableRow>
+          <TableCell>SKU</TableCell>
+          <TableCell align="center">Product Qty</TableCell>
+          <TableCell align="center">Product Free</TableCell>
+          <TableCell align="center">Product Value</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.prod_id}>
+            <TableCell>{item.prod_name}</TableCell>
+            <TableCell align="center">{zeroTonull(item.ord_qty)}</TableCell>
+            <TableCell align="center">{zeroTonull(item.free_qty)}</TableCell>
+            <TableCell align="center">{zeroTonull(item.prod_val)}</TableCell>
+          </TableRow>
+        ))}
+        <TableRow sx={{ backgroundColor: "#D8D8D8", fontWeight: 600 }}>
+          <TableCell align="center">TOTAL</TableCell>
+          <TableCell align="center">{zeroTonull(totals.ord_qty)}</TableCell>
+          <TableCell align="center">{zeroTonull(totals.free_qty)}</TableCell>
+          <TableCell align="center">{zeroTonull(totals.prod_val)}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+}
+
 export default function Dashboard() {
   const [widgets, setWidgets] = useState([]);
   const [tabIndex, setTabIndex] = useState(1);
@@ -153,6 +379,11 @@ export default function Dashboard() {
   const [activityData, setActivityData] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
 
+  // ───────────────────── Day Wise state ─────────────────────
+  const [dayWiseDate, setDayWiseDate] = useState(dayjs());
+  const [dayWiseData, setDayWiseData] = useState([]);
+  const [dayWiseLoading, setDayWiseLoading] = useState(false);
+
   const [userTypeOptions, setUserTypeOptions] = useState([]); // from backend, mirrors $user_type_mas
   const [empTypeOptions, setEmpTypeOptions] = useState([]);   // from backend, mirrors $bumas
   const [activityBreakUp, setActivityBreakUp] = useState("2"); // default '2' per PHP ng-init
@@ -169,6 +400,14 @@ export default function Dashboard() {
   /* ───────────────────── Logged-in user context (from JWT) ───────────────────── */
   const [sessionUser, setSessionUser] = useState({ userType: null, userId: null });
   const [masterPanel, setMasterPanel] = useState({});
+  const [dayWiseDetailModal, setDayWiseDetailModal] = useState({
+    open: false,
+    loading: false,
+    kind: null,       // "routeMap" | "jointWork" | "sample" | "order"
+    title: "",
+    data: null,
+  });
+  const closeDayWiseDetailModal = () => setDayWiseDetailModal((p) => ({ ...p, open: false }));
 
   // labels derived from masterPanel with fallbacks
   const zoneLabel = masterPanel["ZONE"] || "Zone";
@@ -188,6 +427,27 @@ export default function Dashboard() {
     };
     loadMasterPanel();
   }, []);
+
+  const handleDayWiseDetailClick = useCallback(
+    async (kind, row) => {
+      setDayWiseDetailModal({ open: true, loading: true, kind, title: row.u_name || "", data: null });
+      try {
+        const payload = {
+          srId: row.user_id,
+          dt: dayWiseDate ? dayWiseDate.format("YYYY-MM-DD") : "",   // ← renamed from callDate to dt
+          distype: 1,
+          masId: row.call_id,
+          ...(row.extraParams || {}),   // ← merges { type, reportingType } for routeMap
+        };
+        const res = await api.post(DAY_WISE_ENDPOINTS[kind], payload);
+        setDayWiseDetailModal((prev) => ({ ...prev, loading: false, data: res.data }));
+      } catch (err) {
+        console.error(err);
+        setDayWiseDetailModal((prev) => ({ ...prev, loading: false, data: null }));
+      }
+    },
+    [dayWiseDate]
+  );
 
   useEffect(() => {
     const token = localStorage.getItem("session-token");
@@ -386,7 +646,7 @@ export default function Dashboard() {
   });
   const closePhotoRatingModal = () => setPhotoRatingModal((p) => ({ ...p, open: false }));
 
-    const handleViewPhotoRating = useCallback(async (row) => {
+  const handleViewPhotoRating = useCallback(async (row) => {
     const hasHeaderInfo = row && (row.cus_name || row.user_name || row.call_date);
 
     setPhotoRatingModal((prev) => ({
@@ -562,6 +822,36 @@ export default function Dashboard() {
     if (filterType === "1") fetchActivityData();
   }, [filterType, fromDateValue, toDateValue, activityBreakUp, cusType, empType]);
 
+  // ───────────────────── Day Wise fetch ─────────────────────
+  // PHP: getActivityCallData() -> POST dashboard/activityDashboard with
+  // {crDate, activityType:1, activityBreakUp, frmDate, empType, cusType, value}
+  const fetchDayWiseData = useCallback(async () => {
+    if (!dayWiseDate) return;
+    setDayWiseLoading(true);
+    try {
+      const res = await api.post("/dashboard/activityDashboard", {
+        crDate: dayWiseDate.format("YYYY-MM-DD"),
+        frmDate: dayWiseDate.format("YYYY-MM-DD"),
+        activityType: 1,
+        activityBreakUp,
+        empType,
+        cusType,
+        // PHP: toggleCheckbox4 (default checked) -> value=1 means "only reported"
+        value: showAllReported ? 1 : 0,
+      });
+      setDayWiseData(res.data?.activityData || []);
+    } catch (err) {
+      console.error(err);
+      setDayWiseData([]);
+    } finally {
+      setDayWiseLoading(false);
+    }
+  }, [dayWiseDate, activityBreakUp, empType, cusType, showAllReported]);
+
+  useEffect(() => {
+    if (filterType === "0") fetchDayWiseData();
+  }, [filterType, fetchDayWiseData]);
+
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -696,16 +986,21 @@ export default function Dashboard() {
     [activityBreakUp, cusType, fromDateValue, toDateValue]
   );
 
+  // Now supports Day Wise too: pass activityTypeOverride="1" + dtOverride (the selected day)
+  // to hit callSummaryDetails_new the same way PHP's .callSummaryDetails click does when
+  // activityType==1 (single-day call summary rather than a from/to range).
   const handleSalePersonClick = useCallback(
-    async (srId, regId, name) => {
+    async (srId, regId, name, activityTypeOverride, dtOverride) => {
       setDetailModal((prev) => ({ ...prev, open: false }));
       setDisplayBreakupModal((prev) => ({ ...prev, open: false }));
+      const effectiveType = activityTypeOverride || "2";
+      const effectiveDt = dtOverride || toDateValue;
       setSummaryModal({
         open: true,
         loading: true,
         title: name || "",
         srId,
-        activityType: "2",
+        activityType: effectiveType,
         profile: null,
         activitySummary: [],
         userJoint: [],
@@ -716,8 +1011,8 @@ export default function Dashboard() {
       try {
         const res = await api.post("/dashboard/callSummaryDetails_new", {
           srID: srId,
-          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
-          type: "2",
+          dt: effectiveDt ? effectiveDt.format("YYYY-MM-DD") : "",
+          type: effectiveType,
           frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
           userType: activityBreakUp,
           cusType: cusType,
@@ -725,7 +1020,7 @@ export default function Dashboard() {
         setSummaryModal((prev) => ({
           ...prev,
           loading: false,
-          activityType: String(res.data?.type ?? "2"),
+          activityType: String(res.data?.type ?? effectiveType),
           profile: res.data?.profile || null,
           activitySummary: res.data?.activitySummary || [],
           userJoint: res.data?.userJoint || [],
@@ -738,6 +1033,13 @@ export default function Dashboard() {
       }
     },
     [activityBreakUp, cusType, fromDateValue, toDateValue]
+  );
+
+  // Day Wise PSM name click — same handler, just fixes activityType="1" and uses the
+  // single selected day instead of the cumulative to-date.
+  const handleDayWiseSalePersonClick = useCallback(
+    (userId, regId, name) => handleSalePersonClick(userId, regId, name, "1", dayWiseDate),
+    [handleSalePersonClick, dayWiseDate]
   );
 
   const handleSummaryTypeFilterChange = useCallback(
@@ -918,6 +1220,12 @@ export default function Dashboard() {
             <CallSummaryTable
               srId={summaryModal.srId}
               type={summaryModal.activityType}
+              onRouteMapClick={(userId) =>
+                handleDayWiseDetailClick("routeMap", {
+                  user_id: userId,
+                  extraParams: { type: 1, reportingType: "" },
+                })
+              }
               profile={summaryModal.profile}
               custype={summaryCusType}
               activitySummary={summaryModal.activitySummary}
@@ -1048,7 +1356,10 @@ export default function Dashboard() {
                       <DatePicker
                         label="Date"
                         format="DD MMM YYYY"
+                        value={dayWiseDate}
+                        onChange={(v) => setDayWiseDate(v)}
                         slotProps={{ textField: { size: "small", fullWidth: true } }}
+                        maxDate={dayjs()}
                       />
                     </LocalizationProvider>
                   </Grid>
@@ -1177,12 +1488,21 @@ export default function Dashboard() {
                 onClick={async () => {
                   setExporting(true);
                   try {
-                    await exportActivityExcel(
-                      activityData,
-                      fromDateValue.format("DD MMM YYYY"),
-                      toDateValue.format("DD MMM YYYY"),
-                      psmLabel,
-                    );
+                    if (filterType === "0") {
+                      // Day Wise export — single selected day, day-wise sample styling
+                      exportDayWiseExcel(
+                        dayWiseData,
+                        dayWiseDate ? dayWiseDate.format("DD MMM YYYY") : "",
+                      );
+                    } else {
+                      // Cumulative export — unchanged
+                      await exportActivityExcel(
+                        activityData,
+                        fromDateValue.format("DD MMM YYYY"),
+                        toDateValue.format("DD MMM YYYY"),
+                        psmLabel,
+                      );
+                    }
                   } catch (err) {
                     console.error("Export failed:", err);
                   } finally {
@@ -1205,6 +1525,28 @@ export default function Dashboard() {
               onProfileWidgetClick={handleProfileWidgetClick}
               activityLoading={activityLoading}
               srLabel={psmLabel}
+            />
+          )}
+          {filterType === "0" && (
+            <DayWiseDashboard
+              activityData={dayWiseData}
+              activityLoading={dayWiseLoading}
+              onSalePersonClick={handleDayWiseSalePersonClick}
+              onRouteMapClick={(userId) =>
+                handleDayWiseDetailClick("routeMap", {
+                  user_id: userId,
+                  extraParams: { type: 1, reportingType: "" },
+                })
+              }
+              onJointWorkClick={(userId) => handleDayWiseDetailClick("jointWork", { user_id: userId })}
+              onSampleDetailClick={(row) =>
+                handleDayWiseDetailClick("sample", {
+                  user_id: row.user_id,
+                  call_id: row.call_id,
+                  distype: 1,          // ← matches PHP's hardcoded hidden input for day-wise
+                })
+              }
+              onOrderDetailClick={(row) => handleDayWiseDetailClick("order", row)}
             />
           )}
         </Box>
@@ -1294,6 +1636,36 @@ export default function Dashboard() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closePhotoRatingModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Day Wise generic detail — route map / joint work / sample / order */}
+      <Dialog open={dayWiseDetailModal.open} onClose={closeDayWiseDetailModal} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {{
+            routeMap: "Route Map",
+            jointWork: "Joint Work",
+            sample: "Sample Details",
+            order: "Product Details",
+          }[dayWiseDetailModal.kind] || "Details"}
+          {dayWiseDetailModal.title ? ` — ${dayWiseDetailModal.title}` : ""}
+        </DialogTitle>
+        <DialogContent dividers>
+          {dayWiseDetailModal.loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : dayWiseDetailModal.kind === "routeMap" ? (
+            <RouteMapDetail data={dayWiseDetailModal.data} />
+          ) : dayWiseDetailModal.kind === "jointWork" ? (
+            <JointWorkDetail data={dayWiseDetailModal.data} />
+          ) : dayWiseDetailModal.kind === "sample" ? (
+            <SampleDetailTable data={dayWiseDetailModal.data} />
+          ) : dayWiseDetailModal.kind === "order" ? (
+            <OrderDetailTable data={dayWiseDetailModal.data} />
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDayWiseDetailModal}>Close</Button>
         </DialogActions>
       </Dialog>
     </Layout>

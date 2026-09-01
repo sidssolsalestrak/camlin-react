@@ -73,6 +73,7 @@ export default function CallSummaryTable({
   const handleCustypeChange = (e) => {
     onTypeFilterChange && onTypeFilterChange(e.target.value);
   };
+  const userID = activitySummary[0]?.user_id || 0
 
   return (
     <Box>
@@ -134,7 +135,7 @@ export default function CallSummaryTable({
                       size="small"
                       variant="contained"
                       color="warning"
-                      onClick={onRouteMapClick}
+                      onClick={() => onRouteMapClick && onRouteMapClick(userID)}
                     >
                       View Reporting Route Map
                     </Button>
