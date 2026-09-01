@@ -231,8 +231,8 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 fullWidth size="small" placeholder='Enter Zip Code'
                                                 value={clinic.zipCode}
                                                 onChange={(e) => {
-                                                    const onlyText = e.target.value.replace(/^\s+/, "")
-                                                    updateClinic(idx, "zipCode", onlyText)
+                                                    const onlyDigits = e.target.value.replace(/\D/g, "")
+                                                    updateClinic(idx, "zipCode", onlyDigits)
                                                 }}
                                             />
                                         </Grid>
