@@ -69,11 +69,13 @@ export default function CallSummaryTable({
   onDeleteCall, // (callId) => void — omit to hide the trash icon entirely
   onViewDisplayBreakup, // (callId) => void
   custype = "0",
+  onOrderDetailsClick
 }) {
   const handleCustypeChange = (e) => {
     onTypeFilterChange && onTypeFilterChange(e.target.value);
   };
   const userID = activitySummary[0]?.user_id || 0
+  console.log("activity summary data",activitySummary)
 
   return (
     <Box>
@@ -93,7 +95,7 @@ export default function CallSummaryTable({
         <Box>
           <Button
             variant="contained"
-            color="warning"
+            sx={{backgroundColor:'#03a9f4'}}
             startIcon={<FaFileExcel />}
             onClick={() => exportCallSummaryExcel(profile, activitySummary)}
           >
@@ -130,12 +132,13 @@ export default function CallSummaryTable({
                   <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
                     {profile?.sr_name || ""}
                   </Typography>
-                  {Number(type) === 1 && (
+                  {Number(type) === 1 && activitySummary.length>0 && (
                     <Button
                       size="small"
                       variant="contained"
                       color="warning"
                       onClick={() => onRouteMapClick && onRouteMapClick(userID)}
+                      sx={{ml:{lg:40}}}
                     >
                       View Reporting Route Map
                     </Button>
@@ -217,18 +220,21 @@ export default function CallSummaryTable({
                     <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
                       {key.market_ip_qty}
                     </TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
-                      {zeroTonull(key.ord_qty)}
-                    </TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
+                      <TableCell
+                        onClick={onOrderDetailsClick ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined}
+                        sx={{ ...styles.dataCell, ...styles.center, cursor: onOrderDetailsClick ? "pointer" : "default",color:'#133BDE' }}
+                      >
+                        {zeroTonull(key.ord_qty)}
+                      </TableCell>
+                    <TableCell sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
                       {zeroTonull(key.free_qty)}
                     </TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
+                    <TableCell sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
                       {zeroTonull(key.samp_qty)}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.call_rem}</TableCell>
                     <TableCell
-                      sx={{ ...styles.dataCell, ...styles.center, cursor: onViewDisplayBreakup ? "pointer" : "default" }}
+                      sx={{ ...styles.dataCell, ...styles.center, cursor: onViewDisplayBreakup ? "pointer" : "default",color:'#133BDE' }}
                       onClick={
                         onViewDisplayBreakup ? () => onViewDisplayBreakup(key.call_id) : undefined
                       }
