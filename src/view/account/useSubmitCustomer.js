@@ -297,7 +297,7 @@ if (noAccountOwner) {
         toast.success("Request to Add new, Generated successfully!!");
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 500);
       } else if (res.data.status === 300) {
         toast.error(res.data.message || "Submission failed.");
       } else {
@@ -328,7 +328,7 @@ if (noAccountOwner) {
         toast.success("Update Request Generated successfully!!");
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 500);
       } else if (res.data.status === 300) {
         toast.error(res.data.message || "Update failed.");
       } else {

@@ -20,6 +20,7 @@ import AddCompetitor from "./AddCompetitor";
 import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
+import ConfirmationDialog from "../../utils/confirmDialog";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -70,6 +71,7 @@ function CreateCustomer() {
   // ── Role-based access control (same pattern as Area.jsx / AccountMas.jsx) ──
   // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
   const [accStat, setAccStat] = useState(null);
+  const [editDataLoading, setEditDataLoading] = useState(!!decodedID && decodedID !== "0");
 
     useEffect(() => {
     const resolveAccStat = async () => {
@@ -165,6 +167,20 @@ function CreateCustomer() {
     contactNum: {}   // ← indexed by clinic position: { 0: "error", 1: "" , ... }
   });
 
+  // ── Confirmation dialog (Add / Update) ──
+  const [confirm, setConfirm] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "OK",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+  });
+
+  const closeConfirm = () =>
+    setConfirm((c) => ({ ...c, open: false, onConfirm: null }));
+
   // ── Baseline snapshot for "Generate Update Request" change detection ──
   const [originalSnapshot, setOriginalSnapshot] = useState(null);
 
@@ -253,17 +269,180 @@ function CreateCustomer() {
     form, clinics, brandData, competitorBrands, competitorRows, setFieldErrors, setForm
   });
 
-  const onAddClick = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-    try { await handleSubmit(); } finally { setSubmitting(false); }
-  };
+ const validateEmail = (email) => {
+  const filter =
+    /^([\w-.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+  return filter.test(email);
+};
 
-  const onUpdateClick = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-    try { await handleUpdate(decodedID); } finally { setSubmitting(false); }
-  };
+const validateMobile = (mobile) => mobile && mobile.length === 10;
+
+const validateForm = () => {
+  const newErrors = {};
+  const toastMessages = [];
+  let hasError = false;
+
+  if (!form.cusType) {
+    newErrors.cusType = "Account Type is Required";
+    hasError = true;
+  }
+  if (!form.retailerType) {
+    newErrors.retailerType = "Type is Required";
+    hasError = true;
+  }
+  if (!form.potentiality) {
+    newErrors.potentiality = "Potentiality Class is Required";
+    hasError = true;
+  }
+
+  if (!form.firstName || !form.firstName.trim()) {
+    newErrors.firstName = "Store Name is required";
+    hasError = true;
+  }
+
+  if (!form.region || form.region === "0" || form.region === "") {
+    newErrors.region = "Region is required";
+    hasError = true;
+  }
+
+  if (!clinics[0]?.stkId || clinics[0].stkId === "0") {
+    newErrors.stkId = "Distributor is required";
+    hasError = true;
+  }
+
+  if (form.sendSms === "1" && (!form.mobile || !form.mobile.trim())) {
+    newErrors.mobile = "Mobile No is required";
+    hasError = true;
+  } else if (form.mobile && form.mobile.trim() && !validateMobile(form.mobile)) {
+    newErrors.mobile = "Please enter valid Mobile No";
+    hasError = true;
+  } else {
+    newErrors.mobile = "";
+  }
+
+  if (form.sendEmail === "1" && (!form.email || !form.email.trim())) {
+    newErrors.email = "Email is required";
+    hasError = true;
+  } else if (form.email && form.email.trim() && !validateEmail(form.email)) {
+    newErrors.email = "Please enter valid Email address";
+    hasError = true;
+  } else {
+    newErrors.email = "";
+  }
+
+  const lat = Number(form.customerLatitude);
+  const lng = Number(form.customerLongitude);
+  if (!form.customerLatitude || !form.customerLongitude || !lat || !lng) {
+    newErrors.location = "Please Add Location By Clicking Location Icon!!";
+    hasError = true;
+  }
+
+  if (form.cusType === "1") {
+    const repIds = clinics.map((c) => c.repIncharge).filter((id) => id && id !== "0");
+    if (repIds.length !== new Set(repIds).size) {
+      toastMessages.push("Rep Incharge in multiple Contact Info can't be same.. Please compare Contact Info details!");
+      hasError = true;
+    }
+  }
+
+  if (form.cusType === "2") {
+    const posIds = clinics.map((c) => c.repInchargePOS).filter((id) => id && id !== "0");
+    if (posIds.length !== new Set(posIds).size) {
+      toastMessages.push("Account Owner (KAM) in multiple Contact Info can't be same.. Please compare Contact Info details!");
+      hasError = true;
+    }
+  }
+
+  const filteredClinics = clinics.filter((c) =>
+    form.cusType === "1"
+      ? c.repIncharge && c.repIncharge !== "0"
+      : c.repInchargePOS && c.repInchargePOS !== "0",
+  );
+
+  const noAccountOwner = clinics.some((c) =>
+    form.cusType === "2"
+      ? !c.repInchargePOS || c.repInchargePOS === "0"
+      : !c.repIncharge || c.repIncharge === "0",
+  );
+  if (noAccountOwner) {
+    newErrors.repIncharge = form.cusType === "2" ? "Account Owner is Required" : "Rep Incharge is Required";
+    hasError = true;
+  }
+
+  const noBeat = filteredClinics.some((c) => !c.beat || c.beat === "0");
+  if (noBeat) {
+    newErrors.beat = "Beat is Required";
+    hasError = true;
+  }
+
+  const noBranch = filteredClinics.some((c) => !c.clinicName || c.clinicName.trim() === "");
+  if (noBranch) {
+    newErrors.clinicName = "Branch Name is Required";
+    hasError = true;
+  }
+
+  const contactNumErrors = {};
+  let hasContactNumError = false;
+  clinics.forEach((c, i) => {
+    const no = c.contactNo;
+    if (no && no.length !== 10) {
+      contactNumErrors[i] = "Please enter valid 10-digit Contact No";
+      hasContactNumError = true;
+    }
+  });
+  if (hasContactNumError) hasError = true;
+  newErrors.contactNum = contactNumErrors;
+
+  setFieldErrors((prev) => ({ ...prev, ...newErrors }));
+
+  if (newErrors.mobile) setForm((f) => ({ ...f, sendSms: "0" }));
+  if (newErrors.email) setForm((f) => ({ ...f, sendEmail: "0" }));
+
+  if (hasError) {
+    toastMessages.forEach((msg) => showAlert.error(msg));
+    showAlert.error("Please fix all mandatory fields");
+  }
+
+  return !hasError;
+};
+
+const onAddClick = () => {
+  if (!validateForm()) return;
+  setConfirm({
+    open: true,
+    title: "Confirmation",
+    message: "Are you sure you want to submit this request?",
+    confirmText: "OK",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+    onConfirm: async () => {
+      closeConfirm();
+      if (submitting) return;
+      setSubmitting(true);
+      try { await handleSubmit(); } finally { setSubmitting(false); }
+    },
+  });
+};
+
+const onUpdateClick = () => {
+  if (!validateForm()) return;
+  setConfirm({
+    open: true,
+    title: "Confirmation",
+    message: "Are you sure you want to update this request?",
+    confirmText: "OK",
+    cancelText: "Cancel",
+    confirmColor: "primary",
+    onConfirm: async () => {
+      closeConfirm();
+      if (submitting) return;
+      setSubmitting(true);
+      try { await handleUpdate(decodedID); } finally { setSubmitting(false); }
+    },
+  });
+};
+
+  
 
   const handleMobileChange = (e) => {
     const val = e.target.value.replace(/\D/g, ""); // numbers only
@@ -678,8 +857,11 @@ function CreateCustomer() {
     setRepInchargeOptions([]);
     setRepPOSOptions([]);
     setDistributorOptions([]);
-    if (!decodedID || decodedID === "0") return;
-
+    if (!decodedID || decodedID === "0") {
+      setEditDataLoading(false);
+      return;
+    }
+    setEditDataLoading(true);
     const getEditData = async () => {
       try {
         // ── 1. PRIMARY data based on isTemp
@@ -925,6 +1107,9 @@ function CreateCustomer() {
       } catch (error) {
         console.error("getEditData error:", error);
       }
+      finally{
+         setEditDataLoading(false);
+      }
     };
 
     getEditData();
@@ -959,7 +1144,6 @@ function CreateCustomer() {
           {decodedID && ALLOWED_USER_TYPES.includes(Number(userType)) && (
             <>
               {pendingRequest ? (
-                // ── Pending request exists → show warning label ──
                 <Box
                   sx={{
                     background: "#ffd36f",
@@ -974,11 +1158,10 @@ function CreateCustomer() {
                   for this account ! Waiting for Approval..
                 </Box>
               ) : (
-                // ── No pending request + account is Active → show button (Checker / All only) ──
                 delFlag === 0 && [0, 2, 1].includes(Number(accStat)) && (
                   <Button
                     variant="contained"
-                    disabled={isUpdateDisabled() || submitting}
+                    disabled={isUpdateDisabled() || submitting || editDataLoading}
                     onClick={onUpdateClick}
                     startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
                   >
@@ -1527,6 +1710,20 @@ function CreateCustomer() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ---------------- Add / Update Confirmation Dialog ------------------------- */}
+      <ConfirmationDialog
+        open={confirm.open}
+        onClose={closeConfirm}
+        onConfirm={confirm.onConfirm}
+        title={confirm.title}
+        message={confirm.message}
+        confirmText={confirm.confirmText}
+        cancelText={confirm.cancelText}
+        loading={submitting}
+        confirmColor={confirm.confirmColor}
+      />
+
       <AddCompetitor
   selectedBrand={selectedBrand}
   compModalOpen={compModalOpen}
