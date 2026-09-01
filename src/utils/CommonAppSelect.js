@@ -34,7 +34,10 @@ export default function CommonAppSelect({
       required={required}
       sx={{
         "& .MuiInputLabel-root": {
-          color: Boolean(error) ? "#d32f2f" : "inherit",
+          color: Boolean(error) ? "#d32f2f" : "rgba(0, 0, 0, 0.6)",
+        },
+        "& .MuiInputLabel-root.Mui-focused": {
+          color: Boolean(error) ? "#d32f2f" : "undefined",
         },
         "& .MuiOutlinedInput-root.Mui-error fieldset": {
           borderColor: "#d32f2f !important",

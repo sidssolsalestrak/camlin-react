@@ -126,7 +126,8 @@ function App() {
   const isAllowed =
   !token
     ? false
-    : allowList.includes(currentPath) ||
+     : currentPath.startsWith("/Auth/forgot_paswd/") ||
+      allowList.includes(currentPath) ||
       menuUrls.some((url) => {
         if (!url || url === "#") return false;
 
@@ -194,6 +195,10 @@ function App() {
       {/* <SnackbarProvider maxSnack={3}> */}
       <BrowserRouter>
         <Routes>
+           <Route
+              path="/Auth/forgot_paswd/:resetToken"
+              element={<ForgotPassword />}
+           />
           <Route element={<ProtectedRoute />}>
             <Route path="/:token" element={<TokenHandler />} />
             {/* <Route path="/" element={<Dashboard />} /> */}
@@ -390,10 +395,6 @@ function App() {
           {/* <Route path="/login" element={<Login />} /> */}
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
-             <Route
-              path="/Auth/forgot_paswd/:resetToken"
-              element={<ForgotPassword />}
-           />
            <Route path="/" element={<LoginProjCode />} />
            <Route path="/passexpReset" element={<PassExpReset />}   />
            <Route path="/otp_validate" element={<OtpTwoStepValidate />}   />

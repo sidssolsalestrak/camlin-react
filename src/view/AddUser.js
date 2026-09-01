@@ -743,6 +743,7 @@ function AddUser() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+    setModifyLoading(true)
     try {
       const formData = new FormData();
 
@@ -904,7 +905,7 @@ function AddUser() {
 
         setTimeout(() => {
           navigate(-1);
-        }, 3000);
+        }, 2000);
       }
       if(res.data.status === 400) {
         setToast({
@@ -914,7 +915,18 @@ function AddUser() {
         })
       }
     } catch (err) {
+      setToast({
+        open: true,
+        message:"something went wrong try again!!",
+        severity: "error",
+      })
       console.error(err);
+    }
+    finally{
+      setTimeout(()=>{
+       setModifyLoading(false)
+      },2500)
+      setOpenSaveDialog(false);
     }
   };
 
@@ -1905,6 +1917,7 @@ function AddUser() {
               <Button
                 variant="contained"
                 sx={{ mt: 2 }}
+                disabled={modifyLoading}
                 onClick={() => {
                   if (!validate()) {
                     setToast({
@@ -1912,18 +1925,19 @@ function AddUser() {
                       message: "Please fix all mandotory fields",
                       severity: "error",
                     });
-                    return
-                  };
+                    return;
+                  }
                   setOpenSaveDialog(true);
                 }}
               >
-                Add User
+              Add User
               </Button>
             )}
             {(Number(flag) === 1 && Number(accStatus) === 0 && Number(sessionId) !== id && [0, 2].includes(Number(accStat))) && (
-              <Button variant="contained"
+              <Button
+                variant="contained"
                 sx={{ mt: 2 }}
-                disabled={isUpdateDisabled()}
+                disabled={isUpdateDisabled() || modifyLoading}
                 onClick={() => {
                   if (!validate()) {
                     setToast({
@@ -1931,11 +1945,12 @@ function AddUser() {
                       message: "Please fix all mandotory fields",
                       severity: "error",
                     });
-                    return
-                  };
+                    return;
+                  }
                   setOpenSaveDialog(true);
-                }}>
-                Update User
+                }}
+              >
+               Update User
               </Button>
             )}
           </Box>
@@ -2265,7 +2280,7 @@ function AddUser() {
                     </Box>
 
                     {/* Deactivate button */}
-                    {(accStatus === 0 && delFlag === 0 && [0,2].includes(Number(accStat))) && Number(sessionId) !== id  && (
+                    {(originalData && accStatus === 0 && delFlag === 0 && [0,2].includes(Number(accStat))) && Number(sessionId) !== id  && (
                       <Button
                         variant="contained"
                         color="error"
@@ -2561,8 +2576,8 @@ function AddUser() {
 
           <Button
             variant="contained"
+            disabled={modifyLoading}
             onClick={() => {
-              setOpenSaveDialog(false);
               handleSubmit();
             }}
           >

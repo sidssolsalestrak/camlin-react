@@ -10,7 +10,7 @@ import {
   Box, Grid, Typography, TextField, Button, Divider,
   RadioGroup, FormControlLabel, FormControl, Radio,
   Dialog, DialogTitle, DialogContent, IconButton,
-  DialogActions
+  DialogActions, CircularProgress
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import { LocationTaggingMap } from "./LocationTaggingMap";
@@ -158,6 +158,7 @@ function CreateCustomer() {
   const [userType, setUserType] = useState(null)
   const [pendingRequest, setPendingRequest] = useState(null); // { request_type: 2 or 3 } or null
   const [delFlag, setDelFlag] = useState(0); // 0 = Active, 1 = Inactive
+  const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
     mobile: "",
     email: "",
@@ -251,6 +252,18 @@ function CreateCustomer() {
   const { handleSubmit, handleUpdate } = useSubmitCustomer({
     form, clinics, brandData, competitorBrands, competitorRows, setFieldErrors, setForm
   });
+
+  const onAddClick = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try { await handleSubmit(); } finally { setSubmitting(false); }
+  };
+
+  const onUpdateClick = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try { await handleUpdate(decodedID); } finally { setSubmitting(false); }
+  };
 
   const handleMobileChange = (e) => {
     const val = e.target.value.replace(/\D/g, ""); // numbers only
@@ -965,10 +978,11 @@ function CreateCustomer() {
                 delFlag === 0 && [0, 2, 1].includes(Number(accStat)) && (
                   <Button
                     variant="contained"
-                    disabled={isUpdateDisabled()}
-                    onClick={() => handleUpdate(decodedID)}
+                    disabled={isUpdateDisabled() || submitting}
+                    onClick={onUpdateClick}
+                    startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
                   >
-                    Generate Update Request
+                    {submitting ? "Submitting..." : "Generate Update Request"}
                   </Button>
                 )
               )}
@@ -977,7 +991,14 @@ function CreateCustomer() {
 
           {/* Add New Request — Maker / All only */}
           {!decodedID && [0, 1, 2].includes(Number(accStat)) && (
-            <Button variant="contained" onClick={handleSubmit}>Generate Add Request</Button>
+            <Button
+              variant="contained"
+              onClick={onAddClick}
+              disabled={submitting}
+              startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
+            >
+              {submitting ? "Submitting..." : "Generate Add Request"}
+            </Button>
           )}
 
           <Button

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Box, Card, TextField, Button, Typography } from "@mui/material";
 import useToast from "../utils/useToast";
@@ -16,6 +16,12 @@ const ForgotPassword = () => {
     password: "",
     confPass: "",
   });
+
+  useEffect(() => {
+  localStorage.removeItem("session-token");
+  localStorage.removeItem("otp-token");
+  localStorage.removeItem("acc_stat");
+  }, []);
 
   const handleSubmit = async () => {
     setError({
