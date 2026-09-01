@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { Box, Typography, CircularProgress, TextField, InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import { GOOGLE_MAPS_LIBRARIES } from "../../utils/googleMapsConfig";
 
-const LIBRARIES = ["geometry", "visualization", "places"];
 const DEFAULT_LAT = 19.076090;
 const DEFAULT_LNG = 72.877426;
 
@@ -17,7 +17,7 @@ export function LocationTaggingMap({ initialLat, initialLng, onLocationSelect })
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_API_KEY,
-    libraries: LIBRARIES,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const parsedLat = parseFloat(initialLat);

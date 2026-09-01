@@ -1,0 +1,1 @@
+export const GOOGLE_MAPS_LIBRARIES = ["geometry", "visualization", "places"];
