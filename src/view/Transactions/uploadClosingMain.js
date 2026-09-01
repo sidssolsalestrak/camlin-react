@@ -153,6 +153,7 @@ function UploadClosing() {
   const [mapActionRowKey, setMapActionRowKey] = useState(null);
   const [rawInvalidCell, setRawInvalidCell] = useState(null);
   const suppressTglEffect = useRef(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const [mapConfirm, setMapConfirm] = useState({
     open: false,
@@ -1119,7 +1120,7 @@ function UploadClosing() {
       cancelText: "Close",
       confirmColor: "error",
       onConfirm: async () => {
-        closeConfirm();
+        setConfirmLoading(true);
         try {
           let response = await api.post("/delete_single_prod", {
             rowId: row.id,
@@ -1129,9 +1130,12 @@ function UploadClosing() {
           if (response.data.status === 200) {
             toast.success(response.data.message);
           }
+          closeConfirm();
         } catch (err) {
           console.error(err);
           toast.error("something went wrong,Try again!");
+        } finally {
+          setConfirmLoading(false);
         }
       },
     });
@@ -1151,11 +1155,9 @@ function UploadClosing() {
       cancelText: "Close",
       confirmColor: "error",
       onConfirm: async () => {
-        closeConfirm();
+        setConfirmLoading(true);
         try {
-          const selectedRows = tableData.filter((r) =>
-            keys.includes(r._rowKey),
-          );
+          const selectedRows = tableData.filter((r) => keys.includes(r._rowKey));
           const ids = selectedRows.map((r) => r.id);
           const masIds = selectedRows.map((r) => r.mas_id).filter(Boolean);
           let response = await api.post("/selected_dlt", {
@@ -1168,9 +1170,12 @@ function UploadClosing() {
           if (response.data.status === 200) {
             toast.success(response.data.message);
           }
+          closeConfirm();
         } catch (err) {
           console.error(err);
           toast.error("something went wrong,Try again!");
+        } finally {
+          setConfirmLoading(false);
         }
       },
     });
@@ -1185,6 +1190,7 @@ function UploadClosing() {
       cancelText: "Close",
       confirmColor: "error",
       onConfirm: async () => {
+        setConfirmLoading(true);
         try {
           let response = await api.post("/delete_all", {
             mas_id: masId,
@@ -1206,6 +1212,7 @@ function UploadClosing() {
           console.error(err);
           toast.error("something went wrong,Try again!");
         } finally {
+          setConfirmLoading(false);
           closeConfirm();
         }
       },
@@ -1391,6 +1398,7 @@ function UploadClosing() {
       cancelText: "Close",
       confirmColor: "primary",
       onConfirm: async () => {
+        setConfirmLoading(true);
         try {
           let response = await api.post("/dlt_All", {
             mas_id: masId,
@@ -1406,6 +1414,7 @@ function UploadClosing() {
           console.log("Delete this Data btn err", err);
           toast.error("someThing went wrong,try again!");
         } finally {
+          setConfirmLoading(false);
           closeConfirm();
         }
       },
@@ -3015,7 +3024,7 @@ function UploadClosing() {
         message={confirm.message}
         confirmText={confirm.confirmText}
         cancelText={confirm.cancelText}
-        loading={loading}
+        loading={confirmLoading || loading}
         confirmColor={confirm.confirmColor}
       />
 
