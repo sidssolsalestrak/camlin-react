@@ -218,51 +218,34 @@ function UploadClosing() {
     invalid: "#6c5dc5",
   };
 
+  const isRowMapped = (r) => r.prod_map_stat !== 1 || r.strak_prod_name != null;
   const MapDot = ({ row }) => {
-    const color =
-      row.prod_map_stat === 1
-        ? row.pn
-          ? MAP_COLORS.semi
-          : MAP_COLORS.unmapped
-        : row.qty_map_stat === 1
-          ? MAP_COLORS.invalid
-          : MAP_COLORS.mapped;
+    const color = !isRowMapped(row)
+      ? row.pn
+        ? MAP_COLORS.semi
+        : MAP_COLORS.unmapped
+      : row.qty_map_stat === 1
+        ? MAP_COLORS.invalid
+        : MAP_COLORS.mapped;
     return (
       <Box
         component="span"
-        sx={{
-          width: 9,
-          height: 9,
-          borderRadius: "2px",
-          background: color,
-          display: "inline-block",
-          flexShrink: 0,
-        }}
+        sx={{ width: 9, height: 9, borderRadius: "2px", background: color, display: "inline-block", flexShrink: 0 }}
       />
     );
   };
 
   const counts = useMemo(() => {
-    let mapped = 0,
-      semi = 0,
-      unmapped = 0,
-      invalid = 0,
-      totalQty = 0;
+    let mapped = 0, semi = 0, unmapped = 0, invalid = 0, totalQty = 0;
     tableData.forEach((r) => {
-      if (r.prod_map_stat === 1 && !r.pn) unmapped++;
-      if (r.prod_map_stat === 1 && r.pn) semi++;
+      const mappedNow = isRowMapped(r);
+      if (!mappedNow && !r.pn) unmapped++;
+      if (!mappedNow && r.pn) semi++;
       if (r.qty_map_stat === 1) invalid++;
-      if (r.prod_map_stat !== 1) mapped++;
+      if (mappedNow) mapped++;
       totalQty += Number(r.prod_qty) || 0;
     });
-    return {
-      mapped,
-      semi,
-      unmapped,
-      invalid,
-      total: tableData.length,
-      totalQty,
-    };
+    return { mapped, semi, unmapped, invalid, total: tableData.length, totalQty };
   }, [tableData]);
 
   const availableCategories = useMemo(() => {
@@ -1452,7 +1435,7 @@ function UploadClosing() {
     if (activeFilter === "semi")
       rows = rows.filter((r) => r.prod_map_stat === 1 && r.pn);
     if (activeFilter === "unmapped")
-      rows = rows.filter((r) => r.prod_map_stat === 1 && !r.pn);
+      rows = rows.filter((r) => !isRowMapped(r) && !r.pn);
     if (activeFilter === "invalid")
       rows = rows.filter((r) => r.qty_map_stat === 1);
     if (selCategory !== "all")
