@@ -221,7 +221,7 @@ export default function DayWiseDashboard({
                             style={{ color: Number(sale.app_stat) === 1 ? "#09a12d" : "red" }}
                             title={Number(sale.app_stat) === 1 ? "Logged-in" : "Not Logged-in"}
                           />
-                           <i
+                          <i
                             className="fa fa-unlock"
                             style={{ color: "#35bcf5" }}
                             title="No restrictions"
@@ -256,7 +256,12 @@ export default function DayWiseDashboard({
                     <TableCell sx={styles.dataCell}>{sale.beat_plan}</TableCell>
                     <TableCell sx={styles.dataCell}>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>{sale.beat_work}</span>
+                        <span style={{
+                          width:200,
+                          whiteSpace: "normal",
+                          wordBreak: "normal",
+                          overflowWrap: "anywhere",
+                        }}>{sale.beat_work}</span>
                         {showRouteMarker && (
                           <i className="fa fa-map-marker" style={{ color: "#ea4b35", fontSize: 18 }} />
                         )}
