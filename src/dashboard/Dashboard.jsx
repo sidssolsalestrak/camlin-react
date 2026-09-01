@@ -63,7 +63,7 @@ import { jwtDecode } from "jwt-decode";
 import { IoChevronBackCircleOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { GOOGLE_MAPS_LIBRARIES } from "../utils/googleMapsConfig";
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
@@ -163,7 +163,6 @@ function RouteMapDetail({ data }) {
     setActiveIdx(i);
   };
 
-  // cleanup on unmount
   useEffect(() => clearCloseTimer, []);
 
   useEffect(() => {
@@ -208,6 +207,9 @@ function RouteMapDetail({ data }) {
     return <Typography align="center" sx={{ py: 4 }}>No location data for this day</Typography>;
   }
 
+  // Path for the connecting polyline, in marker order
+  const routePath = markers.map((m) => ({ lat: m.lat, lng: m.lng }));
+
   return (
     <GoogleMap
       mapContainerStyle={{ width: "100%", height: "500px" }}
@@ -220,6 +222,20 @@ function RouteMapDetail({ data }) {
         fullscreenControl: true,
       }}
     >
+      {/* Single red line connecting all points in order */}
+      {routePath.length > 1 && (
+        <Polyline
+          path={routePath}
+          options={{
+            strokeColor: "#FF0000",
+            strokeOpacity: 1.0,
+            strokeWeight: 3,
+            geodesic: true,
+            clickable: false,
+          }}
+        />
+      )}
+
       {markers.map((m, i) => (
         <Marker
           key={i}
@@ -236,8 +252,6 @@ function RouteMapDetail({ data }) {
           onCloseClick={() => setActiveIdx(null)}
           options={{ disableAutoPan: true }}
         >
-          {/* wrapper div lets us cancel the pending close while the
-              pointer is over the popup content, and re-arm it on leave */}
           <div
             onMouseEnter={clearCloseTimer}
             onMouseLeave={scheduleClose}
@@ -435,7 +449,7 @@ export default function Dashboard() {
         const payload = {
           srId: row.user_id,
           dt: dayWiseDate ? dayWiseDate.format("YYYY-MM-DD") : "",   // ← renamed from callDate to dt
-          distype: 1,
+          distype: row.distype || 1,
           masId: row.call_id,
           ...(row.extraParams || {}),   // ← merges { type, reportingType } for routeMap
         };
@@ -507,10 +521,12 @@ export default function Dashboard() {
   const closeJointWorkModal = () => setJointWorkModal((p) => ({ ...p, open: false }));
 
   const handleJointWorkSaved = useCallback(async () => {
+    console.log("joint work save is running",summaryModal)
     if (summaryModal.srId) {
+      const dt = summaryModal.dt || toDateValue;   // ← use the date the summary was opened with
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
-        dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+        dt: dt ? dt.format("YYYY-MM-DD") : "",
         type: "2",
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
@@ -529,6 +545,8 @@ export default function Dashboard() {
       }
     }
   }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
+
+  console.log("handle joint work todt changes",toDateValue.format("DD-MM-YYYY"))
 
   /* ───────────────────── Market Input modal (+ icon per call row) ───────────────────── */
   const [marketInputModal, setMarketInputModal] = useState({
@@ -679,9 +697,10 @@ export default function Dashboard() {
 
   const handleMarketInputSaved = useCallback(async () => {
     if (summaryModal.srId) {
+      const dt = summaryModal.dt || toDateValue; 
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
-        dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+        dt:  dt ? dt.format("YYYY-MM-DD") : "",
         type: "2",
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
@@ -719,7 +738,12 @@ export default function Dashboard() {
   });
 
   const closeDetailModal = () => setDetailModal((p) => ({ ...p, open: false }));
-  const closeSummaryModal = () => setSummaryModal((p) => ({ ...p, open: false }));
+  const closeSummaryModal = () => {
+  setSummaryModal((p) => ({ ...p, open: false }));
+  if (filterType === "0") {
+    fetchDayWiseData();
+  }
+};
   const closeProfileModal = () => setProfileModal((p) => ({ ...p, open: false }));
 
   const fetchUserTypeOptions = async () => {
@@ -1001,6 +1025,7 @@ export default function Dashboard() {
         title: name || "",
         srId,
         activityType: effectiveType,
+        dt: effectiveDt, 
         profile: null,
         activitySummary: [],
         userJoint: [],
@@ -1048,11 +1073,12 @@ export default function Dashboard() {
       setSummaryCusType(custype);
       setSummaryModal((prev) => ({ ...prev, loading: true }));
       try {
+        const dt = summaryModal.dt || toDateValue; 
         const res = await api.post("/dashboard/callSummaryDetails_new_filters", {
           srID: summaryModal.srId,
           type: summaryModal.activityType,
           custype,
-          dt: toDateValue ? toDateValue.format("YYYY-MM-DD") : "",
+          dt: dt?dt.format("YYYY-MM-DD"):'',
           frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         });
         setSummaryModal((prev) => ({
@@ -1234,6 +1260,9 @@ export default function Dashboard() {
               onAddMarketInput={openMarketInputModal}
               onDeleteCall={canDeleteCall ? openDeleteCallModal : undefined}
               onViewDisplayBreakup={handleViewDisplayBreakup}
+              onOrderDetailsClick={(callId, userId) =>
+                handleDayWiseDetailClick("order", { user_id: userId, call_id: callId, distype: 2  })
+              }
             />
           )}
         </Box>
@@ -1643,7 +1672,7 @@ export default function Dashboard() {
         <DialogTitle>
           {{
             routeMap: "Route Map",
-            jointWork: "Joint Work",
+            jointWork: "Joint Work With",
             sample: "Sample Details",
             order: "Product Details",
           }[dayWiseDetailModal.kind] || "Details"}

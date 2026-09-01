@@ -78,6 +78,11 @@ function AccountTransfer() {
 
     const canTransfer = [0, 2].includes(Number(accStat));
 
+    // 1 = Account Share, 2 = Account Transfer — drives all user-facing copy
+    // (submit button label, confirmation dialog title/message) so the wording
+    // always matches whichever Type is currently selected.
+    const transferActionLabel = transferType === 1 ? "Share" : "Transfer"
+
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"
@@ -93,8 +98,8 @@ function AccountTransfer() {
 
     const showSubmitTransferConfirmation = () => {
         showConfirmationDialog({
-            title: `${masterPanel["ACCM"] || "Account"} Transfer`,
-            message: `Are you sure want to Transfer ${selectedRows.length} ${masterPanel["ACCM"] || "Account"}s from ${selFromUser.user_name} 
+            title: `${masterPanel["ACCM"] || "Account"} ${transferActionLabel}`,
+            message: `Are you sure want to ${transferActionLabel} ${selectedRows.length} ${masterPanel["ACCM"] || "Account"}s from ${selFromUser.user_name} 
             to ${selToUser.user_name} for Selected ${masterPanel["ACCM"] || "Account"}s??`,
             confirmText: `Yes`,
             confirmColor: "primary",
@@ -161,6 +166,15 @@ function AccountTransfer() {
         setSelectedRows([])
         setAllCustomerList([])
         setErrors({})
+    }
+
+    // Reset everything when the Type (Account Share / Account Transfer) changes.
+    // Resetting selRegion back to "Select" also cascades through the existing
+    // selRegion useEffect, which already calls resetFields() — so we don't need
+    // to duplicate that logic here.
+    const handleTransferTypeChange = (e) => {
+        setTransferType(e.target.value)
+        setSelRegion({ id: 0, reg_name: "Select" })
     }
 
     const handleSelectAll = (e) => {
@@ -452,7 +466,7 @@ function AccountTransfer() {
                             label="Type"
                             labelId="transType"
                             value={transferType}
-                            onChange={(e) => setTransferType(e.target.value)}
+                            onChange={handleTransferTypeChange}
                         >
                             <MenuItem value={1}>Account Share</MenuItem>
                             <MenuItem value={2}>Account Transfer</MenuItem>
@@ -465,6 +479,8 @@ function AccountTransfer() {
                                 options={allRegion}
                                 getOptionLabel={(option) => option.reg_name || ""}
                                 getOptionKey={(option) => option.id}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                value={selRegion}
                                 onChange={(e, newValue) => setSelRegion(newValue)}
                                 renderInput={(params) => (
                                   <TextField
@@ -573,7 +589,7 @@ function AccountTransfer() {
                                         variant="contained"
                                         sx={{ mt: 3, ml: 2, mb: 2, textTransform: 'none' }}
                                     >
-                                        Transfer
+                                        {transferActionLabel}
                                     </Button>
                                 )}
                             </Box>

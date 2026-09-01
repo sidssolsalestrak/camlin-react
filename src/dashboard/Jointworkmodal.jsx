@@ -82,6 +82,7 @@ export default function JointWorkModal({
       if (res?.data) {
         showAlert.success("Joint work Updated")
       }
+      console.log("res data for joint work modal",res?.data)
       onSaved(res.data);
       onClose();
     } catch (err) {
@@ -106,7 +107,8 @@ export default function JointWorkModal({
             isOptionEqualToValue={(opt, val) => opt.id === val.id}
             value={selected}
             onChange={(e, newVal) => setSelected(newVal)}
-            renderInput={(params) => <TextField {...params} label="PSM" placeholder="Select PSM" />}
+            size="small"
+            renderInput={(params) => <TextField  {...params} label="PSM" placeholder="Select PSM" />}
           />
         )}
         {!onSaved && (

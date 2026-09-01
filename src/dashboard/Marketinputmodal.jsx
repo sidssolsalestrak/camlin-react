@@ -125,6 +125,7 @@ export default function MarketInputModal({
               isOptionEqualToValue={(opt, val) => opt.id === val.id}
               value={selectedInputs}
               onChange={(e, newVal) => setSelectedInputs(newVal)}
+              size="small"
               renderInput={(params) => (
                 <TextField {...params} label="Market Input" placeholder="Select" />
               )}
