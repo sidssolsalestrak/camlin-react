@@ -34,7 +34,7 @@ const styles = {
     borderBottom: "1px solid rgba(0,0,0,0.08)",
     padding: "11px 6px",
     whiteSpace: "normal",
-    maxWidth: 100,
+    maxWidth: 200,
   },
   dataCell: {
     borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -42,7 +42,7 @@ const styles = {
     fontSize: "12px",
     color: "#343A40",
     fontWeight: 400,
-    maxWidth: 100,
+    maxWidth: 200,
   },
   noborder: {
     border: "none",
