@@ -49,6 +49,7 @@ function Login() {
     message: "",
     pendingLogin: null, // holds { token } so we can proceed on "No" for warning mode
   });
+  const [confirmingLogin, setConfirmingLogin] = useState(false);
 
   const resetFields = () => {
     setEmail("");
@@ -172,11 +173,25 @@ function Login() {
     navigate("/passexpReset", { state: { identity: email } });
   };
 
-  const handleDialogContinue = () => {
-    // Only reachable in "warning" mode — let them into the app
-    if (pwdDialog.pendingLogin?.token) {
-      localStorage.setItem("session-token", pwdDialog.pendingLogin.token);
+  const handleDialogContinue = async () => {
+    
+    const token = pwdDialog.pendingLogin?.token;
+
+    if (token) {
+      localStorage.setItem("session-token", token);
     }
+
+    setConfirmingLogin(true);
+    try {
+      if (token) {
+        await api.post("/confirm-login");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmingLogin(false);
+    }
+
     setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
     toast.success("Login Successful");
     navigate("/dashboard");
@@ -613,8 +628,12 @@ function Login() {
         </DialogContent>
         <DialogActions>
           {pwdDialog.mode === "warning" && (
-            <Button onClick={handleDialogContinue} color="inherit">
-              No, Later
+            <Button
+              onClick={handleDialogContinue}
+              color="inherit"
+              disabled={confirmingLogin}
+            >
+              {confirmingLogin ? "Please wait..." : "No, Later"}
             </Button>
           )}
           <Button onClick={handleDialogResetNow} variant="contained" color="success" autoFocus>

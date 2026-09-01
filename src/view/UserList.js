@@ -509,14 +509,12 @@ function UserList() {
       width: 50,
       renderCell: ({ row }) => (
         <div style={{ display: "flex", gap: 12 }}>
-          {[0, 2].includes(Number(accStat)) && (
-            <div className="editBtn actionBtn">
+           <div className="editBtn actionBtn">
               <FaEdit
                 style={{ cursor: "pointer" }}
                 onClick={() => handleEdit(row)}
               />
             </div>
-          )}
           { Number(userType)===2 && [0, 2].includes(Number(accStat)) && (
             <div className="dltBtn actionBtn">
               <FaTrash
