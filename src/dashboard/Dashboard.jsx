@@ -65,6 +65,7 @@ import { useNavigate } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
 import { GoogleMap, Marker, InfoWindow, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { GOOGLE_MAPS_LIBRARIES } from "../utils/googleMapsConfig";
+import DataTable from "../utils/dataTable";
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
 // matching PHP's `s3_path3 . 'doctor_reporting/' . $photoName` exactly.
@@ -265,101 +266,108 @@ function RouteMapDetail({ data }) {
 
 function JointWorkDetail({ data }) {
   const rows = data?.jointWork || [];
-  if (!rows.length) return <Typography align="center" sx={{ py: 4 }}>No joint work found</Typography>;
+
+  const columns = [
+    { field: "sl", headerName: "#", width: 60 },
+    { field: "jnt_user", headerName: "Name", width: 200 },
+    { field: "cus_name", headerName: "Customer", width: 200 },
+  ];
 
   return (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>#</TableCell>
-          <TableCell>Name</TableCell>
-          <TableCell>Customer</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {rows.map((r) => (
-          <TableRow key={r.sl}>
-            <TableCell>{r.sl}</TableCell>
-            <TableCell>{r.jnt_user}</TableCell>
-            <TableCell>{r.cus_name}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <DataTable
+      data={rows}
+      columns={columns}
+      searchable={false}
+      pagination={false}
+      showHeader={false}
+      noDataMessage="No joint work found"
+    />
   );
 }
 
 function SampleDetailTable({ data }) {
   const items = data?.items || [];
   const totQty = data?.totQty ?? 0;
+
   const zeroTonull = (v) => {
     const n = Number(v);
     return v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0 ? "-" : v;
   };
 
-  if (!items.length) return <Typography align="center" sx={{ py: 4 }}>No sample data</Typography>;
+  const columns = [
+    { field: "name", headerName: "SKU", width: 200 },
+    {
+      field: "samp_qty",
+      headerName: "Sample Qty",
+      type: "alignCenter",
+      width: 140,
+      valueFormatter: zeroTonull,
+      showTotal: true,
+      footerValue: () => zeroTonull(totQty), // use backend-provided total instead of recalculating
+    },
+  ];
 
   return (
-    <Table size="small" sx={{ fontSize: 15 }}>
-      <TableHead>
-        <TableRow>
-          <TableCell>SKU</TableCell>
-          <TableCell align="center">Sample Qty</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.prod_id}>
-            <TableCell>{item.name}</TableCell>
-            <TableCell align="center">{zeroTonull(item.samp_qty)}</TableCell>
-          </TableRow>
-        ))}
-        <TableRow sx={{ backgroundColor: "#D8D8D8", fontWeight: 600 }}>
-          <TableCell align="center">TOTAL</TableCell>
-          <TableCell align="center">{zeroTonull(totQty)}</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+    <DataTable
+      data={items}
+      columns={columns}
+      searchable={false}
+      pagination={false}
+      showHeader={false}
+      noDataMessage="No sample data"
+    />
   );
 }
 
-function OrderDetailTable({ data }) {
+function OrderDetailTable({ data, prodLabel }) {
   const items = data?.items || [];
   const totals = data?.totals || {};
+
   const zeroTonull = (v) => {
     const n = Number(v);
     return v === null || v === undefined || v === "" || Number.isNaN(n) || n === 0 ? "-" : v;
   };
 
-  if (!items.length) return <Typography align="center" sx={{ py: 4 }}>No order data</Typography>;
+  const columns = [
+    { field: "prod_name", headerName: "SKU", width: 200 },
+    {
+      field: "ord_qty",
+      headerName: `${prodLabel} Qty`,
+      type: "alignCenter",
+      width: 140,
+      valueFormatter: zeroTonull,
+      showTotal: true,
+      footerValue: () => zeroTonull(totals.ord_qty),
+    },
+    {
+      field: "free_qty",
+      headerName: `${prodLabel} Free`,
+      type: "alignCenter",
+      width: 140,
+      valueFormatter: zeroTonull,
+      showTotal: true,
+      footerValue: () => zeroTonull(totals.free_qty),
+    },
+    {
+      field: "prod_val",
+      headerName: `${prodLabel} Value`,
+      type: "alignCenter",
+      width: 140,
+      valueFormatter: zeroTonull,
+      showTotal: true,
+      footerValue: () => zeroTonull(totals.prod_val),
+    },
+  ];
 
   return (
-    <Table size="small" sx={{ fontSize: 15 }}>
-      <TableHead>
-        <TableRow>
-          <TableCell>SKU</TableCell>
-          <TableCell align="center">Product Qty</TableCell>
-          <TableCell align="center">Product Free</TableCell>
-          <TableCell align="center">Product Value</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.prod_id}>
-            <TableCell>{item.prod_name}</TableCell>
-            <TableCell align="center">{zeroTonull(item.ord_qty)}</TableCell>
-            <TableCell align="center">{zeroTonull(item.free_qty)}</TableCell>
-            <TableCell align="center">{zeroTonull(item.prod_val)}</TableCell>
-          </TableRow>
-        ))}
-        <TableRow sx={{ backgroundColor: "#D8D8D8", fontWeight: 600 }}>
-          <TableCell align="center">TOTAL</TableCell>
-          <TableCell align="center">{zeroTonull(totals.ord_qty)}</TableCell>
-          <TableCell align="center">{zeroTonull(totals.free_qty)}</TableCell>
-          <TableCell align="center">{zeroTonull(totals.prod_val)}</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+    <DataTable
+      data={items}
+      columns={columns}
+      searchable={false}
+      pagination={false}
+      showHeader={false}
+      noDataMessage="No order data"
+    />
   );
 }
 
@@ -387,7 +395,7 @@ export default function Dashboard() {
   const sliderContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
-  const [filterType, setFilterType] = useState("1");
+  const [filterType, setFilterType] = useState("0");
   const [fromDateValue, setFromDateValue] = useState(dayjs().startOf("month"));
   const [toDateValue, setToDateValue] = useState(dayjs());
   const [activityData, setActivityData] = useState([]);
@@ -1674,7 +1682,7 @@ export default function Dashboard() {
             routeMap: "Route Map",
             jointWork: "Joint Work With",
             sample: "Sample Details",
-            order: "Product Details",
+            order: `${prodLabel} Details`,
           }[dayWiseDetailModal.kind] || "Details"}
           {dayWiseDetailModal.title ? ` — ${dayWiseDetailModal.title}` : ""}
         </DialogTitle>
@@ -1690,7 +1698,7 @@ export default function Dashboard() {
           ) : dayWiseDetailModal.kind === "sample" ? (
             <SampleDetailTable data={dayWiseDetailModal.data} />
           ) : dayWiseDetailModal.kind === "order" ? (
-            <OrderDetailTable data={dayWiseDetailModal.data} />
+            <OrderDetailTable data={dayWiseDetailModal.data} prodLabel={prodLabel} />
           ) : null}
         </DialogContent>
         <DialogActions>
