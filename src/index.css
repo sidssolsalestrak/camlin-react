@@ -1,13 +1,54 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  /* font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; */
+  font-family: "DM Sans", sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+} */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* action button styles */
+.updateBtn {
+  background-color: #efefff !important;
+  color: #3939ff !important;
+  border-radius: 5px !important;
+}
+
+.deleteBtn {
+  background-color: #ffecec !important;
+  color: #ff0000 !important;
+  border-radius: 5px !important;
+  margin-left: 10px !important;
+}
+
+.mainTitle {
+  font-size: 1.8em;
+  /* line-height: 29px; */
+  margin: 0;
+  padding: 0;
+  float: left !important;
+  /* color: #026cb6; */
+  color: #1a1917;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.sl-cell {
+  color: #a09d97;
+  font-family: "DM Mono", monospace;
 }

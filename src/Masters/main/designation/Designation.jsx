@@ -7,21 +7,38 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import DataTable from '../../../utils/dataTable';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from "../../../services/api";
 import useToast from "../../../utils/useToast";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../utils/confirmDialog";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
 const Designation = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([])
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
+    const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
+
+    // label derived from masterPanel with fallback
+    const desigLabel = masterPanel["DESI"] || "Designation";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+
     /*----------form fields ---------*/
     const [formData, setFormData] = useState({
         abbreviation: "",
@@ -75,14 +92,15 @@ const Designation = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
     const showSubmitConfirmation = () => {
         if (!validations()) return;
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Designation`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Designation?`,
+            title: `${decodedId ? "Edit" : "Add"} ${desigLabel}`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -91,8 +109,8 @@ const Designation = () => {
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Designation`,
-            message: `Are you sure you want to delete this Designation?`,
+            title: `Delete ${desigLabel}`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -106,12 +124,19 @@ const Designation = () => {
             abbreviation: "",
             designation: ""
         }
-        if (!formData.abbreviation) {
-            newValidations.abbreviation = "The Abbreviation field is required";
+        if (!formData.designation || formData.designation.trim() === "") {
+            newValidations.designation = `The ${desigLabel} field is required.`;
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ()]/.test(formData.designation)) {
+            newValidations.designation = "Only letters, numbers, underscore, hyphen, forward slash, brackets and spaces are allowed";
             isValid = false;
         }
-        if (!formData.designation) {
-            newValidations.designation = "The Designation field is required.";
+
+        if (!formData.abbreviation || formData.abbreviation.trim() === "") {
+            newValidations.abbreviation = "The Abbreviation field is required";
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ()]/.test(formData.abbreviation)) {
+            newValidations.abbreviation = "Only letters, numbers, underscore, hyphen, forward slash, brackets and spaces are allowed";
             isValid = false;
         }
         setValidations(newValidations)
@@ -121,31 +146,27 @@ const Designation = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 desig_name: formData.designation,
                 desig_abbr_name: formData.abbreviation
             }
             const res = await axios.post("/addDesignation", payload)
-            console.log("adding sub category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Designation")
+                showAlert.success(`${desigLabel} Added Successfully`)
                 setFormData({ abbreviation: "", designation: "" });
                 fetchTableData();
                 resetValidations();
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ designation: val?.message || "", abbreviation: "" });
-                } else {
-                    setValidations({ designation: "", abbreviation: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Add Designation")
+                showAlert.error(`Failed to Add ${desigLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -155,6 +176,7 @@ const Designation = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 desig_name: formData.designation,
@@ -163,26 +185,21 @@ const Designation = () => {
                 hdndesignationabb: original.abbreviation
             }
             const res = await axios.post("/UpdateDesignation", payload)
-            console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Designation")
+                showAlert.success(`${desigLabel} Updated Successfully`)
                 setFormData({ abbreviation: "", designation: "" });
                 setValue('1')
                 navigate(`/masters/designation`)
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ designation: val?.message || "", abbreviation: "" });
-                } else {
-                    setValidations({ designation: "", abbreviation: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Designation")
+                showAlert.error(`Failed to Update ${desigLabel}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -194,10 +211,10 @@ const Designation = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteDesignation/${id}`);
-            console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Designation")
+                showAlert.success(`Successfully Deleted ${desigLabel}`)
                 fetchTableData();
             }
         } catch (error) {
@@ -227,29 +244,37 @@ const Designation = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true,
         },
         {
             field: "desig_name",
-            headerName: "Designation",
+            headerName: desigLabel,
             filterable: true,
+            sortable: true,
         },
         {
             field: "desig_abbr_name",
             headerName: "Abbreviation",
             filterable: true,
+            sortable: true,
         },
         {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                    )}
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    )}
                 </>
             )
         },
@@ -264,8 +289,11 @@ const Designation = () => {
                 ...row,
                 index: index + 1
             })) : [];
-            console.log("table data", data);
             settableData(data);
+            setAccStat(res?.data?.acc_stat ?? null);
+            if (res?.data?.acc_stat !== null && res?.data?.acc_stat !== undefined) {
+            localStorage.setItem("acc_stat", res?.data?.acc_stat);
+            }
         } catch (error) {
             console.error(error);
             settableData([]);
@@ -318,46 +346,76 @@ const Designation = () => {
         getEditData(decodedId);
     }, [decodedId]);
 
+    const isEdited =
+    formData.designation.trim() !== original.designation.trim() ||
+    formData.abbreviation.trim() !== original.abbreviation.trim();
+
     return (
-        <Layout>
-            <PageHeader title="Designation" />
-            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                <TabContext value={value}>
-                    {!decodedId ?
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                <Tab sx={tabStyle} label="ADD NEW" value="1" />
-                                <Tab sx={tabStyle} label="VIEW LIST" value="2" />
-                            </TabList>
-                        </Box>
-                        : <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Designation</Typography>
-                    }
-                    {/*---------------- Add section--------------- */}
-                    <TabPanel value="1">
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <TextField value={formData.designation}
-                                onChange={(e) => formDataChange("designation", e.target.value)}
-                                required size='small' placeholder="Enter Designation"
-                                variant='outlined' label="Designation" error={!!validation.designation}
-                                helperText={validation.designation && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.designation}</span>} />
-                            <TextField
-                                value={formData.abbreviation}
-                                onChange={(e) => formDataChange("abbreviation", e.target.value)}
-                                required size='small' placeholder="Enter Abbreviation"
-                                variant='outlined' label="Abbreviation" error={!!validation.abbreviation}
-                                helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.abbreviation}</span>} />
-                        </Box>
-                        <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
-                    </TabPanel>
-                    {/*---------------- View section--------------- */}
-                    <TabPanel value="2">
-                        <DataTable
-                            columns={columns}
-                            data={tableData}
-                            loading={loading}
-                        />
-                    </TabPanel>
-                </TabContext>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: desigLabel },
+        ]}>
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">{desigLabel}</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    <TabContext value={value}>
+                        {!decodedId ?
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    <Tab sx={tabStyle} label="ADD NEW" value="1" />
+                                    <Tab sx={tabStyle} label="VIEW LIST" value="2" />
+                                </TabList>
+                            </Box>
+                            : <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {desigLabel}</Typography>
+                        }
+                        {/*---------------- Add section--------------- */}
+                        <TabPanel value="1">
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <TextField value={formData.designation}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
+                                        formDataChange("designation", onlyText)
+                                    }}
+                                    required size='small' placeholder={`Enter ${desigLabel}`}
+                                    variant='outlined' label={desigLabel} error={!!validation.designation}
+                                    helperText={validation.designation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.designation}</span>} />
+                                <TextField
+                                    value={formData.abbreviation}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ()]/g, "").replace(/^\s+/, "");
+                                        formDataChange("abbreviation", onlyText)
+                                    }}
+                                    required size='small' placeholder="Enter Abbreviation"
+                                    variant='outlined' label="Abbreviation" error={!!validation.abbreviation}
+                                    helperText={validation.abbreviation && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.abbreviation}</span>} />
+                            </Box>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'>Create</Button>
+                            )}
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2,textTransform:'none' }} color="primary" variant='contained'  disabled={!isEdited}>Update</Button>
+                            )}
+                        </TabPanel>
+                        {/*---------------- View section--------------- */}
+                        <TabPanel value="2" sx={{ padding: 0 }}>
+                            <DataTable
+                                columns={columns}
+                                data={tableData}
+                                loading={loading}
+                            />
+                        </TabPanel>
+                    </TabContext>
+                </Box>
             </Box>
             <ConfirmationDialog
                 open={confirmationDialog.open}
