@@ -535,7 +535,7 @@ export default function Dashboard() {
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
         dt: dt ? dt.format("YYYY-MM-DD") : "",
-        type: "2",
+         type: summaryModal.activityType,
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
         cusType: cusType,
@@ -709,7 +709,7 @@ export default function Dashboard() {
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
         dt:  dt ? dt.format("YYYY-MM-DD") : "",
-        type: "2",
+         type: summaryModal.activityType,
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
         cusType: cusType,
@@ -1392,40 +1392,40 @@ export default function Dashboard() {
             <Box sx={{ flex: 1 }}>
               <Grid container spacing={1} alignItems="center">
                 {filterType === "0" ? (
-                  <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
                         label="Date"
                         format="DD MMM YYYY"
                         value={dayWiseDate}
                         onChange={(v) => setDayWiseDate(v)}
-                        slotProps={{ textField: { size: "small", fullWidth: true } }}
+                        slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
                         maxDate={dayjs()}
                       />
                     </LocalizationProvider>
                   </Grid>
                 ) : (
                   <>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="From"
                           format="DD MMM YYYY"
                           value={fromDateValue}
                           onChange={(newVal) => setFromDateValue(newVal)}
-                          slotProps={{ textField: { size: "small", fullWidth: true } }}
+                          slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
                           maxDate={toDateValue ? toDateValue : null}
                         />
                       </LocalizationProvider>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.5, lg: 1.5 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="To"
                           format="DD MMM YYYY"
                           value={toDateValue}
                           onChange={(newVal) => setToDateValue(newVal)}
-                          slotProps={{ textField: { size: "small", fullWidth: true } }}
+                          slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
                           minDate={fromDateValue ? fromDateValue : null}
                         />
                       </LocalizationProvider>
