@@ -1271,6 +1271,10 @@ export default function Dashboard() {
               onOrderDetailsClick={(callId, userId) =>
                 handleDayWiseDetailClick("order", { user_id: userId, call_id: callId, distype: 2  })
               }
+              onSampleDetailsClick={(callId, userId)=>{
+                handleDayWiseDetailClick("sample", { user_id: userId, call_id: callId, distype: 2  })
+              }
+              }
             />
           )}
         </Box>

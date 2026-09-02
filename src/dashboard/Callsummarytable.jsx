@@ -69,7 +69,8 @@ export default function CallSummaryTable({
   onDeleteCall, // (callId) => void — omit to hide the trash icon entirely
   onViewDisplayBreakup, // (callId) => void
   custype = "0",
-  onOrderDetailsClick
+  onOrderDetailsClick,
+  onSampleDetailsClick
 }) {
   const handleCustypeChange = (e) => {
     onTypeFilterChange && onTypeFilterChange(e.target.value);
@@ -217,19 +218,54 @@ export default function CallSummaryTable({
                       {key.clm_secs}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.jnt_user}</TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center }}>
+                    <TableCell
+                      onClick={onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? () => onSampleDetailsClick(key.call_id, srId, key.cus_id) : undefined}
+                      sx={{
+                        ...styles.dataCell,
+                        ...styles.center,
+                        cursor: onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? "pointer" : "default",
+                        "&:hover": onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? { textDecoration: "underline" } : {},
+                      }}
+                    >
                       {key.market_ip_qty}
                     </TableCell>
-                      <TableCell
-                        onClick={onOrderDetailsClick && Number(key.ord_qty)>0  ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined}
-                        sx={{ ...styles.dataCell, ...styles.center, cursor: onOrderDetailsClick ? "pointer" : "default",color:'#133BDE' }}
-                      >
-                        {zeroTonull(key.ord_qty)}
-                      </TableCell>
-                    <TableCell  onClick={onOrderDetailsClick && Number(key.free_qty)>0  ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined} sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
+
+                    <TableCell
+                      onClick={onOrderDetailsClick && Number(key.ord_qty) > 0 ? () => onOrderDetailsClick(key.call_id, srId, key.cus_id) : undefined}
+                      sx={{
+                        ...styles.dataCell,
+                        ...styles.center,
+                        color: "#133BDE",
+                        cursor: onOrderDetailsClick && Number(key.ord_qty) > 0 ? "pointer" : "default",
+                        "&:hover": onOrderDetailsClick && Number(key.ord_qty) > 0 ? { textDecoration: "underline" } : {},
+                      }}
+                    >
+                      {zeroTonull(key.ord_qty)}
+                    </TableCell>
+
+                    <TableCell
+                      onClick={onOrderDetailsClick && Number(key.free_qty) > 0 ? () => onOrderDetailsClick(key.call_id, srId, key.cus_id) : undefined}
+                      sx={{
+                        ...styles.dataCell,
+                        ...styles.center,
+                        color: "#133BDE",
+                        cursor: onOrderDetailsClick && Number(key.free_qty) > 0 ? "pointer" : "default",
+                        "&:hover": onOrderDetailsClick && Number(key.free_qty) > 0 ? { textDecoration: "underline" } : {},
+                      }}
+                    >
                       {zeroTonull(key.free_qty)}
                     </TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
+
+                    <TableCell
+                      onClick={onSampleDetailsClick && Number(key.samp_qty) > 0 ? () => onSampleDetailsClick(key.call_id, srId, key.cus_id) : undefined}
+                      sx={{
+                        ...styles.dataCell,
+                        ...styles.center,
+                        color: "#133BDE",
+                        cursor: onSampleDetailsClick && Number(key.samp_qty) > 0 ? "pointer" : "default",
+                        "&:hover": onSampleDetailsClick && Number(key.samp_qty) > 0 ? { textDecoration: "underline" } : {},
+                      }}
+                    >
                       {zeroTonull(key.samp_qty)}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.call_rem}</TableCell>
