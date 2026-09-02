@@ -369,7 +369,7 @@ export default function DayWiseDashboard({
                       {Number(sale.tot_jnt) > 0 && (
                         <i
                           className="fa fa-info-circle"
-                          style={{ cursor: "pointer", marginRight: 4 }}
+                          style={{ cursor: "pointer", marginRight: 4,color:'#133bde' }}
                           onClick={() => onJointWorkClick && onJointWorkClick(sale.user_id)}
                         />
                       )}

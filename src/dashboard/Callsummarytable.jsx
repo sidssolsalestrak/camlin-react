@@ -221,12 +221,12 @@ export default function CallSummaryTable({
                       {key.market_ip_qty}
                     </TableCell>
                       <TableCell
-                        onClick={onOrderDetailsClick ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined}
+                        onClick={onOrderDetailsClick && Number(key.ord_qty)>0  ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined}
                         sx={{ ...styles.dataCell, ...styles.center, cursor: onOrderDetailsClick ? "pointer" : "default",color:'#133BDE' }}
                       >
                         {zeroTonull(key.ord_qty)}
                       </TableCell>
-                    <TableCell sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
+                    <TableCell  onClick={onOrderDetailsClick && Number(key.free_qty)>0  ? () => onOrderDetailsClick(key.call_id, srId,key.cus_id,) : undefined} sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
                       {zeroTonull(key.free_qty)}
                     </TableCell>
                     <TableCell sx={{ ...styles.dataCell, ...styles.center,color:'#133BDE' }}>
