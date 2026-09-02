@@ -141,15 +141,21 @@ export default function DayWiseDashboard({
   }, [activityData]);
 
   const latestUserId = useMemo(() => {
-  if (!activityData.length) return null;
-  let latest = activityData[0];
-  for (const sale of activityData) {
-    if (dayjs(sale.last_updated).isAfter(dayjs(latest.last_updated))) {
-      latest = sale;
+    // Only consider rows that are actually reported (✓, report_type_id > 0).
+    // Unreported rows (✗) can still carry a recent last_updated from a
+    // generic backend sync, so they must be excluded from this comparison.
+    const reportedRows = activityData.filter(
+      (sale) => Number(sale.report_type_id) > 0 && sale.report_type_id !== ""
+    );
+    if (!reportedRows.length) return null;
+    let latest = reportedRows[0];
+    for (const sale of reportedRows) {
+      if (dayjs(sale.last_updated).isAfter(dayjs(latest.last_updated))) {
+        latest = sale;
+      }
     }
-  }
-  return latest.user_id;
-}, [activityData]);
+    return latest.user_id;
+  }, [activityData]);
 
   return (
     <Paper elevation={0} sx={{ overflow: "auto" }}>
@@ -269,7 +275,7 @@ export default function DayWiseDashboard({
                     <TableCell sx={styles.dataCell}>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{
-                          width:200,
+                          width: 200,
                           whiteSpace: "normal",
                           wordBreak: "normal",
                           overflowWrap: "anywhere",
