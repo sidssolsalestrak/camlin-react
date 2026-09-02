@@ -140,6 +140,17 @@ export default function DayWiseDashboard({
     ────────────────────────────────────────────────────────────────────── */
   }, [activityData]);
 
+  const latestUserId = useMemo(() => {
+  if (!activityData.length) return null;
+  let latest = activityData[0];
+  for (const sale of activityData) {
+    if (dayjs(sale.last_updated).isAfter(dayjs(latest.last_updated))) {
+      latest = sale;
+    }
+  }
+  return latest.user_id;
+}, [activityData]);
+
   return (
     <Paper elevation={0} sx={{ overflow: "auto" }}>
       <TableContainer>
@@ -190,6 +201,7 @@ export default function DayWiseDashboard({
               rows.map((row) => {
                 // ── data row ──
                 const sale = row.sale;
+                const isLatest = sale.user_id === latestUserId;
                 const perHcpProdCall = sale.hcp_prod_call > 0 ? "%" : "";
                 const perRetProdCall = sale.ret_prod_call > 0 ? "%" : "";
                 const hcpProdCall = sale.hcp_prod_call > 0
@@ -204,7 +216,7 @@ export default function DayWiseDashboard({
                 const showRouteMapIcon = Number(sale.location_stat) > 0 && sale.beat_work !== " ";
 
                 return (
-                  <TableRow key={row.key}>
+                  <TableRow key={row.key} sx={isLatest ? { "& td": { backgroundColor: "#FFC72C" } } : undefined}>
                     <TableCell sx={{ ...styles.dataCell, maxWidth: 200 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <span
