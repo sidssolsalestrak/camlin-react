@@ -1568,6 +1568,7 @@ export default function Dashboard() {
             <DayWiseDashboard
               activityData={dayWiseData}
               activityLoading={dayWiseLoading}
+              selectedDate={dayWiseDate} 
               onSalePersonClick={handleDayWiseSalePersonClick}
               onRouteMapClick={(userId) =>
                 handleDayWiseDetailClick("routeMap", {

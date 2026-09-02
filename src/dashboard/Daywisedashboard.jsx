@@ -62,6 +62,13 @@ const styles = {
       textDecoration: "underline",
     },
   },
+  regionTotal: {
+    backgroundColor: "#D8D8D8",
+    fontWeight: 600,
+    padding: "4px 6px",
+    fontSize: "12px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+  },
 };
 
 function formatCallTime(t) {
@@ -75,33 +82,54 @@ function formatCallTime(t) {
   return parsed.isValid() ? parsed.format("h:mm a") : "-";
 }
 
+// Matches PHP's percentage-of-productive-call calc, used both per-row and per-region-total
+const calcProdPct = (prodCount, totalCount) => {
+  if (Number(prodCount) > 0) {
+    return { pct: Math.round((Number(prodCount) / Number(totalCount)) * 100), suffix: "%" };
+  }
+  return { pct: "", suffix: "" };
+};
+
+const emptyTotals = () => ({
+  dist: 0,
+  hcp: 0,
+  ret: 0,
+  prodHcp: 0,
+  prodRet: 0,
+  event: 0,
+  samp: 0,
+  joint: 0,
+  bday: 0,
+  ord: 0,
+  ordVal: 0,
+  survey: 0,
+});
+
+const roundTotal = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : v;
+};
+
 /**
- * Mirrors the PHP day-wise SellOutQTYUSD table.
- *
- * NOTE: The PHP source code technically contains logic to print a
- * region-subtotal row (on reg_id change) and a final subtotal row
- * after the loop — but the live PHP UI does NOT render these rows.
- * To match actual UI behavior, that logic has been removed here.
- * (Left commented below in case it needs to be re-enabled later.)
+ * Mirrors the PHP day-wise SellOutQTYUSD table, including region-subtotal
+ * rows (grey, printed whenever reg_id changes, plus once more for the final
+ * region after the loop) — same accumulate/reset logic as the PHP source.
  */
 export default function DayWiseDashboard({
   activityData = [],
   activityLoading,
+  selectedDate, // dayjs value of the currently selected Day Wise date — drives the yellow-highlight-only-if-today rule
   onSalePersonClick, // (userId, regId, name) => void
   onJointWorkClick, // (userId) => void — NOT YET WIRED, needs getSrJointWork API
   onRouteMapClick, // (userId) => void — NOT YET WIRED, needs activityMAP API
   onOrderDetailClick, // (row) => void — NOT YET WIRED, needs activity_summary_prodDetails API
   onSampleDetailClick, // (row) => void — NOT YET WIRED, needs activity_summary_sampDetails API
 }) {
+  // Build the row list with region-subtotal rows interleaved, mirroring the
+  // PHP loop: a subtotal row is emitted right before the first row of a new
+  // region (using the just-finished region's totals), and one final
+  // subtotal row is emitted after the loop for the last region.
   const rows = useMemo(() => {
-    // Simple pass-through — one row per SR, no region grouping/totals.
-    return activityData.map((sale, idx) => ({
-      _rowType: "data",
-      sale,
-      key: `sr-${sale.user_id}-${idx}`,
-    }));
-
-    /* ── Previous region-subtotal logic (disabled — not present in PHP UI) ──
     const out = [];
     let regId = "";
     let regName = "";
@@ -109,13 +137,13 @@ export default function DayWiseDashboard({
 
     activityData.forEach((sale, idx) => {
       if (idx > 0 && regId !== sale.reg_id) {
-        out.push({ _rowType: "regionTotal", regName, tot: { ...tot }, key: `region-${regId}` });
+        out.push({ _rowType: "regionTotal", regName, tot: { ...tot }, key: `region-${regId}-${idx}` });
         tot = emptyTotals();
       }
 
       out.push({ _rowType: "data", sale, key: `sr-${sale.user_id}-${idx}` });
 
-      tot.dist += Number(sale.dist_kms) || 0;
+      tot.dist += Math.trunc(Number(sale.dist_kms) || 0);
       tot.hcp += Number(sale.hcp_call) || 0;
       tot.ret += Number(sale.ret_call) || 0;
       tot.prodHcp += Number(sale.hcp_prod_call) || 0;
@@ -137,10 +165,14 @@ export default function DayWiseDashboard({
     }
 
     return out;
-    ────────────────────────────────────────────────────────────────────── */
   }, [activityData]);
 
+  // Only highlight the most-recently-reported row when the selected date is
+  // today — reviewing a past day shouldn't show a "latest" highlight at all.
+  const isViewingToday = selectedDate ? dayjs(selectedDate).isSame(dayjs(), "day") : false;
+
   const latestUserId = useMemo(() => {
+    if (!isViewingToday) return null;
     // Only consider rows that are actually reported (✓, report_type_id > 0).
     // Unreported rows (✗) can still carry a recent last_updated from a
     // generic backend sync, so they must be excluded from this comparison.
@@ -155,7 +187,7 @@ export default function DayWiseDashboard({
       }
     }
     return latest.user_id;
-  }, [activityData]);
+  }, [activityData, isViewingToday]);
 
   return (
     <Paper elevation={0} sx={{ overflow: "auto" }}>
@@ -205,6 +237,32 @@ export default function DayWiseDashboard({
               </TableRow>
             ) : (
               rows.map((row) => {
+                // ── region subtotal row ──
+                if (row._rowType === "regionTotal") {
+                  const { tot, regName } = row;
+                  const hcpPct = calcProdPct(tot.prodHcp, tot.hcp);
+                  const retPct = calcProdPct(tot.prodRet, tot.ret);
+                  return (
+                    <TableRow key={row.key}>
+                      <TableCell colSpan={6} sx={styles.regionTotal}>{regName}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.dist)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>
+                        <b>{zeroTonullVal(tot.hcp)}</b> | <b>{zeroTonullVal(tot.ret)}</b>
+                      </TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>
+                        <b>{zeroTonullVal(hcpPct.pct)}{hcpPct.suffix}</b> | <b>{zeroTonullVal(retPct.pct)}{retPct.suffix}</b>
+                      </TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.event)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.samp)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.joint)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.bday)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.ord)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(roundTotal(tot.ordVal))}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.survey)}</TableCell>
+                    </TableRow>
+                  );
+                }
+
                 // ── data row ──
                 const sale = row.sale;
                 const isLatest = sale.user_id === latestUserId;
