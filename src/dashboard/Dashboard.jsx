@@ -1185,6 +1185,23 @@ export default function Dashboard() {
     navigate(`/dashboard/primarysalesview/${encMonth}/${enType}`)
   }
 
+  const handleFilterTypeChange = useCallback((newType) => {
+  setFilterType(newType);
+  setActivityBreakUp("2");
+  setCusType("0");
+  setEmpType("0");
+
+  if (newType === "0") {
+    // Day Wise defaults
+    setDayWiseDate(dayjs());
+    setShowAllReported(true);
+  } else {
+    // Cumulative defaults
+    setFromDateValue(dayjs().startOf("month"));
+    setToDateValue(dayjs());
+  }
+}, []);
+
   return (
     <Layout>
       <Box sx={{ padding: "20px 20px 0px 20px" }}>
@@ -1443,7 +1460,7 @@ export default function Dashboard() {
                       labelId="type"
                       variant="outlined"
                       value={filterType}
-                      onChange={(e) => setFilterType(e.target.value)}
+                      onChange={(e) => handleFilterTypeChange(e.target.value)}
                     >
                       <MenuItem style={{ fontSize: "11px" }} value="0">Day Wise</MenuItem>
                       <MenuItem style={{ fontSize: "11px" }} value="1">Cumulative</MenuItem>
