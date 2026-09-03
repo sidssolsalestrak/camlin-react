@@ -529,13 +529,13 @@ export default function Dashboard() {
   const closeJointWorkModal = () => setJointWorkModal((p) => ({ ...p, open: false }));
 
   const handleJointWorkSaved = useCallback(async () => {
-    console.log("joint work save is running",summaryModal)
+    console.log("joint work save is running", summaryModal)
     if (summaryModal.srId) {
       const dt = summaryModal.dt || toDateValue;   // ← use the date the summary was opened with
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
         dt: dt ? dt.format("YYYY-MM-DD") : "",
-         type: summaryModal.activityType,
+        type: summaryModal.activityType,
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
         cusType: cusType,
@@ -554,7 +554,7 @@ export default function Dashboard() {
     }
   }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
 
-  console.log("handle joint work todt changes",toDateValue.format("DD-MM-YYYY"))
+  console.log("handle joint work todt changes", toDateValue.format("DD-MM-YYYY"))
 
   /* ───────────────────── Market Input modal (+ icon per call row) ───────────────────── */
   const [marketInputModal, setMarketInputModal] = useState({
@@ -705,11 +705,11 @@ export default function Dashboard() {
 
   const handleMarketInputSaved = useCallback(async () => {
     if (summaryModal.srId) {
-      const dt = summaryModal.dt || toDateValue; 
+      const dt = summaryModal.dt || toDateValue;
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
-        dt:  dt ? dt.format("YYYY-MM-DD") : "",
-         type: summaryModal.activityType,
+        dt: dt ? dt.format("YYYY-MM-DD") : "",
+        type: summaryModal.activityType,
         frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         userType: activityBreakUp,
         cusType: cusType,
@@ -744,14 +744,17 @@ export default function Dashboard() {
     repProfileData: null,
     coveragePatternData: [],
   });
+  const isDayWiseFetchingRef = useRef(false);
+  const dayWiseRequestIdRef = useRef(0);   // NEW — tags each request, discards stale/out-of-order responses
+  const pendingRefetchRef = useRef(false);
 
   const closeDetailModal = () => setDetailModal((p) => ({ ...p, open: false }));
   const closeSummaryModal = () => {
-  setSummaryModal((p) => ({ ...p, open: false }));
-  if (filterType === "0") {
-    fetchDayWiseData();
-  }
-};
+    setSummaryModal((p) => ({ ...p, open: false }));
+    if (filterType === "0") {
+      fetchDayWiseData();
+    }
+  };
   const closeProfileModal = () => setProfileModal((p) => ({ ...p, open: false }));
 
   const fetchUserTypeOptions = async () => {
@@ -857,32 +860,85 @@ export default function Dashboard() {
   // ───────────────────── Day Wise fetch ─────────────────────
   // PHP: getActivityCallData() -> POST dashboard/activityDashboard with
   // {crDate, activityType:1, activityBreakUp, frmDate, empType, cusType, value}
-  const fetchDayWiseData = useCallback(async () => {
-    if (!dayWiseDate) return;
-    setDayWiseLoading(true);
-    try {
-      const res = await api.post("/dashboard/activityDashboard", {
-        crDate: dayWiseDate.format("YYYY-MM-DD"),
-        frmDate: dayWiseDate.format("YYYY-MM-DD"),
-        activityType: 1,
-        activityBreakUp,
-        empType,
-        cusType,
-        // PHP: toggleCheckbox4 (default checked) -> value=1 means "only reported"
-        value: showAllReported ? 1 : 0,
-      });
+const fetchDayWiseData = useCallback(async ({ silent = false } = {}) => {
+  if (!dayWiseDate) return;
+
+  if (isDayWiseFetchingRef.current) {
+    // A fetch (poll or manual) is already in flight.
+    // If this call came from a manual/filter change, remember to refetch
+    // immediately once the current one finishes — don't just drop it.
+    if (!silent) pendingRefetchRef.current = true;
+    return;
+  }
+
+  isDayWiseFetchingRef.current = true;
+  const requestId = ++dayWiseRequestIdRef.current; // stamp this call uniquely
+
+  if (!silent) setDayWiseLoading(true);
+  try {
+    const res = await api.post("/dashboard/activityDashboard", {
+      crDate: dayWiseDate.format("YYYY-MM-DD"),
+      frmDate: dayWiseDate.format("YYYY-MM-DD"),
+      activityType: 1,
+      activityBreakUp,
+      empType,
+      cusType,
+      value: showAllReported ? 1 : 0,
+    });
+
+    // Only apply this response if no newer request has superseded it —
+    // prevents an old (e.g. previous-date) response from overwriting
+    // the table after the user has already moved on to a new date.
+    if (requestId === dayWiseRequestIdRef.current) {
       setDayWiseData(res.data?.activityData || []);
-    } catch (err) {
-      console.error(err);
-      setDayWiseData([]);
-    } finally {
-      setDayWiseLoading(false);
     }
-  }, [dayWiseDate, activityBreakUp, empType, cusType, showAllReported]);
+  } catch (err) {
+    console.error(err);
+    if (!silent && requestId === dayWiseRequestIdRef.current) {
+      setDayWiseData([]);
+    }
+  } finally {
+    if (!silent) setDayWiseLoading(false);
+    isDayWiseFetchingRef.current = false;
+
+    // If a manual change was skipped while this fetch was running,
+    // fire it now with the *current* dayWiseDate/filters (fresh closure).
+    if (pendingRefetchRef.current) {
+      pendingRefetchRef.current = false;
+      fetchDayWiseData({ silent: false });
+    }
+  }
+}, [dayWiseDate, activityBreakUp, empType, cusType, showAllReported]);
 
   useEffect(() => {
     if (filterType === "0") fetchDayWiseData();
   }, [filterType, fetchDayWiseData]);
+
+  useEffect(() => {
+    if (filterType !== "0") return;
+    if (!dayWiseDate || !dayWiseDate.isSame(dayjs(), "day")) return;
+
+    let cancelled = false;
+    let timeoutId = null;
+
+    const scheduleNext = () => {
+      timeoutId = setTimeout(async () => {
+        if (cancelled) return;
+        // Skip this tick entirely if a fetch is already in flight (filter change or previous poll)
+        if (!isDayWiseFetchingRef.current) {
+          await fetchDayWiseData({ silent: true });
+        }
+        if (!cancelled) scheduleNext();
+      }, 2000);
+    };
+
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [filterType, dayWiseDate, fetchDayWiseData]);
 
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
@@ -1033,7 +1089,7 @@ export default function Dashboard() {
         title: name || "",
         srId,
         activityType: effectiveType,
-        dt: effectiveDt, 
+        dt: effectiveDt,
         profile: null,
         activitySummary: [],
         userJoint: [],
@@ -1081,12 +1137,12 @@ export default function Dashboard() {
       setSummaryCusType(custype);
       setSummaryModal((prev) => ({ ...prev, loading: true }));
       try {
-        const dt = summaryModal.dt || toDateValue; 
+        const dt = summaryModal.dt || toDateValue;
         const res = await api.post("/dashboard/callSummaryDetails_new_filters", {
           srID: summaryModal.srId,
           type: summaryModal.activityType,
           custype,
-          dt: dt?dt.format("YYYY-MM-DD"):'',
+          dt: dt ? dt.format("YYYY-MM-DD") : '',
           frDt: fromDateValue ? fromDateValue.format("YYYY-MM-DD") : "",
         });
         setSummaryModal((prev) => ({
@@ -1186,21 +1242,21 @@ export default function Dashboard() {
   }
 
   const handleFilterTypeChange = useCallback((newType) => {
-  setFilterType(newType);
-  setActivityBreakUp("2");
-  setCusType("0");
-  setEmpType("0");
+    setFilterType(newType);
+    setActivityBreakUp("2");
+    setCusType("0");
+    setEmpType("0");
 
-  if (newType === "0") {
-    // Day Wise defaults
-    setDayWiseDate(dayjs());
-    setShowAllReported(true);
-  } else {
-    // Cumulative defaults
-    setFromDateValue(dayjs().startOf("month"));
-    setToDateValue(dayjs());
-  }
-}, []);
+    if (newType === "0") {
+      // Day Wise defaults
+      setDayWiseDate(dayjs());
+      setShowAllReported(true);
+    } else {
+      // Cumulative defaults
+      setFromDateValue(dayjs().startOf("month"));
+      setToDateValue(dayjs());
+    }
+  }, []);
 
   return (
     <Layout>
@@ -1286,10 +1342,10 @@ export default function Dashboard() {
               onDeleteCall={canDeleteCall ? openDeleteCallModal : undefined}
               onViewDisplayBreakup={handleViewDisplayBreakup}
               onOrderDetailsClick={(callId, userId) =>
-                handleDayWiseDetailClick("order", { user_id: userId, call_id: callId, distype: 2  })
+                handleDayWiseDetailClick("order", { user_id: userId, call_id: callId, distype: 2 })
               }
-              onSampleDetailsClick={(callId, userId)=>{
-                handleDayWiseDetailClick("sample", { user_id: userId, call_id: callId, distype: 2  })
+              onSampleDetailsClick={(callId, userId) => {
+                handleDayWiseDetailClick("sample", { user_id: userId, call_id: callId, distype: 2 })
               }
               }
             />
@@ -1589,7 +1645,7 @@ export default function Dashboard() {
             <DayWiseDashboard
               activityData={dayWiseData}
               activityLoading={dayWiseLoading}
-              selectedDate={dayWiseDate} 
+              selectedDate={dayWiseDate}
               onSalePersonClick={handleDayWiseSalePersonClick}
               onRouteMapClick={(userId) =>
                 handleDayWiseDetailClick("routeMap", {
