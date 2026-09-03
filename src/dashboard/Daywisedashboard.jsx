@@ -125,6 +125,9 @@ export default function DayWiseDashboard({
   onOrderDetailClick, // (row) => void — NOT YET WIRED, needs activity_summary_prodDetails API
   onSampleDetailClick, // (row) => void — NOT YET WIRED, needs activity_summary_sampDetails API
 }) {
+  // Only highlight the most-recently-reported row when the selected date is
+  // today — reviewing a past day shouldn't show a "latest" highlight at all.
+  const isViewingToday = selectedDate ? dayjs(selectedDate).isSame(dayjs(), "day") : false;
   // Build the row list with region-subtotal rows interleaved, mirroring the
   // PHP loop: a subtotal row is emitted right before the first row of a new
   // region (using the just-finished region's totals), and one final
@@ -143,7 +146,9 @@ export default function DayWiseDashboard({
 
       out.push({ _rowType: "data", sale, key: `sr-${sale.user_id}-${idx}` });
 
-      tot.dist += Math.trunc(Number(sale.dist_kms) || 0);
+      tot.dist += isViewingToday
+        ? (Number(sale.dist_kms) || 0)
+        : Math.trunc(Number(sale.dist_kms) || 0);
       tot.hcp += Number(sale.hcp_call) || 0;
       tot.ret += Number(sale.ret_call) || 0;
       tot.prodHcp += Number(sale.hcp_prod_call) || 0;
@@ -166,10 +171,6 @@ export default function DayWiseDashboard({
 
     return out;
   }, [activityData]);
-
-  // Only highlight the most-recently-reported row when the selected date is
-  // today — reviewing a past day shouldn't show a "latest" highlight at all.
-  const isViewingToday = selectedDate ? dayjs(selectedDate).isSame(dayjs(), "day") : false;
 
   const latestUserId = useMemo(() => {
     if (!isViewingToday) return null;
@@ -245,7 +246,7 @@ export default function DayWiseDashboard({
                   return (
                     <TableRow key={row.key}>
                       <TableCell colSpan={6} sx={styles.regionTotal}>{regName}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.dist)}</TableCell>
+                      <TableCell align="center" sx={styles.regionTotal}>{tot.dist ? tot.dist.toFixed(2) : "-"}</TableCell>
                       <TableCell align="center" sx={styles.regionTotal}>
                         <b>{zeroTonullVal(tot.hcp)}</b> | <b>{zeroTonullVal(tot.ret)}</b>
                       </TableCell>
@@ -276,9 +277,11 @@ export default function DayWiseDashboard({
                   : "";
                 const isSpecialReportType = [2, 3, 4, 5].includes(Number(sale.report_type_id));
                 const reported = Number(sale.report_type_id) > 0 && sale.report_type_id !== "";
-                const showRouteMarker = sale.beat_work !== " " && Number(sale.location_stat) === 0;
-                const showRouteMapIcon = Number(sale.location_stat) > 0 && sale.beat_work !== " ";
+                const locStat = sale.location_stat;
+                const locStatNum = locStat === "" || locStat === null || locStat === undefined ? 0 : Number(locStat);
 
+                const showRouteMarker = isViewingToday && locStatNum === 0;
+                const showRouteMapIcon = locStatNum > 0;
                 return (
                   <TableRow key={row.key} sx={isLatest ? { "& td": { backgroundColor: "#FFC72C" } } : undefined}>
                     <TableCell sx={{ ...styles.dataCell, maxWidth: 200 }}>
@@ -369,7 +372,7 @@ export default function DayWiseDashboard({
                       {Number(sale.tot_jnt) > 0 && (
                         <i
                           className="fa fa-info-circle"
-                          style={{ cursor: "pointer", marginRight: 4,color:'#133bde' }}
+                          style={{ cursor: "pointer", marginRight: 4, color: '#133bde' }}
                           onClick={() => onJointWorkClick && onJointWorkClick(sale.user_id)}
                         />
                       )}
