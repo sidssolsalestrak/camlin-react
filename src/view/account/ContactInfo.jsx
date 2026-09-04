@@ -31,7 +31,6 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
     handleClinicContactNoBlur,
 }) => {
     const id = React.useId();
-    console.log("field config of meeting time",fieldConfig["Meeting Time"])
     return (
         <div style={{ marginBottom: "10%" }}>
             <Box sx={headContainer}>
@@ -53,9 +52,9 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label="Rep Incharge"
                                                 value={clinic.repIncharge}
                                                 onChange={(e) => handleRepChange(idx, String(e.target.value), false)}
-                                                options={repInchargeOptions}
+                                                options={[{ id: "0", full_name: "Select Rep Incharge" },...repInchargeOptions]}
                                                 valueKey="id"
-                                                labelKey="first_name"
+                                                labelKey="full_name"
                                                 required={true}
                                                 error={!!fieldErrors.repIncharge}
                                                 helperText={fieldErrors.repIncharge}
@@ -74,7 +73,10 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 label={idx === 0 ? "Account Owner (SO)" : "Account Owner (KAM)"}
                                                 value={clinic.repInchargePOS}
                                                 onChange={(e) => handleRepChange(idx, String(e.target.value), true)}
-                                                options={repPOSOptions}
+                                                options={[
+                                                    { id: "0", full_name: "Select Account Owner" },  // ← ADD THIS
+                                                    ...repPOSOptions
+                                                ]}
                                                 valueKey="id"
                                                 labelKey="full_name"
                                                 required={true}
@@ -314,7 +316,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 onChange={(e) => updateClinic(idx, "pharmacyAttached", String(e.target.value))}
                                                 options={pharmacyOptions}
                                                 valueKey="id"
-                                                labelKey="first_name"
+                                                labelKey="name"
                                             />
                                         </Grid>
                                     )}

@@ -1,6 +1,10 @@
 import { Checkbox, FormControlLabel, Grid, TextField } from '@mui/material'
 import React from 'react'
 import CommonAppSelect from '../../utils/CommonAppSelect'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
 const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOptions, ageOptions }) => {
     return (
@@ -55,16 +59,22 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                 {fieldConfig["Birthday"]?.show && (
                     <>
                         <Grid size={{ xs: 12, md: 3 }}>
-                            <TextField
-                                label={fieldConfig["Birthday"]?.label || "Birth Date"}
-                                fullWidth size="small" type="date"
-                                InputLabelProps={{ shrink: true }}
-                                value={form.dob}
-                                disabled={form.dobNA}
-                                onChange={(e) =>
-                                    setForm({ ...form, dob: e.target.value })
-                                }
-                            />
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label={fieldConfig["Birthday"]?.label || "Birth Date"}
+                                    value={form.dob ? dayjs(form.dob) : null}
+                                    onChange={(newValue) =>
+                                        setForm({
+                                            ...form,
+                                            dob: newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "",
+                                        })
+                                    }
+                                    format="DD MMM YYYY"
+                                    views={["day", "month", "year"]}
+                                    disabled={form.dobNA}
+                                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
                         </Grid>
                         <Grid size={{ xs: 12, md: 1 }} sx={{ display: "flex", alignItems: "center" }}>
                             <FormControlLabel
@@ -87,16 +97,22 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                 {fieldConfig["Anniversary"]?.show && (
                     <>
                         <Grid size={{ xs: 12, md: 3 }}>
-                            <TextField
-                                label={fieldConfig["Anniversary"]?.label || "Anniversary"}
-                                fullWidth size="small" type="date"
-                                InputLabelProps={{ shrink: true }}
-                                value={form.anniversary}
-                                disabled={form.anniversaryNA}
-                                onChange={(e) =>
-                                    setForm({ ...form, anniversary: e.target.value })
-                                }
-                            />
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label={fieldConfig["Anniversary"]?.label || "Anniversary"}
+                                    value={form.anniversary ? dayjs(form.anniversary) : null}
+                                    onChange={(newValue) =>
+                                        setForm({
+                                            ...form,
+                                            anniversary: newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "",
+                                        })
+                                    }
+                                    format="DD MMM YYYY"
+                                    views={["day", "month", "year"]}
+                                    disabled={form.anniversaryNA}
+                                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
                         </Grid>
                         <Grid size={{ xs: 12, md: 1 }} sx={{ display: "flex", alignItems: "center" }}>
                             <FormControlLabel

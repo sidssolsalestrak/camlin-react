@@ -362,7 +362,7 @@ function AccountExtract() {
           <Grid container spacing={2}>
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl fullWidth size="small">
+              <FormControl required fullWidth size="small">
                 <InputLabel>{masterPanel["ZONE"] || "Zone"}</InputLabel>
                 <Select
                   value={selectedRegion}
@@ -385,7 +385,7 @@ function AccountExtract() {
 
             {/* ACCOUNT TYPE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl fullWidth size="small">
+              <FormControl required fullWidth size="small">
                 <InputLabel>{masterPanel["ACCM"] || "Account"} Type</InputLabel>
                 <Select
                   value={selectedAccType}
@@ -430,14 +430,22 @@ function AccountExtract() {
             {/* USER */}
             <Grid size={{ xs: 12, md: 2, lg: 2.8 }}>
               <Autocomplete
-                options={userData}
-                getOptionLabel={(option) =>
-                  `${option.first_name || ""} ${option.last_name || ""} (${option.id})`.trim()
+                size="small"
+                options={[{ id: 0, full_name: "All" }, ...userData]}
+                getOptionLabel={(option) => option.full_name || ""}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    {option.full_name}
+                  </li>
+                )}
+                value={
+                  userData.find((u) => u.id === selectedUser) ||
+                  (selectedUser === 0 ? { id: 0, full_name: "All" } : null)
                 }
-                value={userData.find((u) => u.id === selectedUser) || null}
-                onChange={(e, val) => setSelectedUser(val ? val.id : 0)}
+                onChange={(e, val) => setSelectedUser(val ? val.id : '')}
                 renderInput={(params) => (
-                  <TextField {...params} label={masterPanel["USER"] || "User"} size="small" />
+                  <TextField {...params}  label={masterPanel["USER"] || "User"} size="small" />
                 )}
               />
             </Grid>

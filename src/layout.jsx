@@ -85,6 +85,17 @@ const Layout = ({ children, breadcrumb = [] }) => {
     // loadChatbot();
   }, []);
 
+  
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "session-token" && e.newValue === null) {
+        navigate("/Auth");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [navigate]);
+
   const fetchMenu = async () => {
     try {
       const res = await api.post("/getMenuDetails");

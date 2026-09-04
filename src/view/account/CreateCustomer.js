@@ -148,6 +148,11 @@ function CreateCustomer() {
     agegroup: "1",
     potentiality: "1",
     region: "0",
+    adoption: "",
+    loyaltyType: "", 
+    loyalty:"1",
+    dobNA:true,
+    anniversaryNA:true
   });
 
   const isHcpField = (form.cusType === "1"); // hcpDiv2 fields only show for HCP
@@ -206,6 +211,7 @@ function CreateCustomer() {
       frequency: formVal.frequency || "48",
       keyOpinionLeader: formVal.keyOpinionLeader !==null && formVal.keyOpinionLeader!==undefined ? String(formVal.keyOpinionLeader):"0" ,
       adoption: formVal.adoption || "",
+      marketingTools: [...(formVal.marketingTools || [])].sort(), 
       region: formVal.region || "",
       competitorPref: formVal.competitorPref || "",
       hobbies: formVal.hobbies || "",
@@ -256,6 +262,7 @@ function CreateCustomer() {
         oth_qty: r.oth_qty || 0,
       }))
       .sort((x, y) => String(x.pid).localeCompare(String(y.pid)) || String(x.subcat_id).localeCompare(String(y.subcat_id)));
+      console.log("competitior rows which passing compare",comp)
 
     return JSON.stringify({ f, c, b, comp });
   };
@@ -264,6 +271,15 @@ function CreateCustomer() {
     if (originalSnapshot === null) return false; // baseline not loaded yet — don't block
     return buildComparableSnapshot(form, clinics, brandData, competitorRows) === originalSnapshot;
   };
+
+   // helper — a row only "counts" if it has a real, non-zero value somewhere
+    const rowHasData = (r) =>
+        Number(r.prod_qty) > 0 ||
+        Number(r.comp_id_1) > 0 ||
+        Number(r.comp_id_2) > 0 ||
+        Number(r.comp_id_3) > 0 ||
+        Number(r.oth_qty) > 0 ||
+        (r.other_name && r.other_name.trim() !== '');
 
   const { handleSubmit, handleUpdate } = useSubmitCustomer({
     form, clinics, brandData, competitorBrands, competitorRows, setFieldErrors, setForm
@@ -369,13 +385,13 @@ const validateForm = () => {
     hasError = true;
   }
 
-  const noBeat = filteredClinics.some((c) => !c.beat || c.beat === "0");
+  const noBeat = clinics.some((c) => !c.beat || c.beat === "0");
   if (noBeat) {
     newErrors.beat = "Beat is Required";
     hasError = true;
   }
 
-  const noBranch = filteredClinics.some((c) => !c.clinicName || c.clinicName.trim() === "");
+const noBranch = clinics.some((c) => !c.clinicName || c.clinicName.trim() === "");
   if (noBranch) {
     newErrors.clinicName = "Branch Name is Required";
     hasError = true;
@@ -597,6 +613,7 @@ const onUpdateClick = () => {
   useEffect(() => {
     loadDynamicForm(form.cusType);
     fetchAccountOwner()
+    fetchRepIncharge();
   }, []);
 
   const handleAccTypeChange = (e) => {
@@ -604,8 +621,8 @@ const onUpdateClick = () => {
     setForm((f) => ({
     ...f, cusType: val,
     gender: "1", agegroup: "1", pharmaType: 1, practiceType: "",
-    potentiality: "1", loyalty: "", loyaltyType: "", frequency: "",  // ← "1" not ""
-    retailerType: "1",
+    potentiality: "1", loyalty: "1", loyaltyType: "", frequency: "",  // ← "1" not ""
+    retailerType: "1",dobNA:true,anniversaryNA:true
     }));
     setFieldErrors((prev) => ({ ...prev, cusType: "" }));
     setGenderOptions([]); setAgeOptions([]);
@@ -614,7 +631,26 @@ const onUpdateClick = () => {
     setRepInchargeOptions([]); setRepPOSOptions([]);
     setClinics([{ ...DEFAULT_CLINIC }]);
     loadDynamicForm(val);
+    fetchAccountOwner();    
+    fetchRepIncharge(); 
   };
+
+  useEffect(()=>{
+    let fetchBrandData=async()=>{
+      let  brandsRes=await api.post('/getBrands',{ doctorId: decodedID > 0 ? decodedID : 0 })
+      const brandsRaw = brandsRes.data.data || [];
+      const mappedBrands = brandsRaw.map(b => ({
+        subCatId: String(b.id),
+        name: b.sub_name,
+        focus: b.foc? 1 : 0,
+        reminder: b.rem ? 1 : 0,
+        competition: 0,
+        compCount: 0,
+    }));
+      setBrandData(mappedBrands);
+    }
+    fetchBrandData()
+  },[])
 
   const handleRegionChange = async (val) => {
     // find zone_id from the selected region
@@ -625,27 +661,15 @@ const onUpdateClick = () => {
     setFieldErrors((prev) => ({ ...prev, region: "" }));
 
     try {
-      const [repRes, repPoso, distRes, brandsRes] = await Promise.all([
+      const [repRes, repPoso, distRes] = await Promise.all([
         api.post("/getRepIncharge", { regId: val, requestType: form.cusType }),
         api.post("/getRepInchargePos", { regId: val }),
         api.post("/getDistributor", { regId: val }),
-        api.post("/getBrands", { doctorId: decodedID > 0 ? decodedID : 0 }), // ← missing
       ]);
 
       setRepInchargeOptions((repRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
       setRepPOSOptions((repRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
       setDistributorOptions((distRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
-      const brandsRaw = brandsRes.data.data || [];
-      console.log("brands Raw in list",brandsRaw)
-      const mappedBrands = brandsRaw.map(b => ({
-        subCatId: String(b.id),
-        name: b.sub_name,
-        focus: b.foc? 1 : 0,
-        reminder: b.rem ? 1 : 0,
-        competition: 0,
-        compCount: 0,
-    }));
-      setBrandData(mappedBrands);
 
     } catch (err) { console.error(err); }
   };
@@ -730,6 +754,32 @@ const onUpdateClick = () => {
     });
   }, [fieldConfig]);
 
+
+      // Auto-select first option for Practice Type (only on initial load, not edit)
+    useEffect(() => {
+      if (!editDataLoading && !decodedID && practiseType.length > 0 && !form.practiseType) {
+        setForm(prev => ({ ...prev, practiseType: String(practiseType[0].id) }));
+      }
+    }, [practiseType, editDataLoading, decodedID, form.practiseType]);
+
+    // Auto-select first option for Adoption/Current Zone
+    useEffect(() => {
+      if (adoptionOptions.length > 0 && (!form.adoption || form.adoption === "")) {
+        if (!decodedID || decodedID === "0") {
+          setForm(prev => ({ ...prev, adoption: String(adoptionOptions[0].id) }));
+        }
+      }
+    }, [adoptionOptions]);
+
+    // Auto-select first option for Loyalty Type
+    useEffect(() => {
+      if (loyaltyTypeOptions.length > 0 && (!form.loyaltyType || form.loyaltyType === "")) {
+        if (!decodedID || decodedID === "0") {
+          setForm(prev => ({ ...prev, loyaltyType: String(loyaltyTypeOptions[0].id) }));
+        }
+      }
+    }, [loyaltyTypeOptions]);
+
   const handleRepChange = async (idx, repId, isPos = false) => {
     const updated = clinics.map((c, i) => {
       if (i !== idx) return c;
@@ -758,6 +808,18 @@ const onUpdateClick = () => {
       console.log("fetch sales o region error", err)
     }
   }
+
+  const fetchRepIncharge = async () => {
+  try {
+    let response = await api.post("/getRepIncharge", { regId: 0, requestType: form.cusType })
+    let result = Array.isArray(response.data.data) ? response.data.data : []
+    setRepInchargeOptions(result)
+  }
+  catch (err) {
+    console.log("fetch rep incharge error", err)
+  }
+}
+
 
   const updateClinic = (idx, field, value) => {
     setClinics((prev) => prev.map((c, i) => (i === idx ? { ...c, [field]: value } : c)));
@@ -841,6 +903,11 @@ const onUpdateClick = () => {
       agegroup: "1",
       potentiality: "1",
       region: "0",
+      adoption: "", 
+      loyaltyType: "",
+      loyalty:'1',
+      dobNA:true,
+      anniversaryNA:true 
     });
     setClinics([{ ...DEFAULT_CLINIC }]);
     setBrandData([]);
@@ -869,6 +936,7 @@ const onUpdateClick = () => {
         const res = await api.post(primaryEndpoint, { id: decodedID });
         const d = res.data.data[0];
         if (!d) return;
+        console.log("edit data in customers",res)
 
         // ── 2. Load dynamic form first
         await loadDynamicForm(String(d.cus_type_id));
@@ -896,15 +964,15 @@ const onUpdateClick = () => {
           email: d.email || "",
           sendEmail: String(d.email_stat || "0"),
           potentiality: String(d.p_class_id || "1"),
-          loyalty: String(d.l_class_id || "0"),
+          loyalty: String(d.l_class_id || "1"),
           loyaltyType: String(d.loyality_id || "0"),
           frequency: String(d.cus_visit_freq || ""),
           keyOpinionLeader: d.kol_stat !== null && d.kol_stat !== undefined
           ? String(d.kol_stat)
           : "0",
           adoption: String(d.adoption_id || "0"),
-          marketingTools: d.marketing_tool_ids
-          ? String(d.marketing_tool_ids).split(",").filter(Boolean)
+          marketingTools: d.tool_id
+          ? String(d.tool_id).split(",").filter(Boolean)
           : [],
           region: String(d.reg_id || "0"),
           competitorPref: d.comp_pref || "",
@@ -1285,7 +1353,7 @@ const onUpdateClick = () => {
                   setForm({ ...form, practiseType: String(e.target.value) })
                 }
                 options={practiseType}
-                labelKey="pharmacy_type"
+                labelKey="practice_type"
               />
             </Grid>
           )}
@@ -1735,6 +1803,7 @@ const onUpdateClick = () => {
     const editedRows = saveData.rows;
     console.log("Edited rows from Add Competitor:", editedRows);
     if (!decodedID || decodedID === "0") {
+   // New record path
     const rowsWithSubcat = editedRows.map(r => ({
       ...r,
       subcat_id: selectedBrand?.subCatId || 0,
@@ -1747,7 +1816,7 @@ const onUpdateClick = () => {
 
     setBrandData(prev => prev.map(b =>
       b.subCatId === selectedBrand?.subCatId
-        ? { ...b, compCount: rowsWithSubcat.length }
+        ? { ...b, compCount: rowsWithSubcat.filter(rowHasData).length }   // ← filtered
         : b
     ));
     return;
@@ -1838,7 +1907,7 @@ const onUpdateClick = () => {
       
       setBrandData(prev => prev.map(b =>
         b.subCatId === selectedBrand?.subCatId
-          ? { ...b, compCount: mergedRows.length }
+          ? { ...b, compCount: mergedRows.filter(rowHasData).length }
           : b
       ));
       

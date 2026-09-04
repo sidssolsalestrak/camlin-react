@@ -94,7 +94,7 @@ function AccountMas() {
     ? "Approval List"
     : `${masterPanel["ACCM"] || "Account"} Masters`;
   const [regionData, setRegionData] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState(0);
 
   const [userType, setUserType] = useState([]);
   const [selectedUserType, setSelectedUserType] = useState(0);
@@ -171,34 +171,45 @@ function AccountMas() {
   };
 
   const fetchUsers = async ({ trigger_type = 0 } = {}) => {
-    try {
-      const res = await api.post("/getUsersByRegion", {
-        country: selectedRegion,
-        cus_req: cusReq,
-        req_type: reqType,
-        user_type: selectedUserType,
-        trigger_type,
-      });
-      setUserData(res.data.data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  if (cusReq == 1 && (!selectedRegion || selectedRegion == 0)) {
+    setUserData([]);
+    return;
+  }
+
+  try {
+    const res = await api.post("/getUsersByRegion", {
+      country: selectedRegion,
+      cus_req: cusReq,
+      req_type: reqType,
+      user_type: selectedUserType,
+      trigger_type,
+    });
+    setUserData(res.data.data || []);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleLoad = (newSelectedUser = null) => {
     const effectiveSelectedUser =
-      typeof newSelectedUser === "number" ? newSelectedUser : selectedUser;
+      newSelectedUser === 0 || newSelectedUser === "" || typeof newSelectedUser === "number"
+        ? newSelectedUser
+        : selectedUser;
 
-    const val2 = selectedRegion; // country
-    const val3 = effectiveSelectedUser; // user
-    const val4 = selectedUserType; // userType
-    const val5 = cusReq; // customers / requests
+    const val2 = selectedRegion;
+    const val3 = effectiveSelectedUser;
+    const val4 = selectedUserType;
+    const val5 = cusReq;
     let val = 0;
 
     if (val5 == 2) {
       val = reqType;
     } else if (val5 == 1) {
-      if (val3 === 0) {
+      if (!val2) {
+        toast.error(`Please select ${masterPanel["REGN"] || "Region"}!`);
+        return;
+      }
+      if (!val3) {
         toast.error(`Please select ${masterPanel["USER"] || "User"}!`);
         return;
       }
@@ -209,13 +220,12 @@ function AccountMas() {
       return;
     }
 
-    const encode = (val) => btoa(val || 0);
+    const encode = (val) => btoa(val || 0);   // "" and 0 both encode the same way, so navigate is unaffected
 
     navigate(
       `/customers/AllDoctors/${encode(val)}/${encode(val2)}/${encode(val3)}/${encode(val4)}/${encode(val5)}`,
     );
   };
-
   const badge = (color) => ({
     backgroundColor: color,
     color: "#fff",
@@ -644,9 +654,7 @@ function AccountMas() {
   };
 
   useEffect(() => {
-    if (selectedRegion) {
-      fetchUsers({ trigger_type: 1 });
-    }
+   fetchUsers({ trigger_type: 1 });
   }, [selectedRegion]);
 
   useEffect(() => {
@@ -997,7 +1005,7 @@ const handleRejectAll = () => {
           </Grid>
 
           <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-            <FormControl required fullWidth size="small">
+            <FormControl fullWidth size="small">
               <InputLabel id="userType-label">{masterPanel["USER"] || "User"} Type</InputLabel>
 
               <Select
@@ -1024,33 +1032,37 @@ const handleRejectAll = () => {
 
           <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth size="small">
-              <Autocomplete
+             <Autocomplete
                 size="small"
-                options={userData}
+                options={[{ id: 0, full_name: "All" }, ...userData]}
                 getOptionLabel={(option) => {
-                  const name = [option.first_name, option.last_name]
-                    .filter((val) => val && val !== "null")
-                    .join(" ");
-
-                  return `${name}${cusReq == 2 && option.count ? ` (${option.count})` : ""
-                    }`;
+                  if (option.id === 0) return "All";
+                  return `${option.full_name}${cusReq == 2 && option.count ? ` (${option.count})` : ""}`;
                 }}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 renderOption={(props, option) => {
-                  const name = [option.first_name, option.last_name]
-                    .filter(Boolean)
-                    .join(" ");
+                  if (option.id === 0) {
+                    return (
+                      <li {...props} key={0}>
+                        All
+                      </li>
+                    );
+                  }
 
                   return (
                     <li {...props} key={option.id}>
-                      {name}
+                      {option.full_name}
                       {cusReq == 2 && option.count ? ` (${option.count})` : ""}
                     </li>
                   );
                 }}
-                value={userData.find((u) => u.id === selectedUser) || null}
+                value={
+                  userData.find((u) => u.id === selectedUser) ||
+                  (selectedUser === 0 ? { id: 0, full_name: "All" } : null)
+                }
                 onChange={(e, newValue) => {
-                  const userId = newValue ? newValue.id : 0;
+                  const userId = newValue ? newValue.id : "";
+                  console.log("userId in onchange",userId)
                   setSelectedUser(userId);
                   handleLoad(userId);
                 }}
@@ -1060,6 +1072,7 @@ const handleRejectAll = () => {
                     placeholder={`Select ${masterPanel["USER"] || "User"}`}
                     variant="outlined"
                     label={masterPanel["USER"] || "User"}
+                    required
                   />
                 )}
               />
