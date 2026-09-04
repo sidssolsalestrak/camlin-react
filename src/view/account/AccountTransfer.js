@@ -459,7 +459,7 @@ function AccountTransfer() {
                     }}>
                         <Grid container spacing={0.95}>
                         <Grid size={{ md: 3.3, lg:2.3, xs: 12, sm: 4 }}>
-                        <FormControl fullWidth>
+                        <FormControl  required fullWidth>
                         <InputLabel id="transType">Type</InputLabel>
                         <Select
                             size="small"

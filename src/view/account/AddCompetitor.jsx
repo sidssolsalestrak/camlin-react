@@ -98,16 +98,14 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                 if (r.pid !== pid) return r;
 
                 const normalizedValue = (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3')
-                    ? String(value)   // ← always store as string
+                    ? String(value)
                     : value;
 
                 const updatedRow = { ...r, [field]: normalizedValue };
 
                 if (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3') {
-                    const qtyField = field.replace('id', 'id_qty');
-                    if (normalizedValue === "0") {
-                        updatedRow[qtyField] = "";
-                    }
+                    const qtyField = `${field}_qty`;   // ← comp_id_1 -> comp_id_1_qty
+                    updatedRow[qtyField] = "";
                 }
 
                 return updatedRow;
@@ -187,7 +185,7 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
                 size="small"
                 value={String(value || "0")}
                 onChange={(e) => updateRow(pid, field, e.target.value)}
-                sx={{ fontSize: "11px", minWidth: 110 }}
+                sx={{ fontSize: "11px", minWidth: 110,maxWidth: 110 }}
             >
                 <MenuItem value="0"><em>Select Competitor</em></MenuItem>
                 {availableComps.map((c) => (
@@ -261,9 +259,10 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
         }
     }
 
-    // ✅ ONLY include rows that have actual data
+    
+    //    zeroing is saved/propagated instead of being silently dropped)
     const rowsWithData = rows.filter(row => {
-        return (
+        const hasData = (
             Number(row.prod_qty) > 0 ||
             Number(row.comp_id_1) > 0 ||
             Number(row.comp_id_2) > 0 ||
@@ -271,14 +270,18 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
             Number(row.oth_qty) > 0 ||
             (row.other_name && row.other_name.trim() !== '')
         );
+
+        const existedBefore = existingRows.some(e => String(e.pid) === String(row.pid));
+
+        return hasData || existedBefore;
     });
 
     const grandTotalSum = rowsWithData.reduce((sum, r) => sum + getRowTotal(r), 0);
 
-    if (grandTotalSum === 0 && rowsWithData.length === 0) {
-        toast.error('Total Qty Must be more than 0 to Proceed!!');
-        return;
-    }
+    // if (grandTotalSum === 0 && rowsWithData.length === 0) {
+    //     toast.error('Total Qty Must be more than 0 to Proceed!!');
+    //     return;
+    // }
 
     const saveData = {
         subcat_id: selectedBrand?.subCatId,

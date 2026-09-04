@@ -77,6 +77,7 @@ import LoginProjCode from "./view/LoginProjCode";
 import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
 import { useLocation } from "react-router-dom";
 import PassExpReset from "./view/PassExpReset";
+import UploadBilling from "./view/trans/uploadBilling";
 
 function App() {
    const relatedRoutes = {
@@ -388,6 +389,7 @@ function App() {
              element={<UploadClosing />} 
              />
              <Route path="/upload_closing" element={<UploadClosing />}  />
+             <Route path="/input/uploadBilling" element={<UploadBilling />}  />
              <Route path="/change_password"  element={<ChangePassword />}  />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

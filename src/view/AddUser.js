@@ -383,8 +383,13 @@ function AddUser() {
         // setAppAccess(String(d.app_acc_stat));
 
         if (d.image_upl) {
-          setPreviewImage(`${process.env.REACT_APP_PROFILE_URL}/${d.image_upl}`);
-          setOldProfileImage(d.image_upl)
+          const imgUrl = `${process.env.REACT_APP_PROFILE_URL}/${d.image_upl}`;
+          console.log("image url passing",imgUrl)
+          const img = new Image();
+          img.onload = () => setPreviewImage(imgUrl);
+          img.onerror = () => setPreviewImage(profile);
+          img.src = imgUrl;
+          setOldProfileImage(d.image_upl);
         }
 
         // if (d.rep_to_type) {
@@ -1740,6 +1745,7 @@ function AddUser() {
                   multiline
                   minRows={3}
                   value={address}
+                  required
                   onChange={(e) => {
                     const onlyText = e.target.value.replace(/^\s+/, "");
                     setAddress(onlyText)
@@ -2166,9 +2172,12 @@ function AddUser() {
 
               {/* RIGHT SIDE */}
               <Grid size={{ xs: 12, sm: 6 }}>
-                <img
+               <img
                   src={previewImage}
-                  alt="profile"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = profile;
+                  }}
                   style={{
                     width: "150px",
                     height: "150px",
