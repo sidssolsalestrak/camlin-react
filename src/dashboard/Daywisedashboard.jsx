@@ -369,14 +369,14 @@ export default function DayWiseDashboard({
                       {zeroTonullVal(sale.tot_samp)}
                     </TableCell>
                     <TableCell sx={styles.dataCell} align="center">
+                      {zeroTonullVal(sale.tot_jnt)}{" "}
                       {Number(sale.tot_jnt) > 0 && (
                         <i
                           className="fa fa-info-circle"
-                          style={{ cursor: "pointer", marginRight: 4, color: '#133bde' }}
+                          style={{ cursor: "pointer", color: '#133bde' }}
                           onClick={() => onJointWorkClick && onJointWorkClick(sale.user_id)}
                         />
                       )}
-                      {zeroTonullVal(sale.tot_jnt)}
                     </TableCell>
                     <TableCell sx={styles.dataCell} align="center">{zeroTonullVal(sale.tot_dob_anniv)}</TableCell>
                     <TableCell

@@ -405,7 +405,7 @@ export default function Dashboard() {
   const [dayWiseDate, setDayWiseDate] = useState(dayjs());
   const [dayWiseData, setDayWiseData] = useState([]);
   const [dayWiseLoading, setDayWiseLoading] = useState(false);
-
+  const [refetchTick, setRefetchTick] = useState(0);
   const [userTypeOptions, setUserTypeOptions] = useState([]); // from backend, mirrors $user_type_mas
   const [empTypeOptions, setEmpTypeOptions] = useState([]);   // from backend, mirrors $bumas
   const [activityBreakUp, setActivityBreakUp] = useState("2"); // default '2' per PHP ng-init
@@ -860,59 +860,64 @@ export default function Dashboard() {
   // ───────────────────── Day Wise fetch ─────────────────────
   // PHP: getActivityCallData() -> POST dashboard/activityDashboard with
   // {crDate, activityType:1, activityBreakUp, frmDate, empType, cusType, value}
-const fetchDayWiseData = useCallback(async ({ silent = false } = {}) => {
-  if (!dayWiseDate) return;
+  const fetchDayWiseData = useCallback(async ({ silent = false } = {}) => {
+    if (!dayWiseDate) return;
 
-  if (isDayWiseFetchingRef.current) {
-    // A fetch (poll or manual) is already in flight.
-    // If this call came from a manual/filter change, remember to refetch
-    // immediately once the current one finishes — don't just drop it.
-    if (!silent) pendingRefetchRef.current = true;
-    return;
-  }
-
-  isDayWiseFetchingRef.current = true;
-  const requestId = ++dayWiseRequestIdRef.current; // stamp this call uniquely
-
-  if (!silent) setDayWiseLoading(true);
-  try {
-    const res = await api.post("/dashboard/activityDashboard", {
-      crDate: dayWiseDate.format("YYYY-MM-DD"),
-      frmDate: dayWiseDate.format("YYYY-MM-DD"),
-      activityType: 1,
-      activityBreakUp,
-      empType,
-      cusType,
-      value: showAllReported ? 1 : 0,
-    });
-
-    // Only apply this response if no newer request has superseded it —
-    // prevents an old (e.g. previous-date) response from overwriting
-    // the table after the user has already moved on to a new date.
-    if (requestId === dayWiseRequestIdRef.current) {
-      setDayWiseData(res.data?.activityData || []);
+    if (isDayWiseFetchingRef.current) {
+      // A fetch (poll or manual) is already in flight.
+      // If this call came from a manual/filter change, remember to refetch
+      // immediately once the current one finishes — don't just drop it.
+      if (!silent) pendingRefetchRef.current = true;
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    if (!silent && requestId === dayWiseRequestIdRef.current) {
-      setDayWiseData([]);
-    }
-  } finally {
-    if (!silent) setDayWiseLoading(false);
-    isDayWiseFetchingRef.current = false;
 
-    // If a manual change was skipped while this fetch was running,
-    // fire it now with the *current* dayWiseDate/filters (fresh closure).
-    if (pendingRefetchRef.current) {
-      pendingRefetchRef.current = false;
-      fetchDayWiseData({ silent: false });
+    isDayWiseFetchingRef.current = true;
+    const requestId = ++dayWiseRequestIdRef.current; // stamp this call uniquely
+
+    if (!silent) setDayWiseLoading(true);
+    try {
+      const res = await api.post("/dashboard/activityDashboard", {
+        crDate: dayWiseDate.format("YYYY-MM-DD"),
+        frmDate: dayWiseDate.format("YYYY-MM-DD"),
+        activityType: 1,
+        activityBreakUp,
+        empType,
+        cusType,
+        value: showAllReported ? 1 : 0,
+      });
+
+      // Only apply this response if no newer request has superseded it —
+      // prevents an old (e.g. previous-date) response from overwriting
+      // the table after the user has already moved on to a new date.
+      if (requestId === dayWiseRequestIdRef.current) {
+        setDayWiseData(res.data?.activityData || []);
+      }
+    } catch (err) {
+      console.error(err);
+      if (!silent && requestId === dayWiseRequestIdRef.current) {
+        setDayWiseData([]);
+      }
+    } finally {
+      if (!silent) setDayWiseLoading(false);
+      isDayWiseFetchingRef.current = false;
+
+      // Don't recurse into this closure — it's stale. Bump state so a
+      // fresh effect (with the CURRENT dayWiseDate/filters) does the retry.
+      if (pendingRefetchRef.current) {
+        pendingRefetchRef.current = false;
+        setRefetchTick((t) => t + 1);
+      }
     }
-  }
-}, [dayWiseDate, activityBreakUp, empType, cusType, showAllReported]);
+  }, [dayWiseDate, activityBreakUp, empType, cusType, showAllReported]);
 
   useEffect(() => {
     if (filterType === "0") fetchDayWiseData();
   }, [filterType, fetchDayWiseData]);
+
+   useEffect(() => {
+    if (refetchTick === 0) return;
+    if (filterType === "0") fetchDayWiseData();
+  }, [refetchTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (filterType !== "0") return;
@@ -1465,40 +1470,40 @@ const fetchDayWiseData = useCallback(async ({ silent = false } = {}) => {
             <Box sx={{ flex: 1 }}>
               <Grid container spacing={1} alignItems="center">
                 {filterType === "0" ? (
-                  <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
                         label="Date"
                         format="DD MMM YYYY"
                         value={dayWiseDate}
                         onChange={(v) => setDayWiseDate(v)}
-                        slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+                        slotProps={{ textField: { size: "small", sx: { maxWidth: 140 } } }}
                         maxDate={dayjs()}
                       />
                     </LocalizationProvider>
                   </Grid>
                 ) : (
                   <>
-                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="From"
                           format="DD MMM YYYY"
                           value={fromDateValue}
                           onChange={(newVal) => setFromDateValue(newVal)}
-                          slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+                          slotProps={{ textField: { size: "small", sx: { maxWidth: 140 } } }}
                           maxDate={toDateValue ? toDateValue : null}
                         />
                       </LocalizationProvider>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="To"
                           format="DD MMM YYYY"
                           value={toDateValue}
                           onChange={(newVal) => setToDateValue(newVal)}
-                          slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+                          slotProps={{ textField: { size: "small", sx: { maxWidth: 140 } } }}
                           minDate={fromDateValue ? fromDateValue : null}
                         />
                       </LocalizationProvider>
