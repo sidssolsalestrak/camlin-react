@@ -248,6 +248,7 @@ function CreateCustomer() {
       .sort((x, y) => String(x.subCatId).localeCompare(String(y.subCatId)));
 
     const comp = (competitorRowsVal || [])
+     .filter(rowHasData)   
       .map(r => ({
         subcat_id: r.subcat_id,
         pid: r.pid,
