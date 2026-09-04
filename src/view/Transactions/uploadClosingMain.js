@@ -1541,7 +1541,7 @@ function UploadClosing() {
             {masterPanel["PROD"] || "Product"} Name
           </Typography>
           <Box
-            sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}
+            sx={{ display: "flex", alignItems: "center", gap: 0.25}}
           >
             <Typography
               variant="caption"
@@ -1671,7 +1671,7 @@ function UploadClosing() {
           </Typography>
           {isApproved && (
             <Box
-              sx={{ display: "flex", alignItems: "center", gap: 0.25, mr: 30 }}
+              sx={{ display: "flex", alignItems: "center", gap: 0.25,}}
             >
               <Typography
                 variant="caption"
@@ -2651,6 +2651,25 @@ function UploadClosing() {
                 </Box>
               )}
               <Box sx={{ flex: 1 }} />
+               {availableCategories.length > 0 && (isApproved || manualMode) && (
+                <FormControl size="small" sx={{ minWidth: 100 }}>
+                  <Select
+                    value={selCategory}
+                    onChange={(e) => setSelCategory(e.target.value)}
+                    sx={{ fontSize: 12 }}
+                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                  >
+                    <MenuItem value="all" sx={{ fontSize: 12 }}>
+                      All
+                    </MenuItem>
+                    {availableCategories.map((cat) => (
+                      <MenuItem key={cat} value={cat} sx={{ fontSize: 12 }}>
+                        {cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               {!isApproved &&
                 !isRejected &&
@@ -2720,25 +2739,6 @@ function UploadClosing() {
                 >
                   Abort
                 </Button>
-              )}
-              {availableCategories.length > 0 && (isApproved || manualMode) && (
-                <FormControl size="small" sx={{ minWidth: 100 }}>
-                  <Select
-                    value={selCategory}
-                    onChange={(e) => setSelCategory(e.target.value)}
-                    sx={{ fontSize: 12 }}
-                    MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
-                  >
-                    <MenuItem value="all" sx={{ fontSize: 12 }}>
-                      All
-                    </MenuItem>
-                    {availableCategories.map((cat) => (
-                      <MenuItem key={cat} value={cat} sx={{ fontSize: 12 }}>
-                        {cat}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               )}
             </Box>
 
