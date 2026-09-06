@@ -1194,7 +1194,7 @@ const handleRejectAll = () => {
         {decodedParams.cusReq == 2 &&
           [0, 2].includes(Number(accStat)) &&
           tableData.some((row) => isRowActionAllowed(row)) && (
-            <Box mt={2} display="flex" justifyContent="center">
+            <Box display="flex" justifyContent="center">
               <button
                 onClick={handleSubmitAllClick}
                 style={{

@@ -17,8 +17,10 @@ import {
     Stack,
     Pagination,
     PaginationItem,
+    TextField,
+    InputAdornment,
 } from "@mui/material";
-import { KeyboardArrowDown } from "@mui/icons-material";
+import { KeyboardArrowDown, Search, Clear } from "@mui/icons-material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import {
@@ -113,9 +115,11 @@ const SubmissionStatusTableComponent = ({
     onPreviewFile = null,
     userType = null,
     pagination = true,
-    defaultPageSize = 25,
+    defaultPageSize = 50,
     pageSizeOptions = [10, 25, 50, 100, 200, 500],
     footerActions = null,
+    searchable = true,
+    searchPlaceholder = "Search",
 }) => {
     const lastGroupField = useMemo(() => {
         if (stkGroup === 1) {
@@ -190,26 +194,60 @@ const SubmissionStatusTableComponent = ({
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         setPage(0);
     }, [tableData]);
 
-    const pageCount = pagination ? Math.max(1, Math.ceil(tableData.length / rowsPerPage)) : 1;
+    const filteredData = useMemo(() => {
+        if (!searchTerm.trim()) return tableData;
+
+        const term = searchTerm.toLowerCase().trim();
+        return tableData.filter((row) => {
+            const searchParts = [];
+
+            Object.values(row).forEach((val) => {
+                if (val === null || val === undefined) return;
+                if (typeof val === "object") return;
+                searchParts.push(String(val));
+            });
+
+            columns.forEach((col) => {
+                const val = row[col.field];
+                if (val === null || val === undefined) return;
+
+                if (col.field === "close_date" && dayjs(val).isValid()) {
+                    searchParts.push(dayjs(val).format("MMM YYYY"));
+                    searchParts.push(dayjs(val).format("YYYY-MM-DD"));
+                } else if (col.field === "create_dt" && val !== "1970-01-01" && dayjs(val).isValid()) {
+                    searchParts.push(dayjs(val).format("DD MMM YYYY"));
+                    searchParts.push(dayjs(val).format("DD-MM-YYYY"));
+                } else {
+                    searchParts.push(String(val));
+                }
+            });
+
+            const searchableText = searchParts.join(" ").toLowerCase();
+            return searchableText.includes(term);
+        });
+    }, [tableData, searchTerm, columns]);
+
+    const pageCount = pagination ? Math.max(1, Math.ceil(filteredData.length / rowsPerPage)) : 1;
 
     const paginatedRows = useMemo(() => {
-        if (!pagination) return tableData;
+        if (!pagination) return filteredData;
         const start = page * rowsPerPage;
-        return tableData.slice(start, start + rowsPerPage);
-    }, [tableData, pagination, page, rowsPerPage]);
+        return filteredData.slice(start, start + rowsPerPage);
+    }, [filteredData, pagination, page, rowsPerPage]);
 
     const { scrollRef, onScroll, startIndex, endIndex, topSpacerHeight, bottomSpacerHeight } =
-        useVirtualRows(pagination ? 0 : tableData.length);
+        useVirtualRows(pagination ? 0 : filteredData.length);
 
     const visibleRows = useMemo(() => {
         if (pagination) return paginatedRows;
-        return tableData.slice(startIndex, endIndex);
-    }, [pagination, paginatedRows, tableData, startIndex, endIndex]);
+        return filteredData.slice(startIndex, endIndex);
+    }, [pagination, paginatedRows, filteredData, startIndex, endIndex]);
 
     const renderStarRating = useCallback((score, processStat) => {
         if (!score && processStat === 0) return null;
@@ -547,15 +585,60 @@ const SubmissionStatusTableComponent = ({
                             variant="body2"
                             sx={{ color: "#6b7280", backgroundColor: "#f3f4f6", px: 1.5, py: 0.25, borderRadius: 1, fontSize: "0.875rem", whiteSpace: "nowrap" }}
                         >
-                            {tableData.length > 0
-                                ? `Showing ${page * rowsPerPage + 1} to ${Math.min((page + 1) * rowsPerPage, tableData.length)} of ${tableData.length.toLocaleString()} entries`
+                            {filteredData.length > 0
+                                ? `Showing ${page * rowsPerPage + 1} to ${Math.min((page + 1) * rowsPerPage, filteredData.length)} of ${filteredData.length.toLocaleString()} entries`
                                 : "Showing 0 to 0 of 0 entries"}
                         </Typography>
                     </Box>
                 ) : (
                     <Box />
                 )}
-                {headerLegend}
+                <Box display="flex" alignItems="center" gap={1}>
+                    {headerLegend}
+                    {searchable && (
+                        <TextField
+                            size="small"
+                            placeholder={searchPlaceholder}
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setPage(0);
+                            }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search sx={{ color: "#9ca3af", fontSize: 18 }} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: searchTerm && (
+                                    <InputAdornment position="end">
+                                        <Clear
+                                            sx={{
+                                                color: "#9ca3af",
+                                                fontSize: 16,
+                                                cursor: "pointer",
+                                            }}
+                                            onClick={() => {
+                                                setSearchTerm("");
+                                                setPage(0);
+                                            }}
+                                        />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                width: 200,
+                                "& .MuiOutlinedInput-root": {
+                                    height: 32,
+                                    fontSize: "0.875rem",
+                                    "& fieldset": { borderColor: "#d1d5db" },
+                                    "&:hover fieldset": { borderColor: "primary.main" },
+                                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                                },
+                            }}
+                        />
+                    )}
+                </Box>
             </Box>
 
             <Box
@@ -605,10 +688,12 @@ const SubmissionStatusTableComponent = ({
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {tableData.length === 0 ? (
+                        {filteredData.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={columns.length} align="center" sx={{ py: 4 }}>
-                                    <Typography variant="body1" sx={{ color: "#4a4e55" }}>No data available</Typography>
+                                    <Typography variant="body1" sx={{ color: "#4a4e55" }}>
+                                        {searchTerm ? "No matching records found" : "No data available"}
+                                    </Typography>
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -676,7 +761,8 @@ const SubmissionStatusTable = React.memo(SubmissionStatusTableComponent, (prevPr
         prevProps.terGroup === nextProps.terGroup &&
         prevProps.committedType === nextProps.committedType &&
         prevProps.masterPanel === nextProps.masterPanel &&
-        prevProps.pagination === nextProps.pagination
+        prevProps.pagination === nextProps.pagination &&
+        prevProps.searchable === nextProps.searchable
     );
 });
 
