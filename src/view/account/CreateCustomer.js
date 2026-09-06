@@ -394,7 +394,7 @@ const validateForm = () => {
 
 const noBranch = clinics.some((c) => !c.clinicName || c.clinicName.trim() === "");
   if (noBranch) {
-    newErrors.clinicName = "Branch Name is Required";
+    newErrors.clinicName = isHcpField ? "Clinic Name is Required" : "Branch Name is Required";
     hasError = true;
   }
 

@@ -1228,12 +1228,11 @@ function DataSubmissionStatus() {
                         </Grid>
 
                       {[1,2].includes(Number(userType)) && <Grid size={{ xs: 12, md: 2, lg: 1.8 }}>
-                            <Button sx={{ textTransform: "none" }} onClick={() => navigate("/reports/email_process_data")} variant="contained">
-                                Email Unprocess Data
-                            </Button>
+                        <Button sx={{ textTransform: "none", whiteSpace: "nowrap" }} onClick={() => navigate("/reports/email_process_data")} variant="contained">
+                            Email Unprocess Data
+                        </Button>
                         </Grid>
-                       } 
-
+                        }
                         <Grid size={{ xs: 4, md: 2, lg: 0.5 }}>
                             <Box sx={{ mb: "-0.3rem" }}>
                                 {progress
