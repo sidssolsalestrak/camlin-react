@@ -24,8 +24,20 @@ const MEETING_DAYS = [
     { label: "Sun", value: "1" },
 ];
 
-const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange, updateClinic, toggleMeetingDay
-    , repInchargeOptions, repPOSOptions, hospitalOptions, distributorOptions, pharmacyOptions,
+const ContactInfo = ({ 
+    fieldConfig, 
+    isHcp, 
+    isRetailer, 
+    clinics, 
+    handleRepChange, 
+    updateClinic, 
+    toggleMeetingDay,
+    repInchargeOptions, 
+    repPOSOptions, 
+    hospitalOptions, 
+    distributorOptions, 
+    pharmacyOptions,
+    masterPanel = {},
     fieldErrors = {},
     handleClinicContactNoChange,
     handleClinicContactNoBlur,
@@ -74,7 +86,7 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                                 value={clinic.repInchargePOS}
                                                 onChange={(e) => handleRepChange(idx, String(e.target.value), true)}
                                                 options={[
-                                                    { id: "0", full_name: "Select Account Owner" },  // ← ADD THIS
+                                                    { id: "0", full_name: "Select Account Owner" },
                                                     ...repPOSOptions
                                                 ]}
                                                 valueKey="id"
@@ -254,20 +266,29 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
+                                    {/* Distributor – Retailer */}
                                     {fieldConfig["Distributor"]?.show && !isHcp && (
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
-                                                <InputLabel id="Distributor">Distributor</InputLabel>
-                                                <Select value={clinic.stkId} id='Distributor' label="Distributor" 
-                                                    labelId="Distributor" variant="outlined"
-                                                      MenuProps={{
-                                                            PaperProps: {
-                                                                style: {
-                                                                    maxHeight: 200
-                                                                }
+                                                <InputLabel id="Distributor">{masterPanel["DIST"] || "Distributor"}</InputLabel>
+                                                <Select 
+                                                    value={clinic.stkId} 
+                                                    id='Distributor' 
+                                                    label={masterPanel["DIST"] || "Distributor"}
+                                                    labelId="Distributor" 
+                                                    variant="outlined"
+                                                    MenuProps={{
+                                                        PaperProps: {
+                                                            style: {
+                                                                maxHeight: 200
                                                             }
-                                                        }}
-                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}>
+                                                        }
+                                                    }}
+                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}
+                                                >
+                                                    <MenuItem value="0" style={{ fontSize: "11px" }}>
+                                                        Select {masterPanel["DIST"] || "Distributor"}
+                                                    </MenuItem>
                                                     {distributorOptions?.map((item, index) => (
                                                         <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
                                                             {item?.stk_code} - {item?.stk_name}
@@ -279,34 +300,6 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
 
-                                    </Grid>
-                                     <Grid container spacing={2}  sx={{ mb: 2 }}>
-                                    
-                                      {/* Distributor */}
-                                    {fieldConfig["Distributor"]?.show && isHcp && (
-                                        <Grid size={{ xs: 12, md: 4 }}>
-                                            <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
-                                                <InputLabel id="Distributor">Distributor</InputLabel>
-                                                <Select value={clinic.stkId} id='Distributor' label="Distributor" 
-                                                    labelId="Distributor" variant="outlined"
-                                                      MenuProps={{
-                                                            PaperProps: {
-                                                                style: {
-                                                                    maxHeight: 200
-                                                                }
-                                                            }
-                                                        }}
-                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}>
-                                                    {distributorOptions?.map((item, index) => (
-                                                        <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
-                                                            {item?.stk_code} - {item?.stk_name}
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                                {fieldErrors.stkId && <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.stkId}</Typography>}
-                                            </FormControl>
-                                        </Grid>
-                                    )}
                                     {/* Pharmacy Attached */}
                                     {fieldConfig["Pharmacy Attached"]?.show && (
                                         <Grid size={{ xs: 12, md: 4 }}>
@@ -336,6 +329,45 @@ const ContactInfo = ({ fieldConfig, isHcp, isRetailer, clinics, handleRepChange,
                                         </Grid>
                                     )}
                                     </Grid>
+
+                                    <Grid container spacing={2}  sx={{ mb: 2 }}>
+                                    
+                                      {/* Distributor – HCP */}
+                                    {fieldConfig["Distributor"]?.show && isHcp && (
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <FormControl fullWidth size="small" required error={!!fieldErrors.stkId}>
+                                                <InputLabel id="Distributor">{masterPanel["DIST"] || "Distributor"}</InputLabel>
+                                                <Select 
+                                                    value={clinic.stkId} 
+                                                    id='Distributor' 
+                                                    label={masterPanel["DIST"] || "Distributor"}
+                                                    labelId="Distributor" 
+                                                    variant="outlined"
+                                                    MenuProps={{
+                                                        PaperProps: {
+                                                            style: {
+                                                                maxHeight: 200
+                                                            }
+                                                        }
+                                                    }}
+                                                    onChange={(e) => updateClinic(idx, "stkId", String(e.target.value))}
+                                                >
+                                                    <MenuItem value="0" style={{ fontSize: "11px" }}>
+                                                        Select {masterPanel["DIST"] || "Distributor"}
+                                                    </MenuItem>
+                                                    {distributorOptions?.map((item, index) => (
+                                                        <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>
+                                                            {item?.stk_code} - {item?.stk_name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                                {fieldErrors.stkId && <Typography sx={{ color: "#D32F2F", fontSize: "9px", ml: 1 }}>{fieldErrors.stkId}</Typography>}
+                                            </FormControl>
+                                        </Grid>
+                                    )}
+
+                                    </Grid>
+
                                     {/* Meeting Days */}
                                     {fieldConfig["Meeting Days"]?.show && (
                                         <Grid size={{ xs: 12, md: 8 }}>
