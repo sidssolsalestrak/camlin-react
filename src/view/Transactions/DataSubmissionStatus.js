@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef,useCallback } from "react";
 import Layout from "../../layout";
 import {
     Box,
@@ -48,7 +48,6 @@ import {
 } from "react-icons/fa";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import api from "../../services/api";
-import DataTable from "../../utils/dataTable";
 import "../../assets/css/accountMas.css";
 import { TbClockHour9 } from "react-icons/tb";
 import { IoTrashSharp } from "react-icons/io5";
@@ -60,6 +59,7 @@ import CircularProgressLoading from "../../utils/CircularProgressLoading";
 import FilePreviewModal from "./FilePreviewModal";
 import { getMasterPanel } from "../../services/masterPanelService";
 import { jwtDecode } from "jwt-decode";
+import SubmissionStatusTable from "./SubmissionStatusTable";
 
 // ─── Multi-Checkbox Group-By Dropdown ────────────────────────────────────────
 function GroupByDropdown({ groupChecks, onChange, typeId, masterPanel }) {
@@ -902,18 +902,20 @@ function DataSubmissionStatus() {
     };
 
     // ─── Row style ────────────────────────────────────────────────────────────
-    const rowStyle = (row) => {
+    const rowStyle = useCallback((row) => {
         if (row._rowType === "grand_total")   return { "& td": { backgroundColor: "#d0cece !important", fontWeight: 700 } };
         if (row._rowType === "zone_subtotal") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 600 } };
         if (row._rowType === "reg_subtotal")  return { "& td": { backgroundColor: "#e9e3e3 !important", fontWeight: 550 } };
         return {};
-    };
+    }, []);
 
     // ─── Build table rows with subtotals ──────────────────────────────────────
     // All group flags are computed INSIDE the memo from committedGroupChecks +
     // committedType so that rawData, flags, and subtotal logic are always in
     // sync within the same render — no stale-closure flicker.
+    
     const tableData = useMemo(() => {
+        console.time("tableData memo");
         if (!rawData.length) return [];
 
         // Compute flags fresh inside memo
@@ -969,13 +971,20 @@ function DataSubmissionStatus() {
             zoneStk = zoneRecv = zoneProc = zoneUnproc = zoneRej = zonePend = zoneRating = 0;
         };
 
+        // Precompute once, outside the per-row loop, since it doesn't vary by row.
+        const _fallbackCloseDate = dayjs(selMonth).format("MMM YYYY");
+
         rawData.forEach((key) => {
             if (prevZoneId !== null) {
                 if (_showRegSub  && prevRegId  !== key.reg_id)  flushReg(regName);
                 if (_showZoneSub && prevZoneId !== key.zone_id) flushZone(zoneName);
             }
 
-            rows.push({ ...key, id: `data-${key.stk_id ?? i}-${i}`, _rowType: "data", _sl: i });
+            const _closeDate = key.close_date
+                ? dayjs(key.close_date).format("MMM YYYY")
+                : _fallbackCloseDate;
+
+            rows.push({ ...key, id: `data-${key.stk_id ?? i}-${i}`, _rowType: "data", _sl: i, _closeDate });
 
             grandStk    += Number(key.tot_stk    || 0);
             grandRecv   += Number(key.tot_recv   || 0);
@@ -1019,9 +1028,9 @@ function DataSubmissionStatus() {
             tot_unproc:  grandUnproc, tot_rej:  grandRej,   tot_pend: grandPend,
             _avg_rating: grandStk > 0 ? Math.round(grandRating / grandStk) : 0,
         });
-
+        console.timeEnd("tableData memo");
         return rows;
-    }, [rawData, committedType, committedGroupChecks, selRegion]);
+    }, [rawData, committedType, committedGroupChecks, selRegion, selMonth]);
 
     // ─── Rows eligible for "Process" checkbox ─────────────────────────────────
     const processableRows = useMemo(
@@ -1100,444 +1109,6 @@ function DataSubmissionStatus() {
         return cols;
     }, [zoneGroup, regGroup, areaGroup, terGroup, stkGroup, masterPanel]);
 
-    // ─── Columns ──────────────────────────────────────────────────────────────
-    const columns = useMemo(() => {
-        const cols = [
-            {
-                field: "_sl",
-                headerName: "#",
-                renderCell: ({ row }) => {
-                    if (row._rowType !== "data") return null;
-                    return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row._sl}</Typography>;
-                },
-            },
-            ...levelColumns,
-        ];
-
-        if (stkGroup === 1) {
-            cols.push(
-                {
-                    field: "close_date",
-                    headerName: "Month",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        return (
-                            <Typography sx={{ textWrap: "nowrap", color: "#212121", fontSize: "11px" }}>
-                                {row.close_date ? dayjs(row.close_date).format("MMM YYYY") : ""}
-                            </Typography>
-                        );
-                    },
-                },
-                {
-                    field: "stk_code",
-                    headerName: "Code",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        return <Typography sx={{ color: "#212121", fontSize: "11px" }}>{row.stk_code}</Typography>;
-                    },
-                },
-                {
-                    field: "stk_name",
-                    headerName: `${masterPanel["STKS"] || "Distributor"} Name`,
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "grand_total")
-                            return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
-                        if (row._rowType === "zone_subtotal")
-                            return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#3a3a3a", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
-                        if (row._rowType === "reg_subtotal")
-                            return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#555", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
-                        return (
-                            <Box>
-                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", whiteSpace: "nowrap", gap: 0.5 }}>
-                                    <span style={{ color: "#212121", fontSize: "11px" }}>{row.stk_name}</span>
-                                    <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-                                        {renderUplTypeIcon(row.upl_type)}
-                                    </Box>
-                                </Box>
-                                <Box sx={{ fontSize: "9px", color: "#585757" }}>
-                                    {row.reg_name} | {row.area_name}
-                                </Box>
-                            </Box>
-                        );
-                    },
-                }
-            );
-        } else {
-            if (levelColumns.length === 0) {
-                cols.push({
-                    field: "_label",
-                    headerName: "",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data") return null;
-                        return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
-                    },
-                });
-            } else {
-                const lastIdx  = cols.length - 1;
-                const original = cols[lastIdx].renderCell;
-                cols[lastIdx]  = {
-                    ...cols[lastIdx],
-                    renderCell: (params) => {
-                        const { row } = params;
-                        if (row._rowType !== "data") {
-                            return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
-                        }
-                        return original(params);
-                    },
-                };
-            }
-        }
-
-        cols.push(
-            {
-                field: "tot_stk",
-                headerName: "Total",
-                headerAlign: "right",
-                renderCell: ({ row }) => {
-                    if (row._rowType === "data")
-                        return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_stk)}</Typography>;
-                    return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_stk)}</strong>;
-                },
-            },
-            {
-                field: "tot_recv",
-                headerName: "Received",
-                headerAlign: "right",
-                renderCell: ({ row }) => {
-                    if (row._rowType === "data")
-                        return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_recv)}</Typography>;
-                    return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_recv)}</strong>;
-                },
-            }
-        );
-
-        if (stkGroup !== 1) {
-            cols.push(
-                {
-                    field: "tot_proc",
-                    headerName: "Processed",
-                    headerAlign: "right",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data")
-                            return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_proc)}</Typography>;
-                        return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_proc)}</strong>;
-                    },
-                },
-                {
-                    field: "tot_unproc",
-                    headerName: "Process Due",
-                    headerAlign: "right",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data")
-                            return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_unproc)}</Typography>;
-                        return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_unproc)}</strong>;
-                    },
-                },
-                {
-                    field: "tot_rej",
-                    headerName: "Rejected",
-                    headerAlign: "right",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data")
-                            return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_rej)}</Typography>;
-                        return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_rej)}</strong>;
-                    },
-                },
-                {
-                    field: "tot_pend",
-                    headerName: "Pending",
-                    headerAlign: "right",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data")
-                            return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{zeroToNull(row.tot_pend)}</Typography>;
-                        return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{zeroToNull(row.tot_pend)}</strong>;
-                    },
-                }
-            );
-        }
-
-        if (stkGroup === 1) {
-            cols.push(
-                {
-                    field: "process_stat",
-                    headerName: "Status",
-                    renderHeader: () => (
-                        <Typography sx={{ textAlign: "center" }}>Status</Typography>
-                    ),
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        return (
-                            <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: 0.3 }}>
-                                {renderStatusCell(row)}
-                                {Number(row.base_data_stat) === 1 &&
-                                    row.process_stat !== 2 &&
-                                    row.process_stat !== 3 && (
-                                        <Tooltip title="Reject">
-                                            <span style={{ cursor: "pointer", alignSelf: "end" }}>
-                                                <FaMinusSquare
-                                                    style={{ color: "white", border: "0.1px solid #ce2323", backgroundColor: "red", fontSize: 11, borderRadius: "2px" }}
-                                                    onClick={() => handleReject(row.primary_id)}
-                                                />
-                                            </span>
-                                        </Tooltip>
-                                    )}
-                            </Box>
-                        );
-                    },
-                },
-                {
-                    field: "rate_score",
-                    headerName: "Rating",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType === "data")
-                            return renderStarRating(row.rate_score, row.process_stat);
-                        if (row._avg_rating != null)
-                            return <Box sx={{ textAlign: "center", width: "100%" }}><strong>{row._avg_rating}%</strong></Box>;
-                        return null;
-                    },
-                },
-                {
-                    field: "err_desc",
-                    headerName: "Errors",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        return <Box sx={{ textAlign: "center", width: "100%", textWrap: "nowrap", color: "#212121", fontSize: "11px" }}>{row.err_desc}</Box>;
-                    },
-                },
-                {
-                    field: "base_data_stat",
-                    headerName: "Raw",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        const closeDate = row.close_date
-                            ? dayjs(row.close_date).format("MMM YYYY")
-                            : dayjs(selMonth).format("MMM YYYY");
-                        const pstat = row.process_stat === 3 ? 1 : row.process_stat;
-
-                        if (Number(row.base_data_stat) === 1) {
-                            return (
-                                <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", justifyContent: "center" }}>
-                                    <Tooltip title="View Raw Data">
-                                        <Box
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() =>
-                                                navigate(
-                                                    `/upload_closing/index/${btoa(1)}/${btoa(closeDate)}/${btoa(
-                                                        `${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`
-                                                    )}/${btoa(pstat)}/${btoa(1)}`
-                                                )
-                                            }
-                                        >
-                                            <FaDatabase style={{ color: "#6e6767", fontSize: 15 }} />
-                                        </Box>
-                                    </Tooltip>
-                                    <Box>{renderDocIcon(row.file_type, row.doc_name)}</Box>
-                                </Box>
-                            );
-                        }
-                        if (Number(row.base_data_stat) !== 1 && row.process_stat === 0) {
-                            return (
-                                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                    <Tooltip title="Upload Data">
-                                        <a
-                                            href={`/upload_closing/index/${btoa(1)}/${btoa(closeDate)}/${btoa(
-                                                `${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`
-                                            )}/${btoa(pstat)}/${btoa(1)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            <FaPlus style={{ color: "green", fontSize: 15 }} />
-                                        </a>
-                                    </Tooltip>
-                                </Box>
-                            );
-                        }
-                        return null;
-                    },
-                },
-                {
-                    field: "proc_data_stat",
-                    headerName: "Processed",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        if (row.proc_data_stat === 1) {
-                            const closeDate = row.close_date
-                                ? dayjs(row.close_date).format("MMM YYYY")
-                                : dayjs(selMonth).format("MMM YYYY");
-                            return (
-                                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                    <Tooltip title="View Processed Data">
-                                        <a
-                                            href={`/upload_closing/index/${btoa(1)}/${btoa(closeDate)}/${btoa(
-                                                `${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`
-                                            )}/${btoa(row.process_stat)}/${btoa(2)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            <FaRegFileAlt style={{ color: "#0614ee", fontSize: 15 }} />
-                                        </a>
-                                    </Tooltip>
-                                </Box>
-                            );
-                        }
-                        return null;
-                    },
-                },
-                {
-                    field: "pri_stat",
-                    headerName: "Primary",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        if (row.pri_stat === 2) {
-                            const closeDate = row.close_date
-                                ? dayjs(row.close_date).format("MMM YYYY")
-                                : dayjs(selMonth).format("MMM YYYY");
-                            return (
-                                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                    <Tooltip title="View Primary Sale">
-                                        <a
-                                            href={`/reports/primary_sale_report/${btoa(closeDate)}/${btoa(row.stk_id)}/${btoa(2)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            {renderPrimaryIcon(row.pri_stat)}
-                                        </a>
-                                    </Tooltip>
-                                </Box>
-                            );
-                        }
-                        return (
-                            <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                {renderPrimaryIcon(row.pri_stat)}
-                            </Box>
-                        );
-                    },
-                },
-                {
-                    field: "create_dt",
-                    headerName: "Submission Date",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-                        if (!row.create_dt || row.create_dt === "1970-01-01") return "";
-                        return <Typography sx={{ textAlign: "right", color: "#212121", fontSize: "11px" }}>{dayjs(row.create_dt).format("DD MMM YYYY")}</Typography>;
-                    },
-                },
-                {
-                    field: "_checkbox",
-                    headerAlign: "center",
-                    align: "center",
-                    headerName: committedType === 1 ? (
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-                            <Checkbox
-                                sx={{ p: 0 }}
-                                size="small"
-                                checked={checkAll}
-                                onChange={(e) => handleCheckAll(e.target.checked)}
-                            />
-                            <Typography sx={{ fontSize: 12 }}>Check All</Typography>
-                        </Box>
-                    ) : <Typography>Stock &amp; Sales</Typography>,
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data") return null;
-
-                        if (Number(row.cl_stat) === 0 && Number(row.process_stat) === 3 && stkGroup === 1) {
-                            const closeDate = row.close_date
-                                ? dayjs(row.close_date).format("MMM YYYY")
-                                : dayjs(selMonth).format("MMM YYYY");
-                            return (
-                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, width: "100%", height: "100%" }}>
-                                    <Tooltip title="Preview Stock & Sales">
-                                        <Box
-                                            sx={{ cursor: "pointer", display: "flex", alignItems: "center" }}
-                                            onClick={() => navigate(
-                                                `/reports/preview_stk_sales/${btoa(closeDate)}/${btoa(row.stk_id)}/${btoa(`${row.stk_code}-${row.stk_name}`)}`
-                                            )}
-                                        >
-                                            <FaBars style={{ color: "#585757", fontSize: 14 }} />
-                                        </Box>
-                                    </Tooltip>
-                                    {committedType === 1 && (
-                                        <Checkbox
-                                            sx={{ p: 0, m: 0 }}
-                                            size="small"
-                                            checked={!!checkedRows[row.stk_id]}
-                                            onChange={(e) => handleRowCheck(row.stk_id, e.target.checked)}
-                                        />
-                                    )}
-                                </Box>
-                            );
-                        }
-                        if (Number(row.cl_stat) === 1) {
-                            const closeDate = row.close_date
-                                ? dayjs(row.close_date).format("MMM YYYY")
-                                : dayjs(selMonth).format("MMM YYYY");
-                            return (
-                                <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", justifyContent: "center" }}>
-                                    {committedType === 1 && (
-                                        <Tooltip title="Delete Stock & Sales">
-                                            <span style={{ cursor: "pointer" }}>
-                                                <IoTrashSharp
-                                                    style={{ color: "#e90505", fontSize: 18 }}
-                                                    onClick={() => handleDelete(row)}
-                                                />
-                                            </span>
-                                        </Tooltip>
-                                    )}
-                                    <Tooltip title="View Stock & Sales">
-                                        <a
-                                            href={`/input/stock_sales/${btoa(closeDate)}/${btoa(row.stk_id)}/${btoa(1)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            <FaRegFileAlt style={{ color: "#0614ee", fontSize: 15 }} />
-                                        </a>
-                                    </Tooltip>
-                                </Box>
-                            );
-                        }
-                        return null;
-                    },
-                },
-                {
-                    field: "_delete_all",
-                    headerName: "Delete All",
-                    headerAlign: "center",
-                    align: "center",
-                    renderCell: ({ row }) => {
-                        if (row._rowType !== "data" || ![2,3].includes(Number(userType))) return null;
-                        if (Number(row.base_data_stat) === 1) {
-                            return (
-                                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                    <Tooltip title="Delete All">
-                                        <span style={{ cursor: "pointer" }}>
-                                            <IoTrashSharp
-                                                style={{ color: "#e90505", fontSize: 18 }}
-                                                onClick={() => handleDeleteAll(row)}
-                                            />
-                                        </span>
-                                    </Tooltip>
-                                </Box>
-                            );
-                        }
-                        return null;
-                    },
-                }
-            );
-        }
-
-        return cols;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [levelColumns, stkGroup, zoneGroup, regGroup, areaGroup, terGroup, checkAll, checkedRows, committedType, selMonth, masterPanel]);
 
     // ─── Show "Process" button only when eligible rows exist ──────────────────
     const showProcessButton = processableRows.length > 0 && stkGroup === 1 && committedType === 1;
@@ -1681,30 +1252,29 @@ function DataSubmissionStatus() {
 
                 {/* Data Table */}
                 <Box sx={{ background: "#fff", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)", "& td": { padding: "4px 6px" } }}>
-                    <DataTable
-                        data={tableData}
-                        columns={columns}
-                        loading={loading}
-                        pagination={false}
-                        showHeader={true}
-                        rowStyle={rowStyle}
-                        headerLegend={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    <TbClockHour9 style={{ color: "#585757", fontSize: 15 }} />
-                                    <Typography sx={{ fontSize: 13, color: "#585757" }}>No Data</Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    <FaSpinner style={{ color: "#585757", fontSize: 13 }} />
-                                    <Typography sx={{ fontSize: 13, color: "#585757" }}>Pending</Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    <FaThumbsUp style={{ color: "#585757", fontSize: 13 }} />
-                                    <Typography sx={{ fontSize: 13, color: "#585757" }}>Received</Typography>
-                                </Box>
-                            </Box>
-                        }
-                    />
+                  <SubmissionStatusTable
+                    tableData={tableData}
+                    loading={loading}
+                    rowStyle={rowStyle}
+                    masterPanel={masterPanel}
+                    selMonth={selMonth}
+                    stkGroup={stkGroup}
+                    zoneGroup={zoneGroup}
+                    regGroup={regGroup}
+                    areaGroup={areaGroup}
+                    terGroup={terGroup}
+                    committedType={committedType}
+                    checkedRows={checkedRows}
+                    checkAll={checkAll}
+                    onCheckAll={handleCheckAll}
+                    onRowCheck={handleRowCheck}
+                    onReject={handleReject}
+                    onDelete={handleDelete}
+                    onDeleteAll={handleDeleteAll}
+                    onNavigate={navigate}
+                    onPreviewFile={setPreviewFile}
+                    userType={userType}
+                />
                 </Box>
 
                 {showProcessButton && (

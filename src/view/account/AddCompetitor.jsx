@@ -92,18 +92,30 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
     }, [compModalOpen, selectedBrand, cusId, tempId, existingRows]);
 
     // Update a single cell
+        // Update a single cell
     const updateRow = useCallback((pid, field, value) => {
         setRows((prev) =>
             prev.map((r) => {
                 if (r.pid !== pid) return r;
 
-                const normalizedValue = (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3')
-                    ? String(value)
-                    : value;
+                const isCompetitorField = field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3';
+                const isQtyField = field.endsWith('_qty'); // prod_qty, comp_id_1_qty, comp_id_2_qty, comp_id_3_qty, oth_qty
+
+                let normalizedValue;
+
+                if (isCompetitorField) {
+                    normalizedValue = String(value);
+                } else if (isQtyField && (value === "0" || value === 0)) {
+                    // ── editing a qty field down to 0 clears it to "" instead
+                    //    of leaving a literal "0" sitting in the input ──
+                    normalizedValue = "";
+                } else {
+                    normalizedValue = value;
+                }
 
                 const updatedRow = { ...r, [field]: normalizedValue };
 
-                if (field === 'comp_id_1' || field === 'comp_id_2' || field === 'comp_id_3') {
+                if (isCompetitorField) {
                     const qtyField = `${field}_qty`;   // ← comp_id_1 -> comp_id_1_qty
                     updatedRow[qtyField] = "";
                 }

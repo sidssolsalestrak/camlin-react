@@ -215,12 +215,7 @@ function AccountMas() {
       }
     }
 
-    if (!(val2 > 0 || val3 > 0)) {
-      toast.error(`Please select ${masterPanel["REGN"] || "Region"} or ${masterPanel["USER"] || "User"}`);
-      return;
-    }
-
-    const encode = (val) => btoa(val || 0);   // "" and 0 both encode the same way, so navigate is unaffected
+    const encode = (val) => btoa(val || 0);
 
     navigate(
       `/customers/AllDoctors/${encode(val)}/${encode(val2)}/${encode(val3)}/${encode(val4)}/${encode(val5)}`,
@@ -284,16 +279,17 @@ function AccountMas() {
   }, [decodedParams.cusReq]);
 
   useEffect(() => {
-    if (regionData.length > 0 && decodedParams.country) {
-      const exists = regionData.some(
-        (r) => r.id === Number(decodedParams.country),
-      );
-
+    const countryVal = Number(decodedParams.country);
+    
+    if (countryVal === 0) {
+      setSelectedRegion(0);
+    } else if (regionData.length > 0) {
+      const exists = regionData.some((r) => r.id === countryVal);
       if (exists) {
-        setSelectedRegion(Number(decodedParams.country));
+        setSelectedRegion(countryVal);
       }
     }
-  }, [regionData, decodedParams.country]);
+}, [regionData, decodedParams.country]);
 
   useEffect(() => {
     if (userType.length && decodedParams.userType) {
@@ -615,13 +611,8 @@ function AccountMas() {
       const req_type = Number(decodedParams.reqType) || 0;
       const beatId= Number(decodedParams.beatId) || 0;
 
-      if (cus_req === 2) {
-        if (!(country || req_type || users || userType)){ 
-          setTableData([]);
-          return
-        };
-      }
-
+      // ── Only "All Current Customers" requires Region/User to be selected.
+      //    "Requests" (cus_req === 2) should always load, filters or not. ──
       if (cus_req === 1) {
         if (!(country || userType || users)) {
           console.log("❌ Skipping API (no filters)");

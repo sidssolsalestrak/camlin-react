@@ -638,20 +638,24 @@ const onUpdateClick = () => {
 
   useEffect(()=>{
     let fetchBrandData=async()=>{
-      let  brandsRes=await api.post('/getBrands',{ doctorId: decodedID > 0 ? decodedID : 0 })
-      const brandsRaw = brandsRes.data.data || [];
-      const mappedBrands = brandsRaw.map(b => ({
-        subCatId: String(b.id),
-        name: b.sub_name,
-        focus: b.foc? 1 : 0,
-        reminder: b.rem ? 1 : 0,
-        competition: 0,
-        compCount: 0,
-    }));
-      setBrandData(mappedBrands);
+      try {
+        let  brandsRes=await api.post('/getBrands',{ doctorId: decodedID > 0 ? decodedID : 0 })
+        const brandsRaw = brandsRes.data.data || [];
+        const mappedBrands = brandsRaw.map(b => ({
+          subCatId: String(b.id),
+          name: b.sub_name,
+          focus: b.foc? 1 : 0,
+          reminder: b.rem ? 1 : 0,
+          competition: 0,
+          compCount: 0,
+        }));
+        setBrandData(mappedBrands);
+      } catch (err) {
+        console.error("fetchBrandData error", err);
+      }
     }
     fetchBrandData()
-  },[])
+  },[decodedID])
 
   const handleRegionChange = async (val) => {
     // find zone_id from the selected region

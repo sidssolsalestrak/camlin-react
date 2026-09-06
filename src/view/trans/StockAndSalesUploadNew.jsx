@@ -179,6 +179,20 @@ const StockAndSalesUploadNew = () => {
         setLoading(false);
     };
 
+    // ── Resolve the selected distributor's label/match for the Autocomplete
+    //     display. This is intentionally separate from the data-fetching
+    //     effect below so that `distribute` loading (or changing reference)
+    //     never re-triggers a network call to /stock_sales. ──────────────────
+    useEffect(() => {
+        if (!decodedDistributor || distribute.length === 0) return;
+        const match = distribute.find(d => String(d.id) === String(decodedDistributor));
+        if (match) handleChange("Distributor", String(match.id));
+    }, [distribute, decodedDistributor]);
+
+    // ── Fetches the table data for the current route params. Depends ONLY on
+    //     the route params (closeDate, stkid) so it fires exactly once per
+    //     navigation, instead of firing again when `distribute` finishes
+    //     loading and gets a new array reference. ────────────────────────────
     useEffect(() => {
         const loadData = async () => {
             if (!decodedDistributor && !decodedMonth) {
@@ -190,13 +204,7 @@ const StockAndSalesUploadNew = () => {
             }
 
             setMonth(dayjs(decodedMonth));
-
-            if (distribute.length > 0) {
-                const match = distribute.find(d => String(d.id) === String(decodedDistributor));
-                if (match) handleChange("Distributor", String(match.id));
-            } else {
-                handleChange("Distributor", String(decodedDistributor));
-            }
+            handleChange("Distributor", String(decodedDistributor));
 
             setWithValues(true);
             setLoading(true);
@@ -209,7 +217,7 @@ const StockAndSalesUploadNew = () => {
         };
 
         loadData();
-    }, [closeDate, stkid, distribute]);
+    }, [closeDate, stkid]);
 
     const handleInputChange = (prodId, field, rawValue) => {
         setSalesData(prev =>

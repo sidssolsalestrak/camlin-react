@@ -64,6 +64,7 @@ import FilePreviewModal from "./FilePreviewModal";
 import useToast from "../../utils/useToast";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { getMasterPanel } from "../../services/masterPanelService";
+import ManualProductTable from "./ManualProductTable";
 
 function UploadClosing() {
   const {
@@ -349,15 +350,14 @@ function UploadClosing() {
     for (let i = 0; i < rows.length; i++) {
       if (rows[i]._isGrandTotal) continue;
       const raw = rows[i].prod_qty;
-      const isValid = /^\d+$/.test(String(raw ?? "").trim());
+      const isValid = /^\d*$/.test(String(raw ?? "").trim());
       if (!isValid) {
         toast.error(`Invalid number in row ${i + 1}`);
         return false;
       }
     }
     return true;
-  };
-
+};
   useEffect(() => {
     (async () => {
       try {
@@ -2742,15 +2742,24 @@ function UploadClosing() {
               )}
             </Box>
 
+           {manualMode || isApproved ? (
+            <ManualProductTable
+              rows={groupedRows}
+              onQtyChange={manualMode ? handleManualQtyChange : handleQtyChange}
+              tglVal={tglVal}
+              onToggleAll={handleToggleAllProducts}
+              masterPanel={masterPanel}
+              loading={loading}
+              editable={manualMode || canEditQty}
+              showToggle={manualMode || isApproved}
+            />
+          ) : (
             <DataTable
-              columns={manualMode ? manualColumns : dtColumns}
+              columns={dtColumns}
               data={groupedRows}
               loading={loading}
-              pageSize={10}
               pagination={true}
               defaultPageSize={500}
-              externalSearch={search}
-              onSearchChange={setSearch}
               getRowId={(row) => row._rowKey}
               rowStyle={rowStyle}
               getRowClassName={(params) =>
@@ -2768,6 +2777,7 @@ function UploadClosing() {
                 },
               }}
             />
+          )}
           </Paper>
         )}
 
