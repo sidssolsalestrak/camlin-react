@@ -15,7 +15,6 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                     label="Competitor Preference"
                     fullWidth size="small"
                     value={form.competitorPref}
-                    InputLabelProps={{ shrink: true }} 
                     onChange={(e) => {
                         const onlyText = e.target.value.replace(/^\s+/, "");
                         setForm({ ...form, competitorPref: onlyText });

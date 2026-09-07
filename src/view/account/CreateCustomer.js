@@ -152,7 +152,8 @@ function CreateCustomer() {
     loyaltyType: "", 
     loyalty:"1",
     dobNA:true,
-    anniversaryNA:true
+    anniversaryNA:true,
+    competitorPref: "",
   });
 
   const isHcpField = (form.cusType === "1"); // hcpDiv2 fields only show for HCP
@@ -665,8 +666,26 @@ const onUpdateClick = () => {
     setForm((f) => ({ ...f, region: val }));
     setFieldErrors((prev) => ({ ...prev, region: "" }));
 
+    // ── clear stale rep/POS selections on every clinic row, since the
+    //    dropdown lists themselves are about to change for the new region ──
+    setClinics((prev) =>
+      prev.map((c) => ({
+        ...c,
+        repIncharge: "0",
+        repInchargePOS: "0",
+        beat: "",
+        beatOptions: [],
+      }))
+    );
+
+    // ── reset dropdown option lists while the new fetch is in flight,
+    //    so stale options from the old region don't briefly show ──
+    setRepInchargeOptions([]);
+    setRepPOSOptions([]);
+    setDistributorOptions([]);
+
     try {
-      const [repRes, repPoso, distRes] = await Promise.all([
+      const [repRes, repPosRes, distRes] = await Promise.all([
         api.post("/getRepIncharge", { regId: val, requestType: form.cusType }),
         api.post("/getRepInchargePos", { regId: val }),
         api.post("/getDistributor", { regId: val }),
@@ -677,8 +696,7 @@ const onUpdateClick = () => {
       setDistributorOptions((distRes.data.data || []).map(i => ({ ...i, id: String(i.id) })));
 
     } catch (err) { console.error(err); }
-  };
-
+};
   // ---------------- LAZY LOAD ALL ----------------
   useEffect(() => {
     loadIfNeeded({
@@ -912,7 +930,8 @@ const onUpdateClick = () => {
       loyaltyType: "",
       loyalty:'1',
       dobNA:true,
-      anniversaryNA:true 
+      anniversaryNA:true,
+      competitorPref: "",
     });
     setClinics([{ ...DEFAULT_CLINIC }]);
     setBrandData([]);
