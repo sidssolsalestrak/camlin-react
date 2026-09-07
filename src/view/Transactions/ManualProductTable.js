@@ -150,14 +150,18 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
         sx={{
           display: "flex",
           alignItems: "center",
-          px: 1.5,
-          py: 1,
+          px: 2,
+          mx: 1.5,
+          py: 0.75,
           backgroundColor: "#c0c0c0da",
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: "0.88rem",
+          gap: 1,
         }}
       >
-        {row.cat_name}
+        <Box sx={{ width: 40, flexShrink: 0 }} />
+        <Box sx={{ flex: 1 }}>{row.cat_name}</Box>
+        <Box sx={{ width: QTY_COL_WIDTH, flexShrink: 0 }} />
       </Box>
     );
   }
@@ -168,8 +172,9 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
         sx={{
           display: "flex",
           alignItems: "center",
-          px: 1.5,
-          py: 1,
+          px: 2,
+          mx: 1.5,
+          py: 0.75,
           borderTop: "2px solid",
           borderColor: "divider",
           backgroundColor: "rgba(0,0,0,0.04)",
@@ -193,7 +198,8 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
       sx={{
         display: "flex",
         alignItems: "center",
-        px: 1.5,
+        px: 2,
+        mx: 1.5,
         py: 0.75,
         gap: 1,
         borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -285,7 +291,8 @@ function ManualProductTable({
       {/* Toolbar: rows-per-page + entries count + search */}
       <Box
         sx={{
-          p: "10px 14px",
+          p: "10px 0px",
+          mx: 1.5,
           borderBottom: "1px solid",
           borderColor: "divider",
           display: "flex",
@@ -370,7 +377,8 @@ function ManualProductTable({
         sx={{
           display: "flex",
           alignItems: "center",
-          px: 1.5,
+          px: 2,
+          mx: 1.5,
           py: "8px",
           backgroundColor: "#F6F5F2",
           borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -395,9 +403,9 @@ function ManualProductTable({
             {prodLabel} Name
           </Typography>
           {showToggle && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+            <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
-                All
+                All Products
               </Typography>
               <Switch
                 checked={tglVal === 1}

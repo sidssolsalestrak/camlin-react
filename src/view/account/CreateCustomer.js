@@ -931,6 +931,9 @@ const onUpdateClick = () => {
     setDistributorOptions([]);
     if (!decodedID || decodedID === "0") {
       setEditDataLoading(false);
+      loadDynamicForm("2");
+      fetchAccountOwner();    // optional but consistent with handleAccTypeChange:
+      fetchRepIncharge();     //   re-baseline rep/pos lists for regId 0 + cusType "2"
       return;
     }
     setEditDataLoading(true);
@@ -1186,7 +1189,7 @@ const onUpdateClick = () => {
     };
 
     getEditData();
-  }, [decodedID]);
+  }, [decodedID,location.pathname]);
 
   const ALLOWED_USER_TYPES = [2, 6, 8, 15];
 

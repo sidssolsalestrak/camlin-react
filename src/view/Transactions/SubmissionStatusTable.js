@@ -66,16 +66,28 @@ function useVirtualRows(rowCount, rowHeight = ROW_HEIGHT, viewportHeight = VIEWP
     return { scrollRef, onScroll, startIndex, endIndex, topSpacerHeight, bottomSpacerHeight };
 }
 
+// NOTE: columns.map now includes the column index `i` so the first and last
+// cells can be given px: 2 edge padding — matching the `mx: 1.5` + `px: 2`
+// inset rhythm used by ManualProductTable's rows. The table container itself
+// gets `mx: 1.5` (see the scroll wrapper Box below) so the whole table sits
+// inset from the Paper edges the same way the manual table's rows do.
 const SubmissionRow = React.memo(
     function SubmissionRow({ row, columns, renderCell, rowStyle, checked }) {
         const rowSx = rowStyle ? rowStyle(row) : {};
         return (
             <TableRow sx={{ "&:hover td": { backgroundColor: "#FAFAF8" }, ...rowSx }}>
-                {columns.map((col) => (
+                {columns.map((col, i) => (
                     <TableCell
                         key={`${row.id}-${col.field}`}
                         align={col.type === "number" || col.type === "currency" ? "right" : "left"}
-                        sx={{ fontSize: "12px", color: "#343A40", fontWeight: 400, borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+                        sx={{
+                            fontSize: "12px",
+                            color: "#343A40",
+                            fontWeight: 400,
+                            borderBottom: "1px solid rgba(0,0,0,0.08)",
+                            pl: i === 0 ? 2 : undefined,
+                            pr: i === columns.length - 1 ? 2 : undefined,
+                        }}
                     >
                         {renderCell(col, row, checked)}
                     </TableCell>
@@ -137,7 +149,7 @@ const SubmissionStatusTableComponent = ({
     const columns = useMemo(() => {
         const cols = [];
 
-        cols.push({ field: "_sl", headerName: "#", width: 50 });
+        cols.push({ field: "_sl", headerName: "#", width: 20, type: "number" });
 
         if (stkGroup === 1) {
             if (areaGroup === 1) {
@@ -167,8 +179,8 @@ const SubmissionStatusTableComponent = ({
             }
         }
 
-        cols.push({ field: "tot_stk", headerName: "Total", width: 80, type: "number" });
-        cols.push({ field: "tot_recv", headerName: "Received", width: 80, type: "number" });
+        cols.push({ field: "tot_stk", headerName: "Total", width: 20, type: "number" });
+        cols.push({ field: "tot_recv", headerName: "Received", width: 20, type: "number" });
 
         if (stkGroup !== 1) {
             cols.push({ field: "tot_proc", headerName: "Processed", width: 85, type: "number" });
@@ -184,7 +196,7 @@ const SubmissionStatusTableComponent = ({
             cols.push({ field: "base_data_stat", headerName: "Raw", width: 80 });
             cols.push({ field: "proc_data_stat", headerName: "Processed", width: 90 });
             cols.push({ field: "pri_stat", headerName: "Primary", width: 80 });
-            cols.push({ field: "create_dt", headerName: "Submission Date", width: 130 });
+            cols.push({ field: "create_dt", headerName: "Submission Date", width: 160 });
             cols.push({ field: "_checkbox", headerName: committedType === 1 ? "Check All" : "Stock & Sales", width: 120 });
             cols.push({ field: "_delete_all", headerName: "Delete", width: 80 });
         }
@@ -558,7 +570,7 @@ const SubmissionStatusTableComponent = ({
 
     return (
         <Paper sx={{ background: "#fff", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-            <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #e5e7eb", display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", md: "center" }, gap: 1.5 }}>
+            <Box sx={{ mx: 1.5, py: 1.5, borderBottom: "1px solid #e5e7eb", display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", md: "center" }, gap: 1.5 }}>
                 {pagination ? (
                     <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                         <FormControl size="small" sx={{ minWidth: 70 }}>
@@ -641,10 +653,19 @@ const SubmissionStatusTableComponent = ({
                 </Box>
             </Box>
 
+            {/*
+              mx: 1.5 insets the whole table (head + body) from the Paper's
+              edges — same outer margin ManualProductTable applies to each
+              of its row Boxes via `mx: 1.5`.
+            */}
             <Box
                 ref={pagination ? null : scrollRef}
                 onScroll={pagination ? undefined : onScroll}
-                sx={pagination ? { overflowX: "auto" } : { overflowY: "auto", overflowX: "auto", maxHeight: VIEWPORT_HEIGHT }}
+                sx={
+                    pagination
+                        ? { overflowX: "auto", mx: 1.5 }
+                        : { overflowY: "auto", overflowX: "auto", maxHeight: VIEWPORT_HEIGHT, mx: 1.5 }
+                }
             >
                 <Table size="small" stickyHeader={!pagination} sx={{ "& td": { padding: "4px 6px" } }}>
                     <TableHead>
@@ -664,7 +685,7 @@ const SubmissionStatusTableComponent = ({
                                 return (
                                     <TableCell
                                         key={i}
-                                        align={col.type === "number" || col.type === "currency" ? "right" : "left"}
+                                        align="left"
                                         sx={{
                                             color: "#A09D97",
                                             borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -675,10 +696,14 @@ const SubmissionStatusTableComponent = ({
                                             width: col.width,
                                             minWidth: col.width || 80,
                                             backgroundColor: "#F6F5F2",
+                                            // Edge padding mirrors ManualProductTable's px: 2 header row
+                                            // inset on its first/last column.
+                                            pl: i === 0 ? 2 : 1,
+                                            pr: i === columns.length - 1 ? 2 : 1,
                                         }}
                                     >
                                         {typeof headerContent === "string" ? (
-                                            <Typography sx={{ fontSize: 11 }}>{headerContent}</Typography>
+                                            <Typography sx={{ fontSize: 11, textAlign: "left" }}>{headerContent}</Typography>
                                         ) : (
                                             headerContent
                                         )}
@@ -690,7 +715,7 @@ const SubmissionStatusTableComponent = ({
                     <TableBody>
                         {filteredData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={columns.length} align="center" sx={{ py: 4 }}>
+                                <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
                                     <Typography variant="body1" sx={{ color: "#4a4e55" }}>
                                         {searchTerm ? "No matching records found" : "No data available"}
                                     </Typography>

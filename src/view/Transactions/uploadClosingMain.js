@@ -2759,7 +2759,7 @@ function UploadClosing() {
               data={groupedRows}
               loading={loading}
               pagination={true}
-              defaultPageSize={500}
+              defaultPageSize={100}
               getRowId={(row) => row._rowKey}
               rowStyle={rowStyle}
               getRowClassName={(params) =>
