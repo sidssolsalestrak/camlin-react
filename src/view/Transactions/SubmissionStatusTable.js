@@ -184,7 +184,7 @@ const SubmissionStatusTableComponent = ({
             cols.push({ field: "base_data_stat", headerName: "Raw", width: 80 });
             cols.push({ field: "proc_data_stat", headerName: "Processed", width: 90 });
             cols.push({ field: "pri_stat", headerName: "Primary", width: 80 });
-            cols.push({ field: "create_dt", headerName: "Submission Date", width: 130 });
+            cols.push({ field: "create_dt", headerName: "Submission Date", width: 160 });
             cols.push({ field: "_checkbox", headerName: committedType === 1 ? "Check All" : "Stock & Sales", width: 120 });
             cols.push({ field: "_delete_all", headerName: "Delete", width: 80 });
         }
@@ -664,7 +664,7 @@ const SubmissionStatusTableComponent = ({
                                 return (
                                     <TableCell
                                         key={i}
-                                        align={col.type === "number" || col.type === "currency" ? "right" : "left"}
+                                        align="left"
                                         sx={{
                                             color: "#A09D97",
                                             borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -690,7 +690,7 @@ const SubmissionStatusTableComponent = ({
                     <TableBody>
                         {filteredData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={columns.length} align="center" sx={{ py: 4 }}>
+                                <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
                                     <Typography variant="body1" sx={{ color: "#4a4e55" }}>
                                         {searchTerm ? "No matching records found" : "No data available"}
                                     </Typography>
