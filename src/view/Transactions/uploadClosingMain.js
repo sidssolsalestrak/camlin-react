@@ -122,6 +122,7 @@ function UploadClosing() {
   const latestReqRef = useRef(0);
 
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [masId, setMasId] = useState(null);
   const [jsonName, setJsonName] = useState(null);
@@ -155,6 +156,14 @@ function UploadClosing() {
   const [rawInvalidCell, setRawInvalidCell] = useState(null);
   const suppressTglEffect = useRef(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Request-scoped process status / btn val used for /getDesList.
+  // Defaults to the values decoded from the nav URL params (raw-mode nav
+  // from another page), but is reset to 0 whenever the user manually picks
+  // a different distributor from the Autocomplete below, so the payload
+  // doesn't keep carrying stale nav-specific context.
+  const [reqProcStat, setReqProcStat] = useState(() => Number(decodedProcStat) ?? 0);
+  const [reqBtnVal, setReqBtnVal] = useState(() => decodedBtnVal ?? 0);
 
   const [mapConfirm, setMapConfirm] = useState({
     open: false,
@@ -372,25 +381,27 @@ function UploadClosing() {
   const loadDesListData = useCallback(async () => {
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") return;
-    const reqId = ++latestReqRef.current;   // ① claim this request
+    const reqId = ++latestReqRef.current;
     setLoading(true);
+    setLoadingType("fetch");
     try {
       const res = await api.post("/getDesList", {
         des_name_id: desId,
         selected_mnt: parseMonth(selMonth),
-        pro_status: Number(decodedProcStat) ?? 0,
-        btn_val: decodedBtnVal ?? 0,
+        pro_status: reqProcStat,
+        btn_val: reqBtnVal,
         tgl_val: tglVal,
       });
-      if (reqId !== latestReqRef.current) return;  // ② drop if stale
+      if (reqId !== latestReqRef.current) return;
       setManualMode(false);
       handleApiResponse(res.data);
     } catch (err) {
       console.error("fetchDesList:", err);
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
-  }, [selDesName, selMonth, handleApiResponse, decodedProcStat, decodedBtnVal, tglVal]);
+  }, [selDesName, selMonth, handleApiResponse, reqProcStat, reqBtnVal, tglVal]);
 
   useEffect(() => {
     if (suppressTglEffect.current) {
@@ -413,8 +424,10 @@ function UploadClosing() {
       ? decodedStkId
       : "0";
 
-  suppressTglEffect.current = true; // avoid a double fetch from tglVal reset
+  suppressTglEffect.current = true;
   resetUploadState();
+  setReqProcStat(Number(decodedProcStat) ?? 0);
+  setReqBtnVal(decodedBtnVal ?? 0);
   setSelMonth(newMonth);
   setSelDesName(newDesName);
 }, [defEncode, enMonth, endistributor, enProcessStat, enProcessDataStat]);
@@ -488,17 +501,15 @@ function UploadClosing() {
     form.append("des_code", desCode);
     form.append("selected_mnt", parseMonth(selMonth));
     setLoading(true);
+    setLoadingType("import");
     try {
       const res = await api.post("/upload_to_s3", form);
       setManualMode(false);
       setFiles([]);
 
       if (res.data.result) {
-        // raw OCR pending — column-mapping mode, use payload directly
         handleApiResponse(res.data);
       } else {
-        // OCR + mapping already done server-side — re-fetch the
-        // canonical table view from getDesList (same as every other refresh)
         await loadDesListData();
       }
     } catch (err) {
@@ -507,6 +518,7 @@ function UploadClosing() {
       toast.error("something went wrong, Try again!");
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -520,6 +532,7 @@ function UploadClosing() {
 
     suppressTglEffect.current = true;
     setLoading(true);
+    setLoadingType("manual");
     if (overrideTglVal === undefined) setTglVal(0);
 
     try {
@@ -529,11 +542,12 @@ function UploadClosing() {
         add_tgl_val: tglToSend,
       });
       setManualMode(true);
-      handleApiResponse(res.data); // OK now — showTable no longer collapses on empty rows
+      handleApiResponse(res.data);
     } catch (err) {
       console.error("addManual:", err);
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -576,7 +590,6 @@ function UploadClosing() {
       }),
     );
 
-    // clear the error once the user fixes that exact cell
     setRawInvalidCell((prev) =>
       prev &&
       prev.pageIdx === pageIdx &&
@@ -705,7 +718,7 @@ function UploadClosing() {
       }
     }
 
-    const qtyRegex = /^\d+$/; // digits only — no letters, no dots, no symbols
+    const qtyRegex = /^\d+$/;
     const allValues = [];
     const totPage = [];
 
@@ -732,7 +745,7 @@ function UploadClosing() {
         const qty = String(cells[qtyIdx] ?? "").trim();
 
         if (qty !== "" && !qtyRegex.test(qty)) {
-          setRawPageIndex(p); // jump to the page containing the error
+          setRawPageIndex(p);
           setRawInvalidCell({ pageIdx: p, rowIdx: r, colIdx: qtyIdx });
           toast.error(
             `Invalid Closing Qty in row ${r + 1} of page ${p + 1} — only numbers are allowed`,
@@ -761,6 +774,7 @@ function UploadClosing() {
         closeConfirm();
         const [desId, desName, desCode] = selDesName.split("|");
         setLoading(true);
+        setLoadingType("rawSubmit");
         try {
           const res = await api.post("/upload_to_db", {
             des_id: desId,
@@ -780,6 +794,7 @@ function UploadClosing() {
           console.error("uploadToDb:", err);
         } finally {
           setLoading(false);
+          setLoadingType(null);
         }
       },
     });
@@ -1001,7 +1016,6 @@ function UploadClosing() {
 
   const TableSkeleton = ({ rows = 8 }) => (
     <Box>
-      {/* header/legend bar skeleton */}
       <Box
         sx={{
           p: "10px 14px",
@@ -1025,7 +1039,6 @@ function UploadClosing() {
         ))}
       </Box>
 
-      {/* row skeletons */}
       <Box sx={{ p: "10px 14px" }}>
         {Array.from({ length: rows }).map((_, i) => (
           <Box
@@ -1227,6 +1240,7 @@ function UploadClosing() {
         const prodName = semiRows.map((r) => r.pn);
 
         setLoading(true);
+        setLoadingType("save");
         try {
           let response = await api.post("/update_all", {
             allData,
@@ -1246,6 +1260,7 @@ function UploadClosing() {
           toast.error("Somthing went wrong,Try again!");
         } finally {
           setLoading(false);
+          setLoadingType(null);
         }
       },
     });
@@ -1270,6 +1285,7 @@ function UploadClosing() {
           .join(",");
 
         setLoading(true);
+        setLoadingType("manualInsert");
         try {
           const res = await api.post("/insert_manual", {
             primary_mas_id: masId ?? 0,
@@ -1292,6 +1308,8 @@ function UploadClosing() {
           console.error("insertManual:", err);
         } finally {
           closeConfirm();
+          setLoading(false);
+          setLoadingType(null);
         }
       },
     });
@@ -1337,6 +1355,7 @@ function UploadClosing() {
           confirmColor: "primary",
           onConfirm: async () => {
             setLoading(true);
+            setLoadingType("confirm");
             try {
               const response = await api.post("/final_submit", { allData });
               if (response.data.status === 200) {
@@ -1348,6 +1367,7 @@ function UploadClosing() {
               toast.error("something went wrong, Try again!");
             } finally {
               setLoading(false);
+              setLoadingType(null);
               closeConfirm();
             }
           },
@@ -1355,8 +1375,6 @@ function UploadClosing() {
       } catch (err) {
         console.error(err);
         toast.error("something went wrong, Try again!");
-      } finally {
-        setLoading(false);
       }
     })();
   };
@@ -1426,8 +1444,9 @@ function UploadClosing() {
   const hasExistingData = Boolean(masId);
   const showDistributorTerritory = selDesName !== "0";
   const hasPreviewFiles = imgData.length > 0;
+  const shouldShowSkeleton = loading && ["import", "manual", "rawSubmit", "save", "manualInsert", "confirm"].includes(loadingType);
+  const shouldShowSpinner = loading && !shouldShowSkeleton;
 
-  // ─── filteredRows: same as before ───────────────────────────────────────────
   const filteredRows = useMemo(() => {
     let rows = tableData;
     if (activeFilter === "mapped")
@@ -1462,9 +1481,8 @@ function UploadClosing() {
     return numbered;
   }, [tableData, activeFilter, isApproved, selCategory]);
 
-  // ─── NEW: groupedRows — injects cat_name header rows when approved ────────
   const groupedRows = useMemo(() => {
-    if (!isApproved && !manualMode) return filteredRows; // ✅ also group when manualMode
+    if (!isApproved && !manualMode) return filteredRows;
 
     const rows = [];
     let prevCat = null;
@@ -1492,7 +1510,6 @@ function UploadClosing() {
     return rows;
   }, [filteredRows, isApproved, manualMode]);
 
-  // ─── NEW: rowStyle — grey background for category header rows ────────────
   const rowStyle = (row) => {
     if (row._rowType === "cat_header") {
       return {
@@ -1517,7 +1534,7 @@ function UploadClosing() {
       align: "center",
       sortable: false,
       renderCell: ({ row }) => {
-        if (row._rowType === "cat_header") return null; // ✅ hide for headers
+        if (row._rowType === "cat_header") return null;
         return (
           <Typography variant="caption" color="text.secondary">
             {row._sl}
@@ -1567,7 +1584,6 @@ function UploadClosing() {
       ),
       renderCell: ({ row }) => {
         if (row._rowType === "cat_header") {
-          // ✅ category header row
           return <strong>{row.cat_name}</strong>;
         }
         if (row._isGrandTotal) {
@@ -1598,7 +1614,7 @@ function UploadClosing() {
       headerAlign: "center",
       align: "center",
       renderCell: ({ row }) => {
-        if (row._rowType === "cat_header") return null; // ✅ hide for headers
+        if (row._rowType === "cat_header") return null;
         if (row._isGrandTotal) {
           return (
             <Typography
@@ -1645,7 +1661,6 @@ function UploadClosing() {
       align: "center",
       sortable: false,
       renderCell: ({ row }) => {
-        // ✅ No serial number for category headers
         if (row._rowType === "cat_header") return null;
         return (
           <Typography variant="caption" color="text.secondary">
@@ -1697,7 +1712,6 @@ function UploadClosing() {
         </Box>
       ),
       renderCell: ({ row }) => {
-        // ✅ Category header — show cat_name spanning the cell
         if (row._rowType === "cat_header") {
           return <strong>{row.cat_name}</strong>;
         }
@@ -1818,7 +1832,6 @@ function UploadClosing() {
             </Box>
           );
         }
-        // ✅ No qty cell for category headers
         if (row._rowType === "cat_header") return null;
 
         if (row._isGrandTotal) {
@@ -1930,7 +1943,6 @@ function UploadClosing() {
                   </Box>
                 );
               }
-              // ✅ No actions for category headers
               if (row._rowType === "cat_header") return null;
               if (row._isGrandTotal) return null;
               return (
@@ -2089,6 +2101,13 @@ function UploadClosing() {
                   }
                   onChange={(event, newValue) => {
                     resetUploadState();
+                    // A manual distributor switch is no longer bound to the
+                    // process status / btn val that came in via URL params
+                    // when navigating from another page — reset them so the
+                    // /getDesList payload doesn't stay scoped to the old
+                    // distributor's nav context.
+                    setReqProcStat(0);
+                    setReqBtnVal(0);
                     if (newValue) {
                       setSelDesName(
                         `${newValue.id}|${newValue.stk_name}|${newValue.stk_code}|${newValue.ter_name}`,
@@ -2101,6 +2120,7 @@ function UploadClosing() {
                   }}
                   renderInput={(params) => (
                     <TextField
+                      required
                       {...params}
                       label={masterPanel["STKS"] || "Distributor"}
                       placeholder={`Search ${masterPanel["STKS"] || "Distributor"}`}
@@ -2539,8 +2559,7 @@ function UploadClosing() {
           </Paper>
         )}
 
-        {/* Skeleton — shown while fetching (covers distributor/month switch, import, refresh) */}
-        {loading && !rawMode && (
+        {shouldShowSkeleton && (
           <Paper
             elevation={0}
             sx={{
@@ -2553,8 +2572,24 @@ function UploadClosing() {
             <TableSkeleton rows={8} />
           </Paper>
         )}
+        {shouldShowSpinner && (
+            <Paper
+              elevation={0}
+              sx={{
+                p:4.9,
+                textAlign: "center",
+                borderRadius: "10px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <CircularProgress color="primary" size={30} />
+            </Paper>
+          )}
 
-        {/* Real table — only once loading is done and we have data */}
+
         {!loading && showTable && (
           <Paper
             elevation={0}
@@ -2741,43 +2776,45 @@ function UploadClosing() {
                 </Button>
               )}
             </Box>
+            <Box sx={{ position: "relative" }}>
 
-           {manualMode || isApproved ? (
-            <ManualProductTable
-              rows={groupedRows}
-              onQtyChange={manualMode ? handleManualQtyChange : handleQtyChange}
-              tglVal={tglVal}
-              onToggleAll={handleToggleAllProducts}
-              masterPanel={masterPanel}
-              loading={loading}
-              editable={manualMode || canEditQty}
-              showToggle={manualMode || isApproved}
-            />
-          ) : (
-            <DataTable
-              columns={dtColumns}
-              data={groupedRows}
-              loading={loading}
-              pagination={true}
-              defaultPageSize={100}
-              getRowId={(row) => row._rowKey}
-              rowStyle={rowStyle}
-              getRowClassName={(params) =>
-                params.row._isGrandTotal ? "grand-total-row" : ""
-              }
-              sx={{
-                "& .grand-total-row": {
-                  backgroundColor: "rgba(0,0,0,0.04)",
-                  fontWeight: 600,
-                  borderTop: "2px solid",
-                  borderColor: "divider",
-                },
-                "& .grand-total-row:hover": {
-                  backgroundColor: "rgba(0,0,0,0.07) !important",
-                },
-              }}
-            />
-          )}
+              {manualMode || isApproved ? (
+                <ManualProductTable
+                  rows={groupedRows}
+                  onQtyChange={manualMode ? handleManualQtyChange : handleQtyChange}
+                  tglVal={tglVal}
+                  onToggleAll={handleToggleAllProducts}
+                  masterPanel={masterPanel}
+                  loading={loading}
+                  editable={manualMode || canEditQty}
+                  showToggle={manualMode || isApproved}
+                />
+              ) : (
+                <DataTable
+                  columns={dtColumns}
+                  data={groupedRows}
+                  loading={loading}
+                  pagination={true}
+                  defaultPageSize={100}
+                  getRowId={(row) => row._rowKey}
+                  rowStyle={rowStyle}
+                  getRowClassName={(params) =>
+                    params.row._isGrandTotal ? "grand-total-row" : ""
+                  }
+                  sx={{
+                    "& .grand-total-row": {
+                      backgroundColor: "rgba(0,0,0,0.04)",
+                      fontWeight: 600,
+                      borderTop: "2px solid",
+                      borderColor: "divider",
+                    },
+                    "& .grand-total-row:hover": {
+                      backgroundColor: "rgba(0,0,0,0.07) !important",
+                    },
+                  }}
+                />
+              )}
+            </Box>
           </Paper>
         )}
 

@@ -79,7 +79,13 @@ const SubmissionRow = React.memo(
                 {columns.map((col, i) => (
                     <TableCell
                         key={`${row.id}-${col.field}`}
-                        align={col.type === "number" || col.type === "currency" ? "right" : "left"}
+                        align={
+                            col.type === "number" || col.type === "currency"
+                                ? "right"
+                                : col.field === "stk_name"
+                                    ? "left"
+                                    : "center"
+                        }
                         sx={{
                             fontSize: "12px",
                             color: "#343A40",
@@ -160,7 +166,7 @@ const SubmissionStatusTableComponent = ({
             }
             cols.push({ field: "close_date", headerName: "Month", width: 100 });
             cols.push({ field: "stk_code", headerName: "Code", width: 80 });
-            cols.push({ field: "stk_name", headerName: `${masterPanel["STKS"] || "Distributor"} Name`, width: 200 });
+            cols.push({ field: "stk_name", headerName: `${masterPanel["STKS"] || "Distributor"} Name`, width: 150 });
         } else {
             if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0) {
                 cols.push({ field: "zone_name", headerName: masterPanel["ZONE"] || "Zone", width: 120 });
@@ -386,7 +392,7 @@ const SubmissionStatusTableComponent = ({
 
         if (row._rowType !== "data" && field === lastGroupField) {
             return (
-                <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", textAlign: "right" }}>
+                <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", textAlign: "center" }}>
                     {row._label}
                 </strong>
             );
@@ -402,7 +408,7 @@ const SubmissionStatusTableComponent = ({
             if (row._rowType === "data")
                 return (
                     <Box>
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", whiteSpace: "nowrap", gap: 0.5 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", whiteSpace: "nowrap", mt: 0.2 }}>
                             <span style={{ color: "#212121", fontSize: "11px" }}>{row.stk_name}</span>
                             <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
                                 {renderUplTypeIcon(row.upl_type)}
@@ -653,21 +659,55 @@ const SubmissionStatusTableComponent = ({
                 </Box>
             </Box>
 
-            {/*
-              mx: 1.5 insets the whole table (head + body) from the Paper's
-              edges — same outer margin ManualProductTable applies to each
-              of its row Boxes via `mx: 1.5`.
-            */}
             <Box
                 ref={pagination ? null : scrollRef}
                 onScroll={pagination ? undefined : onScroll}
                 sx={
-                    pagination
-                        ? { overflowX: "auto", mx: 1.5 }
-                        : { overflowY: "auto", overflowX: "auto", maxHeight: VIEWPORT_HEIGHT, mx: 1.5 }
-                }
+                pagination
+                    ? {
+                        overflowX: "auto",
+                        mx: 1.5,
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "#c1c1c1 #f1f1f1",
+                        "&::-webkit-scrollbar": { width: 6, height: 6 },
+                        "&::-webkit-scrollbar-track": {
+                            backgroundColor: "#f1f1f1",
+                            borderRadius: 8,
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                            backgroundColor: "#c1c1c1",
+                            borderRadius: 8,
+                        },
+                        "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
+                    }
+                    : {
+                        overflowY: "auto",
+                        overflowX: "auto",
+                        maxHeight: VIEWPORT_HEIGHT,
+                        mx: 1.5,
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "#c1c1c1 #f1f1f1",
+                        "&::-webkit-scrollbar": { width: 6, height: 6 },
+                        "&::-webkit-scrollbar-track": {
+                            backgroundColor: "#f1f1f1",
+                            borderRadius: 8,
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                            backgroundColor: "#c1c1c1",
+                            borderRadius: 8,
+                        },
+                        "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
+                    }
+            }
             >
-                <Table size="small" stickyHeader={!pagination} sx={{ "& td": { padding: "4px 6px" } }}>
+                <Table
+                    size="small"
+                    stickyHeader={!pagination}
+                    sx={{
+                        "& td": { padding: "2px 6px", lineHeight: 1.3 },
+                        "& td strong": { lineHeight: 1.3 },
+                    }}
+                >
                     <TableHead>
                         <TableRow sx={{ backgroundColor: "#F6F5F2" }}>
                             {columns.map((col, i) => {
@@ -685,7 +725,7 @@ const SubmissionStatusTableComponent = ({
                                 return (
                                     <TableCell
                                         key={i}
-                                        align="left"
+                                        align={col.field === "stk_name" ? "left" : "center"}
                                         sx={{
                                             color: "#A09D97",
                                             borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -696,14 +736,12 @@ const SubmissionStatusTableComponent = ({
                                             width: col.width,
                                             minWidth: col.width || 80,
                                             backgroundColor: "#F6F5F2",
-                                            // Edge padding mirrors ManualProductTable's px: 2 header row
-                                            // inset on its first/last column.
                                             pl: i === 0 ? 2 : 1,
                                             pr: i === columns.length - 1 ? 2 : 1,
                                         }}
                                     >
                                         {typeof headerContent === "string" ? (
-                                            <Typography sx={{ fontSize: 11, textAlign: "left" }}>{headerContent}</Typography>
+                                            <Typography sx={{ fontSize: 11, textAlign: col.field === "stk_name" ? "left" : "center" }}>{headerContent}</Typography>
                                         ) : (
                                             headerContent
                                         )}
