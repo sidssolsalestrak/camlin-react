@@ -1470,7 +1470,7 @@ export default function Dashboard() {
             <Box sx={{ flex: 1 }}>
               <Grid container spacing={1} alignItems="center">
                 {filterType === "0" ? (
-                  <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
+                  <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
                         label="Date"
@@ -1484,7 +1484,7 @@ export default function Dashboard() {
                   </Grid>
                 ) : (
                   <>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
+                    <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="From"
@@ -1496,7 +1496,7 @@ export default function Dashboard() {
                         />
                       </LocalizationProvider>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.7, lg: 1.7 }}>
+                    <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="To"
@@ -1511,7 +1511,7 @@ export default function Dashboard() {
                   </>
                 )}
 
-                <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                   <FormControl size="small" fullWidth>
                     <InputLabel id="type">Type</InputLabel>
                     <Select
@@ -1529,7 +1529,7 @@ export default function Dashboard() {
                   </FormControl>
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                   <FormControl size="small" fullWidth>
                     <InputLabel id="Usertype">{userLabel} Type</InputLabel>
                     <Select
@@ -1551,7 +1551,7 @@ export default function Dashboard() {
                 </Grid>
 
                 {filterType === "0" ? (
-                  <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
+                  <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Typography variant="body2" color="text.secondary">Show All</Typography>
                       <Switch
@@ -1564,7 +1564,7 @@ export default function Dashboard() {
                   </Grid>
                 ) : (
                   <>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                    <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                       <FormControl size="small" fullWidth>
                         <InputLabel id="custype">Cus.Type</InputLabel>
                         <Select
@@ -1577,7 +1577,7 @@ export default function Dashboard() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
+                    <Grid size={{ xs: 12, sm: 12, md: 2, lg: 2 }}>
                       <FormControl size="small" fullWidth>
                         <InputLabel id="emptype">Emp Type</InputLabel>
                         <Select
