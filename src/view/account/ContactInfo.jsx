@@ -259,7 +259,7 @@ const ContactInfo = ({
                                                 label={fieldConfig["Hospital Attached"]?.label || "Hospital Attached To"}
                                                 value={clinic.hospitalAttached}
                                                 onChange={(e) => updateClinic(idx, "hospitalAttached", String(e.target.value))}
-                                                options={hospitalOptions}
+                                                options={[{ id: "0", hosp_name: "Select Hospital" }, ...hospitalOptions]}
                                                 valueKey="id"
                                                 labelKey="hosp_name"
                                             />
@@ -299,6 +299,8 @@ const ContactInfo = ({
                                             </FormControl>
                                         </Grid>
                                     )}
+                                    </Grid>
+                                    <Grid container spacing={2}  sx={{ mb: 2 }}>
 
                                     {/* Pharmacy Attached */}
                                     {fieldConfig["Pharmacy Attached"]?.show && (
@@ -307,7 +309,7 @@ const ContactInfo = ({
                                                 label={fieldConfig["Pharmacy Attached"]?.label || "Pharmacy Attached"}
                                                 value={clinic.pharmacyAttached}
                                                 onChange={(e) => updateClinic(idx, "pharmacyAttached", String(e.target.value))}
-                                                options={pharmacyOptions}
+                                                options={[{ id: "0", name: "Select Pharmacy" }, ...pharmacyOptions]}
                                                 valueKey="id"
                                                 labelKey="name"
                                             />
@@ -328,9 +330,7 @@ const ContactInfo = ({
                                             />
                                         </Grid>
                                     )}
-                                    </Grid>
-
-                                    <Grid container spacing={2}  sx={{ mb: 2 }}>
+                       
                                     
                                       {/* Distributor – HCP */}
                                     {fieldConfig["Distributor"]?.show && isHcp && (
