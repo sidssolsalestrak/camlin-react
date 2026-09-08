@@ -2085,7 +2085,7 @@ function UploadClosing() {
                   height: "35px",
                 }}
               >
-                <Autocomplete
+              <Autocomplete
                   size="small"
                   options={allDesname}
                   disabled={checking === 2}
@@ -2099,13 +2099,20 @@ function UploadClosing() {
                   getOptionLabel={(option) =>
                     `${option.stk_name} - ${option.stk_code}`
                   }
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
+                  }
+                  filterOptions={(options, { inputValue }) => {
+                    if (!inputValue) return options;
+                    const val = inputValue.toLowerCase().trim().replace(/\s+/g, "");
+                    return options.filter((opt) =>
+                      (opt.stk_name?.toLowerCase() || "").replace(/\s+/g, "").startsWith(val) ||
+                      (String(opt.stk_code || "").toLowerCase()).replace(/\s+/g, "").startsWith(val)
+                    );
+                  }}
+                  noOptionsText="No matching distributors"
                   onChange={(event, newValue) => {
                     resetUploadState();
-                    // A manual distributor switch is no longer bound to the
-                    // process status / btn val that came in via URL params
-                    // when navigating from another page — reset them so the
-                    // /getDesList payload doesn't stay scoped to the old
-                    // distributor's nav context.
                     setReqProcStat(0);
                     setReqBtnVal(0);
                     if (newValue) {
@@ -2115,7 +2122,6 @@ function UploadClosing() {
                     } else {
                       setSelDesName("0");
                     }
-
                     setManualMode(false);
                   }}
                   renderInput={(params) => (
