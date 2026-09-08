@@ -53,7 +53,8 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                         }}
                     />
                 </Grid>
-
+                </Grid>
+                <Grid container spacing={2} alignItems="center" sx={{ mt: 2 }}>
                 {/* Birth Date + NA */}
                 {fieldConfig["Birthday"]?.show && (
                     <>

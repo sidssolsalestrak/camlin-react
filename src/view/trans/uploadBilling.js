@@ -6,18 +6,16 @@ import {
     Box, Grid, Paper, Typography, Button, IconButton, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, TableContainer,
     Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
-    Divider, Chip
+    Divider, Chip, Alert, Tabs, Tab,
 } from '@mui/material';
 import { FiRefreshCw } from "react-icons/fi";
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import DescriptionIcon from '@mui/icons-material/Description';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
-
+import MappingTable from './MappingTable';
+import useToast from '../../utils/useToast'
+import DataTable from '../../utils/dataTable';
+import ConfirmationDialog from '../../utils/confirmDialog';
 
 
 const UploadBilling = () => {
@@ -44,12 +42,43 @@ const UploadBilling = () => {
     const [billModalOpen, setBillModalOpen] = useState(false);
     const [billDetails, setBillDetails] = useState(null);
     const [billLoading, setBillLoading] = useState(false);
+    const [mappingOpen, setMappingOpen] = useState(false);
+    const [mappingTabValue, setMappingTabValue] = useState(0);
+    const [mappingLoading, setMappingLoading] = useState(false);
+    const [mappingSaving, setMappingSaving] = useState(false);
+    const [unmappedProducts, setUnmappedProducts] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [productSelections, setProductSelections] = useState({});
+    const [unmappedCustomers, setUnmappedCustomers] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [customerSelections, setCustomerSelections] = useState({});
+    const [uploadedBilling, setUploadedBilling] = useState([])
+    const toast = useToast()
+    const [ignoreLoading, setIgnoreLoading] = useState(false);
+    const [stockistUploading, setStockistUploading] = useState(false);
+    const [confirmationDialog, setConfirmationDialog] = useState({
+        open: false,
+        title: '',
+        message: '',
+        onConfirm: null,
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmColor: 'primary',
+    });
+
+    const showConfirmationDialog = (config) => {
+        setConfirmationDialog((prev) => ({ ...prev, ...config, open: true }));
+    };
+
+    const closeConfirmationDialog = () => {
+        setConfirmationDialog((prev) => ({ ...prev, open: false }));
+    };
 
     const fetchSummary = useCallback(async () => {
         setSummaryLoading(true);
         try {
             const { data } = await api.post(`/lastUploadedData`);
-            let lasupdtdt=data.lastUpdated?dayjs(data?.lastUpdated).format('DD MMM YYYY HH:mm A'):''
+            let lasupdtdt = data.lastUpdated ? dayjs(data?.lastUpdated).format('DD MMM YYYY hh:mm A') : ''
             setLastUpdated(lasupdtdt || '');
             setUnmappedInfo(data.unmappedInfo || '');
         } catch (err) {
@@ -59,14 +88,13 @@ const UploadBilling = () => {
         }
     }, []);
 
-    const fetchRefreshBillingData=async()=>{
-        try{
-            let response=await api.get('/ftp_primary_sales')
-            console.log("refreshed billingdata response",response)
-
+    const fetchRefreshBillingData = async () => {
+        try {
+            let response = await api.get('/ftp_primary_sales')
+            console.log("refreshed billingdata response", response)
         }
-        catch(err){
-            console.log("Refresh billing data Error",err)
+        catch (err) {
+            console.log("Refresh billing data Error", err)
         }
     }
 
@@ -97,12 +125,192 @@ const UploadBilling = () => {
     }, []);
 
     useEffect(() => {
-        fetchSummary();
-    }, [fetchSummary]);
-
-    useEffect(() => {
         fetchBillingLogs(logDate);
     }, [logDate, fetchBillingLogs]);
+
+    const fetchUnmappedCount = async () => {
+        try {
+            const response = await api.post('/getUnMappedData');
+            setUnmappedInfo(response.data?.unmap_cout ?? 0);
+        } catch (error) {
+            console.error('Get unmapped count error:', error);
+            setUnmappedInfo(0);
+        }
+    };
+
+    const loadUploadedBilling = async () => {
+        try {
+            let response = await api.post('/viewUploadedBilling')
+            let billingdata = Array.isArray(response.data.data) ? response.data.data : []
+            setUploadedBilling(billingdata)
+
+        }
+        catch (err) {
+            console.log("load uploaded billing data err", err)
+        }
+    }
+
+    const loadUnmappedProducts = async () => {
+        setMappingLoading(true);
+        try {
+            const { data } = await api.get('/unmappedbillingproducts');
+            setUnmappedProducts(data.unmappedProducts || []);
+            setProducts(data.products || []);
+            setProductSelections({});
+        } catch (err) {
+            toast.error('Unable to load unmapped products.')
+        } finally {
+            setMappingLoading(false);
+        }
+    };
+
+    const loadUnmappedCustomers = async () => {
+        setMappingLoading(true);
+        try {
+            const { data } = await api.get('/unmappedbillingcustomers');
+            setUnmappedCustomers(data.unmappedCustomers || []);
+            setCustomers(data.customers || []);
+            setCustomerSelections({});
+        } catch (err) {
+            toast.error('Unable to load unmapped customers.')
+        } finally {
+            setMappingLoading(false);
+        }
+    };
+
+    const openMappingDialog = async () => {
+        if (!Number(unmappedInfo)) return;
+        setMappingOpen(true);
+        setMappingTabValue(0);
+        await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
+    };
+
+    // ---- Save Products (now the actual action, called on confirm) ----
+    const saveProductMappings = async () => {
+        const mappings = unmappedProducts
+            .filter(row => productSelections[row.prod_name])
+            .map((row) => ({
+                sourceProductName: row.prod_name,
+                productId: productSelections[row.prod_name],
+            }));
+
+        if (mappings.length === 0) {
+            toast.error('Please select at least one product.');
+            return;
+        }
+
+        setMappingSaving(true);
+
+        try {
+            const { data } = await api.post('/unmappedbillingproductsmap', { mappings });
+            toast.success('Products mapped successfully.');
+            if (data.counts.products === 0 && data.counts.customers === 0) {
+                await loadUploadedBilling();
+            }
+            await fetchUnmappedCount();
+            await loadUnmappedProducts();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Unable to save product mappings.');
+        } finally {
+            setMappingSaving(false);
+            closeConfirmationDialog();
+        }
+    };
+
+    const showSaveProductsConfirmation = () => {
+        const selectedCount = unmappedProducts.filter(row => productSelections[row.prod_name]).length;
+        if (selectedCount === 0) {
+            toast.error('Please select at least one product.');
+            return;
+        }
+        showConfirmationDialog({
+            title: 'Confirmation',
+            message: `Are you sure want to Map Selected Product?`,
+            confirmText: 'Save',
+            cancelText: 'Cancel',
+            confirmColor: 'primary',
+            onConfirm: () => saveProductMappings(),
+        });
+    };
+
+    // ---- Save Customers (now the actual action, called on confirm) ----
+    const saveCustomerMappings = async () => {
+        const mappings = unmappedCustomers
+            .filter(row => customerSelections[row.cus_name])
+            .map((row) => ({
+                sourceCustomerName: row.cus_name,
+                customerId: customerSelections[row.cus_name],
+            }));
+
+        if (mappings.length === 0) {
+            toast.error('Please select at least one customer.');
+            return;
+        }
+
+        setMappingSaving(true);
+
+        try {
+            const { data } = await api.post('/unmappedbillingcustomersmap', { mappings });
+            toast.success('Customers mapped successfully.');
+            await fetchUnmappedCount();
+            await loadUnmappedCustomers();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Unable to save customer mappings.');
+        } finally {
+            setMappingSaving(false);
+            closeConfirmationDialog();
+        }
+    };
+
+    const showSaveCustomersConfirmation = () => {
+        const selectedCount = unmappedCustomers.filter(row => customerSelections[row.cus_name]).length;
+        if (selectedCount === 0) {
+            toast.error('Please select at least one customer.');
+            return;
+        }
+        showConfirmationDialog({
+            title: 'Confirmation',
+            message: `Save mapping for ${selectedCount} selected customer${selectedCount > 1 ? 's' : ''}?`,
+            confirmText: 'Save',
+            cancelText: 'Cancel',
+            confirmColor: 'primary',
+            onConfirm: () => saveCustomerMappings(),
+        });
+    };
+
+    const columns = [
+        {
+            field: 'invoice_no',
+            headerName: 'Invoice No'
+        },
+        {
+            field: 'cus_type_name',
+            headerName: 'Distributor Type'
+        },
+        {
+            field: 'cus_name',
+            headerName: 'Distributor Code'
+        },
+        {
+            field: 'stk_name',
+            headerName: 'Distributor'
+        },
+        {
+            field: 'prod_name',
+            headerName: 'Product Code'
+        },
+        {
+            field: 'sku_name',
+            headerName: 'Product Name'
+        },
+        {
+            field: 'prod_qty',
+            headerName: 'Prod Qty',
+            renderCell: (row) => (
+                <Typography sx={{ textAlign: 'right' }}>{row.value}</Typography>
+            )
+        }
+    ]
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files?.[0] || null);
@@ -164,6 +372,103 @@ const UploadBilling = () => {
         setBillDetails(null);
     };
 
+    const handleIgnoreunMapProduct = async () => {
+        setIgnoreLoading(true);
+        try {
+            const month = uploadMonth.format('YYYY-MM-DD');
+
+            const [prodRes, cusRes] = await Promise.all([
+                api.post('/deleteUnMapProd', { month }),
+                api.post('/deleteUnMapCus', { month }),
+            ]);
+
+            if (prodRes.data?.success && cusRes.data?.success) {
+                toast.success('Unmapped product and customer records removed.');
+                setMappingOpen(false);
+                await fetchUnmappedData();
+                await loadUploadedBilling();
+            } else {
+                toast.error('Unable to delete UnMapped Product and Customer');
+            }
+        } catch (err) {
+            console.log("ignore unmapeed err", err);
+            toast.error(err.response?.data?.message || "Unable to delete UnMapped Product and Customer");
+        } finally {
+            setIgnoreLoading(false);
+            closeConfirmationDialog();
+        }
+    };
+
+    const showIgnoreUnmappedConfirmation = () => {
+        showConfirmationDialog({
+            title: 'Confirmation',
+            message: `Are you sure you want to permanently delete all unmapped Items?`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            confirmColor: 'error',
+            onConfirm: () => handleIgnoreunMapProduct(),
+        });
+    };
+
+    const fetchUnmappedData = useCallback(async () => {
+        try {
+            const { data } = await api.post('/getUnMappedData');
+            setUnmappedInfo(data.unmap_cout ?? 0);
+            if (Number(data.unmap_cout) === 0) {
+                await loadUploadedBilling()
+            }
+        } catch (err) {
+            console.error('Failed to fetch unmapped count', err);
+            setUnmappedInfo(0);
+        }
+    }, []);
+
+    const handleuploadStockistBilling = async () => {
+        setStockistUploading(true);
+        try {
+            const startDay = uploadMonth.startOf('month').format('YYYY-MM-DD');
+            const endDay = uploadMonth.endOf('month').format('YYYY-MM-DD');
+
+            const { data } = await api.post('/uploadStockistBilling', { startDay, endDay });
+
+            if (data?.success) {
+                toast.success(data.message || 'Stockist billing uploaded successfully.');
+                setUploadedBilling([]);
+                await fetchSummary();
+                await fetchBillingLogs(logDate);
+                await fetchUnmappedData();
+            } else {
+                toast.error(data?.message || 'Unable to upload stockist billing.');
+            }
+        } catch (err) {
+            console.log("uploadStockistBilling err", err);
+            toast.error(err.response?.data?.message || 'Unable to upload stockist billing.');
+        } finally {
+            setStockistUploading(false);
+            closeConfirmationDialog();
+        }
+    };
+
+    const showUploadStockistBillingConfirmation = () => {
+        showConfirmationDialog({
+            title: 'Confirmation',
+            message: `Are you sure you want to upload?`,
+            confirmText: 'Upload',
+            cancelText: 'Cancel',
+            confirmColor: 'primary',
+            onConfirm: () => handleuploadStockistBilling(),
+        });
+    };
+
+
+
+    useEffect(() => {
+        fetchSummary();
+        fetchUnmappedData();
+    }, [fetchSummary, fetchUnmappedData]);
+
+    console.log("uploaded billing data", uploadedBilling)
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -171,25 +476,32 @@ const UploadBilling = () => {
             { label: "Upload Billing", path: location.pathname },
         ]}>
 
-            <Box sx={{ p: 2,backgroundColor:'white',mt:3,ml:2,mr:2,borderRadius:'0.2rem' }}>
+            <Box sx={{ p: 2, backgroundColor: 'white', mt: 3, ml: 2, mr: 2, borderRadius: '0.2rem' }}>
                 <Grid container spacing={2}>
                     {/* EDI Last Updated */}
                     <Grid item size={{ lg: 3, md: 5, xs: 12 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography sx={{fontSize:'1.2rem',fontWeight:600}}>EDI - Last Updated</Typography>
+                                <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>EDI - Last Updated</Typography>
                                 <IconButton size="small" onClick={fetchRefreshBillingData} disabled={summaryLoading}>
-                                    {summaryLoading ? <CircularProgress size={16} /> : <FiRefreshCw fontSize="small" color='#466F9B'  />}
+                                    {summaryLoading ? <CircularProgress size={16} /> : <FiRefreshCw fontSize="small" color='#466F9B' />}
                                 </IconButton>
                             </Box>
                             <Divider sx={{ my: 1 }} />
-                            <Typography  sx={{ mb: 1,color:'#466F9B',fontSize:'1.2rem',fontWeight:600,textAlign:'center'}}>{lastUpdated || '—'}</Typography>
+                            <Typography sx={{ mb: 1, color: '#466F9B', fontSize: '1.2rem', fontWeight: 600, textAlign: 'center' }}>{lastUpdated || '—'}</Typography>
                             <Typography
                                 variant="body1"
-                                color="primary"
-                                sx={{ cursor: 'pointer', fontWeight: 600, textAlign:'center',mt:2.5,color:'#466F9B',fontSize:'1.2rem' }}
+                                onClick={openMappingDialog}
+                                sx={{
+                                    cursor: Number(unmappedInfo) ? 'pointer' : 'default',
+                                    fontWeight: 600,
+                                    textAlign: 'center',
+                                    mt: 2.5,
+                                    color: '#466F9B',
+                                    fontSize: '1.2rem',
+                                }}
                             >
-                             {unmappedInfo} <span style={{color:'#a9c2e6'}}>Unmapped</span>
+                                {unmappedInfo} <span style={{ color: '#a9c2e6' }}>Unmapped</span>
                             </Typography>
                         </Paper>
                     </Grid>
@@ -199,8 +511,8 @@ const UploadBilling = () => {
 
                     {/* Manual Upload */}
                     <Grid item size={{ lg: 4.5, md: 5, xs: 12 }}>
-                        <Paper variant="outlined" sx={{ p: 2, height: '100%',borderRadius: '1rem'}}>
-                            <Typography sx={{textAlign:'center',fontWeight:600,fontSize:'1.2rem'}} variant="subtitle1" fontWeight={600}>Manual Upload</Typography>
+                        <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
+                            <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '1.2rem' }} variant="subtitle1" fontWeight={600}>Manual Upload</Typography>
                             <Divider sx={{ my: 1 }} />
                             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, alignItems: 'start' }}>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -210,153 +522,177 @@ const UploadBilling = () => {
                                         format='MMM YYYY'
                                         onChange={(val) => val && setUploadMonth(val)}
                                         slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                                        sx={{width:110}}
+                                        sx={{ width: 110 }}
                                     />
                                 </LocalizationProvider>
-                                <Box sx={{display:'flex',flexDirection:'column',gap:2,ml:3}}>
-                                <Button
-                                    variant="outlined"
-                                    component="label"
-                                    fullWidth
-                                >
-                                    {selectedFile ? selectedFile.name : 'Upload Billing Data'}
-                                    <input
-                                        type="file"
-                                        hidden
-                                        accept=".csv"
-                                        onChange={handleFileChange}
-                                    />
-                                </Button>
-                                
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    size="small"
-                                    onClick={handleUpload}
-                                    disabled={uploading}
-                                    sx={{width:'2rem'}}
-                                >
-                                    {uploading ? <CircularProgress size={18} color="inherit" /> : 'Upload'}
-                                </Button>
-                                {uploadMessage.text && (
-                                    <Typography
-                                        variant="caption"
-                                        color={uploadMessage.type === 'error' ? 'error' : 'success.main'}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: 3 }}>
+                                    <Button
+                                        variant="outlined"
+                                        component="label"
+                                        fullWidth
                                     >
-                                        {uploadMessage.text}
-                                    </Typography>
-                                )}
+                                        {selectedFile ? selectedFile.name : 'Upload Billing Data'}
+                                        <input
+                                            type="file"
+                                            hidden
+                                            accept=".csv"
+                                            onChange={handleFileChange}
+                                        />
+                                    </Button>
+
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="small"
+                                        onClick={handleUpload}
+                                        disabled={uploading}
+                                        sx={{ width: '2rem' }}
+                                    >
+                                        {uploading ? <CircularProgress size={18} color="inherit" /> : 'Upload'}
+                                    </Button>
+                                    {uploadMessage.text && (
+                                        <Typography
+                                            variant="caption"
+                                            color={uploadMessage.type === 'error' ? 'error' : 'success.main'}
+                                        >
+                                            {uploadMessage.text}
+                                        </Typography>
+                                    )}
                                 </Box>
                             </Box>
                         </Paper>
                     </Grid>
                 </Grid>
 
-                {/* Billing Log */}
-                {/* <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <Typography variant="h6" sx={{ mr: 2 }}>Billing Log</Typography>
-                        <IconButton size="small" onClick={() => shiftDate(-1)}>
-                            <ChevronLeftIcon />
-                        </IconButton>
-                        <DatePicker
-                            value={logDate}
-                            onChange={(val) => val && setLogDate(val)}
-                            slotProps={{ textField: { size: 'small' } }}
-                        />
-                        <IconButton size="small" onClick={() => shiftDate(1)}>
-                            <ChevronRightIcon />
-                        </IconButton>
-                    </Box>
+                {/* Mapping Section */}
+                {mappingOpen && (
+                    <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>
+                                Manage Unmapped Data
+                            </Typography>
+                            <Button variant='contained' color='error' onClick={() => showIgnoreUnmappedConfirmation()}>Ignore Unmapped</Button>
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
 
-                    <TableContainer>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow sx={{ '& th': { fontWeight: 600, bgcolor: 'grey.100' } }}>
-                                    <TableCell align="center">Sl.</TableCell>
-                                    <TableCell align="center">Invoice</TableCell>
-                                    <TableCell align="center">Date</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Code</TableCell>
-                                    <TableCell>Customer Name</TableCell>
-                                    <TableCell align="center">Total Qty Pcs</TableCell>
-                                    <TableCell align="center">Total Kgs</TableCell>
-                                    <TableCell align="right">Total Value</TableCell>
-                                    <TableCell align="center">Status</TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {logsLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={11} align="center">
-                                            <CircularProgress size={20} />
-                                        </TableCell>
-                                    </TableRow>
-                                ) : billingLogs.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={11} align="center">No Logs found</TableCell>
-                                    </TableRow>
+                        <Tabs value={mappingTabValue} onChange={(e, val) => setMappingTabValue(val)}>
+                            <Tab label={`Products (${unmappedProducts.length})`} />
+                            <Tab label={`Customers (${unmappedCustomers.length})`} />
+                        </Tabs>
+
+                        {mappingLoading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                <CircularProgress />
+                            </Box>
+                        ) : mappingTabValue === 0 ? (
+                            <>
+                                {unmappedProducts.length === 0 ? (
+                                    <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
+                                        No unmapped products
+                                    </Typography>
                                 ) : (
-                                    billingLogs.map((row, idx) => {
-                                        const unmapped = row.cus_id === 0;
-                                        const prodUnmapped = row.prod_stat === 1;
-                                        const hasError = unmapped || prodUnmapped;
-                                        return (
-                                            <TableRow key={idx} hover>
-                                                <TableCell align="center">{idx + 1}</TableCell>
-                                                <TableCell align="center">
-                                                    <DescriptionIcon
-                                                        fontSize="small"
-                                                        sx={{ cursor: 'pointer' }}
-                                                        onClick={() => openBillModal(row)}
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="center">{logDate.format('DD MMM YYYY')}</TableCell>
-                                                <TableCell>
-                                                    {unmapped ? (
-                                                        <Chip size="small" color="error" icon={<ErrorIcon />} label="Unmapped" />
-                                                    ) : row.cus_type}
-                                                </TableCell>
-                                                <TableCell>{row.cus_code}</TableCell>
-                                                <TableCell>{row.cus_name}</TableCell>
-                                                <TableCell align="center">{row.tot_qty}</TableCell>
-                                                <TableCell align="center">
-                                                    {prodUnmapped ? <ErrorIcon fontSize="small" color="error" /> : row.tot_kg}
-                                                </TableCell>
-                                                <TableCell align="right">{row.tot_val}</TableCell>
-                                                <TableCell align="center">
-                                                    {hasError ? (
-                                                        <Chip size="small" color="error" icon={<ErrorIcon />} label="Unmapped" />
-                                                    ) : (
-                                                        <Chip size="small" color="success" icon={<CheckCircleIcon />} label="Mapped" />
-                                                    )}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{ color: 'primary.main', fontWeight: 600, cursor: 'pointer' }}
-                                                    onClick={() => openBillModal(row)}
-                                                >
-                                                    View
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })
+                                    <MappingTable
+                                        rows={unmappedProducts}
+                                        rowKeyField="prod_name"
+                                        sourceLabel="Uploaded Product"
+                                        targetLabel="Map To Product"
+                                        selectLabel="Select Product"
+                                        options={products}
+                                        optionValueField="prod_id"
+                                        optionLabel={(product) => `${product.code} - ${product.prod_name}`}
+                                        selections={productSelections}
+                                        searchFields={["code", "prod_name"]}
+                                        onSelectionChange={(key, value) =>
+                                            setProductSelections((previous) => ({
+                                                ...previous,
+                                                [key]: value,
+                                            }))
+                                        }
+                                    />
                                 )}
-                                {billingLogs.length > 0 && (
-                                    <TableRow sx={{ '& td': { fontWeight: 600 } }}>
-                                        <TableCell colSpan={6} align="right">Total</TableCell>
-                                        <TableCell align="center">{totals.qty}</TableCell>
-                                        <TableCell align="center">{totals.kg}</TableCell>
-                                        <TableCell align="right">{totals.val}</TableCell>
-                                        <TableCell />
-                                        <TableCell />
-                                    </TableRow>
+                            </>
+                        ) : (
+                            <>
+                                {unmappedCustomers.length === 0 ? (
+                                    <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
+                                        No unmapped customers
+                                    </Typography>
+                                ) : (
+                                    <MappingTable
+                                        rows={unmappedCustomers}
+                                        rowKeyField="cus_name"
+                                        sourceLabel="Uploaded Customer"
+                                        targetLabel="Map To Customer"
+                                        selectLabel="Select Customer"
+                                        options={customers}
+                                        optionValueField="id"
+                                        optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
+                                        selections={customerSelections}
+                                        searchFields={["stk_code", "stk_name"]}
+                                        onSelectionChange={(key, value) =>
+                                            setCustomerSelections((previous) => ({
+                                                ...previous,
+                                                [key]: value,
+                                            }))
+                                        }
+                                    />
                                 )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Paper> */}
+                            </>
+                        )}
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                            <Button
+                                disabled={mappingSaving}
+                                onClick={() => setMappingOpen(false)}
+                            >
+                                Close
+                            </Button>
+
+                            {mappingTabValue === 0 && unmappedProducts.length > 0 && (
+                                <Button
+                                    variant="contained"
+                                    disabled={mappingLoading || mappingSaving}
+                                    onClick={showSaveProductsConfirmation}
+                                >
+                                    {mappingSaving ? <CircularProgress size={18} color="inherit" /> : 'Save Products'}
+                                </Button>
+                            )}
+
+                            {mappingTabValue === 1 && unmappedCustomers.length > 0 && (
+                                <Button
+                                    variant="contained"
+                                    disabled={mappingLoading || mappingSaving}
+                                    onClick={showSaveCustomersConfirmation}
+                                >
+                                    {mappingSaving ? <CircularProgress size={18} color="inherit" /> : 'Save Customers'}
+                                </Button>
+                            )}
+                        </Box>
+                    </Paper>
+                )}
             </Box>
+
+            {uploadedBilling.length > 0 &&
+                <Box sx={{ mt: 2, mx: 2, backgroundColor: 'white' }}>
+                    <Typography sx={{ p: 2, fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>Upload Summary</Typography>
+                    <DataTable
+                        columns={columns}
+                        data={uploadedBilling}
+                    />
+                    <Box sx={{ display: 'flex', width: '100%', justifyContent: 'end' }}>
+                        <Button
+                            sx={{ textAlign: 'right', mb: 2, mr: 2 }}
+                            color='primary'
+                            variant='contained'
+                            onClick={showUploadStockistBillingConfirmation}
+                            disabled={stockistUploading}
+                        >
+                            {stockistUploading ? <CircularProgress size={18} color="inherit" /> : 'Upload'}
+                        </Button>
+                    </Box>
+                </Box>
+            }
+
 
             {/* Bill Details Modal */}
             <Dialog open={billModalOpen} onClose={closeBillModal} maxWidth="sm" fullWidth>
@@ -405,6 +741,17 @@ const UploadBilling = () => {
                     <Button onClick={closeBillModal}>Close</Button>
                 </DialogActions>
             </Dialog>
+            <ConfirmationDialog
+                open={confirmationDialog.open}
+                onClose={closeConfirmationDialog}
+                onConfirm={confirmationDialog.onConfirm}
+                title={confirmationDialog.title}
+                message={confirmationDialog.message}
+                confirmText={confirmationDialog.confirmText}
+                cancelText={confirmationDialog.cancelText}
+                loading={ignoreLoading || stockistUploading || mappingSaving}
+                confirmColor={confirmationDialog.confirmColor}
+            />
         </Layout>
     )
 }
