@@ -18,6 +18,7 @@ import DataTable from '../../utils/dataTable';
 import ConfirmationDialog from '../../utils/confirmDialog';
 import { GrUploadOption } from "react-icons/gr";
 import { FaDownload } from "react-icons/fa";
+import { IoMdCloudUpload } from "react-icons/io";
 
 
 const UploadBilling = () => {
@@ -52,13 +53,14 @@ const UploadBilling = () => {
     const [unmappedCustomers, setUnmappedCustomers] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [customerSelections, setCustomerSelections] = useState({});
+    const [tabNumber, setTabNumber] = useState(0)
 
     const [uploadedBilling, setUploadedBilling] = useState([])
     const toast = useToast()
     const [ignoreLoading, setIgnoreLoading] = useState(false);
     const [stockistUploading, setStockistUploading] = useState(false);
     const [billingDateRange, setBillingDateRange] = useState(null)
-    const [tempval,setTempVal] = useState(0)
+    const [tempval, setTempVal] = useState(0)
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
@@ -163,7 +165,7 @@ const UploadBilling = () => {
             const { data } = await api.get('/unmappedbillingproducts');
             setUnmappedProducts(data.unmappedProducts || []);
             setProducts(data.products || []);
-            if(data.count === 0){
+            if(data.count !== 0){
                 setTempVal(1)
             }
             setProductSelections({});
@@ -178,7 +180,7 @@ const UploadBilling = () => {
             setUnmappedCustomers(data.unmappedCustomers || []);
             setCustomers(data.customers || []);
             setCustomerSelections({});
-            if(data.count === 0){
+            if(data.count !== 0){
                 setTempVal(1)
             }
         } catch (err) {
@@ -189,6 +191,7 @@ const UploadBilling = () => {
     const openMappingDialog = async () => {
         if (!Number(unmappedInfo)) return;
         setMappingOpen(true);
+        setTabNumber(0);
         setMappingLoading(true);
         try {
             await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
@@ -324,10 +327,10 @@ const UploadBilling = () => {
             const { data } = await api.post(`/uploadExcel`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setUploadMessage({ text: data.message || 'File uploaded successfully.', type: 'success' });
             setSelectedFile(null);
             fetchSummary();
             fetchBillingLogs(logDate);
+            toast.success(data.message || 'File uploaded successfully.')
         } catch (err) {
             console.error('Upload failed', err);
             setUploadMessage({
@@ -414,8 +417,8 @@ const UploadBilling = () => {
     const showIgnoreProductsConfirmation = () => {
         showConfirmationDialog({
             title: 'Confirmation',
-            message: `Are you sure you want to permanently delete all unmapped products?`,
-            confirmText: 'Delete',
+            message: `Are you sure you want to  delete Unmapped Items?`,
+            confirmText: 'Yes! Delete',
             cancelText: 'Cancel',
             confirmColor: 'error',
             onConfirm: () => handleIgnoreUnmappedProducts(),
@@ -425,7 +428,7 @@ const UploadBilling = () => {
     const showIgnoreCustomersConfirmation = () => {
         showConfirmationDialog({
             title: 'Confirmation',
-            message: `Are you sure you want to permanently delete all unmapped customers?`,
+            message: `Are you sure want to Delete UnMapped Items?`,
             confirmText: 'Delete',
             cancelText: 'Cancel',
             confirmColor: 'error',
@@ -489,6 +492,7 @@ const UploadBilling = () => {
     }, [fetchSummary, fetchUnmappedData]);
 
     console.log("uploaded billing data", uploadedBilling)
+    console.log("temp val seted", tempval)
 
     return (
         <Layout breadcrumb={[
@@ -501,7 +505,15 @@ const UploadBilling = () => {
                <Box sx={{backgroundColor: 'white', p: 2}}>
                 <Grid container spacing={2}>
                     <Grid item size={{ lg: 3, md: 5, xs: 12 }}>
-                        <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2,
+                                height: '100%',
+                                borderRadius: '1rem',
+                                borderTop: '3px solid #F57C00',
+                            }}
+                        >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>EDI - Last Updated</Typography>
                                 {tempval === 0 &&
@@ -531,7 +543,15 @@ const UploadBilling = () => {
                     <Grid item size={{ lg: 4, xs: 0 }} />
 
                     <Grid item size={{ lg: 4.5, md: 5, xs: 12 }}>
-                        <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2,
+                                height: '100%',
+                                borderRadius: '1rem',
+                                borderTop: '3px solid #1976D2',
+                            }}
+                        >
                             <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '1.2rem' }} variant="subtitle1" fontWeight={600}>Manual Upload</Typography>
                             <Divider sx={{ my: 1 }} />
                             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, alignItems: 'start' }}>
@@ -546,131 +566,145 @@ const UploadBilling = () => {
                                     />
                                 </LocalizationProvider>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: 3 }}>
-                                    <Button 
-                                    variant="outlined" 
-                                    component="label" 
-                                    fullWidth
+                                <Button
+                                    variant="outlined"
+                                    component="label"
                                     sx={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
+                                        width: '14.5rem',
+                                        justifyContent: 'flex-start',
+                                        textTransform: 'none',
                                     }}
-                                    >
-                                    {selectedFile ? selectedFile.name : 'Upload Billing Data'}
+                                    startIcon={<IoMdCloudUpload size={18} />}
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'block',
+                                            width: '100%',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    > 
+                                        {selectedFile ? selectedFile.name : 'Upload Billing Data'}
+                                    </Box>
                                     <input type="file" hidden accept=".csv" onChange={handleFileChange} />
-                                    </Button>
+                                </Button>
 
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        size="small"
-                                        onClick={handleUpload}
-                                        disabled={uploading}
-                                        sx={{ width: '2rem' }}
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    onClick={handleUpload}
+                                    disabled={uploading}
+                                    sx={{ width: '2rem' }}
+                                >
+                                    Upload
+                                </Button>
+                                {uploadMessage.text && (
+                                    <Typography
+                                        variant="caption"
+                                        color={uploadMessage.type === 'error' ? 'error' : 'success.main'}
                                     >
-                                       Upload
-                                    </Button>
-                                    {uploadMessage.text && (
-                                        <Typography
-                                            variant="caption"
-                                            color={uploadMessage.type === 'error' ? 'error' : 'success.main'}
-                                        >
-                                            {uploadMessage.text}
-                                        </Typography>
-                                    )}
-                                </Box>
+                                        {uploadMessage.text}
+                                    </Typography>
+                                )}
+                            </Box>
                             </Box>
                         </Paper>
                     </Grid>
                 </Grid>
                 </Box>
                 {mappingLoading && mappingOpen ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8,backgroundColor:'white',mt:2,borderRadius: '1rem' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8, backgroundColor: 'white', mt: 2, borderRadius: '1rem' }}>
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Box >
-                        {mappingOpen && unmappedProducts.length > 0 && (
-                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem',backgroundColor:'white'}}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
-                                        Update Product
-                                    </Typography>
-                                    <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
-                                </Box>
-                                <Divider sx={{ my: 1 }} />
+                    <Box>
+                        {mappingOpen && (unmappedProducts.length > 0 || unmappedCustomers.length > 0) && (
+                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem', backgroundColor: 'white' }}>
+                                <Tabs value={tabNumber} onChange={(e, val) => setTabNumber(val)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                    <Tab label="Products" value={0} disabled={unmappedProducts.length === 0} />
+                                    <Tab label="Customers" value={1} disabled={unmappedCustomers.length === 0} />
+                                </Tabs>
 
-                                <MappingTable
-                                    rows={unmappedProducts}
-                                    rowKeyField="prod_name"
-                                    sourceLabel="Not Mapped Product"
-                                    targetLabel="Map Product"
-                                    selectLabel="Select Product"
-                                    options={products}
-                                    optionValueField="prod_id"
-                                    optionLabel={(product) => `${product.code} - ${product.prod_name}`}
-                                    selections={productSelections}
-                                    searchFields={["code", "prod_name"]}
-                                    onSelectionChange={(key, value) =>
-                                        setProductSelections((previous) => ({
-                                            ...previous,
-                                            [key]: value,
-                                        }))
-                                    }
-                                />
+                                {tabNumber === 0 && unmappedProducts.length > 0 && (
+                                    <Box sx={{ pt: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                                Update Product
+                                            </Typography>
+                                            <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
+                                        </Box>
+                                        <MappingTable
+                                            rows={unmappedProducts}
+                                            rowKeyField="prod_name"
+                                            sourceLabel="Not Mapped Product"
+                                            targetLabel="Map Product"
+                                            selectLabel="Select Product"
+                                            options={products}
+                                            optionValueField="prod_id"
+                                            optionLabel={(product) => `${product.code} - ${product.prod_name}`}
+                                            selections={productSelections}
+                                            searchFields={["code", "prod_name"]}
+                                            onSelectionChange={(key, value) =>
+                                                setProductSelections((previous) => ({
+                                                    ...previous,
+                                                    [key]: value,
+                                                }))
+                                            }
+                                        />
+                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                            <Button
+                                                variant="contained"
+                                                disabled={mappingLoading || mappingSaving}
+                                                onClick={showSaveProductsConfirmation}
+                                                startIcon={<FaDownload size={14} />}
+                                            >
+                                                Update Products
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                )}
 
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                                    <Button
-                                        variant="contained"
-                                        disabled={mappingLoading || mappingSaving}
-                                        onClick={showSaveProductsConfirmation}
-                                        startIcon={<FaDownload size={14} />}
-                                    >
-                                       Update Products
-                                    </Button>
-                                </Box>
-                            </Paper>
-                        )}
-
-                        {mappingOpen && unmappedCustomers.length > 0 && (
-                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
-                                        Update Customer 
-                                    </Typography>
-                                    {unmappedProducts.length ===0 && <Button variant='contained' color='error' onClick={() => showIgnoreCustomersConfirmation()}>Ignore Unmapped</Button>}
-                                </Box>
-                                <Divider sx={{ my: 1 }} />
-
-                                <MappingTable
-                                    rows={unmappedCustomers}
-                                    rowKeyField="cus_name"
-                                    sourceLabel="Not Mapped Customer"
-                                    targetLabel="Map Customer"
-                                    selectLabel="Select Customer"
-                                    options={customers}
-                                    optionValueField="id"
-                                    optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
-                                    selections={customerSelections}
-                                    searchFields={["stk_code", "stk_name"]}
-                                    onSelectionChange={(key, value) =>
-                                        setCustomerSelections((previous) => ({
-                                            ...previous,
-                                            [key]: value,
-                                        }))
-                                    }
-                                />
-
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                                    <Button
-                                        variant="contained"
-                                        disabled={mappingLoading || mappingSaving}
-                                        onClick={showSaveCustomersConfirmation}
-                                        startIcon={<FaDownload size={14} />}
-                                    >
-                                        Update Customers
-                                    </Button>
-                                </Box>
+                                {tabNumber === 1 && unmappedCustomers.length > 0 && (
+                                    <Box sx={{ pt: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                                Update Customer
+                                            </Typography>
+                                            <Button variant='contained' color='error' onClick={() =>  showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
+                                        </Box>
+                                        <MappingTable
+                                            rows={unmappedCustomers}
+                                            rowKeyField="cus_name"
+                                            sourceLabel="Not Mapped Customer"
+                                            targetLabel="Map Customer"
+                                            selectLabel="Select Customer"
+                                            options={customers}
+                                            optionValueField="id"
+                                            optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
+                                            selections={customerSelections}
+                                            searchFields={["stk_code", "stk_name"]}
+                                            onSelectionChange={(key, value) =>
+                                                setCustomerSelections((previous) => ({
+                                                    ...previous,
+                                                    [key]: value,
+                                                }))
+                                            }
+                                        />
+                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                            <Button
+                                                variant="contained"
+                                                disabled={mappingLoading || mappingSaving}
+                                                onClick={showSaveCustomersConfirmation}
+                                                startIcon={<FaDownload size={14} />}
+                                            >
+                                                Update Customers
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                )}
                             </Paper>
                         )}
 
