@@ -97,8 +97,8 @@ const MappingTable = ({
             <Table size="small">
                 <TableHead>
                     <TableRow>
-                        <TableCell width="50%"><b>{sourceLabel}</b></TableCell>
-                        <TableCell><b>{targetLabel}</b></TableCell>
+                        <TableCell width="50%" sx={{fontSize: "1.1rem", fontWeight: 500, color: "#000"}}>{sourceLabel}</TableCell>
+                        <TableCell sx={{fontSize: "1.1rem", fontWeight: 500, color: "#000"}}>{targetLabel}</TableCell>
                     </TableRow>
                 </TableHead>
 

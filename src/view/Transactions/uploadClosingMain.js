@@ -1442,7 +1442,7 @@ function UploadClosing() {
   const currentRawPage = rawPages[rawPageIndex] || null;
   const isLastRawPage = rawPageIndex === rawPages.length - 1;
   const hasExistingData = Boolean(masId);
-  const showDistributorTerritory = selDesName !== "0";
+  const showDistributorTerritory = Boolean(selDesName) && selDesName !== "0";
   const hasPreviewFiles = imgData.length > 0;
   const shouldShowSkeleton = loading && ["import", "manual", "rawSubmit", "save", "manualInsert", "confirm"].includes(loadingType);
   const shouldShowSpinner = loading && !shouldShowSkeleton;
@@ -1483,11 +1483,16 @@ function UploadClosing() {
 
   const desOptions = useMemo(
   () => [
-    { id: "0", stk_name: "Select Distributor Name", stk_code: "", ter_name: "" },
+    {
+      id: "0",
+      stk_name: `Select ${masterPanel["STKS"] || "Distributor"} Name`,
+      stk_code: "",
+      ter_name: "",
+    },
     ...allDesname,
   ],
-  [allDesname]
-  );
+  [allDesname, masterPanel]
+);
 
 
 
@@ -2100,13 +2105,15 @@ function UploadClosing() {
                   options={desOptions}
                   disabled={checking === 2}
                   value={
-                    selDesName === "0" 
+                    selDesName === "0"
                       ? desOptions[0]
+                      : selDesName === ""
+                      ? null
                       : desOptions.find(
                           (d) =>
                             `${d.id}|${d.stk_name}|${d.stk_code}|${d.ter_name}` ===
                             selDesName,
-                        ) || desOptions[0]
+                        ) || null
                   }
                   getOptionLabel={(option) =>
                     option.id === "0" ? option.stk_name : `${option.stk_name} - ${option.stk_code}`
@@ -2128,7 +2135,9 @@ function UploadClosing() {
                     resetUploadState();
                     setReqProcStat(0);
                     setReqBtnVal(0);
-                    if (!newValue || newValue.id === "0") {
+                    if (!newValue) {
+                      setSelDesName("");
+                    } else if (newValue.id === "0") {
                       setSelDesName("0");
                     } else {
                       setSelDesName(
@@ -2856,7 +2865,7 @@ function UploadClosing() {
           </Box>
         )}
 
-        {!loading && !showTable && !rawMode && selDesName !== "0" && (
+        {!loading && !showTable && !rawMode && Boolean(selDesName) && selDesName !== "0" && (
           <Paper
             elevation={0}
             sx={{

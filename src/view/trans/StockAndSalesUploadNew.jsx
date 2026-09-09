@@ -506,6 +506,15 @@ const StockAndSalesUploadNew = () => {
             showAlert.error("Failed to export Excel");
         }
     };
+
+   const distOptions = useMemo(
+    () => [
+        { id: "0", stk_code: "", stk_name: `Select ${masterPanel["STKS"] || "Distributor"} Name` },
+        ...distribute,
+    ],
+    [distribute, masterPanel]
+    );
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -536,17 +545,31 @@ const StockAndSalesUploadNew = () => {
                     {/* ── Autocomplete Distributor ── */}
                     <Autocomplete
                         size="small"
-                        sx={{ width: 200 }}
-                        options={distribute}
+                        sx={{ width: 220 }}
+                        options={distOptions}
                         getOptionLabel={(option) =>
-                            option.stk_code && option.stk_name
-                                ? `${option.stk_code} - ${option.stk_name}`
-                                : ""
+                            option.id === "0"
+                                ? option.stk_name
+                                : option.stk_code && option.stk_name
+                                    ? `${option.stk_code} - ${option.stk_name}`
+                                    : ""
                         }
-                        value={distribute.find(d => String(d.id) === String(formData.Distributor)) || null}
-                        onChange={(_, newValue) =>
-                            handleChange("Distributor", newValue ? String(newValue.id) : "0")
+                        value={
+                            formData.Distributor === "0"
+                                ? distOptions[0]
+                                : formData.Distributor === ""
+                                ? null
+                                : distOptions.find(d => String(d.id) === String(formData.Distributor)) || null
                         }
+                        onChange={(_, newValue) => {
+                            if (!newValue) {
+                                handleChange("Distributor", "");
+                            } else if (newValue.id === "0") {
+                                handleChange("Distributor", "0");
+                            } else {
+                                handleChange("Distributor", String(newValue.id));
+                            }
+                        }}
                         isOptionEqualToValue={(option, value) =>
                             String(option.id) === String(value.id)
                         }
