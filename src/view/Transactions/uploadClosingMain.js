@@ -1481,6 +1481,16 @@ function UploadClosing() {
     return numbered;
   }, [tableData, activeFilter, isApproved, selCategory]);
 
+  const desOptions = useMemo(
+  () => [
+    { id: "0", stk_name: "Select Distributor Name", stk_code: "", ter_name: "" },
+    ...allDesname,
+  ],
+  [allDesname]
+  );
+
+
+
   const groupedRows = useMemo(() => {
     if (!isApproved && !manualMode) return filteredRows;
 
@@ -2087,17 +2097,19 @@ function UploadClosing() {
               >
               <Autocomplete
                   size="small"
-                  options={allDesname}
+                  options={desOptions}
                   disabled={checking === 2}
                   value={
-                    allDesname.find(
-                      (d) =>
-                        `${d.id}|${d.stk_name}|${d.stk_code}|${d.ter_name}` ===
-                        selDesName,
-                    ) || null
+                    selDesName === "0" 
+                      ? desOptions[0]
+                      : desOptions.find(
+                          (d) =>
+                            `${d.id}|${d.stk_name}|${d.stk_code}|${d.ter_name}` ===
+                            selDesName,
+                        ) || desOptions[0]
                   }
                   getOptionLabel={(option) =>
-                    `${option.stk_name} - ${option.stk_code}`
+                    option.id === "0" ? option.stk_name : `${option.stk_name} - ${option.stk_code}`
                   }
                   isOptionEqualToValue={(option, value) =>
                     option.id === value.id
@@ -2106,6 +2118,7 @@ function UploadClosing() {
                     if (!inputValue) return options;
                     const val = inputValue.toLowerCase().trim().replace(/\s+/g, "");
                     return options.filter((opt) =>
+                      opt.id === "0" ? false :
                       (opt.stk_name?.toLowerCase() || "").replace(/\s+/g, "").startsWith(val) ||
                       (String(opt.stk_code || "").toLowerCase()).replace(/\s+/g, "").startsWith(val)
                     );
@@ -2115,12 +2128,12 @@ function UploadClosing() {
                     resetUploadState();
                     setReqProcStat(0);
                     setReqBtnVal(0);
-                    if (newValue) {
-                      setSelDesName(
-                        `${newValue.id}|${newValue.stk_name}|${newValue.stk_code}|${newValue.ter_name}`,
-                      );
-                    } else {
+                    if (!newValue || newValue.id === "0") {
                       setSelDesName("0");
+                    } else {
+                      setSelDesName(
+                        `${newValue.id}|${newValue.stk_name}|${newValue.stk_code}|${newValue.ter_name}`
+                      );
                     }
                     setManualMode(false);
                   }}
@@ -2129,7 +2142,6 @@ function UploadClosing() {
                       required
                       {...params}
                       label={masterPanel["STKS"] || "Distributor"}
-                      placeholder={`Search ${masterPanel["STKS"] || "Distributor"}`}
                     />
                   )}
                 />
