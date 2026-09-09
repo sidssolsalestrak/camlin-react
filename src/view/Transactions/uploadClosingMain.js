@@ -1485,7 +1485,7 @@ function UploadClosing() {
   () => [
     {
       id: "0",
-      stk_name: `Select ${masterPanel["STKS"] || "Distributor"} Name`,
+      stk_name: `Select ${masterPanel["STKS"] || "Distributor"}`,
       stk_code: "",
       ter_name: "",
     },
@@ -2083,6 +2083,7 @@ function UploadClosing() {
                     onChange={(v) => {
                       resetUploadState();
                       setSelMonth(v);
+                      setSelDesName("0");
                     }}
                     slotProps={{ textField: { size: "small" } }}
                     maxDate={dayjs()}
@@ -2151,6 +2152,7 @@ function UploadClosing() {
                       required
                       {...params}
                       label={masterPanel["STKS"] || "Distributor"}
+                      placeholder={`Search ${masterPanel["STKS"] || "Distributor"}`}
                     />
                   )}
                 />

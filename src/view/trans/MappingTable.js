@@ -17,9 +17,9 @@ const MappingRow = memo(function MappingRow({
     searchFields,
 }) {
     return (
-        <TableRow>
+        <TableRow >
             <TableCell>{rowKey}</TableCell>
-            <TableCell>
+            <TableCell sx={{mt:1}}>
                 <Autocomplete
                     size="small"
                     options={options}
@@ -95,8 +95,8 @@ const MappingTable = ({
     return (
         <TableContainer>
             <Table size="small">
-                <TableHead>
-                    <TableRow>
+                <TableHead sx={{backgroundColor: "#F6F5F2",border:'none'}}>
+                    <TableRow >
                         <TableCell width="50%" sx={{fontSize: "1.1rem", fontWeight: 500, color: "#000"}}>{sourceLabel}</TableCell>
                         <TableCell sx={{fontSize: "1.1rem", fontWeight: 500, color: "#000"}}>{targetLabel}</TableCell>
                     </TableRow>

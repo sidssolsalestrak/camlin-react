@@ -509,7 +509,7 @@ const StockAndSalesUploadNew = () => {
 
    const distOptions = useMemo(
     () => [
-        { id: "0", stk_code: "", stk_name: `Select ${masterPanel["STKS"] || "Distributor"} Name` },
+        { id: "0", stk_code: "", stk_name: `Select ${masterPanel["STKS"] || "Distributor"} ` },
         ...distribute,
     ],
     [distribute, masterPanel]
