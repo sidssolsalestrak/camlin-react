@@ -16,46 +16,50 @@ import MappingTable from './MappingTable';
 import useToast from '../../utils/useToast'
 import DataTable from '../../utils/dataTable';
 import ConfirmationDialog from '../../utils/confirmDialog';
+import { GrUploadOption } from "react-icons/gr";
+import { FaDownload } from "react-icons/fa";
 
 
 const UploadBilling = () => {
     const location = useLocation();
 
-    // ---- Top summary (EDI last updated / unmapped) ----
     const [lastUpdated, setLastUpdated] = useState('');
     const [unmappedInfo, setUnmappedInfo] = useState('');
     const [summaryLoading, setSummaryLoading] = useState(false);
 
-    // ---- Manual upload panel ----
     const [uploadMonth, setUploadMonth] = useState(dayjs());
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [uploadMessage, setUploadMessage] = useState({ text: '', type: 'info' });
 
-    // ---- Billing log table ----
     const [logDate, setLogDate] = useState(dayjs());
     const [billingLogs, setBillingLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
     const [totals, setTotals] = useState({ qty: 0, kg: 0, val: 0 });
 
-    // ---- Bill details modal ----
     const [billModalOpen, setBillModalOpen] = useState(false);
     const [billDetails, setBillDetails] = useState(null);
     const [billLoading, setBillLoading] = useState(false);
+
     const [mappingOpen, setMappingOpen] = useState(false);
-    const [mappingTabValue, setMappingTabValue] = useState(0);
     const [mappingLoading, setMappingLoading] = useState(false);
     const [mappingSaving, setMappingSaving] = useState(false);
+
     const [unmappedProducts, setUnmappedProducts] = useState([]);
     const [products, setProducts] = useState([]);
     const [productSelections, setProductSelections] = useState({});
+
     const [unmappedCustomers, setUnmappedCustomers] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [customerSelections, setCustomerSelections] = useState({});
+
     const [uploadedBilling, setUploadedBilling] = useState([])
     const toast = useToast()
     const [ignoreLoading, setIgnoreLoading] = useState(false);
     const [stockistUploading, setStockistUploading] = useState(false);
+    const [billingDateRange, setBillingDateRange] = useState(null)
+    const [tempval,setTempVal] = useState(0)
+
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: '',
@@ -143,7 +147,11 @@ const UploadBilling = () => {
             let response = await api.post('/viewUploadedBilling')
             let billingdata = Array.isArray(response.data.data) ? response.data.data : []
             setUploadedBilling(billingdata)
-
+            if(billingdata.length>0){
+                setTempVal(1)
+            }
+            let billingDaterange = response?.data?.summaryDate[0]
+            setBillingDateRange(billingDaterange)
         }
         catch (err) {
             console.log("load uploaded billing data err", err)
@@ -151,41 +159,44 @@ const UploadBilling = () => {
     }
 
     const loadUnmappedProducts = async () => {
-        setMappingLoading(true);
         try {
             const { data } = await api.get('/unmappedbillingproducts');
             setUnmappedProducts(data.unmappedProducts || []);
             setProducts(data.products || []);
+            if(data.count === 0){
+                setTempVal(1)
+            }
             setProductSelections({});
         } catch (err) {
             toast.error('Unable to load unmapped products.')
-        } finally {
-            setMappingLoading(false);
         }
     };
 
     const loadUnmappedCustomers = async () => {
-        setMappingLoading(true);
         try {
             const { data } = await api.get('/unmappedbillingcustomers');
             setUnmappedCustomers(data.unmappedCustomers || []);
             setCustomers(data.customers || []);
             setCustomerSelections({});
+            if(data.count === 0){
+                setTempVal(1)
+            }
         } catch (err) {
             toast.error('Unable to load unmapped customers.')
-        } finally {
-            setMappingLoading(false);
         }
     };
 
     const openMappingDialog = async () => {
         if (!Number(unmappedInfo)) return;
         setMappingOpen(true);
-        setMappingTabValue(0);
-        await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
+        setMappingLoading(true);
+        try {
+            await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
+        } finally {
+            setMappingLoading(false);
+        }
     };
 
-    // ---- Save Products (now the actual action, called on confirm) ----
     const saveProductMappings = async () => {
         const mappings = unmappedProducts
             .filter(row => productSelections[row.prod_name])
@@ -225,7 +236,7 @@ const UploadBilling = () => {
         }
         showConfirmationDialog({
             title: 'Confirmation',
-            message: `Are you sure want to Map Selected Product?`,
+            message: `Are you sure you want to map ${selectedCount} selected product${selectedCount > 1 ? 's' : ''}?`,
             confirmText: 'Save',
             cancelText: 'Cancel',
             confirmColor: 'primary',
@@ -233,7 +244,6 @@ const UploadBilling = () => {
         });
     };
 
-    // ---- Save Customers (now the actual action, called on confirm) ----
     const saveCustomerMappings = async () => {
         const mappings = unmappedCustomers
             .filter(row => customerSelections[row.cus_name])
@@ -279,30 +289,12 @@ const UploadBilling = () => {
     };
 
     const columns = [
-        {
-            field: 'invoice_no',
-            headerName: 'Invoice No'
-        },
-        {
-            field: 'cus_type_name',
-            headerName: 'Distributor Type'
-        },
-        {
-            field: 'cus_name',
-            headerName: 'Distributor Code'
-        },
-        {
-            field: 'stk_name',
-            headerName: 'Distributor'
-        },
-        {
-            field: 'prod_name',
-            headerName: 'Product Code'
-        },
-        {
-            field: 'sku_name',
-            headerName: 'Product Name'
-        },
+        { field: 'invoice_no', headerName: 'Invoice No' },
+        { field: 'cus_type_name', headerName: 'Distributor Type' },
+        { field: 'cus_name', headerName: 'Distributor Code' },
+        { field: 'stk_name', headerName: 'Distributor' },
+        { field: 'prod_name', headerName: 'Product Code' },
+        { field: 'sku_name', headerName: 'Product Name' },
         {
             field: 'prod_qty',
             headerName: 'Prod Qty',
@@ -372,41 +364,72 @@ const UploadBilling = () => {
         setBillDetails(null);
     };
 
-    const handleIgnoreunMapProduct = async () => {
+    const handleIgnoreUnmappedProducts = async () => {
         setIgnoreLoading(true);
         try {
             const month = uploadMonth.format('YYYY-MM-DD');
+            const { data } = await api.post('/deleteUnMapProd', { month });
 
-            const [prodRes, cusRes] = await Promise.all([
-                api.post('/deleteUnMapProd', { month }),
-                api.post('/deleteUnMapCus', { month }),
-            ]);
-
-            if (prodRes.data?.success && cusRes.data?.success) {
-                toast.success('Unmapped product and customer records removed.');
-                setMappingOpen(false);
+            if (data?.success) {
+                toast.success('Unmapped products removed.');
                 await fetchUnmappedData();
-                await loadUploadedBilling();
+                await loadUnmappedProducts();
+                await loadUnmappedCustomers()
+            
             } else {
-                toast.error('Unable to delete UnMapped Product and Customer');
+                toast.error('Unable to delete unmapped products.');
             }
         } catch (err) {
-            console.log("ignore unmapeed err", err);
-            toast.error(err.response?.data?.message || "Unable to delete UnMapped Product and Customer");
+            console.log("ignore unmapped products err", err);
+            toast.error(err.response?.data?.message || 'Unable to delete unmapped products.');
         } finally {
             setIgnoreLoading(false);
             closeConfirmationDialog();
         }
     };
 
-    const showIgnoreUnmappedConfirmation = () => {
+    const handleIgnoreUnmappedCustomers = async () => {
+        setIgnoreLoading(true);
+        try {
+            const month = uploadMonth.format('YYYY-MM-DD');
+            const { data } = await api.post('/deleteUnMapCus', { month });
+
+            if (data?.success) {
+                toast.success('Unmapped customers removed.');
+                setMappingOpen(false);
+                await fetchUnmappedData();
+                await loadUploadedBilling();
+            } else {
+                toast.error('Unable to delete unmapped customers.');
+            }
+        } catch (err) {
+            console.log("ignore unmapped customers err", err);
+            toast.error(err.response?.data?.message || 'Unable to delete unmapped customers.');
+        } finally {
+            setIgnoreLoading(false);
+            closeConfirmationDialog();
+        }
+    };
+
+    const showIgnoreProductsConfirmation = () => {
         showConfirmationDialog({
             title: 'Confirmation',
-            message: `Are you sure you want to permanently delete all unmapped Items?`,
+            message: `Are you sure you want to permanently delete all unmapped products?`,
             confirmText: 'Delete',
             cancelText: 'Cancel',
             confirmColor: 'error',
-            onConfirm: () => handleIgnoreunMapProduct(),
+            onConfirm: () => handleIgnoreUnmappedProducts(),
+        });
+    };
+
+    const showIgnoreCustomersConfirmation = () => {
+        showConfirmationDialog({
+            title: 'Confirmation',
+            message: `Are you sure you want to permanently delete all unmapped customers?`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            confirmColor: 'error',
+            onConfirm: () => handleIgnoreUnmappedCustomers(),
         });
     };
 
@@ -460,8 +483,6 @@ const UploadBilling = () => {
         });
     };
 
-
-
     useEffect(() => {
         fetchSummary();
         fetchUnmappedData();
@@ -476,16 +497,18 @@ const UploadBilling = () => {
             { label: "Upload Billing", path: location.pathname },
         ]}>
 
-            <Box sx={{ p: 2, backgroundColor: 'white', mt: 3, ml: 2, mr: 2, borderRadius: '0.2rem' }}>
+            <Box sx={{ p: 2, mt: 3, ml: 2, mr: 2, borderRadius: '0.2rem' }}>
+               <Box sx={{backgroundColor: 'white', p: 2}}>
                 <Grid container spacing={2}>
-                    {/* EDI Last Updated */}
                     <Grid item size={{ lg: 3, md: 5, xs: 12 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>EDI - Last Updated</Typography>
+                                {tempval === 0 &&
                                 <IconButton size="small" onClick={fetchRefreshBillingData} disabled={summaryLoading}>
                                     {summaryLoading ? <CircularProgress size={16} /> : <FiRefreshCw fontSize="small" color='#466F9B' />}
                                 </IconButton>
+                                }
                             </Box>
                             <Divider sx={{ my: 1 }} />
                             <Typography sx={{ mb: 1, color: '#466F9B', fontSize: '1.2rem', fontWeight: 600, textAlign: 'center' }}>{lastUpdated || '—'}</Typography>
@@ -505,11 +528,8 @@ const UploadBilling = () => {
                             </Typography>
                         </Paper>
                     </Grid>
-                    <Grid item size={{ lg: 4, xs: 0 }}>
+                    <Grid item size={{ lg: 4, xs: 0 }} />
 
-                    </Grid>
-
-                    {/* Manual Upload */}
                     <Grid item size={{ lg: 4.5, md: 5, xs: 12 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%', borderRadius: '1rem' }}>
                             <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '1.2rem' }} variant="subtitle1" fontWeight={600}>Manual Upload</Typography>
@@ -526,18 +546,18 @@ const UploadBilling = () => {
                                     />
                                 </LocalizationProvider>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: 3 }}>
-                                    <Button
-                                        variant="outlined"
-                                        component="label"
-                                        fullWidth
+                                    <Button 
+                                    variant="outlined" 
+                                    component="label" 
+                                    fullWidth
+                                    sx={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
                                     >
-                                        {selectedFile ? selectedFile.name : 'Upload Billing Data'}
-                                        <input
-                                            type="file"
-                                            hidden
-                                            accept=".csv"
-                                            onChange={handleFileChange}
-                                        />
+                                    {selectedFile ? selectedFile.name : 'Upload Billing Data'}
+                                    <input type="file" hidden accept=".csv" onChange={handleFileChange} />
                                     </Button>
 
                                     <Button
@@ -548,7 +568,7 @@ const UploadBilling = () => {
                                         disabled={uploading}
                                         sx={{ width: '2rem' }}
                                     >
-                                        {uploading ? <CircularProgress size={18} color="inherit" /> : 'Upload'}
+                                       Upload
                                     </Button>
                                     {uploadMessage.text && (
                                         <Typography
@@ -563,122 +583,120 @@ const UploadBilling = () => {
                         </Paper>
                     </Grid>
                 </Grid>
-
-                {/* Mapping Section */}
-                {mappingOpen && (
-                    <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>
-                                Manage Unmapped Data
-                            </Typography>
-                            <Button variant='contained' color='error' onClick={() => showIgnoreUnmappedConfirmation()}>Ignore Unmapped</Button>
-                        </Box>
-                        <Divider sx={{ my: 1 }} />
-
-                        <Tabs value={mappingTabValue} onChange={(e, val) => setMappingTabValue(val)}>
-                            <Tab label={`Products (${unmappedProducts.length})`} />
-                            <Tab label={`Customers (${unmappedCustomers.length})`} />
-                        </Tabs>
-
-                        {mappingLoading ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                                <CircularProgress />
-                            </Box>
-                        ) : mappingTabValue === 0 ? (
-                            <>
-                                {unmappedProducts.length === 0 ? (
-                                    <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
-                                        No unmapped products
+                </Box>
+                {mappingLoading && mappingOpen ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8,backgroundColor:'white',mt:2,borderRadius: '1rem' }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Box >
+                        {mappingOpen && unmappedProducts.length > 0 && (
+                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem',backgroundColor:'white'}}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                        Update Product
                                     </Typography>
-                                ) : (
-                                    <MappingTable
-                                        rows={unmappedProducts}
-                                        rowKeyField="prod_name"
-                                        sourceLabel="Uploaded Product"
-                                        targetLabel="Map To Product"
-                                        selectLabel="Select Product"
-                                        options={products}
-                                        optionValueField="prod_id"
-                                        optionLabel={(product) => `${product.code} - ${product.prod_name}`}
-                                        selections={productSelections}
-                                        searchFields={["code", "prod_name"]}
-                                        onSelectionChange={(key, value) =>
-                                            setProductSelections((previous) => ({
-                                                ...previous,
-                                                [key]: value,
-                                            }))
-                                        }
-                                    />
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                {unmappedCustomers.length === 0 ? (
-                                    <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
-                                        No unmapped customers
-                                    </Typography>
-                                ) : (
-                                    <MappingTable
-                                        rows={unmappedCustomers}
-                                        rowKeyField="cus_name"
-                                        sourceLabel="Uploaded Customer"
-                                        targetLabel="Map To Customer"
-                                        selectLabel="Select Customer"
-                                        options={customers}
-                                        optionValueField="id"
-                                        optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
-                                        selections={customerSelections}
-                                        searchFields={["stk_code", "stk_name"]}
-                                        onSelectionChange={(key, value) =>
-                                            setCustomerSelections((previous) => ({
-                                                ...previous,
-                                                [key]: value,
-                                            }))
-                                        }
-                                    />
-                                )}
-                            </>
+                                    <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
+                                </Box>
+                                <Divider sx={{ my: 1 }} />
+
+                                <MappingTable
+                                    rows={unmappedProducts}
+                                    rowKeyField="prod_name"
+                                    sourceLabel="Not Mapped Product"
+                                    targetLabel="Map Product"
+                                    selectLabel="Select Product"
+                                    options={products}
+                                    optionValueField="prod_id"
+                                    optionLabel={(product) => `${product.code} - ${product.prod_name}`}
+                                    selections={productSelections}
+                                    searchFields={["code", "prod_name"]}
+                                    onSelectionChange={(key, value) =>
+                                        setProductSelections((previous) => ({
+                                            ...previous,
+                                            [key]: value,
+                                        }))
+                                    }
+                                />
+
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        disabled={mappingLoading || mappingSaving}
+                                        onClick={showSaveProductsConfirmation}
+                                        startIcon={<FaDownload size={14} />}
+                                    >
+                                       Update Products
+                                    </Button>
+                                </Box>
+                            </Paper>
                         )}
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                            <Button
-                                disabled={mappingSaving}
-                                onClick={() => setMappingOpen(false)}
-                            >
-                                Close
-                            </Button>
+                        {mappingOpen && unmappedCustomers.length > 0 && (
+                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                        Update Customer 
+                                    </Typography>
+                                    {unmappedProducts.length ===0 && <Button variant='contained' color='error' onClick={() => showIgnoreCustomersConfirmation()}>Ignore Unmapped</Button>}
+                                </Box>
+                                <Divider sx={{ my: 1 }} />
 
-                            {mappingTabValue === 0 && unmappedProducts.length > 0 && (
-                                <Button
-                                    variant="contained"
-                                    disabled={mappingLoading || mappingSaving}
-                                    onClick={showSaveProductsConfirmation}
-                                >
-                                    {mappingSaving ? <CircularProgress size={18} color="inherit" /> : 'Save Products'}
-                                </Button>
-                            )}
+                                <MappingTable
+                                    rows={unmappedCustomers}
+                                    rowKeyField="cus_name"
+                                    sourceLabel="Not Mapped Customer"
+                                    targetLabel="Map Customer"
+                                    selectLabel="Select Customer"
+                                    options={customers}
+                                    optionValueField="id"
+                                    optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
+                                    selections={customerSelections}
+                                    searchFields={["stk_code", "stk_name"]}
+                                    onSelectionChange={(key, value) =>
+                                        setCustomerSelections((previous) => ({
+                                            ...previous,
+                                            [key]: value,
+                                        }))
+                                    }
+                                />
 
-                            {mappingTabValue === 1 && unmappedCustomers.length > 0 && (
-                                <Button
-                                    variant="contained"
-                                    disabled={mappingLoading || mappingSaving}
-                                    onClick={showSaveCustomersConfirmation}
-                                >
-                                    {mappingSaving ? <CircularProgress size={18} color="inherit" /> : 'Save Customers'}
-                                </Button>
-                            )}
-                        </Box>
-                    </Paper>
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        disabled={mappingLoading || mappingSaving}
+                                        onClick={showSaveCustomersConfirmation}
+                                        startIcon={<FaDownload size={14} />}
+                                    >
+                                        Update Customers
+                                    </Button>
+                                </Box>
+                            </Paper>
+                        )}
+
+                        {mappingOpen && unmappedProducts.length === 0 && unmappedCustomers.length === 0 && (
+                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
+                                <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
+                                    No unmapped products or customers
+                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                    <Button
+                                        disabled={mappingSaving}
+                                        onClick={() => setMappingOpen(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                </Box>
+                            </Paper>
+                        )}
+                    </Box>
                 )}
             </Box>
 
             {uploadedBilling.length > 0 &&
                 <Box sx={{ mt: 2, mx: 2, backgroundColor: 'white' }}>
                     <Typography sx={{ p: 2, fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>Upload Summary</Typography>
-                    <DataTable
-                        columns={columns}
-                        data={uploadedBilling}
-                    />
+                    <DataTable columns={columns} data={uploadedBilling} />
                     <Box sx={{ display: 'flex', width: '100%', justifyContent: 'end' }}>
                         <Button
                             sx={{ textAlign: 'right', mb: 2, mr: 2 }}
@@ -686,15 +704,14 @@ const UploadBilling = () => {
                             variant='contained'
                             onClick={showUploadStockistBillingConfirmation}
                             disabled={stockistUploading}
+                            startIcon={<GrUploadOption size={15}/>}
                         >
-                            {stockistUploading ? <CircularProgress size={18} color="inherit" /> : 'Upload'}
+                            Upload
                         </Button>
                     </Box>
                 </Box>
             }
 
-
-            {/* Bill Details Modal */}
             <Dialog open={billModalOpen} onClose={closeBillModal} maxWidth="sm" fullWidth>
                 <DialogTitle>Billing Details</DialogTitle>
                 <DialogContent dividers>
@@ -741,6 +758,7 @@ const UploadBilling = () => {
                     <Button onClick={closeBillModal}>Close</Button>
                 </DialogActions>
             </Dialog>
+
             <ConfirmationDialog
                 open={confirmationDialog.open}
                 onClose={closeConfirmationDialog}
