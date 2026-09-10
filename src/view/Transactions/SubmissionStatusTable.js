@@ -540,7 +540,7 @@ const SubmissionStatusTableComponent = ({
                     <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", justifyContent: "center" }}>
                         {committedType === 1 && (
                             <Tooltip title="Delete Stock & Sales">
-                                <span style={{ cursor: "pointer" }} onClick={() => onDelete?.(row)}>
+                                <span style={{ cursor: "pointer",marginTop:'1.4px' }} onClick={() => onDelete?.(row)}>
                                     <IoTrashSharp style={{ color: "#e90505", fontSize: 18 }} />
                                 </span>
                             </Tooltip>

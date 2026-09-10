@@ -87,7 +87,7 @@ function EmailProcessData() {
                             <FormControl fullWidth>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
-                                        label="Date"
+                                        label="Date*"
                                         format="DD MMM YYYY"
                                         value={selMonth}
                                         onChange={(v) => setSelMonth(v)}
