@@ -971,8 +971,6 @@ function DataSubmissionStatus() {
             zoneStk = zoneRecv = zoneProc = zoneUnproc = zoneRej = zonePend = zoneRating = 0;
         };
 
-        // Precompute once, outside the per-row loop, since it doesn't vary by row.
-        const _fallbackCloseDate = dayjs(selMonth).format("MMM YYYY");
 
         rawData.forEach((key) => {
             if (prevZoneId !== null) {
