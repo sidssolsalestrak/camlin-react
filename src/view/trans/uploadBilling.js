@@ -98,8 +98,12 @@ const UploadBilling = () => {
         try {
             let response = await api.get('/ftp_primary_sales')
             console.log("refreshed billingdata response", response)
+            // if(response.data.status === 100){
+            //     toast.error(response.data.message)
+            // }
         }
         catch (err) {
+            
             console.log("Refresh billing data Error", err)
         }
     }
@@ -188,16 +192,38 @@ const UploadBilling = () => {
         }
     };
 
+    // Central "what should the page show" check:
+    // - unmapped products/customers exist -> load them and show the mapping tabs
+    // - nothing unmapped -> skip the tabs entirely, just load and show the uploaded billing table
+    const fetchUnmappedData = useCallback(async () => {
+        try {
+            const { data } = await api.post('/getUnMappedData');
+            const unmapCount = Number(data.unmap_cout ?? 0);
+            setUnmappedInfo(data.unmap_cout ?? 0);
+
+            if (unmapCount > 0) {
+                setTabNumber(0);
+                setMappingLoading(true);
+                try {
+                    await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
+                    setMappingOpen(true);
+                } finally {
+                    setMappingLoading(false);
+                }
+            } else {
+                setMappingOpen(false);
+                await loadUploadedBilling();
+            }
+        } catch (err) {
+            console.error('Failed to fetch unmapped count', err);
+            setUnmappedInfo(0);
+        }
+    }, []);
+
+    // Kept for the manual click on the "Unmapped" counter — just re-runs the same check.
     const openMappingDialog = async () => {
         if (!Number(unmappedInfo)) return;
-        setMappingOpen(true);
-        setTabNumber(0);
-        setMappingLoading(true);
-        try {
-            await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
-        } finally {
-            setMappingLoading(false);
-        }
+        await fetchUnmappedData();
     };
 
     const saveProductMappings = async () => {
@@ -218,11 +244,7 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingproductsmap', { mappings });
             toast.success('Products mapped successfully.');
-            if (data.counts.products === 0 && data.counts.customers === 0) {
-                await loadUploadedBilling();
-            }
-            await fetchUnmappedCount();
-            await loadUnmappedProducts();
+            await fetchUnmappedData();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save product mappings.');
         } finally {
@@ -265,8 +287,7 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingcustomersmap', { mappings });
             toast.success('Customers mapped successfully.');
-            await fetchUnmappedCount();
-            await loadUnmappedCustomers();
+            await fetchUnmappedData();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save customer mappings.');
         } finally {
@@ -328,9 +349,11 @@ const UploadBilling = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
+            // Backend responds with HTTP 200 even for validation failures
+            // (status 100 / 101 / etc). A non-empty status means it failed.
             if (data.status) {
                 const errorText = data.message || 'Upload failed. Please try again.';
-                toast.error(errorText);
+                setUploadMessage({ text: errorText, type: 'error' });
                 return;
             }
 
@@ -382,9 +405,6 @@ const UploadBilling = () => {
             if (data?.success) {
                 toast.success('Unmapped products removed.');
                 await fetchUnmappedData();
-                await loadUnmappedProducts();
-                await loadUnmappedCustomers()
-            
             } else {
                 toast.error('Unable to delete unmapped products.');
             }
@@ -405,9 +425,7 @@ const UploadBilling = () => {
 
             if (data?.success) {
                 toast.success('Unmapped customers removed.');
-                setMappingOpen(false);
                 await fetchUnmappedData();
-                await loadUploadedBilling();
             } else {
                 toast.error('Unable to delete unmapped customers.');
             }
@@ -441,19 +459,6 @@ const UploadBilling = () => {
             onConfirm: () => handleIgnoreUnmappedCustomers(),
         });
     };
-
-    const fetchUnmappedData = useCallback(async () => {
-        try {
-            const { data } = await api.post('/getUnMappedData');
-            setUnmappedInfo(data.unmap_cout ?? 0);
-            if (Number(data.unmap_cout) === 0) {
-                await loadUploadedBilling()
-            }
-        } catch (err) {
-            console.error('Failed to fetch unmapped count', err);
-            setUnmappedInfo(0);
-        }
-    }, []);
 
     const handleuploadStockistBilling = async () => {
         setStockistUploading(true);
@@ -497,9 +502,6 @@ const UploadBilling = () => {
         fetchUnmappedData();
     }, [fetchSummary, fetchUnmappedData]);
 
-    console.log("uploaded billing data", uploadedBilling)
-    console.log("temp val seted", tempval)
-
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -507,7 +509,7 @@ const UploadBilling = () => {
             { label: "Upload Billing", path: location.pathname },
         ]}>
 
-            <Box sx={{ p: 2, mt: 3, ml: 2, mr: 2, borderRadius: '0.2rem' }}>
+            <Box sx={{ p: 2, mt: 3,  }}>
                <Box sx={{backgroundColor: 'white', p: 2}}>
                 <Grid container spacing={2}>
                     <Grid item size={{ lg: 3, md: 5, xs: 12 }}>
@@ -524,7 +526,7 @@ const UploadBilling = () => {
                                 <Typography sx={{ fontSize: '1.2rem', fontWeight: 600 }}>EDI - Last Updated</Typography>
                                 {tempval === 0 &&
                                 <IconButton size="small" onClick={fetchRefreshBillingData} disabled={summaryLoading}>
-                                    {summaryLoading ? <CircularProgress size={16} /> : <FiRefreshCw fontSize="small" color='#466F9B' />}
+                                    {summaryLoading ? <CircularProgress size={16}  /> : <FiRefreshCw fontSize="small" strokeWidth={4} color='#466F9B' />}
                                 </IconButton>
                                 }
                             </Box>
@@ -612,6 +614,7 @@ const UploadBilling = () => {
                                     <Typography
                                         variant="caption"
                                         color={uploadMessage.type === 'error' ? 'error' : 'success.main'}
+                                        sx={{width:'16rem'}}
                                     >
                                         {uploadMessage.text}
                                     </Typography>
@@ -622,122 +625,119 @@ const UploadBilling = () => {
                     </Grid>
                 </Grid>
                 </Box>
-                {mappingLoading && mappingOpen ? (
+                {mappingLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8, backgroundColor: 'white', mt: 2, borderRadius: '1rem' }}>
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Box>
-                        {mappingOpen && (unmappedProducts.length > 0 || unmappedCustomers.length > 0) && (
-                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem', backgroundColor: 'white' }}>
-                                <Tabs value={tabNumber} onChange={(e, val) => setTabNumber(val)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                    <Tab label="Products" value={0} disabled={unmappedProducts.length === 0} />
-                                    <Tab label="Customers" value={1} disabled={unmappedCustomers.length === 0} />
-                                </Tabs>
+                    mappingOpen && (unmappedProducts.length > 0 || unmappedCustomers.length > 0) && (
+                        <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem', backgroundColor: 'white' }}>
+                            <Tabs value={tabNumber} onChange={(e, val) => setTabNumber(val)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <Tab label="Products" value={0} />
+                                <Tab label="Customers" value={1} />
+                            </Tabs>
 
-                                {tabNumber === 0 && unmappedProducts.length > 0 && (
-                                    <Box sx={{ pt: 2 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                            <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
-                                                Update Product
-                                            </Typography>
-                                            <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
-                                        </Box>
-                                        <MappingTable
-                                            rows={unmappedProducts}
-                                            rowKeyField="prod_name"
-                                            sourceLabel="Not Mapped Product"
-                                            targetLabel="Map Product"
-                                            selectLabel="Select Product"
-                                            options={products}
-                                            optionValueField="prod_id"
-                                            optionLabel={(product) => `${product.code} - ${product.prod_name}`}
-                                            selections={productSelections}
-                                            searchFields={["code", "prod_name"]}
-                                            onSelectionChange={(key, value) =>
-                                                setProductSelections((previous) => ({
-                                                    ...previous,
-                                                    [key]: value,
-                                                }))
-                                            }
-                                        />
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                                            <Button
-                                                variant="contained"
-                                                disabled={mappingLoading || mappingSaving}
-                                                onClick={showSaveProductsConfirmation}
-                                                startIcon={<FaDownload size={14} />}
-                                            >
-                                                Update Products
-                                            </Button>
-                                        </Box>
+                            {tabNumber === 0 && unmappedProducts.length > 0 && (
+                                <Box sx={{ pt: 2 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                            Update Product
+                                        </Typography>
+                                        <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
                                     </Box>
-                                )}
-
-                                {tabNumber === 1 && unmappedCustomers.length > 0 && (
-                                    <Box sx={{ pt: 2 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                            <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
-                                                Update Customer
-                                            </Typography>
-                                            <Button variant='contained' color='error' onClick={() =>  showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
-                                        </Box>
-                                        <MappingTable
-                                            rows={unmappedCustomers}
-                                            rowKeyField="cus_name"
-                                            sourceLabel="Not Mapped Customer"
-                                            targetLabel="Map Customer"
-                                            selectLabel="Select Customer"
-                                            options={customers}
-                                            optionValueField="id"
-                                            optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
-                                            selections={customerSelections}
-                                            searchFields={["stk_code", "stk_name"]}
-                                            onSelectionChange={(key, value) =>
-                                                setCustomerSelections((previous) => ({
-                                                    ...previous,
-                                                    [key]: value,
-                                                }))
-                                            }
-                                        />
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                                            <Button
-                                                variant="contained"
-                                                disabled={mappingLoading || mappingSaving}
-                                                onClick={showSaveCustomersConfirmation}
-                                                startIcon={<FaDownload size={14} />}
-                                            >
-                                                Update Customers
-                                            </Button>
-                                        </Box>
+                                    <MappingTable
+                                        rows={unmappedProducts}
+                                        rowKeyField="prod_name"
+                                        sourceLabel="Not Mapped Product"
+                                        targetLabel="Map Product"
+                                        selectLabel="Select Product"
+                                        options={products}
+                                        optionValueField="prod_id"
+                                        optionLabel={(product) => `${product.code} - ${product.prod_name}`}
+                                        selections={productSelections}
+                                        searchFields={["code", "prod_name"]}
+                                        onSelectionChange={(key, value) =>
+                                            setProductSelections((previous) => ({
+                                                ...previous,
+                                                [key]: value,
+                                            }))
+                                        }
+                                    />
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                        <Button
+                                            variant="contained"
+                                            disabled={mappingLoading || mappingSaving}
+                                            onClick={showSaveProductsConfirmation}
+                                            startIcon={<FaDownload size={14} />}
+                                        >
+                                            Update Products
+                                        </Button>
                                     </Box>
-                                )}
-                            </Paper>
-                        )}
-
-                        {mappingOpen && unmappedProducts.length === 0 && unmappedCustomers.length === 0 && (
-                            <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: '1rem' }}>
-                                <Typography sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
-                                    No unmapped products or customers
-                                </Typography>
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                                    <Button
-                                        disabled={mappingSaving}
-                                        onClick={() => setMappingOpen(false)}
-                                    >
-                                        Close
-                                    </Button>
                                 </Box>
-                            </Paper>
-                        )}
-                    </Box>
+                            )}
+                            {tabNumber === 0 && unmappedProducts.length === 0 && (
+                                <Box sx={{ pt: 4, pb: 2 }}>
+                                    <Typography sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                                        No UnMapped Product data available
+                                    </Typography>
+                                </Box>
+                            )}
+
+                            {tabNumber === 1 && unmappedCustomers.length > 0 && (
+                                <Box sx={{ pt: 2 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
+                                            Update Customer
+                                        </Typography>
+                                        <Button variant='contained' color='error' onClick={() => showIgnoreCustomersConfirmation()}>Ignore Unmapped</Button>
+                                    </Box>
+                                    <MappingTable
+                                        rows={unmappedCustomers}
+                                        rowKeyField="cus_name"
+                                        sourceLabel="Not Mapped Customer"
+                                        targetLabel="Map Customer"
+                                        selectLabel="Select Customer"
+                                        options={customers}
+                                        optionValueField="id"
+                                        optionLabel={(customer) => `${customer.stk_code} - ${customer.stk_name}`}
+                                        selections={customerSelections}
+                                        searchFields={["stk_code", "stk_name"]}
+                                        onSelectionChange={(key, value) =>
+                                            setCustomerSelections((previous) => ({
+                                                ...previous,
+                                                [key]: value,
+                                            }))
+                                        }
+                                    />
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                                        <Button
+                                            variant="contained"
+                                            disabled={mappingLoading || mappingSaving}
+                                            onClick={showSaveCustomersConfirmation}
+                                            startIcon={<FaDownload size={14} />}
+                                        >
+                                            Update Customers
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
+                            {tabNumber === 1 && unmappedCustomers.length === 0 && (
+                                <Box sx={{ pt: 4, pb: 2 }}>
+                                    <Typography sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                                        No UnMapped Customer data available
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Paper>
+                    )
                 )}
             </Box>
 
-            {uploadedBilling.length > 0 &&
-                <Box sx={{ mt: 2, mx: 2, backgroundColor: 'white' }}>
+            {!mappingOpen && uploadedBilling.length > 0 &&
+                <Box sx={{ mt: 2, mx: 2, backgroundColor: 'white', borderRadius: '0.6rem' }}>
                     <Typography sx={{ p: 2, fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>Upload Summary</Typography>
-                    <DataTable columns={columns} data={uploadedBilling} />
+                    {billingDateRange && <Typography sx={{backgroundColor:'#Dff0D8',color:'#689F38',mx:2,p:1.5,fontSize:'13px'}}>Date range for excel upload is <span style={{fontWeight:600}}>{ `${billingDateRange?.low_range ? dayjs(billingDateRange?.low_range).format('DD MMM YYYY'):null}` } </span> to <span style={{fontWeight:600}}>{`${billingDateRange?.high_range ? dayjs(billingDateRange?.high_range ).format('DD MMM YYYY'):null}` }</span></Typography>}
+                    <DataTable columns={columns} data={uploadedBilling}/>
                     <Box sx={{ display: 'flex', width: '100%', justifyContent: 'end' }}>
                         <Button
                             sx={{ textAlign: 'right', mb: 2, mr: 2 }}
