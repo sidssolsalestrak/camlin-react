@@ -511,7 +511,7 @@ const SubmissionStatusTableComponent = ({
             if (row.pri_stat === 2) {
                 return (
                     <Tooltip title="View Primary Sale">
-                        <a href={`/reports/primary_sale_report/${btoa(closeDate)}/${btoa(row.stk_id)}/${btoa(2)}`} target="_blank" rel="noreferrer" style={{ display: "flex", justifyContent: "center" }}>
+                        <a href={`/reports/primary_sale_report/${btoa(closeDate?closeDate:falbackDt)}/${btoa(row.stk_id)}/${btoa(2)}`} target="_blank" rel="noreferrer" style={{ display: "flex", justifyContent: "center" }}>
                             {icon}
                         </a>
                     </Tooltip>
