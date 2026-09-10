@@ -19,6 +19,7 @@ import ConfirmationDialog from '../../utils/confirmDialog';
 import { GrUploadOption } from "react-icons/gr";
 import { FaDownload } from "react-icons/fa";
 import { IoMdCloudUpload } from "react-icons/io";
+import CloseIcon from "@mui/icons-material/Close";
 
 
 const UploadBilling = () => {
@@ -334,6 +335,11 @@ const UploadBilling = () => {
         setUploadMessage({ text: '', type: 'info' });
     };
 
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        setUploadMessage({ text: '', type: 'info' });
+    };
+
     const handleUpload = async () => {
         if (!selectedFile) {
             setUploadMessage({ text: 'Please choose a file first.', type: 'error' });
@@ -588,6 +594,9 @@ const UploadBilling = () => {
                                         width: '14.5rem',
                                         justifyContent: 'flex-start',
                                         textTransform: 'none',
+                                        mt: 0.3,
+                                        position: 'relative',
+                                        pr: selectedFile ? 4 : 2,
                                     }}
                                     startIcon={<IoMdCloudUpload size={18} />}
                                 >
@@ -604,6 +613,27 @@ const UploadBilling = () => {
                                         {selectedFile ? selectedFile.name : 'Upload Billing Data'}
                                     </Box>
                                     <input type="file" hidden accept=".csv" onChange={handleFileChange} />
+
+                                    {selectedFile && (
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleRemoveFile();
+                                            }}
+                                            sx={{
+                                                position: 'absolute',
+                                                right: 4,
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                p: '2px',
+                                                color: 'grey',
+                                            }}
+                                        >
+                                            <CloseIcon sx={{ fontSize: 14 }} />
+                                        </IconButton>
+                                    )}
                                 </Button>
 
                                 <Button

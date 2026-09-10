@@ -542,6 +542,7 @@ function UploadClosing() {
         add_tgl_val: tglToSend,
       });
       setManualMode(true);
+      setReqBtnVal(2);
       handleApiResponse(res.data);
     } catch (err) {
       console.error("addManual:", err);
