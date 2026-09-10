@@ -151,6 +151,7 @@ const SubmissionStatusTableComponent = ({
         if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0) return "zone_name";
         return "_label";
     }, [stkGroup, zoneGroup, regGroup, areaGroup, terGroup]);
+     let falbackDt=dayjs(selMonth).format("MMM YYYY");
 
     const columns = useMemo(() => {
         const cols = [];
@@ -486,7 +487,7 @@ const SubmissionStatusTableComponent = ({
             if (Number(row.base_data_stat) !== 1 && row.process_stat === 0) {
                 return (
                     <Tooltip title="Upload Data">
-                        <a href={`/upload_closing/index/${btoa(1)}/${btoa(closeDate)}/${btoa(`${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`)}/${btoa(pstat)}/${btoa(1)}`} target="_blank" rel="noreferrer" style={{ display: "flex", justifyContent: "center" }}>
+                        <a href={`/upload_closing/index/${btoa(1)}/${btoa(falbackDt)}/${btoa(`${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`)}/${btoa(pstat)}/${btoa(1)}`} target="_blank" rel="noreferrer" style={{ display: "flex", justifyContent: "center" }}>
                             <FaPlus style={{ color: "green", fontSize: 15 }} />
                         </a>
                     </Tooltip>

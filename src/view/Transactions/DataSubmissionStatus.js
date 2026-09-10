@@ -972,7 +972,7 @@ function DataSubmissionStatus() {
         };
 
         // Precompute once, outside the per-row loop, since it doesn't vary by row.
-        const _fallbackCloseDate = dayjs(selMonth).format("MMM YYYY");
+        const fallbackCloseDate = dayjs(selMonth).format("MMM YYYY");
 
         rawData.forEach((key) => {
             if (prevZoneId !== null) {
