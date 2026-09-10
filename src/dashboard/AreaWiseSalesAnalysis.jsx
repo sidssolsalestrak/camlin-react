@@ -240,7 +240,7 @@ const AreaWiseSalesAnalysis = () => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
-                            label="FY-Year"
+                            label="FY-Year*"
                             views={["year"]}
                             value={year}
                             onChange={(newValue) => setYear(newValue)}

@@ -250,7 +250,7 @@ function DataSubmissionLog() {
                                 <FormControl fullWidth>
                                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                                         <DatePicker
-                                            label="Year"
+                                            label="Year*"
                                             views={["year"]}
                                             format="YYYY"
                                             value={selYear}

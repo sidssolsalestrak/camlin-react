@@ -1131,7 +1131,7 @@ function DataSubmissionStatus() {
                     <Grid container spacing={0.95} alignItems="flex-end">
 
                         <Grid size={{ xs: 12, md: 3, lg: 1.8 }}>
-                            <FormControl fullWidth>
+                            <FormControl fullWidth required>
                                 <InputLabel id="type">Type</InputLabel>
                                 <Select
                                     labelId="type"
@@ -1159,7 +1159,7 @@ function DataSubmissionStatus() {
                             <FormControl fullWidth>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
-                                        label="Month"
+                                        label="Month*"
                                         views={["year", "month"]}
                                         openTo="month"
                                         format="MMM YYYY"
