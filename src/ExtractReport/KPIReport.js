@@ -475,7 +475,7 @@ function KPIReport() {
                             <FormControl>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
-                                        label="Month"
+                                        label="Month*"
                                         views={["year", "month"]}
                                         openTo="month"
                                         format="MMM YYYY"

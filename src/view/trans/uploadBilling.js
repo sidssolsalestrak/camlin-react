@@ -477,6 +477,7 @@ const UploadBilling = () => {
                 await fetchSummary();
                 await fetchBillingLogs(logDate);
                 await fetchUnmappedData();
+                setTempVal(0)
             } else {
                 toast.error(data?.message || 'Unable to upload stockist billing.');
             }
@@ -514,7 +515,7 @@ const UploadBilling = () => {
             { label: "Upload Billing", path: location.pathname },
         ]}>
 
-            <Box sx={{ p: 2, mt: 3,  }}>
+            <Box sx={{ p: 2, mt:1,  }}>
                <Box sx={{backgroundColor: 'white', p: 2}}>
                 <Grid container spacing={2}>
                     <Grid item size={{ lg: 3, md: 5, xs: 12 }}>

@@ -2075,7 +2075,7 @@ function UploadClosing() {
               <FormControl fullWidth>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    label="Month"
+                    label="Month*"
                     views={["year", "month"]}
                     openTo="month"
                     format="MMM YYYY"
