@@ -446,7 +446,7 @@ const SubmissionStatusTableComponent = ({
                     {renderStatusCell(row)}
                     {Number(row.base_data_stat) === 1 && row.process_stat !== 2 && row.process_stat !== 3 && (
                         <Tooltip title="Reject">
-                            <span style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: "10px", height: "10px", border:"0.1px solid red", borderRadius: "3px",marginTop:'10px' }} onClick={() => onReject?.(row.primary_id)}>
+                            <span style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: "10px", height: "10px", border:"0.1px solid red", borderRadius: "3px"}} onClick={() => onReject?.(row.primary_id)}>
                                 <FaMinus style={{ color: "red", fontSize: 6 }} />
                             </span>
                         </Tooltip>
