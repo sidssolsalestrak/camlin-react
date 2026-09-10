@@ -15,6 +15,7 @@ const MappingRow = memo(function MappingRow({
     selectLabel,
     onChange,
     searchFields,
+    uniqueOptions
 }) {
     return (
         <TableRow >
@@ -22,7 +23,7 @@ const MappingRow = memo(function MappingRow({
             <TableCell sx={{mt:1}}>
                 <Autocomplete
                     size="small"
-                    options={options}
+                    options={uniqueOptions}
                     filterOptions={filterOptions}
                     value={selectedOption}
                     onChange={(event, newValue) => onChange(rowKey, newValue)}
@@ -66,6 +67,16 @@ const MappingTable = ({
         (option, value) => option[optionValueField] === value[optionValueField],
         [optionValueField]
     );
+
+    const uniqueOptions = useMemo(() => {
+        const seen = new Set();
+        return options.filter((opt) => {
+            const key = opt.code || opt.stk_code;          // dedupe by product code, not prod_id
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [options]);
 
     const filterOptions = useCallback(
         (opts, { inputValue }) => {
@@ -119,6 +130,7 @@ const MappingTable = ({
                                 selectLabel={selectLabel}
                                 onChange={handleOptionChange}
                                 searchFields={searchFields}
+                                uniqueOptions={uniqueOptions}
                             />
                         );
                     })}

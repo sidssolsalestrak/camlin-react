@@ -201,16 +201,7 @@ const UploadBilling = () => {
             const unmapCount = Number(data.unmap_cout ?? 0);
             setUnmappedInfo(data.unmap_cout ?? 0);
 
-            if (unmapCount > 0) {
-                setTabNumber(0);
-                setMappingLoading(true);
-                try {
-                    await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
-                    setMappingOpen(true);
-                } finally {
-                    setMappingLoading(false);
-                }
-            } else {
+            if (unmapCount === 0) {
                 setMappingOpen(false);
                 await loadUploadedBilling();
             }
@@ -223,7 +214,15 @@ const UploadBilling = () => {
     // Kept for the manual click on the "Unmapped" counter — just re-runs the same check.
     const openMappingDialog = async () => {
         if (!Number(unmappedInfo)) return;
-        await fetchUnmappedData();
+
+        setTabNumber(0);
+        setMappingLoading(true);
+        try {
+            await Promise.all([loadUnmappedProducts(), loadUnmappedCustomers()]);
+            setMappingOpen(true);
+        } finally {
+            setMappingLoading(false);
+        }
     };
 
     const saveProductMappings = async () => {
@@ -244,7 +243,8 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingproductsmap', { mappings });
             toast.success('Products mapped successfully.');
-            await fetchUnmappedData();
+            await loadUnmappedProducts();   // refresh this tab's data
+            await fetchUnmappedData(); 
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save product mappings.');
         } finally {
@@ -287,7 +287,8 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingcustomersmap', { mappings });
             toast.success('Customers mapped successfully.');
-            await fetchUnmappedData();
+            await loadUnmappedCustomers();  // refresh this tab's data
+            await fetchUnmappedData();     
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save customer mappings.');
         } finally {
@@ -404,6 +405,7 @@ const UploadBilling = () => {
 
             if (data?.success) {
                 toast.success('Unmapped products removed.');
+                await loadUnmappedProducts();
                 await fetchUnmappedData();
             } else {
                 toast.error('Unable to delete unmapped products.');
@@ -425,6 +427,7 @@ const UploadBilling = () => {
 
             if (data?.success) {
                 toast.success('Unmapped customers removed.');
+                await loadUnmappedCustomers();
                 await fetchUnmappedData();
             } else {
                 toast.error('Unable to delete unmapped customers.');
@@ -501,6 +504,8 @@ const UploadBilling = () => {
         fetchSummary();
         fetchUnmappedData();
     }, [fetchSummary, fetchUnmappedData]);
+
+    console.log("tempval which pass",tempval)
 
     return (
         <Layout breadcrumb={[
@@ -689,7 +694,7 @@ const UploadBilling = () => {
                                         <Typography sx={{ fontSize: "1.2rem", fontWeight: 500, color: "#000" }}>
                                             Update Customer
                                         </Typography>
-                                        <Button variant='contained' color='error' onClick={() => showIgnoreCustomersConfirmation()}>Ignore Unmapped</Button>
+                                        <Button variant='contained' color='error' onClick={() => showIgnoreProductsConfirmation()}>Ignore Unmapped</Button>
                                     </Box>
                                     <MappingTable
                                         rows={unmappedCustomers}
