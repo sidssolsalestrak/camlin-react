@@ -327,16 +327,22 @@ const UploadBilling = () => {
             const { data } = await api.post(`/uploadExcel`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
+
+            if (data.status) {
+                const errorText = data.message || 'Upload failed. Please try again.';
+                toast.error(errorText);
+                return;
+            }
+
             setSelectedFile(null);
             fetchSummary();
             fetchBillingLogs(logDate);
-            toast.success(data.message || 'File uploaded successfully.')
+            toast.success(data.message || 'File uploaded successfully.');
         } catch (err) {
             console.error('Upload failed', err);
-            setUploadMessage({
-                text: err.response?.data?.message || 'Upload failed. Please try again.',
-                type: 'error',
-            });
+            const errorText = err.response?.data?.message || 'Upload failed. Please try again.';
+            toast.error(errorText);
+            setUploadMessage({ text: errorText, type: 'error' });
         } finally {
             setUploading(false);
         }
@@ -560,6 +566,7 @@ const UploadBilling = () => {
                                         views={['year', 'month']}
                                         value={uploadMonth}
                                         format='MMM YYYY'
+                                        openTo="month"
                                         onChange={(val) => val && setUploadMonth(val)}
                                         slotProps={{ textField: { size: 'small', fullWidth: true } }}
                                         sx={{ width: 110 }}
