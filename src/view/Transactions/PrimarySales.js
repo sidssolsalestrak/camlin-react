@@ -94,7 +94,10 @@ function PrimarySalesTransact() {
     };
 
     useEffect(() => {
-        if (!stockist || Number(stockist) === 0) return;
+        if (!stockist || Number(stockist) === 0) {
+            setSalesData([]);
+            return;
+        }
         fetchPrimarySales(dateselect, stockist, catId);
         updateUrl(dateselect, stockist, catId);
     }, [dateselect, stockist, catId]);

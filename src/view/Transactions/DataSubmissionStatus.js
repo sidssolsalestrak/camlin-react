@@ -982,7 +982,7 @@ function DataSubmissionStatus() {
 
             const _closeDate = key.close_date
                 ? dayjs(key.close_date).format("MMM YYYY")
-                : _fallbackCloseDate;
+                : '';
 
             rows.push({ ...key, id: `data-${key.stk_id ?? i}-${i}`, _rowType: "data", _sl: i, _closeDate });
 
