@@ -139,7 +139,7 @@ const OrderReport = () => {
         try {
             let payload = {
                 reg_id: formData.region,
-                zone_id:formData.zone
+                zone_id: formData.zone
             }
             const res = await axios.post("/AreaAm", payload);
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
@@ -703,7 +703,15 @@ const OrderReport = () => {
                     }
                 ] : []),
             ]
-            const exportColumns = [...addColumn, ...columns.map(({ renderCell, ...col }) => col)];
+            const mappedColumns = columns.map(({ renderCell, ...col }) => col);
+            const regionIdx = mappedColumns.findIndex((col) => col.field === "reg_name");
+            const exportColumns = regionIdx === -1
+                ? [...addColumn, ...mappedColumns]
+                : [
+                    ...mappedColumns.slice(0, regionIdx + 1),
+                    ...addColumn,
+                    ...mappedColumns.slice(regionIdx + 1),
+                ];
 
             // Determine active group (extract page uses live formData, report page uses decoded URL param)
             const grpBy = extractPath ? formData.groupBy : decodedGrpBy;

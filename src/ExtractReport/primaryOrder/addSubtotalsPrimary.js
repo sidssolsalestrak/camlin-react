@@ -44,9 +44,11 @@ export const addSubtotalsPrimary = (data, isTable = true, zoneFiltered = false) 
     });
 
     // ── Zone subtotal ──
-    // Skip ONLY for the UI table (isTable=true) when a specific zone is selected
-    // and that zone has just 1 region. Excel (isTable=false) always shows it.
-    const skipZoneTotal = isTable && zoneFiltered && regionEntries.length <= 1;
+    // Skip in the UI table (isTable=true) when either:
+    //  (a) a specific zone is filtered — Grand Total already equals it, or
+    //  (b) the zone has only one region — its region subtotal is already the zone total.
+    // Excel (isTable=false) always shows it regardless.
+    const skipZoneTotal = isTable && (zoneFiltered || regionEntries.length <= 1);
 
     if (!skipZoneTotal) {
       result.push({
