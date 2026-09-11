@@ -96,18 +96,23 @@ const UploadBilling = () => {
     }, []);
 
     const fetchRefreshBillingData = async () => {
+        setSummaryLoading(true);
         try {
-            let response = await api.get('/ftp_primary_sales')
-            console.log("refreshed billingdata response", response)
-            // if(response.data.status === 100){
-            //     toast.error(response.data.message)
-            // }
+            const response = await api.get('/ftp_primary_sales');
+            if (response.data.status === 100) {
+                toast.error(response.data.message || 'Refresh failed.');
+                return;
+            }
+            toast.success(response.data.message || 'Billing data refreshed successfully.');
+            await fetchSummary();
+            await fetchBillingLogs(logDate);
+        } catch (err) {
+            console.error('Refresh billing data error', err);
+            toast.error(err.response?.data?.message || 'Failed to refresh billing data.');
+        } finally {
+            setSummaryLoading(false);
         }
-        catch (err) {
-            
-            console.log("Refresh billing data Error", err)
-        }
-    }
+    };
 
     const fetchBillingLogs = useCallback(async (date) => {
         setLogsLoading(true);
@@ -193,9 +198,6 @@ const UploadBilling = () => {
         }
     };
 
-    // Central "what should the page show" check:
-    // - unmapped products/customers exist -> load them and show the mapping tabs
-    // - nothing unmapped -> skip the tabs entirely, just load and show the uploaded billing table
     const fetchUnmappedData = useCallback(async () => {
         try {
             const { data } = await api.post('/getUnMappedData');
@@ -212,7 +214,6 @@ const UploadBilling = () => {
         }
     }, []);
 
-    // Kept for the manual click on the "Unmapped" counter — just re-runs the same check.
     const openMappingDialog = async () => {
         if (!Number(unmappedInfo)) return;
 
@@ -244,7 +245,7 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingproductsmap', { mappings });
             toast.success('Products mapped successfully.');
-            await loadUnmappedProducts();   // refresh this tab's data
+            await loadUnmappedProducts();
             await fetchUnmappedData(); 
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save product mappings.');
@@ -288,7 +289,7 @@ const UploadBilling = () => {
         try {
             const { data } = await api.post('/unmappedbillingcustomersmap', { mappings });
             toast.success('Customers mapped successfully.');
-            await loadUnmappedCustomers();  // refresh this tab's data
+            await loadUnmappedCustomers();
             await fetchUnmappedData();     
         } catch (err) {
             toast.error(err.response?.data?.message || 'Unable to save customer mappings.');
@@ -356,8 +357,6 @@ const UploadBilling = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            // Backend responds with HTTP 200 even for validation failures
-            // (status 100 / 101 / etc). A non-empty status means it failed.
             if (data.status) {
                 const errorText = data.message || 'Upload failed. Please try again.';
                 setUploadMessage({ text: errorText, type: 'error' });
@@ -511,8 +510,6 @@ const UploadBilling = () => {
         fetchSummary();
         fetchUnmappedData();
     }, [fetchSummary, fetchUnmappedData]);
-
-    console.log("tempval which pass",tempval)
 
     return (
         <Layout breadcrumb={[

@@ -403,7 +403,8 @@ export default function SalesHierachy() {
     // ────────────────────────────────────────────────────────────────────────
 
     let handleLoad = () => {
-        if (selUsers?.id === 0 && selUserType > 0) {
+        console.log("selected users",selUsers)
+        if ((selUsers?.id === 0 || !selUsers) && selUserType > 0 ) {
             setUserError(true)
             toast.warning("Please Select User to Load")
             return
@@ -513,6 +514,7 @@ export default function SalesHierachy() {
                                     <Select value={selZone} onChange={(e) => {
                                         setSelRegion(0)
                                         setSelZone(e.target.value)
+                                        setSelUsers({ id: 0, u_name: "All" })
                                     }} labelId="zone" label={zoneLabel} size="small"
                                         MenuProps={{
                                             PaperProps: {
@@ -535,6 +537,7 @@ export default function SalesHierachy() {
                                     <InputLabel id="region">{regionLabel} </InputLabel>
                                     <Select value={selRegion} onChange={(e) => {
                                         setSelDistributor(0)
+                                        setSelUsers({ id: 0, u_name: "All" })
                                         setSelRegion(e.target.value)
                                     }} labelId="region" label={regionLabel} size="small"
                                         MenuProps={{

@@ -89,6 +89,11 @@ const StockAndSalesReport = () => {
     // current navigation, so manual userType changes after that don't re-apply it
     const appliedDecodedUserRef = useRef(false);
 
+    // tracks whether the zone/region/userType change currently in flight came from
+    // the URL-decode sync effect (programmatic) rather than a manual dropdown edit,
+    // so the user-list effect below doesn't stomp on the User being resolved from the URL
+    const isSyncingFromUrlRef = useRef(false);
+
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";
     const areaLabel = masterPanel["AREA"] || "Area";
@@ -149,12 +154,12 @@ const StockAndSalesReport = () => {
     }
 
     /*------------ get user list ---------- */
-    const fetchSSUserList = async () => {
+    const fetchSSUserList = async (zone, region, type) => {
         try {
             let payload = {
-                zone_id: formData.zone,
-                reg_id: formData.region,
-                user_type: formData.userType
+                zone_id: (zone !== undefined && zone !== "") ? zone : formData.zone,
+                reg_id: (region !== undefined && region !== "") ? region : formData.region,
+                user_type: (type !== undefined && type !== "") ? type : formData.userType
             }
             let response = await axios.post("/getExtractSSUserList", payload)
             let userListRes = Array.isArray(response.data.data) ? response.data.data : []
@@ -201,6 +206,12 @@ const StockAndSalesReport = () => {
 
     // UserType changes → fetch users  
     useEffect(() => {
+        if (isSyncingFromUrlRef.current) {
+            // this change came from the URL-decode sync, not a manual edit —
+            // don't stomp on the User that the decoded-resolve effect is (or just did) applying
+            isSyncingFromUrlRef.current = false;
+            return;
+        }
         setuser([]);
         handleChange("User", { id: 0, u_name: "All" });
         if (formData.userType > 0) {
@@ -244,7 +255,7 @@ const StockAndSalesReport = () => {
     }
 
     //fetch table data
-    const fetchTableData = async ({ mtd, zone, reg, type, usr, dist }) => {
+    const fetchTableData = async ({ mtd, zone, reg, type, usr, dist }, signal) => {
         try {
             setloading(true)
             const payload = {
@@ -255,7 +266,7 @@ const StockAndSalesReport = () => {
                 user_id: usr ?? 0,
                 stk_id: dist
             }
-            const response = await axios.post("/getStkSales", payload)
+            const response = await axios.post("/getStkSales", payload, { signal })
             const data = Array.isArray(response.data.data) ? response.data.data : []
             settableData(data)
         } catch (err) {
@@ -263,7 +274,6 @@ const StockAndSalesReport = () => {
                 showAlert.warning("No Data Available")
             } else {
                 console.error(err);
-                showAlert.error("Failed to Load Data")
             }
             settableData([])
         } finally {
@@ -283,6 +293,7 @@ const StockAndSalesReport = () => {
     useEffect(() => {
         if (decodedUser && user.length > 0 && !appliedDecodedUserRef.current) {
             const found = user.find((u) => String(u.id) === String(decodedUser));
+            console.log("selected user found",found)
             if (found) handleChange("User", found);
             appliedDecodedUserRef.current = true;
         }
@@ -290,6 +301,8 @@ const StockAndSalesReport = () => {
 
     //fetch table data useeffect
     useEffect(() => {
+        const abortController = new AbortController();
+        isSyncingFromUrlRef.current = true;
         setMonth(decodedMonth ? dayjs(decodedMonth) : dayjs().startOf("month"));
         setFormData((prev) => ({
             zone: decodedZone || "0",
@@ -309,8 +322,17 @@ const StockAndSalesReport = () => {
             type: decodedUserType,
             usr: decodedUser,
             dist: decodedDistributor
-        })
+        }, abortController.signal)
+        return () => abortController.abort();
     }, [decodedMonth, decodedZone, decodedRegion, decodedUserType, decodedUser, decodedDistributor])
+
+    useEffect(() => {
+        if (decodedUser && decodedZone && decodedUserType && !user.length) {
+            fetchSSUserList(decodedZone, decodedRegion || "0", decodedUserType);
+        }
+    }, [decodedUser, decodedZone, decodedUserType, decodedRegion])
+
+    console.log("decoded user which passes",decodedUser)
 
     const columns = [
         { field: "zone_name", headerName: zoneLabel, filterable: true },
@@ -411,7 +433,7 @@ const StockAndSalesReport = () => {
                 return `${prefix} ${label}`;
             };
             const excelColumns = columns
-                .filter((col) => !col.renderCell || col.field)  // keep all columns
+                .filter((col) => !col.renderCell || col.field)
                 .map((col) => ({ label: col.headerName, id: col.field }));
 
             const filters = [
