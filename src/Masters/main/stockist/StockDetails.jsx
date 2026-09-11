@@ -3,9 +3,10 @@ import React from 'react'
 import { useEffect } from 'react'
 import { useState } from 'react'
 import axios from "../../../services/api";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
 }
@@ -31,6 +32,19 @@ const tooltipSx = {
 
 const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     const [type, setType] = useState([]);
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // label derived from masterPanel with fallback
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
     //tooltip
     const [open, setOpen] = React.useState(false);
     const handleTooltipClose = () => {
@@ -55,13 +69,13 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
     }, [])
 
     const validateEmail = (value) => {
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(value);
     };
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
-            <Typography sx={style}>Stockist Details</Typography>
+            <Typography sx={style}>{stkLabel} Details</Typography>
             <FormControl fullWidth size="small" required>
                 <InputLabel id="type">Type</InputLabel>
                 <Select value={formData.type} id='type' label="Type" error={!!errors.type}
@@ -73,10 +87,15 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 </Select>
                 {errors?.type && <span style={{ color: "#d32f2f", fontSize: "9px", paddingLeft: "10px" }}>{errors.type}</span>}
             </FormControl>
-            <TextField value={formData.code}
-                onChange={(e) => handleChangeForm("code", e.target.value)}
+            <TextField value={formData.code} required
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                    handleChangeForm("code", onlyText)
+                }}
                 size='small' placeholder='Enter Code'
                 variant='outlined' label="Code" fullWidth
+                error={!!errors.code}
+                helperText={errors.code}
             />
 
             <ClickAwayListener onClickAway={handleTooltipClose}>
@@ -92,7 +111,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                         slotProps={tooltipSx}
                     >
                         <TextField value={formData.name} onClick={handleTooltipOpen}
-                            onChange={(e) => handleChangeForm("name", e.target.value)}
+                            onChange={(e) => {
+                                const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                handleChangeForm("name", onlyText)
+                            }}
                             required size='small' placeholder='Enter Name'
                             variant='outlined' label="Name" fullWidth
                             error={!!errors.name}
@@ -103,7 +125,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
             </ClickAwayListener>
 
             <TextField value={formData.contactPerson}
-                onChange={(e) => handleChangeForm("contactPerson", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                    handleChangeForm("contactPerson", onlyText)
+                }}
                 size='small' placeholder='Enter Contact Person'
                 variant='outlined' label="Contact Person" fullWidth
             />
@@ -111,7 +136,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 size="small"
                 multiline
                 value={formData.Address}
-                onChange={(e) => handleChangeForm('Address', e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                    handleChangeForm('Address', onlyText)
+                }}
                 rows={3}
                 label="Address"
                 InputProps={{
@@ -144,7 +172,10 @@ const StockDetails = ({ formData, handleChangeForm, errors, setErrors }) => {
                 variant='outlined' label="Pin" fullWidth
             />
             <TextField value={formData.email}
-                onChange={(e) => handleChangeForm("email", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("email", onlyText)
+                }}
                 onBlur={(e) => {
                     if (!validateEmail(e.target.value)) {
                         setErrors((prev) => ({

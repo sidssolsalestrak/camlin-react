@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../layout";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { decode } from "../../utils/common";
 import "../../assets/css/accountMas.css";
 import {
@@ -23,16 +23,28 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import { Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LinearProgress } from "@mui/material";
 import dayjs from "dayjs";
+import "../../assets/css/accountMas.css";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function AccountMas() {
   const user = getUserFromToken();
-
+  const location = useLocation();
   const loggedInUserId = user?.user_id;
   const loggedInUserType = Number(user?.user_type);
   // console.log("Logged User:", user);
   const params = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const decodedParams = useMemo(
     () => ({
@@ -47,6 +59,11 @@ function AccountMas() {
     [params],
   );
   console.log("decodedParams:", decodedParams);
+
+  // ── Role-based access control (same pattern as Area.jsx) ──
+  // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+  const [accStat, setAccStat] = useState(null);
+
 
   useEffect(() => {
     const generateToken = async () => {
@@ -72,13 +89,15 @@ function AccountMas() {
     generateToken();
   }, [decodedParams.login_id]);
 
-  const title =
-    decodedParams.reqType == 2 ? "Approval List" : "Account Masters";
+ const title =
+  decodedParams.reqType == 2
+    ? "Approval List"
+    : `${masterPanel["ACCM"] || "Account"} Masters`;
   const [regionData, setRegionData] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState("");
 
   const [userType, setUserType] = useState([]);
-  const [selectedUserType, setSelectedUserType] = useState("");
+  const [selectedUserType, setSelectedUserType] = useState(0);
 
   const [userData, setUserData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(0);
@@ -93,6 +112,13 @@ function AccountMas() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
+  // ── Submit (Approve/Reject) confirmation dialog state ──
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState(
+    "Are you sure you want to Approve requests?",
+  );
+
   const [logOpen, setLogOpen] = useState(false);
   const [logData, setLogData] = useState([]);
   const [logLoading, setLogLoading] = useState(false);
@@ -100,9 +126,35 @@ function AccountMas() {
 
   const [approvalState, setApprovalState] = useState({});
 
+  useEffect(() => {
+  const resolveAccStat = async () => {
+    try {
+      console.log("cus req passes in AccStat",cusReq)
+      const res = await api.post("/getAccStat", {
+        menu_url:
+          Number(decodedParams.cusReq) === 1
+            ? "customers/AllDoctors/NA==/MA==/MA==/MA==/MQ=="
+            : Number(decodedParams.cusReq) === 2
+            ? "customers/AllDoctors/NA==/MA==/MA==/MA==/Mg=="
+            : "customers/AllDoctors/NA==/MA==/MA==/MA==/MQ==",
+      });
+
+      const stat = res.data?.data?.acc_stat;
+      if (stat !== null && stat !== undefined) {
+        localStorage.setItem("acc_stat", stat);
+        setAccStat(String(stat));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  resolveAccStat();
+}, [cusReq]);
+
   const fetchRegionData = async () => {
     try {
-      const response = await api.post("/getRegionData");
+      const response = await api.post("/getRegionData", { zoneId: 0 });
       setRegionData(response.data.data || []);
     } catch (error) {
       console.error("Error fetching region data:", error);
@@ -147,13 +199,13 @@ function AccountMas() {
       val = reqType;
     } else if (val5 == 1) {
       if (val3 === 0) {
-        toast.error("Please select User!");
+        toast.error(`Please select ${masterPanel["USER"] || "User"}!`);
         return;
       }
     }
 
     if (!(val2 > 0 || val3 > 0)) {
-      toast.error("Please select Region or User");
+      toast.error(`Please select ${masterPanel["REGN"] || "Region"} or ${masterPanel["USER"] || "User"}`);
       return;
     }
 
@@ -172,6 +224,39 @@ function AccountMas() {
     fontSize: "12px",
   });
 
+  // ── Shared eligibility check — same rule used by per-row Approve/Reject,
+  //     Approve All, Reject All, and the Submit button visibility. ──
+  // ROLES: 0 = All, 1 = Maker, 2 = Checker, 3 = View Only
+  //
+  // Two distinct approval stages share this data:
+  //  - Manager-level approval: identified by hierarchy membership
+  //    (am_user_id / zbm_user_id / rsm_user_id / sh_user_id === loggedInUserId).
+  //    This is the FIRST approval step.
+  //  - Final approval: identified by loggedInUserType 2 or 3 (admin roles).
+  //    This step is independent of whether manager approval has happened yet.
+  const isRowActionAllowed = (row) => {
+    const isManagerLevelApprover =
+      row.am_user_id == loggedInUserId ||
+      row.zbm_user_id == loggedInUserId ||
+      row.rsm_user_id == loggedInUserId ||
+      row.sh_user_id == loggedInUserId;
+
+    const isFinalApprover = loggedInUserType == 2 || loggedInUserType == 3;
+
+    if (Number(accStat) === 2) {
+      // Checker → manager-level approval only, and only while it's still pending
+      return isManagerLevelApprover && row.mgr_approved_stat == 0;
+    }
+
+    if (Number(accStat) === 0) {
+      // All → final approval, regardless of whether manager approval is done or not
+      return isManagerLevelApprover || isFinalApprover;
+    }
+
+    // Maker / View Only never get approve-reject rights
+    return false;
+  };
+
   useEffect(() => {
     fetchRegionData();
     fetchUserType();
@@ -179,10 +264,14 @@ function AccountMas() {
   }, []);
 
   useEffect(() => {
-    if (cusReq !== 2) {
-      setReqType(0);
-    }
-  }, [cusReq]);
+    console.log("cusReq changes run")
+    const newCusReq = decodedParams.cusReq || 1;
+    setCusReq(newCusReq);
+    setReqType(newCusReq === 2 ? (Number(decodedParams.reqType) || 0) : 0);
+    setApprovalState({});      // clear stale approve/reject toggles from the other menu
+    setSelectedUser(Number(decodedParams.user) || 0);
+    setTableData([]);
+  }, [decodedParams.cusReq]);
 
   useEffect(() => {
     if (regionData.length > 0 && decodedParams.country) {
@@ -221,34 +310,39 @@ function AccountMas() {
 
     {
       field: "user",
-      headerName: "USER",
+      headerName: (masterPanel["USER"] || "User").toUpperCase(),
       renderCell: ({ row }) => {
-        const name = [row.req_first_name, row.req_last_name]
-          .filter(Boolean)
-          .join(" ");
-
         return (
           <div>
-            <div style={{ color: "#666" }}>{name}</div>
+            <div style={{ color: "#666" }}>{row.req_full_name}</div>
             <div style={{ fontSize: "12px" }}>
               {row.usertype} | {row.reg_name}
             </div>
           </div>
         );
       },
-      width: 150,
+      width: 175,
     },
 
-    {
+      {
       field: "account",
-      headerName: "ACCOUNT DETAILS",
+      headerName: `${(masterPanel["ACCM"] || "Account").toUpperCase()} DETAILS`,
       renderCell: ({ row }) => {
-        const name = [row.first_name, row.last_name].filter(Boolean).join(" ");
-
+        const name =  row.full_name;
         const type = row.cus_type_id == 1 ? "HCP" : "Retailer";
 
+        const handleClick = () => {
+          if (![0, 2 , 1].includes(Number(accStat))) return;
+
+          if (decodedParams.cusReq == 2) {
+            navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
+          } else {
+            navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(1)}/${btoa(0)}`);
+          }
+        };
+
         return (
-          <div>
+          <div style={{ cursor: "pointer" }} onClick={handleClick}>
             <div
               style={{
                 fontSize: "1.125em",
@@ -263,7 +357,7 @@ function AccountMas() {
           </div>
         );
       },
-      width: 280,
+      width: decodedParams.cusReq == 2 ? 200 : 540,
     },
 
     {
@@ -286,193 +380,178 @@ function AccountMas() {
           );
         }
       },
-      width: 130,
+      width: 65,
     },
 
     ...(decodedParams.cusReq == 2
       ? [
-          {
-            field: "remark",
-            headerName: "REMARK",
-            renderCell: ({ row }) => {
-              if (decodedParams.cusReq != 2) return "";
+        {
+          field: "remark",
+          headerName: "REMARK",
+          renderCell: ({ row }) => {
+            if (decodedParams.cusReq != 2) return "";
 
-              const remarkMap = {
-                1: "New",
-                2: row.remark || "",
-                3: "",
-              };
+            const remarkMap = {
+              1: "New",
+              2: row.remark || "",
+              3: "",
+            };
 
-              return remarkMap[row.request_type] ?? "";
-            },
-            width: 150,
+            return remarkMap[row.request_type] ?? "";
           },
-        ]
+          width: 150,
+        },
+      ]
       : []),
 
     ...(decodedParams.cusReq == 2
       ? [
-          {
-            field: "update",
-            headerName: "UPDATE",
-            renderCell: ({ row }) => (
-              <span style={{ color: "red" }}>{row.upd_data || "-"}</span>
-            ),
-            width: 150,
-          },
-        ]
+        {
+          field: "update",
+          headerName: "UPDATE",
+          renderCell: ({ row }) => (
+            <span style={{ color: "red" }}>{row.upd_data || "-"}</span>
+          ),
+          width: 150,
+        },
+      ]
       : []),
 
-    ...(cusReq == 2
+    ...(decodedParams.cusReq == 2
       ? [
-          {
-            field: "manager_status",
-            headerName: "",
-            renderCell: ({ row }) => {
-              if (row.mgr_approve_user > 0) {
-                const name = [row.mgr_first_name, row.mgr_last_name]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <span>
-                    {name} Approved.
-                    <br />
-                    ZM/NSM Pending
-                  </span>
-                );
-              } else {
-                return <span>Manager Approval Pending.</span>;
-              }
-            },
-            width: 200,
-          },
-        ]
-      : []),
-
-    ...(cusReq == 2
-      ? [
-          {
-            field: "approve",
-            headerName: "APPROVE",
-            renderCell: ({ row }) => {
-              const state = approvalState[row.id] || 0;
-              const isAllowed =
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3);
-
-              if (!isAllowed) return <span>-</span>;
-
-              return (
-                <span
-                  style={{
-                    fontSize: "20px",
-                    color: state === 1 ? "#0bd00b" : "#a5a0a0",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleApprove(row)}
-                >
-                  <FaThumbsUp />
+        {
+          field: "manager_status",
+          headerName: "",
+          renderCell: ({ row }) => {
+            if (row.mgr_approve_user > 0) {
+            return (
+                <span>
+                  {row.mgr_full_name} Approved.
+                  <br />
+                  ZM/NSM Pending
                 </span>
               );
-            },
-            width: 100,
+            } else {
+              return <span>Manager Approval Pending.</span>;
+            }
           },
-        ]
+          width: 200,
+        },
+      ]
       : []),
 
-    ...(cusReq == 2
+    // ── APPROVE — Checker: manager-level approval only (pending). All: final approval ──
+    ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
       ? [
-          {
-            field: "reject",
-            headerName: "REJECT",
-            renderCell: ({ row }) => {
-              const state = approvalState[row.id] || 0;
-              const isAllowed =
-                row.mgr_approved_stat == 0 &&
-                (row.am_user_id == loggedInUserId ||
-                  row.zbm_user_id == loggedInUserId ||
-                  row.rsm_user_id == loggedInUserId ||
-                  row.sh_user_id == loggedInUserId ||
-                  loggedInUserType == 2 ||
-                  loggedInUserType == 3);
+        {
+          field: "approve",
+          headerName: "APPROVE",
+          renderCell: ({ row }) => {
+            const state = approvalState[row.id] || 0;
 
-              if (!isAllowed) return <span>-</span>;
+            if (!isRowActionAllowed(row)) return <span>-</span>;
 
-              return (
-                <span
-                  style={{
-                    fontSize: "20px",
-                    color: state === 2 ? "red" : "#a5a0a0",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleReject(row)}
-                >
-                  <FaThumbsDown />
-                </span>
-              );
-            },
-            width: 100,
-          },
-        ]
-      : []),
-
-    ...(decodedParams.cusReq == 1
-      ? [
-          {
-            field: "edit",
-            headerName: "UPDATE",
-            renderCell: ({ row }) => (
-              <FaEdit
+            return (
+              <span
                 style={{
-                  cursor: "pointer",
-                  color: "#1976d2",
                   fontSize: "20px",
+                  color: state === 1 ? "#0bd00b" : "#a5a0a0",
+                  cursor: "pointer",
                 }}
+                onClick={() => handleApprove(row)}
+              >
+                <FaThumbsUp />
+              </span>
+            );
+          },
+          width: 100,
+        },
+      ]
+      : []),
+
+    // ── REJECT — Checker: manager-level approval only (pending). All: final approval ──
+    ...(decodedParams.cusReq == 2 && [0, 2].includes(Number(accStat))
+      ? [
+        {
+          field: "reject",
+          headerName: "REJECT",
+          renderCell: ({ row }) => {
+            const state = approvalState[row.id] || 0;
+
+            if (!isRowActionAllowed(row)) return <span>-</span>;
+
+            return (
+              <span
+                style={{
+                  fontSize: "20px",
+                  color: state === 2 ? "red" : "#a5a0a0",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleReject(row)}
+              >
+                <FaThumbsDown />
+              </span>
+            );
+          },
+          width: 100,
+        },
+      ]
+      : []),
+
+    // ── EDIT — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 1 && [0, 2, 1].includes(Number(accStat))
+      ? [
+        {
+          field: "edit",
+          headerName: "UPDATE",
+          renderCell: ({ row }) => (
+            <div className="editBtn actionBtn">
+              <FaEdit
+                style={{ cursor: "pointer" }}
                 onClick={() => handleEdit(row)}
               />
-            ),
-          },
-        ]
+            </div>
+          ),
+          width:60
+        },
+      ]
       : []),
 
-    ...(decodedParams.cusReq == 1
+    // ── DELETE — restricted to Checker / All ──
+    ...(decodedParams.cusReq == 1 && [0, 2, 1].includes(Number(accStat))
       ? [
-          {
-            field: "delete",
-            headerName: "DELETE",
-            renderCell: ({ row }) => (
+        {
+          field: "delete",
+          headerName: "DELETE",
+          renderCell: ({ row }) => (
+            <div className="dltBtn actionBtn">
               <FaTrash
-                size={24}
-                style={{ cursor: "pointer", color: "red", fontSize: "12px" }}
+                style={{ cursor: "pointer", color: "red" }}
                 onClick={() => handleDelete(row)}
               />
-            ),
-          },
-        ]
+            </div>
+          ),
+          width:60
+        },
+      ]
       : []),
 
     ...(decodedParams.cusReq == 1
       ? [
-          {
-            field: "logs",
-            headerName: "",
-            renderCell: ({ row }) => (
-              <span
-                style={{ cursor: "pointer", color: "#1976d2" }}
-                onClick={() => handleViewLogs(row)}
-              >
-                View Logs
-              </span>
-            ),
-            width: 140,
-          },
-        ]
+        {
+          field: "logs",
+          headerName: "",
+          renderCell: ({ row }) => (
+            <span
+              style={{ cursor: "pointer", color: "#1976d2" }}
+              onClick={() => handleViewLogs(row)}
+            >
+              View Logs
+            </span>
+          ),
+          width:80
+        },
+      ]
       : []),
   ];
 
@@ -500,8 +579,12 @@ function AccountMas() {
   };
 
   const handleEdit = (row) => {
-    console.log("Edit:", row.id);
-    // navigate(`/customers/editDoctor/${row.id}`)
+    navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(2)}/${btoa(0)}`);
+  };
+
+  // For req=2 (Requests) — clicking account name in approval list
+  const handleViewRequest = (row) => {
+    navigate(`/customers/editDoctor/${btoa(row.id)}/${btoa(3)}/${btoa(row.request_type)}`);
   };
 
   const handleDelete = (row) => {
@@ -520,14 +603,19 @@ function AccountMas() {
       const userType = Number(decodedParams.userType) || 0;
       const cus_req = Number(decodedParams.cusReq);
       const req_type = Number(decodedParams.reqType) || 0;
+      const beatId= Number(decodedParams.beatId) || 0;
 
       if (cus_req === 2) {
-        if (!(country || req_type || users || userType)) return;
+        if (!(country || req_type || users || userType)){ 
+          setTableData([]);
+          return
+        };
       }
 
       if (cus_req === 1) {
         if (!(country || userType || users)) {
           console.log("❌ Skipping API (no filters)");
+          setTableData([]);
           return;
         }
       }
@@ -539,6 +627,7 @@ function AccountMas() {
         userType,
         cus_req,
         req_type,
+        beatId
       });
 
       setTableData(
@@ -561,7 +650,7 @@ function AccountMas() {
   }, [selectedRegion]);
 
   useEffect(() => {
-    if (selectedUserType) {
+    if (selectedUserType || selectedUserType === 0) {
       fetchUsers({ trigger_type: 1 });
     }
   }, [selectedUserType]);
@@ -616,7 +705,7 @@ function AccountMas() {
         params.value ? dayjs(params.value).format("DD MMM YYYY h:mm A") : "-",
     },
 
-    { field: "cat_type", headerName: "POTENTIAL CLASS" },
+    { field: "cat_type", headerName: (masterPanel["PCLS"] || "Potentiality Class").toUpperCase() },
 
     { field: "mobile", headerName: "MOBILE NUMBER" },
 
@@ -717,7 +806,8 @@ function AccountMas() {
     });
   };
 
-  const handleSubmitAll = async () => {
+  // ── Step 1: validate selection, then open confirmation dialog ──
+  const handleSubmitAllClick = () => {
     let approveRows = [];
     let rejectRows = [];
 
@@ -732,8 +822,37 @@ function AccountMas() {
       toast.warning("Please Approve or Reject at least one Request");
       return;
     }
-    // console.log("approveRows", approveRows);
-    // return;
+
+    if (approveRows.length > 0 && rejectRows.length > 0) {
+      setSubmitMessage("Are you sure you want to Approve/Reject these requests?");
+    } else if (rejectRows.length > 0) {
+      setSubmitMessage("Are you sure you want to reject request?");
+    } else {
+      setSubmitMessage("Are you sure you want to Approve requests?");
+    }
+
+    setSubmitConfirmOpen(true);
+  };
+
+  // ── Step 2: actual submit, called after user confirms in the dialog ──
+  const handleSubmitAll = async () => {
+    let approveRows = [];
+    let rejectRows = [];
+
+    tableData.forEach((row) => {
+      const state = approvalState[row.id];
+
+      if (state === 1) approveRows.push(row);
+      if (state === 2) rejectRows.push(row);
+    });
+
+    if (approveRows.length === 0 && rejectRows.length === 0) {
+      toast.warning("Please Approve or Reject at least one Request");
+      setSubmitConfirmOpen(false);
+      return;
+    }
+
+    setSubmitLoading(true);
     try {
       // APPROVE API
       if (approveRows.length > 0) {
@@ -751,9 +870,51 @@ function AccountMas() {
     } catch (err) {
       console.error(err);
       toast.error("Unable to update, please try again");
+    } finally {
+      setSubmitLoading(false);
+      setSubmitConfirmOpen(false);
     }
   };
 
+  const handleApproveAll = () => {
+  if (!selectedUser || selectedUser == 0) {
+    toast.warning(`Please select ${masterPanel["USER"] || "User"} to Approve All`);
+    return;
+  }
+
+  const eligibleRows = tableData.filter((row) => isRowActionAllowed(row));
+
+  const allApproved = eligibleRows.every(
+    (row) => approvalState[row.id] === 1,
+  );
+
+  const updates = {};
+  eligibleRows.forEach((row) => {
+    updates[row.id] = allApproved ? 0 : 1; // if all approved → deselect, else → approve
+  });
+
+  setApprovalState((prev) => ({ ...prev, ...updates }));
+};
+
+const handleRejectAll = () => {
+  if (!selectedUser || selectedUser == 0) {
+    toast.warning(`Please select ${masterPanel["USER"] || "User"} to Reject All`);
+    return;
+  }
+
+  const eligibleRows = tableData.filter((row) => isRowActionAllowed(row));
+
+  const allRejected = eligibleRows.every(
+    (row) => approvalState[row.id] === 2,
+  );
+
+  const updates = {};
+  eligibleRows.forEach((row) => {
+    updates[row.id] = allRejected ? 0 : 2; // if all rejected → deselect, else → reject
+  });
+
+  setApprovalState((prev) => ({ ...prev, ...updates }));
+};
   const buildPayload = (rows) => {
     return {
       val: reqType, // req type (Add/Update/Delete)
@@ -770,11 +931,11 @@ function AccountMas() {
       sh_user_id: rows[0]?.sh_user_id || 0,
 
       rowId: rows.map((r) => r.id),
-      rowReqName: rows.map((r) => r.req_first_name),
+      rowReqName: rows.map((r) => r.req_full_name),
       rowReqEmail: rows.map((r) => r.req_email),
       rowTerName: rows.map((r) => r.ter_name),
       rowClassName: rows.map((r) => r.cat_type),
-      cusName: rows.map((r) => r.first_name),
+      cusName: rows.map((r) => r.full_name),
       updUserId: rows.map((r) => r.upd_user),
       appStat: rows.map((r) => r.request_type),
       cus_id: rows.map((r) => r.cus_id),
@@ -785,184 +946,238 @@ function AccountMas() {
 
   const Wrapper = decodedParams.login_id ? React.Fragment : Layout;
   return (
-    <Wrapper>
-      <Box
-        p={2}
-        sx={{ backgroundColor: "#fff", borderRadius: 1 }}
-        display="flex"
-        flexDirection="column"
-        gap={2}
-      >
-        <Box>
-          <h2 className="mainTitle">{title}</h2>
-        </Box>
-        <Box>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl required fullWidth size="small">
-                <InputLabel id="region-label">Region</InputLabel>
+    <Wrapper
+      {...(!decodedParams.login_id && {
+        breadcrumb: [
+          { label: "Home", path: "/" },
+          { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+          { label: `${masterPanel["ACCM"] || "Account"} List` },
+        ],
+      })}
+    >
+      <Box p={2} display="flex" flexDirection="column" gap={2}>
+        <h2>{title}</h2>
 
-                <Select
-                  labelId="region-label"
-                  value={selectedRegion}
-                  label="Region"
-                  onChange={(e) => {
-                    setSelectedRegion(e.target.value);
+        <Grid
+          container
+          spacing={2}
+          sx={{
+            background: "#fff",
+            borderRadius: "10px",
+            boxShadow:
+              "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+            padding: "16px 18px",
+          }}
+        >
+          <Grid size={{ xs: 12, md: 2, lg: 2 }}>
+            <FormControl required fullWidth size="small">
+              <InputLabel id="region-label">{masterPanel["REGN"] || "Region"}</InputLabel>
 
-                    // fetchUsers({
-                    //   trigger_type: 1,
-                    // });
-                  }}
-                >
-                  <MenuItem value={0}>All</MenuItem>
-                  {regionData.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.reg_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl required fullWidth size="small">
-                <InputLabel id="userType-label">User Type</InputLabel>
-
-                <Select
-                  labelId="userType-label"
-                  value={selectedUserType}
-                  label="Region"
-                  onChange={(e) => {
-                    setSelectedUserType(e.target.value);
-
-                    // fetchUsers({
-                    //   trigger_type: 2,
-                    // });
-                  }}
-                >
-                  <MenuItem value={0}>All</MenuItem>
-                  {userType.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.client_alias}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <Autocomplete
-                  size="small"
-                  options={userData}
-                  getOptionLabel={(option) => {
-                    const name = [option.first_name, option.last_name]
-                      .filter((val) => val && val !== "null")
-                      .join(" ");
-
-                    return `${name}${
-                      cusReq == 2 && option.count ? ` (${option.count})` : ""
-                    }`;
-                  }}
-                  isOptionEqualToValue={(option, value) =>
-                    option.id === value.id
-                  }
-                  renderOption={(props, option) => {
-                    const name = [option.first_name, option.last_name]
-                      .filter(Boolean)
-                      .join(" ");
-
-                    return (
-                      <li {...props} key={option.id}>
-                        {name}
-                        {cusReq == 2 && option.count
-                          ? ` (${option.count})`
-                          : ""}
-                      </li>
-                    );
-                  }}
-                  value={userData.find((u) => u.id === selectedUser) || null}
-                  onChange={(e, newValue) => {
-                    const userId = newValue ? newValue.id : 0;
-                    setSelectedUser(userId);
-                    handleLoad(userId);
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select User"
-                      variant="outlined"
-                      label="User"
-                    />
-                  )}
-                />
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="cusReq-label">Customers / Requests</InputLabel>
-
-                <Select
-                  labelId="cusReq-label"
-                  value={cusReq}
-                  label="Customers / Requests"
-                  onChange={(e) => setCusReq(e.target.value)}
-                >
-                  <MenuItem value={1}>All Current Customers</MenuItem>
-                  <MenuItem value={2}>Requests</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid
-              size={{ xs: 12, md: 2 }}
-              style={{ display: cusReq == 2 ? "block" : "none" }}
-            >
-              <FormControl fullWidth size="small">
-                <InputLabel id="reqType-label">Request Type</InputLabel>
-
-                <Select
-                  labelId="reqType-label"
-                  value={reqType}
-                  label="Request Type"
-                  onChange={(e) => setReqType(e.target.value)}
-                >
-                  {decodedParams.userType == 1 ||
-                  decodedParams.userType == 2 ? (
-                    <MenuItem value={4}>All</MenuItem>
-                  ) : (
-                    <MenuItem value={0}>All</MenuItem>
-                  )}
-
-                  <MenuItem value={1}>Add New</MenuItem>
-                  <MenuItem value={2}>Update</MenuItem>
-                  <MenuItem value={3}>Delete</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 2 }}>
-              <Box>
-                <button
-                  onClick={() => handleLoad()}
-                  style={{
-                    padding: "6px 16px",
-                    background: "#1976d2",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Load
-                </button>
-              </Box>
-            </Grid>
+              <Select
+                labelId="region-label"
+                value={selectedRegion}
+                label={masterPanel["REGN"] || "Region"}
+                MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                onChange={(e) => {
+                  setSelectedRegion(e.target.value);
+                  setSelectedUser(0)
+                  // fetchUsers({
+                  //   trigger_type: 1,
+                  // });
+                }}
+              >
+                <MenuItem value={0}>All</MenuItem>
+                {regionData.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.reg_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
-        </Box>
 
-        <Box mt={3}>
+          <Grid size={{ xs: 12, md: 2, lg: 2 }}>
+            <FormControl required fullWidth size="small">
+              <InputLabel id="userType-label">{masterPanel["USER"] || "User"} Type</InputLabel>
+
+              <Select
+                labelId="userType-label"
+                value={selectedUserType}
+                label={`${masterPanel["USER"] || "User"} Type`}
+                onChange={(e) => {
+                  setSelectedUserType(e.target.value);
+                  setSelectedUser(0)
+                  // fetchUsers({
+                  //   trigger_type: 2,
+                  // });
+                }}
+              >
+                <MenuItem value={0}>All</MenuItem>
+                {userType.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.client_alias}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <Autocomplete
+                size="small"
+                options={userData}
+                getOptionLabel={(option) => {
+                  const name = [option.first_name, option.last_name]
+                    .filter((val) => val && val !== "null")
+                    .join(" ");
+
+                  return `${name}${cusReq == 2 && option.count ? ` (${option.count})` : ""
+                    }`;
+                }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => {
+                  const name = [option.first_name, option.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <li {...props} key={option.id}>
+                      {name}
+                      {cusReq == 2 && option.count ? ` (${option.count})` : ""}
+                    </li>
+                  );
+                }}
+                value={userData.find((u) => u.id === selectedUser) || null}
+                onChange={(e, newValue) => {
+                  const userId = newValue ? newValue.id : 0;
+                  setSelectedUser(userId);
+                  handleLoad(userId);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder={`Select ${masterPanel["USER"] || "User"}`}
+                    variant="outlined"
+                    label={masterPanel["USER"] || "User"}
+                  />
+                )}
+              />
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="cusReq-label">Customers / Requests</InputLabel>
+
+              <Select
+                labelId="cusReq-label"
+                value={cusReq}
+                label="Customers / Requests"
+                onChange={(e) => setCusReq(e.target.value)}
+              >
+                <MenuItem value={1}>All Current Customers</MenuItem>
+                <MenuItem value={2}>Requests</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid
+            size={{ xs: 12, md: 2 }}
+            style={{ display: cusReq == 2 ? "block" : "none" }}
+          >
+            <FormControl fullWidth size="small">
+              <InputLabel id="reqType-label">Request Type</InputLabel>
+
+              <Select
+                labelId="reqType-label"
+                value={reqType}
+                label="Request Type"
+                onChange={(e) => setReqType(e.target.value)}
+              >
+                {decodedParams.userType == 1 || decodedParams.userType == 2 ? (
+                  <MenuItem value={4}>All</MenuItem>
+                ) : (
+                  <MenuItem value={0}>All</MenuItem>
+                )}
+
+                <MenuItem value={1}>Add New</MenuItem>
+                <MenuItem value={2}>Update</MenuItem>
+                <MenuItem value={3}>Delete</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 2 }}>
+            <Box>
+              <button
+                onClick={() => handleLoad()}
+                style={{
+                  padding: "6px 16px",
+                  background: "#1976d2",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Load
+              </button>
+            </Box>
+          </Grid>
+        </Grid>
+           <Box  sx={{backgroundColor: "#fff",borderRadius: "10px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                                            }}>
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            borderRadius: "10px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+          }}
+        >
+         {decodedParams.cusReq == 2 &&
+  [0, 2].includes(Number(accStat)) &&
+  tableData.some((row) => isRowActionAllowed(row)) && (
+    <Box display="flex" justifyContent="flex-end" gap={3} px={4} pt={2}>
+      <span
+        onClick={handleApproveAll}
+        style={{
+          fontSize: "15px",
+          color: tableData
+            .filter((row) => isRowActionAllowed(row))
+            .every((row) => approvalState[row.id] === 1)
+            ? "#0bd00b"   // all approved → green
+            : "#a5a0a0",  // not all approved → grey
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        Approve All <FaThumbsUp size={19} style={{marginBottom:'8px'}} />
+      </span>
+
+      <span
+        onClick={handleRejectAll}
+        style={{
+          fontSize: "15px",
+          color: tableData
+            .filter((row) => isRowActionAllowed(row))
+            .every((row) => approvalState[row.id] === 2)
+            ? "red"       // all rejected → red
+            : "#a5a0a0",  // not all rejected → grey
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        Reject All <FaThumbsDown size={19}  style={{marginTop:'6px'}}/>
+      </span>
+    </Box>
+  )}
+
           <DataTable
             data={tableData}
             columns={columns}
@@ -970,21 +1185,14 @@ function AccountMas() {
             title="Customers List"
           />
         </Box>
+        </Box>
 
-        {cusReq == 2 &&
-          tableData.some(
-            (row) =>
-              row.mgr_approved_stat == 0 &&
-              (row.am_user_id == loggedInUserId ||
-                row.zbm_user_id == loggedInUserId ||
-                row.rsm_user_id == loggedInUserId ||
-                row.sh_user_id == loggedInUserId ||
-                loggedInUserType == 2 ||
-                loggedInUserType == 3),
-          ) && (
+        {decodedParams.cusReq == 2 &&
+          [0, 2].includes(Number(accStat)) &&
+          tableData.some((row) => isRowActionAllowed(row)) && (
             <Box mt={2} display="flex" justifyContent="center">
               <button
-                onClick={handleSubmitAll}
+                onClick={handleSubmitAllClick}
                 style={{
                   padding: "8px 20px",
                   background: "#17a2b8",
@@ -1008,6 +1216,19 @@ function AccountMas() {
           confirmText="Delete"
           confirmColor="error"
           loading={loadingDelete}
+        />
+
+        {/* ── Submit (Approve/Reject) confirmation dialog ── */}
+        <ConfirmationDialog
+          open={submitConfirmOpen}
+          onClose={() => setSubmitConfirmOpen(false)}
+          onConfirm={handleSubmitAll}
+          title="Confirmation"
+          message={submitMessage}
+          confirmText="Submit"
+          cancelText="Cancel"
+          confirmColor="primary"
+          loading={submitLoading}
         />
 
         <Dialog

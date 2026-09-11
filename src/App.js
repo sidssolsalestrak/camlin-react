@@ -1,5 +1,5 @@
 import "./App.css";
-import { useEffect } from "react";
+import { useEffect,useRef } from "react";
 import { useLoader } from "./utils/LoaderContext";
 import { setLoader } from "./services/api";
 import Dashboard from "./dashboard/Dashboard";
@@ -11,7 +11,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import TokenHandler from "./services/TokenHandler";
-import { SnackbarProvider } from "notistack";
+import { SnackbarProvider,useSnackbar } from "notistack";
 import { CssBaseline } from "@mui/material";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
@@ -40,13 +40,147 @@ import EDetailingMaster from "./Masters/AdminPanel/EDetailingMaster";
 import AccountExtract from "./view/account/AccountExtract";
 import Login from "./view/Login";
 import ForgotPassword from "./view/ForgotPassword";
+import AccountTransfer from "./view/account/AccountTransfer";
+import UserList from "./view/UserList";
+import AddUser from "./view/AddUser";
+import RegionWiseSales from "./ExtractReport/RegionWiseSales";
+import SalesHierachy from "./ExtractReport/salesHierachy";
+import DailyActivityReport from "./ExtractReport/DailyActivityReport";
+import DataSubmissionLog from "./ExtractReport/DataSubmissionLog";
+import KPIReport from "./ExtractReport/KPIReport";
+import StockAndSalesDetails from "./ExtractReport/StockAndSalesDetails";
+import StockAndSalesSummary from "./ExtractReport/StockAndSalesSummary"
+import PrimaryOrder from "./ExtractReport/primaryOrder/PrimaryOrder"
+import OrderReport from "./ExtractReport/orderReport/OrderReport";
+import UserLog from "./view/UserLog";
+import CreateCustomer from "./view/account/CreateCustomer";
+import StockAndSalesReport from "./ExtractReport/StockAndSalesReport";
+import OutletCount from "./ExtractReport/OutletCount";
+import OrderFrequencyReport from "./ExtractReport/OrderFrequencyReport";
+import SalesAnalysis from "./dashboard/salesAnalysis/SalesAnalysis";
+import PrimarySales from "./DashBoardReports/TrendAnalysis/PrimarySales";
+import PrimarySalesAnalze from "./DashBoardReports/PrimaryAnalysis/primarySalesAnalyse";
+import SalesAnalysisReport from "./DashBoardReports/PrimaryAnalysis/SalesAnalysisReport";
+import AreaWiseSalesAnalysis from "./dashboard/AreaWiseSalesAnalysis";
+import StockAndSalesUpload from "./view/trans/StockAndSalesUpload";
+import DataSubmissionStatus from "./view/Transactions/DataSubmissionStatus";
+import PreviewStkSales from "./view/Transactions/PreviewStkSales";
+import EmailProcessData from "./view/Transactions/EMailProcessData";
+import StockAndSalesUploadNew from "./view/trans/StockAndSalesUploadNew";
+import PrimarySalesTransact from "./view/Transactions/PrimarySales";
+import UploadClosing from "./view/Transactions/uploadClosingMain";
+import BeatCoverage from "./ExtractReport/BeatCoverage";
+import ChangePassword from "./dashboard/changePassword";
+import OrderApproval from "./dashboard/OrderApproval";
+import MobileOrders from "./dashboard/MobileOrders";
+import LoginProjCode from "./view/LoginProjCode";
+import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
+import { useLocation } from "react-router-dom";
+import PassExpReset from "./view/PassExpReset";
 
 function App() {
-  const ProtectedRoute = () => {
-    const token = localStorage.getItem("session-token");
-    console.log("token", token);
-    return token ? <Outlet /> : <Navigate to="/login" replace />;
+   const relatedRoutes = {
+    "reports/sec_sales_data": [
+      "reports/preview_stk_sales",
+      "reports/primary_sale_report",
+      "/reports/email_process_data"
+    ],
+    "masters/prod_mas":[
+      "masters/prodview"
+    ],
+    "Users/users_list":[
+      "users/adminUserNew"
+    ],
+    "customers/AllDoctors":[
+      "customers/editDoctor"
+    ],
+    "upload_closing":[
+      "upload_closing/index"
+    ]
   };
+
+    const getBasePath = (url) => {
+    // keep segments until we hit one that looks like base64/CI-encoded junk
+    const segments = url.split("/").filter(Boolean);
+    const baseSegments = [];
+    for (const seg of segments) {
+      // stop at first segment that looks like an encoded param (all caps/digits/= or pure "#")
+      if (/^[A-Za-z0-9+/]+=*$/.test(seg) && /[=]/.test(seg)) break;
+      baseSegments.push(seg);
+    }
+    return baseSegments.join("/");
+  };
+
+  const ProtectedRoute = () => {
+  const token = localStorage.getItem("session-token");
+  const location = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
+  const lastWarnedPath = useRef(null);
+
+  const rawMenuUrls = localStorage.getItem("menu_urls");
+  const menuUrls = rawMenuUrls ? JSON.parse(rawMenuUrls) : [];
+
+  const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview"];
+  const currentPath = location.pathname;
+
+  const isAllowed =
+  !token
+    ? false
+     : currentPath.startsWith("/Auth/forgot_paswd/") ||
+      allowList.includes(currentPath) ||
+      menuUrls.some((url) => {
+        if (!url || url === "#") return false;
+
+        const basePath = getBasePath(url);
+        if (!basePath) return false;
+        const normalizedUrl = "/" + basePath;
+        const segmentCount = basePath.split("/").filter(Boolean).length;
+
+        // exact match always allowed
+        if (currentPath === normalizedUrl) return true;
+
+        // prefix match only for multi-segment base paths (real param-based sub-routes),
+        // NOT for single top-level segments like "dashboard" which would otherwise
+        // whitelist every /dashboard/* page
+        if (
+          segmentCount > 1 &&
+          currentPath.startsWith(normalizedUrl + "/")
+        ) {
+          return true;
+        }
+
+        const children = relatedRoutes[url] || relatedRoutes[basePath] || [];
+        return children.some((childUrl) => {
+          const normalizedChild = "/" + childUrl.replace(/^\/+/, "");
+          return (
+            currentPath === normalizedChild ||
+            currentPath.startsWith(normalizedChild + "/")
+          );
+        });
+      });
+
+  useEffect(() => {
+    if (token && !isAllowed && lastWarnedPath.current !== currentPath) {
+      lastWarnedPath.current = currentPath;
+      enqueueSnackbar("You don't have access to this page", {
+        variant: "warning",
+        preventDuplicate: true,
+        key: `access-denied-${currentPath}`,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath]);
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAllowed) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
 
   const PublicRoute = () => {
     const token = localStorage.getItem("session-token");
@@ -61,9 +195,13 @@ function App() {
       {/* <SnackbarProvider maxSnack={3}> */}
       <BrowserRouter>
         <Routes>
+           <Route
+              path="/Auth/forgot_paswd/:resetToken"
+              element={<ForgotPassword />}
+           />
           <Route element={<ProtectedRoute />}>
             <Route path="/:token" element={<TokenHandler />} />
-            <Route path="/" element={<Dashboard />} />
+            {/* <Route path="/" element={<Dashboard />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/masters/zone_mas/:editZoneid?" element={<Zone />} />
             <Route path="/masters/region/:editRegionId?" element={<Region />} />
@@ -75,13 +213,16 @@ function App() {
             <Route path="/masters/area_mas/:editAreaId?" element={<Area />} />
             {/* main master routes */}
             <Route path="/masters/cat/:id?" element={<ProductCategory />} />
-            <Route path="/masters/catSub/:id?" element={<ProductSubCategory />} />
+            <Route
+              path="/masters/catSub/:id?"
+              element={<ProductSubCategory />}
+            />
             <Route path="/masters/dept/:id?" element={<Department />} />
             <Route path="/masters/designation/:id?" element={<Designation />} />
             <Route path="/masters/city_mas/:id?" element={<City />} />
             <Route path="/masters/prod_mas/:id?" element={<AddProduct />} />
             <Route path="/masters/prodview" element={<ViewProduct />} />
-            <Route path="/masters/stockist" element={<Stockist />} />
+            <Route path="/masters/stockist/:id?" element={<Stockist />} />
 
             {/* Admin Panel master routes */}
             <Route
@@ -89,27 +230,6 @@ function App() {
               element={<ReportingTabs />}
             />
 
-            <Route
-              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
-              element={<AccountMas />}
-            />
-            <Route path="/masters/menuMaster/:menuId?" element={<MenuMaster />} />
-            <Route
-              path="/masters/dashboardmaster/:editwidgetId?"
-              element={<AppWidgetMaster />}
-            />
-            <Route
-              path="/masters/appversion/:editappvid?"
-              element={<AppVersion />}
-            />
-            <Route
-              path="/masters/webMenuMaster/:editwebmenuId?"
-              element={<WebMenuMaster />}
-            />
-            <Route path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"
-              element={<AwsLogs />} />
-            <Route path="/AdminPanel/ApiProcessing" element={<ApiProcessing />} />
-            <Route path="/masters/edetailing/:editEdetailing?" element={<EDetailingMaster />} />
             <Route
               path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
               element={<AccountMas />}
@@ -131,19 +251,183 @@ function App() {
               element={<WebMenuMaster />}
             />
             <Route
-              path="/reports/extract/:country?/:accType?/:userType?/:user?"
+              path="/Processlist/planprocess/:frmDate?/:processType?/:userli?/:processSts?"
+              element={<AwsLogs />}
+            />
+            <Route
+              path="/AdminPanel/ApiProcessing"
+              element={<ApiProcessing />}
+            />
+            <Route
+              path="/masters/edetailing/:editEdetailing?"
+              element={<EDetailingMaster />}
+            />
+            <Route
+              path="/customers/AllDoctors/:reqType?/:country?/:user?/:userType?/:cusReq?/:beatId?/:login_id?"
+              element={<AccountMas />}
+            />
+            <Route
+              path="/masters/menuMaster/:menuId?"
+              element={<MenuMaster />}
+            />
+            <Route
+              path="/masters/dashboardmaster/:editwidgetId?"
+              element={<AppWidgetMaster />}
+            />
+            <Route
+              path="/masters/appversion/:editappvid?"
+              element={<AppVersion />}
+            />
+            <Route
+              path="/masters/webMenuMaster/:editwebmenuId?"
+              element={<WebMenuMaster />}
+            />
+            <Route
+              path="/reports/extract/:country?/:accType?/:userType?/:user?/:type?"
               element={<AccountExtract />}
             />
             <Route
-              path="/Auth/forgot_paswd/:userId?/:userEmail?"
-              element={<ForgotPassword />}
+              path="/customers/account_transfer/"
+              element={<AccountTransfer />}
             />
+            <Route
+              path="/Users/users_list/:userType?/:dept?/:zone?/:reg?/:area?/:ter?/:channel?"
+              element={<UserList />}
+            />
+
+            <Route
+              path="/users/adminUserNew/:userMainId?"
+              element={<AddUser />}
+            />
+
+            <Route
+              path="/reports/active_sales_new"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/data_submission_log/:encodeyear?/:encodezone?/:encoderegion?"
+              element={<DataSubmissionLog />}
+            />
+            <Route
+              path="/reports/extract_new"
+              element={<AccountExtract />}
+            />
+            <Route
+              path="/reports/capability_report"
+              element={<KPIReport />}
+            />
+            <Route
+              path="/Users/userLog/:module?/:fromDt?/:toDt?/:userType?/:user?"
+              element={<UserLog />}
+            />
+
+            <Route path="/customers/editDoctor/:id?/:reqType?/:req?" element={<CreateCustomer />} />
+            <Route path="/customers/editDoctor/:id?/:reqType?" element={<CreateCustomer />} />
+            <Route path="/customers/editDoctor/:id?" element={<CreateCustomer />} />
+            <Route path="/customers/CreateDoctor" element={<CreateCustomer />} />
+
+            <Route
+              path="/reports/active_sales/:zoneid?/:regionid?/:usertypeId?/:userid?/:distributorid?"
+              element={<SalesHierachy />}
+            />
+            <Route
+              path="/reports/getfieldActivity_new"
+              element={<DailyActivityReport />}
+            />
+            <Route
+              path="/reports/getfieldActivity"
+              element={<DailyActivityReport />}
+            />
+            <Route
+              path="/reports/outlet_count/:enzone?/:enRegion?/:enArea?/:enSo?"
+              element={<OutletCount />}
+            />
+            <Route
+              path="/reports/day_wise_report/:type?/:enmonth?/:zoneId?/:regId?/:userId?"
+              element={<OrderFrequencyReport />}
+            />
+            <Route
+              path="/reports/trendanalysis/MQ==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="MQ==" />}
+            />
+            <Route
+              path="/reports/trendanalysis/Mg==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="Mg==" />}
+            />
+            <Route
+              path="/reports/trendanalysis/Mw==/:enyear?/:engroupBy?/:enreportType?/:enZone?/:enRegion?/:enArea?/:enterritory?/:enDistributor?/:encategory?/:ensubcategory?/:enproduct?"
+              element={<PrimarySales enType="Mw==" />}
+            />
+            <Route
+              path="/dashboard/primarysalesview/:enMonth?/:enCatType?"
+              element={<PrimarySalesAnalze />}
+            />
+            <Route
+              path="/dashboard/salesanalysis/:encYear?/:enType?/:enSubCat?"
+              element={<SalesAnalysisReport />}
+            />
+            <Route  
+              path="/reports/sec_sales_data"
+              element={<DataSubmissionStatus />}
+            />
+            <Route 
+               path="/reports/preview_stk_sales/:closeDate?/:stkid?/:stkLabel?"
+               element={<PreviewStkSales/>}
+              />
+            <Route 
+              path="/reports/email_process_data"
+              element={<EmailProcessData />}
+            />
+            <Route path="/reports/primary_sale_report/:decMonth?/:decStkId?/:decValue?" element={<PrimarySalesTransact />}  />
+            <Route 
+             path="/upload_closing/index/:defEncode?/:enMonth?/:endistributor?/:enProcessStat?/:enProcessDataStat?" 
+             element={<UploadClosing />} 
+             />
+             <Route path="/upload_closing" element={<UploadClosing />}  />
+             <Route path="/change_password"  element={<ChangePassword />}  />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
           {/* <Route path="/login" element={<Login />} /> */}
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
+           <Route path="/" element={<LoginProjCode />} />
+           <Route path="/passexpReset" element={<PassExpReset />}   />
+           <Route path="/otp_validate" element={<OtpTwoStepValidate />}   />
+          </Route>
+
+          {/* extract and report */}
+          <Route element={<ProtectedRoute />}>
+          <Route path="/reports/reg_sec_sales" element={<RegionWiseSales />} />
+          <Route
+            path="/reports/stk_sales_details"
+            element={<StockAndSalesDetails />}
+          />
+          <Route
+            path="/reports/stk_sales_summary"
+            element={<StockAndSalesSummary />}
+          />
+          <Route path="/reports/primary_order" element={<PrimaryOrder />} />
+          <Route path="/reports/primary_order_new" element={<PrimaryOrder />} />
+          <Route path="/reports/pcm_kam" element={<OrderReport />} />
+          <Route path="/reports/pcm_kam_new" element={<OrderReport />} />
+          <Route path="/reports/stock_salesReport" element={<StockAndSalesReport />} />
+
+           <Route path="/reports/beat_coverage" element={<BeatCoverage />} />
+
+          {/* sales analysis */}
+          <Route path="/reports/performance_report" element={<SalesAnalysis />} />
+          <Route path="/dashboard/districtsales" element={<AreaWiseSalesAnalysis />} />
+
+          <Route path="/orderApproval/orders" element={<OrderApproval />} />
+           <Route path="/mobile/Orders" element={<MobileOrders />} />
+
+          {/* TRANSACTIONS */}
+          <Route path="/input/stock_sales/:closeDate?/:stkid?/:stkLabel?" element={<StockAndSalesUploadNew  />} />
           </Route>
         </Routes>
       </BrowserRouter>

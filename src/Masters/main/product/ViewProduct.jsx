@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../../../layout'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, Button, Typography, TextField, FormControl, InputLabel, MenuItem, Select, IconButton } from '@mui/material'
 import DataTable from '../../../utils/dataTable';
 import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import fetchSubCat from "./fetchSubCat";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
+import { getMasterPanel } from "../../../services/masterPanelService";
+import FormatCurrency from "../../../utils/formatCurrency";
+
+const renderCellStyle = { width: "100%", display: "flex", justifyContent: "center" }
 
 const menuStyle = {
     PaperProps: {
@@ -45,18 +49,56 @@ const safeAtob = (str) => {
 const ViewProduct = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([]);
     const [subCat, setSubCat] = useState([]);
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [formData, setFormdata] = useState({
         productName: "",
-        subCatName: ""
+        subCatName: "",
+        status: "1"
     })
+    const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
+
+    // labels derived from masterPanel with fallbacks
+    const prodLabel = masterPanel["PROD"] || "Product";
+    const subCatLabel = masterPanel["PSUB"] || "Sub Category";
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+                const resolveAccStat = async () => {
+                  try {
+                    const res = await axios.post("/getAccStat", {
+                      menu_url: "masters/prod_mas",
+                    });
+            
+                    const stat = res.data?.data?.acc_stat;
+                    if (stat !== null && stat !== undefined) {
+                      localStorage.setItem("acc_stat", stat);
+                      setAccStat(String(stat));
+                    }
+                  } catch (err) {
+                    console.log(err);
+                  }
+                };
+            
+                resolveAccStat();
+        }, []);
 
     /*---------- decode values  ---------*/
     const decodedProductName = safeAtob(searchParams.get('product'));
     const decodedSubCategory = safeAtob(searchParams.get('subcat'));
+    const decodedStatus = safeAtob(searchParams.get('status'));
 
     /*---------- handleChange  ---------*/
     const handleChange = (name, val) => {
@@ -91,18 +133,46 @@ const ViewProduct = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false
         });
     };
 
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
-            title: `Delete Product`,
-            message: `Are you sure you want to delete this Product?`,
+            title: `Delete ${prodLabel}`,
+            message: `Are you sure you want to delete this ${prodLabel}?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
         });
     };
+
+    const showReactivateConfirmation = (row) => {
+        showConfirmationDialog({
+            title: `Reactivate ${prodLabel}`,
+            message: `Are you sure you want to reactivate this ${prodLabel}?`,
+            confirmText: "Yes",
+            confirmColor: "primary",
+            onConfirm: () => reactivateProduct(row),
+        });
+    };
+
+    const reactivateProduct = async (row) => {
+        let id = row?.row?.prodid
+        try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
+            const res = await axios.post(`/prod_reactivate/${id}`);
+            if (res?.data?.success) {
+                showAlert.success(`Successfully Reactivated ${prodLabel}`)
+                fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert.error("failed to reactivate")
+        } finally {
+            closeConfirmationDialog();
+        }
+    }
 
     /* ---------- edit product ---------- */
     const editdata = (row) => {
@@ -129,7 +199,7 @@ const ViewProduct = () => {
         },
         {
             field: "sub_name",
-            headerName: "Subcategory Name",
+            headerName: `${subCatLabel} Name`,
             filterable: true,
         },
         {
@@ -139,12 +209,124 @@ const ViewProduct = () => {
         },
         {
             field: "prod_type",
-            headerName: "Product Type",
+            headerName: `${prodLabel} Type`,
             filterable: true,
         },
         {
             field: "prod_name",
-            headerName: "Product Name",
+            headerName: `${prodLabel} Name`,
+            filterable: true,
+        },
+        {
+            field: "fac_price",
+            headerName: "Ex Factory (ASP)",
+            filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "wd_price",
+            headerName: `${stkLabel} Price (PTS)`,
+            filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "stk_price",
+            headerName: "Retail Price (PTR)",
+            filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "mrp_price",
+            headerName: "MRP",
+            filterable: true,
+            renderCell: (params) => (
+                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "prod_stat",
+            headerName: "STATUS",
+            filterable: true,
+        },
+        {
+            field: "",
+            headerName: "Action",
+            filterable: true,
+            width: 100,
+            renderCell: (row) => {
+                const status = (row?.row?.prod_stat || "").toString().trim().toLowerCase();
+                const isInactive = status === "in active" || status === "inactive";
+
+                if (isInactive) {
+                    if (Number(accStat) === 0) {
+                        return (
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => showReactivateConfirmation(row)}
+                                sx={{ fontSize: "11px", textTransform: "none", py: 0, px: 1 }}
+                            >
+                                Reactivate
+                            </Button>
+                        );
+                    }
+                    return null;
+                }
+
+                return (
+                    <>
+                        {[0, 2].includes(Number(accStat)) && (
+                            <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                                <MdOutlineEdit size={15} />
+                            </IconButton>
+                        )}
+                        {[0, 2].includes(Number(accStat)) && (
+                            <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                                <DeleteIcon size={15} />
+                            </IconButton>
+                        )}
+                    </>
+                );
+            }
+        },
+    ]
+
+    const excelColumns = [
+        {
+            field: "index",
+            headerName: "#",
+            filterable: true,
+        },
+        {
+            field: "prodid",
+            headerName: "ID",
+            filterable: true,
+        },
+        {
+            field: "sub_name",
+            headerName: `${subCatLabel} Name`,
+            filterable: true,
+        },
+        {
+            field: "code",
+            headerName: "Code",
+            filterable: true,
+        },
+        {
+            field: "prod_type",
+            headerName: `${prodLabel} Type`,
+            filterable: true,
+        },
+        {
+            field: "prod_name",
+            headerName: `${prodLabel} Name`,
             filterable: true,
         },
         {
@@ -154,7 +336,7 @@ const ViewProduct = () => {
         },
         {
             field: "wd_price",
-            headerName: "Stockist Price (PTS)",
+            headerName: `${stkLabel} Price (PTS)`,
             filterable: true,
         },
         {
@@ -168,24 +350,14 @@ const ViewProduct = () => {
             filterable: true,
         },
         {
-            field: "",
-            headerName: "Action",
+            field: "prod_stat",
+            headerName: "STATUS",
             filterable: true,
-            renderCell: (row) => (
-                <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)} >
-                        <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
-                </>
-            )
         },
     ]
 
     /* ---------- table data & sub cat data---------- */
-    const fetchData = async ({ name, cat }) => {
+    const fetchData = async ({ name, cat, status }) => {
         try {
             setloading(true)
             //fetch sub data
@@ -195,7 +367,8 @@ const ViewProduct = () => {
             try {
                 let payload = {
                     pd_name: name ? name.trim() : "",
-                    subcatname: cat || ""
+                    subcatname: cat || "",
+                    status: status
                 }
                 const res = await axios.post("/prodview", payload);
                 const data = Array.isArray(res?.data?.data) ? res?.data?.data.map((row, index) => ({
@@ -224,20 +397,23 @@ const ViewProduct = () => {
     useEffect(() => {
         setFormdata({
             productName: decodedProductName || "",
-            subCatName: decodedSubCategory || ""
+            subCatName: decodedSubCategory || "",
+            status: decodedStatus || "1"
         })
-    }, [decodedProductName, decodedSubCategory])
+    }, [decodedProductName, decodedSubCategory, decodedStatus])
 
     /* ---------- initial render ---------- */
     useEffect(() => {
-        fetchData({ name: decodedProductName, cat: decodedSubCategory });
-    }, [decodedProductName, decodedSubCategory])
+        fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
+    }, [decodedProductName, decodedSubCategory, decodedStatus])
 
     /* ---------- on search ---------- */
     const onSearch = () => {
         const params = new URLSearchParams();
-        if (formData.productName) params.append('product', btoa(formData.productName));
+        const trimmedProductName = formData.productName.trim();
+        if (trimmedProductName) params.append('product', btoa(trimmedProductName));
         if (formData.subCatName) params.append('subcat', btoa(formData.subCatName));
+        if (formData.status) params.append('status', btoa(formData.status));
         navigate(`/masters/prodview?${params.toString()}`);
     }
 
@@ -245,11 +421,12 @@ const ViewProduct = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.prodid
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/prod_delete/${id}`);
-            console.log("delete res:", res);
+            //console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product")
-                fetchData({ name: decodedProductName, cat: decodedSubCategory });
+                showAlert.success(`Successfully Deleted ${prodLabel}`)
+                fetchData({ name: decodedProductName, cat: decodedSubCategory, status: decodedStatus });
             }
         } catch (error) {
             console.error(error);
@@ -263,7 +440,7 @@ const ViewProduct = () => {
     const download = async () => {
         Download(
             tableData,
-            columns,
+            excelColumns,
             "ProductMaster",
             setProgress,
             showAlert,
@@ -272,23 +449,43 @@ const ViewProduct = () => {
     }
 
     return (
-        <Layout>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: `${prodLabel} View` },
+        ]}>
             <Box sx={headContainer}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Typography sx={style}>Product View</Typography>
-                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add Product</Button>
+                    {/* <Typography sx={style}>Product View</Typography> */}
+                    <Box>
+                        <h1 className="mainTitle">{prodLabel} View</h1>
+                    </Box>
+                    <Button onClick={addClick} sx={{ height: "30px" }} variant="contained" color="primary">Add New {prodLabel}</Button>
                 </Box>
                 <Box sx={{ display: "flex", alignContent: "center", gap: 2, flexWrap: "wrap" }}>
                     <TextField value={formData.productName} sx={{ width: "200px" }} size='small' variant='outlined'
-                        label="Product Name" placeholder='Enter Product Name' onChange={(e) => handleChange("productName", e.target.value)} />
+                        label={`${prodLabel} Name`} placeholder={`Enter ${prodLabel} Name`} onChange={(e) => {
+                            const onlyText = e.target.value.replace(/^\s+/, "");
+                            handleChange("productName", onlyText)
+                        }} />
                     <FormControl sx={{ width: "200px" }} size="small" >
-                        <InputLabel id="SubCategoryName">SubCategory Name</InputLabel>
-                        <Select value={formData.subCatName} id='SubCategoryName' label="SubCategory Name" MenuProps={menuStyle}
+                        <InputLabel id="SubCategoryName">{subCatLabel} Name</InputLabel>
+                        <Select value={formData.subCatName} id='SubCategoryName' label={`${subCatLabel} Name`} MenuProps={menuStyle}
                             labelId="SubCategoryName" variant="outlined" onChange={(e) => handleChange("subCatName", e.target.value)}>
-                            <MenuItem style={{ fontSize: "11px" }} value="">Select Sub Category</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="">Select {subCatLabel}</MenuItem>
                             {subCat?.map((item, index) => (
                                 <MenuItem key={item.id || index} style={{ fontSize: "11px" }} value={item.id}>{item?.sub_name}</MenuItem>
                             ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl sx={{ width: "200px" }} size="small" >
+                        <InputLabel id="status">Status</InputLabel>
+                        <Select value={formData.status} id='status' label="Status"
+                            labelId="status" variant="outlined" onChange={(e) => handleChange("status", e.target.value)}>
+                            <MenuItem style={{ fontSize: "11px" }} value="3">All</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="1">Active</MenuItem>
+                            <MenuItem style={{ fontSize: "11px" }} value="2">In Active</MenuItem>
                         </Select>
                     </FormControl>
                     <Button onClick={onSearch} variant='contained' color="primary">Search</Button>

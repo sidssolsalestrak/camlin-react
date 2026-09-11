@@ -20,15 +20,53 @@ import {
   Pagination,
   PaginationItem,
   Tooltip,
+  Collapse,
 } from "@mui/material";
 import { Search, KeyboardArrowDown, Clear } from "@mui/icons-material";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import { useLocation } from "react-router-dom";
 import dayjs from "dayjs";
 
+// ── ExpandedContent: handles both sync JSX and async functions ───────────────
+function ExpandedContent({ row, expandableRow, cacheKey }) {
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    let cancelled = false;
+    setContent(null);
+    setLoading(true);
+    const run = async () => {
+      try {
+        const result = expandableRow(row);
+        const resolved = result instanceof Promise ? await result : result;
+        if (!cancelled) {
+          setContent(resolved);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("ExpandedContent error:", e);
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey]);
+
+  if (loading)
+    return (
+      <Box display="flex" justifyContent="center" p={2}>
+        <CircularProgress size={20} />
+      </Box>
+    );
+
+  return content;
+}
 
 const DataTable = ({
   data = [],
@@ -36,7 +74,7 @@ const DataTable = ({
   loading = false,
   title = "Data Table",
   defaultPageSize = 25,
-  pageSizeOptions = [10, 25, 50, 100],
+  pageSizeOptions = [10, 25, 50, 100, 200, 500],
   onRowClick = null,
   sx = {},
   additionalFilters = [],
@@ -56,15 +94,30 @@ const DataTable = ({
   stickyColumnsCount = 0,
   headerActions = null,
   footerActions = null,
+  expandableRow = null,
+  expandableRowBeat = null,
+  hideSubHeader = false,
+  grandTotal = false,
+  tableTitle = "",
+  showTableTitle = false,
+  columnBgColors = {},
+  headerLegend = null,
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ field: null, direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    field: null,
+    direction: "asc",
+  });
+
+  // expandedRows: { [rowKey]: 'focus' | 'beat' | undefined }
+  const [expandedRows, setExpandedRows] = useState({});
+  const location = useLocation();
+
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  
   const flatColumns = useMemo(() => {
     const result = [];
     columns.forEach((col) => {
@@ -79,7 +132,7 @@ const DataTable = ({
 
   const hasSubColumns = useMemo(
     () => columns.some((col) => col.subColumns?.length > 0),
-    [columns]
+    [columns],
   );
 
   // Track header height for sticky sub-row positioning
@@ -89,23 +142,39 @@ const DataTable = ({
     }
   }, [columns, stickyHeader]);
 
-  // Reset to first page whenever data changes
+  // Reset to first page and clear expanded rows whenever data changes
   useEffect(() => {
+   
     setPage(0);
-  }, [data]);
+    
+    setExpandedRows({});
+  }, [data.length]);
 
-  
+  // ── Stable row key ───────────────────────────────────────────────────────
+  const getRowKey = (row, ri) => row.id ?? `row-${ri}`;
+
+  // ── Toggle expand: same type = close, different type = switch ────────────
+  const handleRowExpand = (rowKey, type) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowKey]: prev[rowKey] === type ? undefined : type,
+    }));
+  };
+
   const handleSort = (field) => {
     if (!field) return;
     setSortConfig((prev) =>
       prev.field === field
         ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field, direction: "asc" }
+        : { field, direction: "asc" },
     );
   };
 
-  
-  const getStickyStyles = (index, colList, { isHeader = false, isFooter = false } = {}) => {
+  const getStickyStyles = (
+    index,
+    colList,
+    { isHeader = false, isFooter = false } = {},
+  ) => {
     if (!stickyLastColumn || stickyColumnsCount <= 0) return {};
     const startIdx = colList.length - stickyColumnsCount;
     if (index < startIdx) return {};
@@ -125,7 +194,6 @@ const DataTable = ({
     };
   };
 
-  
   const formatCellValue = (value, column) => {
     if (value === null || value === undefined || value === "") return " ";
 
@@ -133,11 +201,16 @@ const DataTable = ({
 
     switch (column.type) {
       case "date":
-        return dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : value;
+        return dayjs(value).isValid()
+          ? dayjs(value).format("DD-MM-YYYY")
+          : value;
       case "number":
       case "currency":
         return typeof value === "number"
-          ? value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          ? value.toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
           : value;
       case "boolean":
         return value ? "Yes" : "No";
@@ -165,7 +238,7 @@ const DataTable = ({
           style={{ backgroundColor: highlightColor, borderRadius: 2 }}
         >
           {str.slice(idx, idx + termLower.length)}
-        </span>
+        </span>,
       );
       last = idx + termLower.length;
       idx = lower.indexOf(termLower, last);
@@ -174,8 +247,8 @@ const DataTable = ({
     return parts;
   };
 
-  
-  const isReactElement = (v) => typeof v === "object" && v !== null && v.$$typeof;
+  const isReactElement = (v) =>
+    typeof v === "object" && v !== null && v.$$typeof;
 
   const renderCellContent = (content, isStatus, term) => {
     if (isReactElement(content)) return content;
@@ -204,33 +277,74 @@ const DataTable = ({
     return displayed;
   };
 
-  
   const getStatusStyle = (value, field) =>
-    statusColors[field]?.[value] ?? { color: "#6b7280", backgroundColor: "#f9fafb" };
+    statusColors[field]?.[value] ?? {
+      color: "#6b7280",
+      backgroundColor: "#f9fafb",
+    };
 
- 
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return data;
+
     const term = searchTerm.toLowerCase().trim();
+
     return data.filter((row) => {
-      // Combined name support
-      const fullName = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
-      if (fullName.toLowerCase().includes(term)) return true;
+      const searchParts = [];
 
-      return flatColumns.some((col) => {
-        const val = row[col.field];
-        if (val === null || val === undefined) return false;
-
-       
-        if (col.type === "date" && dayjs(val).isValid()) {
-          return (
-            String(val).toLowerCase().includes(term) ||
-            dayjs(val).format("DD-MM-YYYY").toLowerCase().includes(term) ||
-            dayjs(val).format("DD MMM YYYY").toLowerCase().includes(term)
-          );
-        }
-        return String(val).toLowerCase().includes(term);
+      // Add all raw row values
+      Object.values(row).forEach((val) => {
+        if (val === null || val === undefined) return;
+        if (typeof val === "object") return;
+        searchParts.push(String(val));
       });
+
+      // Add common combined fields
+      if (row.first_name || row.last_name) {
+        searchParts.push(`${row.first_name ?? ""} ${row.last_name ?? ""}`);
+      }
+
+      if (row.prod_code || row.prod_name) {
+        searchParts.push(`${row.prod_code ?? ""} ${row.prod_name ?? ""}`);
+      }
+
+      if (row.cat_code_1 || row.prod_name) {
+        searchParts.push(`${row.cat_code_1 ?? ""} ${row.prod_name ?? ""}`);
+      }
+
+      if (row.strak_prod_code || row.strak_prod_name) {
+        searchParts.push(
+          `${row.strak_prod_code ?? ""} ${row.strak_prod_name ?? ""}`,
+        );
+      }
+
+      if (row.pc || row.pn) {
+        searchParts.push(`${row.pc ?? ""} ${row.pn ?? ""}`);
+      }
+
+      if (row.strak_prod_name) {
+        searchParts.push(row.strak_prod_name);
+      }
+
+      if (row.strak_prod_code) {
+        searchParts.push(row.strak_prod_code);
+      }
+
+      // Date fields
+      flatColumns.forEach((col) => {
+        const val = row[col.field];
+        if (val === null || val === undefined) return;
+
+        if (col.type === "date" && dayjs(val).isValid()) {
+          searchParts.push(dayjs(val).format("DD-MM-YYYY"));
+          searchParts.push(dayjs(val).format("DD MMM YYYY"));
+          searchParts.push(dayjs(val).format("YYYY-MM-DD"));
+        } else {
+          searchParts.push(String(val));
+        }
+      });
+
+      const searchableText = searchParts.join(" ").toLowerCase();
+      return searchableText.includes(term);
     });
   }, [data, searchTerm, flatColumns]);
 
@@ -252,23 +366,42 @@ const DataTable = ({
   }, [filteredData, sortConfig]);
 
   const paginatedData = useMemo(() => {
+    if (!pagination) return sortedData; // ← show all rows when pagination is false
     const start = page * rowsPerPage;
     return sortedData.slice(start, start + rowsPerPage);
-  }, [sortedData, page, rowsPerPage]);
-
+  }, [sortedData, page, rowsPerPage, pagination]);
 
   const calcTotal = (field) =>
-    data.reduce((sum, row) => sum + (Number(row[field]) || 0), 0);
+    data.reduce((sum, row) => {
+      if (row._isSubtotal) return sum; // ← skip subtotal rows
+      return sum + (Number(row[field]) || 0);
+    }, 0);
+
+  const calcAverageTotal = (field) => {
+    const total = data.reduce((sum, row) => {
+      return sum + (Number(row[field]) || 0);
+    }, 0);
+    return data.length ? Math.round(total / data.length) : 0;
+  };
 
   const formatTotal = (total) =>
-    total.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    total.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   if (loading) {
     return (
-      <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2, ...sx }}>
+      <Paper
+        elevation={0}
+        sx={{ border: "1px solid #e5e7eb", borderRadius: 2, ...sx }}
+      >
         <Box display="flex" flexDirection="column" alignItems="center" py={4}>
           <CircularProgress size={32} sx={{ color: "primary.main" }} />
-          <Typography variant="body2" sx={{ mt: 1.5, color: "#6b7280", fontSize: "0.875rem" }}>
+          <Typography
+            variant="body2"
+            sx={{ mt: 1.5, color: "#6b7280", fontSize: "0.875rem" }}
+          >
             Loading...
           </Typography>
         </Box>
@@ -276,21 +409,46 @@ const DataTable = ({
     );
   }
 
-  
   return (
     <Paper
       elevation={0}
       sx={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 2,
         overflow: "hidden",
         padding: "1.5% 2%",
         ...sx,
       }}
     >
+      {showTableTitle && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            bgcolor: "#3464a7",
+            alignSelf: "center",
+            p: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "white",
+            }}
+          >
+            {tableTitle}
+          </Typography>
+        </Box>
+      )}
+
       {/* ── Header Controls ── */}
       {showHeader && (
-        <Box sx={{ backgroundColor: "#ffffff", borderBottom: "1px solid #e5e7eb", pb: 1 }}>
+        <Box
+          sx={{
+            backgroundColor: "#ffffff",
+            borderBottom: "1px solid #e5e7eb",
+            pb: 1,
+          }}
+        >
           <Box
             display="flex"
             flexDirection={{ xs: "column", md: "row" }}
@@ -300,23 +458,34 @@ const DataTable = ({
           >
             {/* Left: rows-per-page + extra filters + count */}
             <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-              <FormControl size="small" sx={{ minWidth: 50 }}>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => { setRowsPerPage(+e.target.value); setPage(0); }}
-                  IconComponent={KeyboardArrowDown}
-                  sx={{
-                    fontSize: "0.875rem",
-                    height: 32,
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "primary.main" },
-                  }}
-                >
-                  {pageSizeOptions.map((s) => (
-                    <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>{s}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {pagination && (
+                <FormControl size="small" sx={{ minWidth: 50 }}>
+                  <Select
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(+e.target.value);
+                      setPage(0);
+                    }}
+                    IconComponent={KeyboardArrowDown}
+                    sx={{
+                      fontSize: "0.875rem",
+                      height: 32,
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d1d5db",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    {pageSizeOptions.map((s) => (
+                      <MenuItem key={s} value={s} sx={{ fontSize: "0.875rem" }}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               {additionalFilters.map((filter, i) => (
                 <FormControl key={i} size="small" sx={{ minWidth: 150 }}>
@@ -328,15 +497,26 @@ const DataTable = ({
                     sx={{
                       fontSize: "0.875rem",
                       height: 32,
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "primary.main" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d1d5db",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "primary.main",
+                      },
                     }}
                   >
-                    <MenuItem value="" sx={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                    <MenuItem
+                      value=""
+                      sx={{ fontSize: "0.875rem", color: "#9ca3af" }}
+                    >
                       {filter.placeholder || `All ${filter.label}`}
                     </MenuItem>
                     {filter.options.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: "0.875rem" }}>
+                      <MenuItem
+                        key={opt.value}
+                        value={opt.value}
+                        sx={{ fontSize: "0.875rem" }}
+                      >
                         {opt.label}
                       </MenuItem>
                     ))}
@@ -344,36 +524,42 @@ const DataTable = ({
                 </FormControl>
               ))}
 
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#6b7280",
-                  backgroundColor: "#f3f4f6",
-                  px: 1.5,
-                  py: 0.25,
-                  borderRadius: 1,
-                  fontSize: "0.875rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {filteredData.length > 0
-                  ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
+              {pagination && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#6b7280",
+                    backgroundColor: "#f3f4f6",
+                    px: 1.5,
+                    py: 0.25,
+                    borderRadius: 1,
+                    fontSize: "0.875rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {filteredData.length > 0
+                    ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
                       (page + 1) * rowsPerPage,
-                      filteredData.length
+                      filteredData.length,
                     )} of ${filteredData.length.toLocaleString()} entries`
-                  : "Showing 0 to 0 of 0 entries"}
-              </Typography>
+                    : "Showing 0 to 0 of 0 entries"}
+                </Typography>
+              )}
             </Box>
 
             {/* Right: search + optional headerActions slot */}
             <Box display="flex" alignItems="center" gap={1}>
               {headerActions}
+              {headerLegend}
               {searchable && (
                 <TextField
                   size="small"
                   placeholder={searchPlaceholder}
                   value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(0);
+                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -383,8 +569,15 @@ const DataTable = ({
                     endAdornment: searchTerm && (
                       <InputAdornment position="end">
                         <Clear
-                          sx={{ color: "#9ca3af", fontSize: 16, cursor: "pointer" }}
-                          onClick={() => { setSearchTerm(""); setPage(0); }}
+                          sx={{
+                            color: "#9ca3af",
+                            fontSize: 16,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            setSearchTerm("");
+                            setPage(0);
+                          }}
                         />
                       </InputAdornment>
                     ),
@@ -414,8 +607,14 @@ const DataTable = ({
           scrollbarWidth: "thin",
           scrollbarColor: "#c1c1c1 #f1f1f1",
           "&::-webkit-scrollbar": { width: 6, height: 6 },
-          "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1", borderRadius: 8 },
-          "&::-webkit-scrollbar-thumb": { backgroundColor: "#c1c1c1", borderRadius: 8 },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: 8,
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#c1c1c1",
+            borderRadius: 8,
+          },
           "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
         }}
       >
@@ -427,16 +626,28 @@ const DataTable = ({
                 <TableCell
                   key={i}
                   colSpan={col.subColumns?.length || 1}
-                  align={col.subColumns ? "center" : col.type === "number" || col.type === "currency" ? "right" : "left"}
+                  align={
+                    col.subColumns
+                      ? "center"
+                      : col.type === "number" || col.type === "currency"
+                        ? "right"
+                        : "left"
+                  }
                   sx={{
                     minWidth: col.type === "date" ? 80 : col.width,
                     width: col.width,
-                    borderRight: i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                    p: 1,
-                    borderBottom: "1px solid #e5e7eb",
-                    backgroundColor: "#EEFAE7",
+                    // borderRight:
+                    //   i !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
+                    padding: "11px 6px",
+                    color: "#A09D97",
+                    borderBottom: "1px solid rgba(0,0,0,0.08)",
+                    backgroundColor: "#F6F5F2",
                     verticalAlign: "top",
-                    ...(stickyHeader && { position: "sticky", top: 0, zIndex: 4 }),
+                    ...(stickyHeader && {
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 4,
+                    }),
                     ...getStickyStyles(i, columns, { isHeader: true }),
                   }}
                 >
@@ -446,20 +657,39 @@ const DataTable = ({
                     <Box
                       sx={{
                         display: "flex",
+                        whiteSpace: "nowrap",
                         flexDirection: "column",
-                        cursor: col.sortable && !col.subColumns ? "pointer" : "default",
+                        cursor:
+                          col.sortable && !col.subColumns
+                            ? "pointer"
+                            : "default",
                         userSelect: "none",
                       }}
-                      onClick={() => col.sortable && !col.subColumns && handleSort(col.field)}
+                      onClick={() =>
+                        col.sortable && !col.subColumns && handleSort(col.field)
+                      }
                     >
-                      <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11px" }}>
+                      <Typography
+                        sx={{
+                          // fontFamily: '"Open Sans", sans-serif',
+                          fontSize: "11px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
                         {col.headerName}
                       </Typography>
-                      {!col.subColumns && sortConfig.field === col.field && (
-                        sortConfig.direction === "asc"
-                          ? <ArrowDropUpIcon sx={{ color: "#1976d2", fontSize: 18 }} />
-                          : <ArrowDropDownIcon sx={{ color: "#1976d2", fontSize: 18 }} />
-                      )}
+                      {!col.subColumns &&
+                        sortConfig.field === col.field &&
+                        (sortConfig.direction === "asc" ? (
+                          <ArrowDropUpIcon
+                            sx={{ color: "#1976d2", fontSize: 18 }}
+                          />
+                        ) : (
+                          <ArrowDropDownIcon
+                            sx={{ color: "#1976d2", fontSize: 18 }}
+                          />
+                        ))}
                     </Box>
                   )}
                 </TableCell>
@@ -467,21 +697,28 @@ const DataTable = ({
             </TableRow>
 
             {/* Sub-header row */}
-            {hasSubColumns && (
-              <TableRow>
+            {hasSubColumns && !hideSubHeader && (
+              <TableRow sx={{ backgroundColor: "#eceae65a" }}>
                 {columns.map((col, pi) =>
                   col.subColumns?.length ? (
                     col.subColumns.map((sub, si) => (
                       <TableCell
                         key={`${pi}-${si}`}
-                        align="center"
                         sx={{
                           minWidth: sub.width,
                           width: sub.width,
-                          borderRight: "1px solid #e5e7eb",
+                          color: "#706E69",
+                          // borderRight: "1px solid #e5e7eb",
                           p: 1,
-                          borderBottom: "1px solid #e5e7eb",
-                          ...(stickyHeader && { position: "sticky", top: headerHeight, zIndex: 4 }),
+                          // borderBottom: "1px solid #e5e7eb",
+                          // borderBottom: "1px solid rgba(0,0,0,0.08)",
+                          // transition: "background 0.1s",
+                          // animation: "rowIn 0.3s ease both",
+                          ...(stickyHeader && {
+                            position: "sticky",
+                            top: headerHeight,
+                            zIndex: 4,
+                          }),
                         }}
                       >
                         <Box
@@ -493,14 +730,25 @@ const DataTable = ({
                           }}
                           onClick={() => sub.sortable && handleSort(sub.field)}
                         >
-                          <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11px" }}>
+                          <Typography
+                            sx={{
+                              // fontFamily: '"Open Sans", sans-serif',
+                              fontSize: "11px",
+                              textWrap: "nowrap",
+                            }}
+                          >
                             {sub.headerName}
                           </Typography>
-                          {sortConfig.field === sub.field && (
-                            sortConfig.direction === "asc"
-                              ? <ArrowDropUpIcon sx={{ color: "#1976d2", fontSize: 16 }} />
-                              : <ArrowDropDownIcon sx={{ color: "#1976d2", fontSize: 16 }} />
-                          )}
+                          {sortConfig.field === sub.field &&
+                            (sortConfig.direction === "asc" ? (
+                              <ArrowDropUpIcon
+                                sx={{ color: "#1976d2", fontSize: 16 }}
+                              />
+                            ) : (
+                              <ArrowDropDownIcon
+                                sx={{ color: "#1976d2", fontSize: 16 }}
+                              />
+                            ))}
                         </Box>
                       </TableCell>
                     ))
@@ -508,13 +756,20 @@ const DataTable = ({
                     <TableCell
                       key={pi}
                       sx={{
-                        borderRight: pi !== columns.length - 1 ? "1px solid #e5e7eb" : "none",
-                        p: 1,
+                        // borderRight:
+                        //   pi !== columns.length - 1
+                        //     ? "1px solid #e5e7eb"
+                        //     : "none",
+                        p: 0.5,
                         borderBottom: "1px solid #e5e7eb",
-                        ...(stickyHeader && { position: "sticky", top: headerHeight, zIndex: 4 }),
+                        ...(stickyHeader && {
+                          position: "sticky",
+                          top: headerHeight,
+                          zIndex: 4,
+                        }),
                       }}
                     />
-                  )
+                  ),
                 )}
               </TableRow>
             )}
@@ -531,8 +786,12 @@ const DataTable = ({
                 }}
               >
                 {flatColumns.map((col, i) => {
-                  const firstIdx = flatColumns.findIndex((c) => c.showHeaderTotal);
-                  const total = col.showHeaderTotal ? calcTotal(col.field) : null;
+                  const firstIdx = flatColumns.findIndex(
+                    (c) => c.showHeaderTotal,
+                  );
+                  const total = col.showHeaderTotal
+                    ? calcTotal(col.field)
+                    : null;
                   return (
                     <TableCell
                       key={col.field}
@@ -541,15 +800,18 @@ const DataTable = ({
                         backgroundColor: "#eef2ff",
                         fontSize: "12px",
                         padding: "2px 8px",
-                        borderRight: i !== flatColumns.length - 1 ? "1px solid #c7d2fe" : "none",
+                        borderRight:
+                          i !== flatColumns.length - 1
+                            ? "1px solid #c7d2fe"
+                            : "none",
                         ...getStickyStyles(i, flatColumns),
                       }}
                     >
                       {col.showHeaderTotal
                         ? formatTotal(total)
                         : i === firstIdx - 1
-                        ? "Total"
-                        : ""}
+                          ? "Total"
+                          : ""}
                     </TableCell>
                   );
                 })}
@@ -560,70 +822,318 @@ const DataTable = ({
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={flatColumns.length} align="center" sx={{ py: 4 }}>
+                <TableCell
+                  colSpan={flatColumns.length}
+                  align="center"
+                  sx={{ py: 4 }}
+                >
                   <Typography variant="body1" sx={{ color: "#4a4e55" }}>
                     {searchTerm ? noResultsMessage : noDataMessage}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row, ri) => (
-                <TableRow
-                  key={row.id ?? `${page}-${ri}`}
-                  onClick={() => onRowClick?.(row)}
-                  sx={{
-                    ...(rowStyle ? rowStyle(row) : {}),
-                    cursor: onRowClick ? "pointer" : "default",
-                    "& td": { backgroundColor: "#ffffff" },
-                    "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
-                    "&:hover td": { backgroundColor: "#e1f3ff" },
-                  }}
-                >
-                  {flatColumns.map((col, ci) => {
-                    const rawContent = col.renderCell
-                      ? col.renderCell({ value: row[col.field], row })
-                      : formatCellValue(row[col.field], col);
-                    const isStatus = statusFields.includes(col.field);
-                    const statusStyle = isStatus ? getStatusStyle(rawContent, col.field) : {};
+              paginatedData.map((row, ri) => {
+                const rowKey = getRowKey(row, ri);
 
-                    return (
-                      <TableCell
-                        key={col.field ?? `col-${ci}`}
-                        align={
-                          col.type === "number" || col.type === "currency" || col.type === "date"
-                            ? "right"
-                            : "left"
+                // 'focus' | 'beat' | undefined
+                const expandedType = expandedRows[rowKey];
+
+                return (
+                  <React.Fragment key={rowKey}>
+                    {/* ── Main data row ── */}
+                    <TableRow
+                      onClick={() => onRowClick?.(row)}
+                      sx={{
+                        cursor: onRowClick ? "pointer" : "default",
+                        "& td": { backgroundColor: "#ffffff" },
+                        // "&:nth-of-type(even) td": { backgroundColor: "#f7fbff" },
+                        // "&:hover td": { backgroundColor: "#e1f3ff" },
+                        ...Object.keys(columnBgColors).reduce((acc, field) => {
+                          const colIndex = flatColumns.findIndex(
+                            (c) => c.field === field,
+                          );
+                          if (colIndex !== -1) {
+                            acc[`&:hover td:nth-of-type(${colIndex + 1})`] = {
+                              backgroundColor: columnBgColors[field],
+                            };
+                          }
+                          return acc;
+                        }, {}),
+                        "&:hover td": { backgroundColor: "#FAFAF8" },
+                        "& td": { color: "#706E69" },
+                        ...(rowStyle ? rowStyle(row) : {}),
+                      }}
+                    >
+                      {flatColumns.map((col, ci) => {
+                        // ── ✅ __expand__ → Focus Range expansion ───────────
+                        if (col.field === "__expand__" && expandableRow) {
+                          return (
+                            <TableCell
+                              key="__expand__"
+                              sx={{
+                                padding: "4px 6px",
+                                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                cursor: "pointer",
+                                textAlign: "center",
+                                ...getStickyStyles(ci, flatColumns),
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowExpand(rowKey, "focus");
+                              }}
+                            >
+                              <Typography
+                                component="span"
+                                sx={{
+                                  color: "#1976d2",
+                                  fontWeight: "bold",
+                                  fontSize: 18,
+                                  lineHeight: 1,
+                                  userSelect: "none",
+                                }}
+                              >
+                                {expandedType === "focus" ? "−" : "+"}
+                              </Typography>
+                            </TableCell>
+                          );
                         }
-                        sx={{
-                          fontSize: "12px",
-                          fontFamily: '"Open Sans", sans-serif',
-                          borderRight: ci !== flatColumns.length - 1 ? "1px solid #e5e7eb" : "none",
-                          p: 1,
-                          color: "#343A40",
-                          fontWeight: 400,
-                          borderBottom: "1px solid #f3f4f6",
-                          ...getStickyStyles(ci, flatColumns),
-                        }}
-                      >
-                        {isStatus ? (
-                          <Chip
-                            label={rawContent}
-                            size="small"
+
+                        // ── ✅ __expand_beat__ → Beat expansion ─────────────
+                        if (
+                          col.field === "__expand_beat__" &&
+                          expandableRowBeat
+                        ) {
+                          const hasBeat =
+                            row.beat_work && row.beat_work.trim() !== "";
+
+                          // No beat — render cell normally, no expand behavior
+                          if (!hasBeat) {
+                            return (
+                              <TableCell
+                                key="__expand_beat__"
+                                sx={{
+                                  padding: "4px 6px",
+                                  borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                  cursor: "default",
+                                  ...getStickyStyles(ci, flatColumns),
+                                }}
+                              >
+                                {col.renderCell
+                                  ? col.renderCell({
+                                    value: row[col.field],
+                                    row,
+                                    isExpanded: false,
+                                  })
+                                  : "-"}
+                              </TableCell>
+                            );
+                          }
+
+                          // Has beat — render with expand toggle
+                          return (
+                            <TableCell
+                              key="__expand_beat__"
+                              sx={{
+                                padding: "4px 6px",
+                                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                                cursor: "pointer",
+                                ...getStickyStyles(ci, flatColumns),
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowExpand(rowKey, "beat");
+                              }}
+                            >
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    fontSize: 15,
+                                    lineHeight: 1,
+                                    userSelect: "none",
+                                  }}
+                                >
+                                  {expandedType === "beat" ? "−" : "+"}
+                                </Typography>
+                                {col.renderCell
+                                  ? col.renderCell({
+                                    value: row[col.field],
+                                    row,
+                                    isExpanded: expandedType === "beat",
+                                  })
+                                  : null}
+                              </Box>
+                            </TableCell>
+                          );
+                        }
+
+                        // ── Normal cell rendering ───────────────────────────
+                        const rawContent = col.renderCell
+                          ? col.renderCell({ value: row[col.field], row })
+                          : formatCellValue(row[col.field], col);
+                        const isStatus = statusFields.includes(col.field);
+                        const statusStyle = isStatus
+                          ? getStatusStyle(rawContent, col.field)
+                          : {};
+
+                        const columnBgColor = columnBgColors[col.field];
+
+                        return (
+                          <TableCell
+                            key={col.field ?? `col-${ci}`}
+                            align={
+                              ["number", "currency", "date"].includes(col.type)
+                                ? "right"
+                                : col.type === "alignCenter"
+                                  ? "center"
+                                  : "left"
+                            }
                             sx={{
-                              fontSize: "11px",
-                              height: 20,
-                              "& .MuiChip-label": { px: 1 },
-                              ...statusStyle,
+                              fontSize: "12px",
+                              // fontFamily: '"Open Sans", sans-serif',
+                              // borderRight:
+                              //   ci !== flatColumns.length - 1
+                              //     ? "1px solid #e5e7eb"
+                              //     : "none",
+                              // p: 0.5,
+                              padding: "4px 6px",
+                              color: "#343A40",
+                              fontWeight: 400,
+                              // borderBottom: "1px solid #f3f4f6",
+                              borderBottom: "1px solid rgba(0,0,0,0.08)",
+                              backgroundColor: columnBgColor || "inherit",
+                              transition: "background 0.1s",
+                              animation: "rowIn 0.3s ease both",
+                              ...getStickyStyles(ci, flatColumns),
+                              ...(col.cellSx || {}),
                             }}
-                          />
-                        ) : (
-                          renderCellContent(rawContent, false, searchTerm)
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))
+                          >
+                            {isStatus ? (
+                              <Chip
+                                label={rawContent}
+                                size="small"
+                                sx={{
+                                  fontSize: "11px",
+                                  height: 20,
+                                  "& .MuiChip-label": { px: 1 },
+                                  ...statusStyle,
+                                }}
+                              />
+                            ) : col.headerName === "Customer Name" ||
+                              col.headerName === "Territory Details" ||
+                              col.headerName === "Invoice Remark" ||
+                              col.headerName === "Reporting To" ||
+                              col.truncateTooltip ? (
+                              (() => {
+                                const showTooltip =
+                                  typeof rawContent === "string" &&
+                                  rawContent.length > 20;
+
+                                const contentSpan = (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      maxWidth: "200px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      verticalAlign: "middle",
+                                      cursor: showTooltip
+                                        ? "pointer"
+                                        : "default",
+                                    }}
+                                  >
+                                    {rawContent}
+                                  </span>
+                                );
+
+                                return showTooltip ? (
+                                  <Tooltip
+                                    arrow
+                                    placement="top-start"
+                                    title={
+                                      <span
+                                        style={{
+                                          fontSize: "10px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        {rawContent}
+                                      </span>
+                                    }
+                                  >
+                                    {contentSpan}
+                                  </Tooltip>
+                                ) : (
+                                  contentSpan
+                                );
+                              })()
+                            ) : (
+                              renderCellContent(rawContent, false, searchTerm)
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+
+                    {/* ── ✅ Expansion row (single row, two Collapses inside) ── */}
+                    {(expandableRow || expandableRowBeat) && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={flatColumns.length}
+                          sx={{
+                            p: 0,
+                            borderBottom: expandedType
+                              ? "2px solid #e5e7eb"
+                              : "none",
+                            backgroundColor: "#f9fafb",
+                          }}
+                        >
+                          {/* Focus Range expansion */}
+                          <Collapse
+                            in={expandedType === "focus"}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ p: 0.5, margin: 0 }}>
+                              {expandableRow && (
+                                <ExpandedContent
+                                  key={`focus-${rowKey}`}
+                                  row={row}
+                                  expandableRow={expandableRow}
+                                  cacheKey={`focus-${rowKey}`}
+                                />
+                              )}
+                            </Box>
+                          </Collapse>
+
+                          {/* Beat expansion */}
+                          <Collapse
+                            in={expandedType === "beat"}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ p: 0.5, margin: 0 }}>
+                              {expandableRowBeat && (
+                                <ExpandedContent
+                                  key={`beat-${rowKey}`}
+                                  row={row}
+                                  expandableRow={expandableRowBeat}
+                                  cacheKey={`beat-${rowKey}`}
+                                />
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
 
@@ -644,24 +1154,42 @@ const DataTable = ({
                 {flatColumns.map((col, i) => {
                   const firstIdx = flatColumns.findIndex((c) => c.showTotal);
                   const total = col.showTotal ? calcTotal(col.field) : null;
-                  const isNumeric = col.type === "number" || col.type === "currency";
+                  const avgTotal = col.showAverageTotal
+                    ? calcAverageTotal(col.field)
+                    : null;
+                  const customValue = col.footerValue
+                    ? col.footerValue(data)
+                    : null;
+                  const isNumeric =
+                    col.type === "number" || col.type === "currency";
                   return (
                     <TableCell
                       key={col.field}
-                      align="right"
+                      align={grandTotal ? "center" : "right"}
                       sx={{
                         fontSize: "12px",
-                        borderRight: i !== flatColumns.length - 1 ? "1px solid #e5e7eb" : "none",
+                        fontWeight: 700,
+                        color: "#706E69",
+                        borderRight:
+                          i !== flatColumns.length - 1
+                            ? "1px solid #e5e7eb"
+                            : "none",
                         py: 1.5,
                         px: 1.5,
                         ...getStickyStyles(i, flatColumns, { isFooter: true }),
                       }}
                     >
-                      {col.showTotal
-                        ? formatTotal(total)
-                        : i === firstIdx - 1
-                        ? "Total"
-                        : ""}
+                      {col.footerValue
+                        ? customValue
+                        : col.showTotal
+                          ? formatTotal(total)
+                          : col.showAverageTotal
+                            ? formatTotal(avgTotal)
+                            : i === firstIdx - 1
+                              ? grandTotal
+                                ? "Grand Total"
+                                : "Total"
+                              : ""}
                     </TableCell>
                   );
                 })}
@@ -673,8 +1201,19 @@ const DataTable = ({
 
       {/* ── Footer: pagination + optional footerActions ── */}
       {pagination && (
-        <Box sx={{ borderTop: "1px solid #e5e7eb", backgroundColor: "#fafbfc", padding: 1}}>
-          <Stack spacing={2} direction="row" alignItems="center" justifyContent="space-between">
+        <Box
+          sx={{
+            borderTop: "1px solid #e5e7eb",
+            backgroundColor: "#fafbfc",
+            padding: 1,
+          }}
+        >
+          <Stack
+            spacing={2}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
             <Pagination
               variant="text"
               count={Math.ceil(filteredData.length / rowsPerPage)}
@@ -684,7 +1223,7 @@ const DataTable = ({
                 <PaginationItem
                   slots={{ previous: ChevronLeftIcon, next: NavigateNextIcon }}
                   {...item}
-                  sx={{color:'#343A40'}}
+                  sx={{ color: "#343A40" }}
                 />
               )}
             />

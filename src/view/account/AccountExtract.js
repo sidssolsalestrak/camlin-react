@@ -9,12 +9,19 @@ import {
   MenuItem,
   TextField,
   Autocomplete,
+  IconButton, Button
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../services/api";
 import DataTable from "../../utils/dataTable";
 import "../../assets/css/accountMas.css";
 import useToast from "../../utils/useToast";
+import { DownloadCSV } from "../../utils/Download CSV/DownloadCSV";
+import { AiOutlineFileExcel } from "react-icons/ai";
+import CircularProgress from "../../utils/CircularProgressLoading";
+import dayjs from "dayjs";
+import { useSnackbar } from "notistack";
+import { getMasterPanel } from "../../services/masterPanelService";
 
 function AccountExtract() {
   const navigate = useNavigate();
@@ -26,14 +33,30 @@ function AccountExtract() {
   const [userData, setUserData] = useState([]);
 
   const [selectedRegion, setSelectedRegion] = useState(0);
-  const [selectedAccType, setSelectedAccType] = useState("");
+  const [selectedAccType, setSelectedAccType] = useState(2);
   const [selectedUserType, setSelectedUserType] = useState(0);
   const [selectedUser, setSelectedUser] = useState(0);
+  const [progress, setProgress] = useState(null);
+  const [progress1, setProgress1] = useState(false);
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selactiveStat, setActiveStat] = useState("1")
+
+  const [masterPanel, setMasterPanel] = useState({});
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
 
   const toast = useToast();
+  const location = useLocation()
+  const URL = location.pathname.split('/')[2]
+  const { enqueueSnackbar } = useSnackbar()
 
   // ---------------- DECODE PARAMS ----------------
   const decode = (val) => {
@@ -49,6 +72,7 @@ function AccountExtract() {
     accType: decode(params.accType),
     userType: decode(params.userType),
     user: decode(params.user),
+    type: decode(params.type)
   };
 
   // ---------------- FETCH FILTER DATA ----------------
@@ -95,7 +119,7 @@ function AccountExtract() {
   const fetchExtractData = async (payload) => {
     try {
       setLoading(true);
-
+      console.log("deocded value payload", payload)
       const res = await api.post("/getAccountExtract", payload);
 
       setTableData(
@@ -129,21 +153,104 @@ function AccountExtract() {
     if (decodedParams.accType) setSelectedAccType(decodedParams.accType);
     if (decodedParams.userType) setSelectedUserType(decodedParams.userType);
     if (decodedParams.user) setSelectedUser(decodedParams.user);
+    if (decodedParams.type) setActiveStat(decodedParams.type)
 
     if (
       decodedParams.country ||
       decodedParams.accType ||
       decodedParams.userType ||
-      decodedParams.user
+      decodedParams.user ||
+      decodedParams.type
     ) {
       fetchExtractData(decodedParams);
     }
   }, [params]);
 
+  const handleDownloadCSV = async () => {
+    try {
+      setProgress1(true)
+      let FormattedData = tableData.map((val) => ({
+        ...val, id: `${val.main_id}_${val.sub_id}`,
+        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
+        create_dt: val?.create_dt ? dayjs(val?.create_dt).format("DD-MM-YYYY HH:mm") : ''
+      }))
+
+      let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
+
+      const safeColumns = ExcelColumns.map(
+        ({ renderCell, renderHeader, ...rest }) => rest,
+      );
+
+      const meta = {
+        "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
+        Date: dayjs().format("DD MMM YYYY")
+      }
+      DownloadCSV(
+        FormattedData,
+        safeColumns,
+        `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
+        setProgress,
+        enqueueSnackbar,
+        meta,
+      );
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setProgress1(false)
+    }
+  }
+
+  const handleExtractCSV = async () => {
+
+    try {
+      setProgress1(true)
+      let payload = {
+        country: selectedRegion,
+        accType: selectedAccType,
+        user: selectedUser,
+        userType: selectedUserType,
+        type: selactiveStat
+
+      }
+      let response = await api.post('/getAccountExtract', payload)
+      let extData = Array.isArray(response.data.data) ? response.data.data : []
+      let FormattedData = extData.map((val, index) => ({
+        ...val, id: `${val.main_id}_${val.sub_id}`,
+        sl: index + 1,
+        user_name: `${val.u_fname || ""} ${val.u_lname || ""}`,
+        create_dt: val.create_dt ? dayjs(val.create_dt).format('DD-MM-YYYY HH:mm') : ''
+      }))
+
+      let AccName = Number(selectedAccType) === 1 ? "HCP" : Number(selectedAccType) === 2 ? "Retailer" : null
+
+      const safeColumns = ExcelColumns.map(
+        ({ renderCell, renderHeader, ...rest }) => rest,
+      );
+
+      const meta = {
+        "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
+        Date: dayjs().format("DD MMM YYYY")
+      }
+      DownloadCSV(
+        FormattedData,
+        safeColumns,
+        `${masterPanel["ACCM"] || "Account"}_Master_Extract_(${AccName})`,
+        setProgress,
+        enqueueSnackbar,
+        meta,
+      );
+    }
+    catch (err) {
+      console.log("Extract CSV Error", err)
+    } finally {
+      setProgress1(false)
+    }
+  }
+
   // ---------------- LOAD BUTTON ----------------
   const handleLoad = () => {
-    if (!selectedRegion || !selectedAccType) {
-      toast.error("Please select Zone and Account Type");
+    if ((!selectedRegion || !selectedAccType) && URL !== 'extract_new') {
+      toast.error(`Please select ${masterPanel["ZONE"] || "Zone"} and ${masterPanel["ACCM"] || "Account"} Type`);
       return;
     }
 
@@ -152,82 +259,119 @@ function AccountExtract() {
     navigate(
       `/reports/extract/${encode(selectedRegion)}/${encode(
         selectedAccType,
-      )}/${encode(selectedUserType)}/${encode(selectedUser)}`,
+      )}/${encode(selectedUserType)}/${encode(selectedUser)}/${encode(selactiveStat)}`,
     );
   };
 
   // ---------------- TABLE COLUMNS ----------------
   const columns = [
-    { field: "sl", headerName: "SL", width: 80 },
+    { field: "sl", headerName: "SL", sortable: true, width: 80 },
 
-    { field: "reg_name", headerName: "Region", width: 120 },
+    { field: "reg_name", headerName: masterPanel["REGN"] || "Region", sortable: true, width: 120 },
 
-    { field: "emp_code", headerName: "SO Code", width: 120 },
+    { field: "emp_code", headerName: `SO/${masterPanel["USER"] || "User"} Code`, sortable: true, width: 120 },
 
     {
       field: "user_name",
-      headerName: "SO Name",
+      headerName: `SO/${masterPanel["USER"] || "User"} Name`,
+      sortable: true,
       width: 150,
       renderCell: ({ row }) => `${row.u_fname || ""} ${row.u_lname || ""}`,
     },
 
-    { field: "so_hq_name", headerName: "HQ", width: 120 },
+    { field: "so_hq_name", headerName: "SO/HQ", sortable: true, width: 120 },
 
     {
       field: "id",
       headerName: "ID",
+      sortable: true,
       width: 140,
       renderCell: ({ row }) => `${row.main_id}_${row.sub_id}`,
     },
 
-    { field: "stk_name", headerName: "Stockist", width: 150 },
+    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor", sortable: true, width: 150 },
 
-    { field: "sup_name", headerName: "WD Name", width: 150 },
+    { field: "sup_name", headerName: "WD Name", sortable: true, width: 150 },
 
-    { field: "clinic_name", headerName: "Store Name", width: 150 },
+    { field: "clinic_name", headerName: "Store Name", sortable: true, width: 150 },
 
     {
       field: "P_class",
-      headerName: "Potential Class",
+      headerName: masterPanel["PCLS"] || "Potential Class",
+      sortable: true,
       width: 120,
     },
 
     {
       field: "cus_visit_freq",
-      headerName: "Frequency",
+      headerName: "Frequency Class",
+      sortable: true,
       width: 120,
     },
 
-    { field: "area_name", headerName: "Area", width: 150 },
+    { field: "area_name", headerName: masterPanel["AREA"] || "Area", sortable: true, width: 150 },
 
-    { field: "beat_name", headerName: "Beat", width: 150 },
+    { field: "beat_name", headerName: `${masterPanel["BEAT"] || "Beat"}/${masterPanel["TERR"] || "Territory"}`, sortable: true, width: 150 },
 
-    { field: "mobile", headerName: "Mobile", width: 150 },
+    { field: "mobile", headerName: "Mobile No", sortable: true, width: 150 },
   ];
 
+  const ExcelColumns = [
+    { field: "sl", headerName: "SL NO" },
+    { field: "reg_name", headerName: masterPanel["REGN"] || "Region" },
+    { field: "emp_code", headerName: `SO/${masterPanel["USER"] || "User"} Code` },
+    { field: "user_name", headerName: `SO/${masterPanel["USER"] || "User"} Name` },
+    { field: "so_hq_name", headerName: "SO/HQ" },
+    { field: "id", headerName: "Customer ID" },
+    { field: "stk_name", headerName: masterPanel["STKS"] || "Distributor" },
+    { field: "sup_name", headerName: "WD Name" },
+    { field: "clinic_name", headerName: "Store Name" },
+    { field: "P_class", headerName: masterPanel["PCLS"] || "Potential Class" },
+    { field: "cus_visit_freq", headerName: "Frequency Class" },
+    { field: "area_name", headerName: masterPanel["AREA"] || "Area" },
+    { field: "beat_name", headerName: `${masterPanel["BEAT"] || "Beat"}/${masterPanel["TERR"] || "Territory"}` },
+    { field: "mobile", headerName: "Mobile No" },
+    { field: "create_dt", headerName: "Created Date" }
+   ]
+
   return (
-    <Layout>
+    <Layout
+      breadcrumb={[
+        { label: "Home", path: "/" },
+        { label: masterPanel["ACCM"] || "Account", path: location.pathname },
+        { label: `${masterPanel["ACCM"] || "Account"} Master Extract`, path: location.pathname },
+      ]}
+    >
       <Box
         p={2}
-        sx={{ backgroundColor: "#fff", borderRadius: 1 }}
+        sx={{ borderRadius: 1 }}
         display="flex"
         flexDirection="column"
         gap={2}
       >
         <Box>
-          <h2 className="mainTitle">Account Master Extract</h2>
+          <h2 >{masterPanel["ACCM"] || "Account"} Master Extract</h2>
         </Box>
 
-        <Box>
+        <Box sx={{
+          backgroundColor: "#fff", boxShadow:
+            "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+          padding: "16px 18px",
+          borderRadius: "10px",
+        }} >
           <Grid container spacing={2}>
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Zone</InputLabel>
+                <InputLabel>{masterPanel["ZONE"] || "Zone"}</InputLabel>
                 <Select
                   value={selectedRegion}
-                  label="Zone"
-                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  label={masterPanel["ZONE"] || "Zone"}
+                  onChange={(e) => {
+                    setSelectedRegion(e.target.value)
+                    setSelectedUser(0);
+                  }}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>Select</MenuItem>
                   {regionData.map((r) => (
@@ -242,11 +386,12 @@ function AccountExtract() {
             {/* ACCOUNT TYPE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>Account Type</InputLabel>
+                <InputLabel>{masterPanel["ACCM"] || "Account"} Type</InputLabel>
                 <Select
                   value={selectedAccType}
-                  label="Account Type"
+                  label={`${masterPanel["ACCM"] || "Account"} Type`}
                   onChange={(e) => setSelectedAccType(e.target.value)}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   {accTypeData.map((a) => (
                     <MenuItem key={a.id} value={a.id}>
@@ -260,11 +405,15 @@ function AccountExtract() {
             {/* USER TYPE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>User Type</InputLabel>
+                <InputLabel>{masterPanel["USER"] || "User"} Type</InputLabel>
                 <Select
                   value={selectedUserType}
-                  label="User Type"
-                  onChange={(e) => setSelectedUserType(e.target.value)}
+                  label={`${masterPanel["USER"] || "User"} Type`}
+                  onChange={(e) => {
+                    setSelectedUserType(e.target.value);
+                    setSelectedUser(0);
+                  }}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                 >
                   <MenuItem value={0}>All</MenuItem>
                   {userTypeData
@@ -279,7 +428,7 @@ function AccountExtract() {
             </Grid>
 
             {/* USER */}
-            <Grid size={{ xs: 12, md: 2, lg: 3 }}>
+            <Grid size={{ xs: 12, md: 2, lg: 2.8 }}>
               <Autocomplete
                 options={userData}
                 getOptionLabel={(option) =>
@@ -288,38 +437,68 @@ function AccountExtract() {
                 value={userData.find((u) => u.id === selectedUser) || null}
                 onChange={(e, val) => setSelectedUser(val ? val.id : 0)}
                 renderInput={(params) => (
-                  <TextField {...params} label="User" size="small" />
+                  <TextField {...params} label={masterPanel["USER"] || "User"} size="small" />
                 )}
               />
             </Grid>
+            <Grid size={{ xs: 12, md: 2, lg: 1.5 }}>
+              <FormControl fullWidth>
+                <InputLabel id="type">Type</InputLabel>
+                <Select labelId="type" label="type" size="small" value={selactiveStat} onChange={(e) => setActiveStat(e.target.value)}  >
+                  <MenuItem value="1">Active</MenuItem>
+                  <MenuItem value="2">In Active</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
             {/* LOAD BUTTON */}
-            <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <button
-                onClick={handleLoad}
-                style={{
-                  padding: "6px 16px",
-                  background: "#1976d2",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
+            {URL !== 'extract_new' &&
+              <Grid size={{ xs: 12, md: 2, lg: 1 }}>
+                <button
+                  onClick={handleLoad}
+                  style={{
+                    padding: "6px 16px",
+                    background: "#1976d2",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Load
+                </button>
+              </Grid>}
+            <Grid size={{ xs: 12, md: 2, lg: 1 }}>
+              <Button
+                disabled={progress1}
+                fullWidth
+                variant="contained"
+                color="warning"
+                sx={{ height: '2.4rem', width: '2rem' }}
+
+                onClick={() => URL !== 'extract_new' ? handleDownloadCSV() : handleExtractCSV()}
               >
-                Load
-              </button>
+                Excel
+              </Button>
             </Grid>
           </Grid>
         </Box>
 
         {/* ---------------- TABLE ---------------- */}
-        <Box mt={3}>
-          <DataTable
-            data={tableData}
-            columns={columns}
-            loading={loading}
-            title="Account Extract List"
-          />
+        <Box>
+          {URL !== 'extract_new' &&
+            <DataTable
+              data={tableData}
+              columns={columns}
+              loading={loading}
+              title={`${masterPanel["ACCM"] || "Account"} Extract List`}
+              sx={{
+                background: "#fff",
+                borderRadius: "10px",
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+              }}
+            />}
         </Box>
       </Box>
     </Layout>

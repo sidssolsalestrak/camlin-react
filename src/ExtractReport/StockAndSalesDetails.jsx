@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from 'react'
+import Layout from '../layout'
+import { Box } from '@mui/material'
+import CircularProgress from '../utils/CircularProgressLoading';
+import { AiOutlineFileExcel } from 'react-icons/ai';
+import { useLocation } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
+import { DownloadCSV } from '../utils/Download CSV/DownloadCSV';
+import axios from "../services/api";
+import useToast from '../utils/useToast';
+import { getMasterPanel } from "../services/masterPanelService";
+
+const headContainer = {
+  background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
+  m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
+    "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+  padding: "16px 18px",
+  width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
+}
+
+const StockAndSalesDetails = () => {
+  const location = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
+  const [progress, setProgress] = useState(null);
+  const [progress1, setProgress1] = useState(null);
+  const [fromDate, setFromDate] = useState(dayjs().subtract(2, "month").startOf("month"));
+  const [toDate, settoDate] = useState(dayjs().endOf("month"));
+  const showAlert = useToast();
+  const [masterPanel, setMasterPanel] = useState({});
+
+  // labels derived from masterPanel with fallbacks
+  const zoneLabel = masterPanel["ZONE"] || "Zone";
+  const areaLabel = masterPanel["AREA"] || "Area";
+  const regionLabel = masterPanel["REGN"] || "Region";
+  const userLabel = masterPanel["USER"] || "Users";
+  const stkLabel = masterPanel["STKS"] || "Distributor";
+  const catLabel = masterPanel["PCAT"] || "Category";
+
+  useEffect(() => {
+    const loadMasterPanel = async () => {
+      const data = await getMasterPanel();
+      setMasterPanel(data);
+    };
+    loadMasterPanel();
+  }, []);
+
+  /*----------------- handle download xl --------*/
+  const handleDownloadExcel = async () => {
+    try {
+      if (toDate.diff(fromDate, 'month', true) > 3) {
+        enqueueSnackbar("From and To date must be within a 3-month range.", { variant: "error" });
+        return;
+      }
+
+      let tableData = [];
+      setProgress1("0%");
+      try {
+        const payload = {
+          startDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
+          endDate: toDate ? dayjs(toDate).format("YYYY-MM-DD") : ""
+        };
+        const res = await axios.post("/stk_sales_details_excel", payload);
+        if (res?.data?.status === 200) {
+          tableData = res?.data?.data ?? [];
+        }
+      } catch (err) {
+        // API not ready yet — proceed with empty data so file still downloads
+        console.warn("API unavailable, downloading with no data:", err.message);
+      }
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("40%");
+      const meta = {
+        centered: true,
+        title: "DISTRIBUTOR STOCK AND SALES DETAIL EXTRACT",
+        dateRange: `(${fromDate.format("MMM YYYY")} - ${toDate.format("MMM YYYY")})`,
+      };
+
+      const columns = [
+        { field: "sale_month1", headerName: "Month", },
+        { field: "zone_name", headerName: zoneLabel },
+        { field: "reg_name", headerName: regionLabel },
+        { field: "stk_code", headerName: `${stkLabel} Code` },
+        { field: "stk_name", headerName: `${stkLabel} Name` },
+        { field: "city_name", headerName: "City" },
+        { field: "state_name", headerName: "State" },
+        { field: "cat_name", headerName: catLabel },
+        { field: "sub_name", headerName: "Range" },
+        { field: "code", headerName: "SKU Code" },
+        { field: "prod_name", headerName: "SKU Name" },
+        { field: "prod_price", headerName: "SKU Rate" },
+        { field: "open_qty", headerName: "Opening Qty" },
+        { field: "open_val", headerName: "Opening Value" },
+        { field: "pur_qty", headerName: "Pri. Qty" },
+        { field: "pur_val", headerName: "Pri. Value" },
+        { field: "tot_qty", headerName: "Total" },
+        { field: "sec_qty", headerName: "Secondary Qty" },
+        { field: "sec_val", headerName: "Secondary Value" },
+        { field: "physical_qty", headerName: "Closing Qty" },
+        { field: "cls_val", headerName: "Closing Stock Value" },
+      ]
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("90%");
+      let formattedData = tableData.map((val) => ({ ...val, sale_month1: val.sale_month ? dayjs(val.sale_month).format('DD-MMM-YYYY') : '' }))
+
+      DownloadCSV(
+        formattedData,
+        columns,
+        `Stock_Sales_Details ${fromDate.format("MMM YYYY")}-${toDate.format("MMM YYYY")}`,
+        setProgress,
+        enqueueSnackbar,
+        meta,
+      );
+      await new Promise((r) => setTimeout(r, 100));
+      setProgress1("100%");
+    } catch (error) {
+      showAlert.error("Failed to Download")
+      setProgress1(null);
+    } finally {
+      setProgress1(null);
+    }
+  };
+
+  return (
+    <Layout breadcrumb={[
+      { label: "Home", path: "/" },
+      { label: "Extract", path: location.pathname },
+      { label: "Stock & Sales Details" },
+    ]}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <Box sx={{ ml: 1.5, mt: 1.5 }}>
+          <h1 className="mainTitle">Stock & Sales Details</h1>
+        </Box>
+      </Box>
+      <Box sx={headContainer}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="From Date"
+              format="MMM YYYY"
+              views={["year", "month"]}
+              openTo="month"
+              value={fromDate}
+              onChange={(newValue) => setFromDate(newValue)}
+              maxDate={toDate ? toDate : null}
+              slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+            />
+          </LocalizationProvider>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="To Date"
+              format="MMM YYYY"
+              views={["year", "month"]}
+              openTo="month"
+              value={toDate}
+              onChange={(newValue) => settoDate(newValue)}
+              slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+              minDate={fromDate ? fromDate : null}
+            />
+          </LocalizationProvider>
+          {progress1 ? <CircularProgress progress={progress1} /> :
+            <span onClick={handleDownloadExcel}>
+              <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
+            </span>}
+        </Box>
+      </Box>
+    </Layout>
+  )
+}
+
+export default StockAndSalesDetails

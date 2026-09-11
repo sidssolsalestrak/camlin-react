@@ -1,0 +1,302 @@
+import React, { useEffect, useState } from 'react'
+import Layout from '../layout'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Box, Button } from '@mui/material'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import CircularProgress from '../utils/CircularProgressLoading';
+import { AiOutlineFileExcel } from "react-icons/ai";
+import dayjs from 'dayjs'
+import DataTable from '../utils/dataTable'
+import axios from "../services/api";
+import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
+import { useSnackbar } from 'notistack'
+import FormatCurrency from "../utils/formatCurrency";
+import useToast from '../utils/useToast';
+import { getMasterPanel } from "../services/masterPanelService";
+
+const headContainer = {
+    background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
+    m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
+        "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+    padding: "16px 18px",
+    width: { lg: '98%', md: '98%', sm: '90%', xs: '90%' }
+}
+
+// URL-safe encode - replaces + / = with cleaner characters
+const encode = (val) => btoa(String(val || ""))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");   // ← removes = entirely, no more %3D
+
+// URL-safe decode - restore before atob
+const decode = (str) => {
+    if (!str) return "";
+    const restored = str
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+    const padded = restored + "==".slice((restored.length % 4) || 4);
+    try { return atob(padded); } catch { return ""; }
+};
+
+const RegionWiseSales = () => {
+    let [searchParams] = useSearchParams();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
+    const showAlert = useToast();
+
+    /*----------------- decode frm and to dt --------*/
+    let decodeFromDate = decode(searchParams.get('frmDt'));
+    let decodeToDate = decode(searchParams.get('toDt'));
+
+    /*----------------- states --------*/
+    const [tableData, settableData] = useState([]);
+    const [showTable, setshowTable] = useState(false);
+    const [loading, setloading] = useState(false);
+    const [progress, setProgress] = useState(null);
+    const [progress1, setProgress1] = useState(null);
+    const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
+    const [toDate, settoDate] = useState(dayjs().endOf("month"));
+
+    const [masterPanel, setMasterPanel] = useState({});
+
+    const regionLabel = masterPanel["REGN"] || "Region";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    /*----------------- fetch table data --------*/
+    const fetchTableData = async ({ from, to }) => {
+        setshowTable(true)
+        try {
+            setloading(true)
+            let payload = {
+                fromDate: from ? dayjs(from).format("YYYY-MM-DD") : "",
+                toDate: to ? dayjs(to).format("YYYY-MM-DD") : "",
+            }
+            const res = await axios.post("/getRegionWiseSecSales", payload);
+            let data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
+            settableData(data)
+        } catch (error) {
+            console.error(error);
+            settableData([])
+        } finally {
+            setloading(false)
+        }
+    }
+
+    //handle load
+    const handleLoad = () => {
+        let params = new URLSearchParams();
+        if (fromDate) params.append('frmDt', encode(fromDate?.format("DD MMM YYYY")));
+        if (toDate) params.append('toDt', encode(toDate?.format("DD MMM YYYY")));
+        navigate(`/reports/reg_sec_sales?${params.toString()}`)
+    }
+
+    //initialize state values
+    useEffect(() => {
+        if (decodeFromDate && decodeToDate) {
+            setFromDate(dayjs(decodeFromDate))
+            settoDate(dayjs(decodeToDate))
+        } else {
+            setFromDate(dayjs().startOf("month"))
+            settoDate(dayjs().endOf("month"))
+            settableData([])
+            setshowTable(false)
+        }
+    }, [decodeFromDate, decodeToDate])
+
+    //fetch data
+    useEffect(() => {
+        if (decodeFromDate && decodeToDate) {
+            fetchTableData({ from: decodeFromDate, to: decodeToDate })
+        }
+    }, [decodeFromDate, decodeToDate])
+
+    /*----------------- table columns --------*/
+    const columns = [
+        {
+            field: "reg_name",
+            headerName: regionLabel,
+            filterable: true,
+            width: 100
+        },
+        {
+            field: "ord_val",
+            headerName: "Total Secondary MTD",
+            filterable: true,
+            type: "alignCenter",
+            showTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "tot_cus",
+            headerName: "Total Mapped Master outlets",
+            filterable: true,
+            type: "alignCenter",
+            showTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "tot_ord_recd",
+            headerName: "Total outlets billed",
+            filterable: true,
+            type: "alignCenter",
+            showTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "avg_sku",
+            headerName: "Average SKU per order",
+            filterable: true,
+            type: "alignCenter",
+            showAverageTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "avg_val",
+            headerName: "Average order value per order",
+            filterable: true,
+            type: "alignCenter",
+            showAverageTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+        {
+            field: "prod_per",
+            headerName: "Productivity %",
+            filterable: true,
+            type: "alignCenter",
+            showAverageTotal: true,
+            renderCell: (params) => (
+                <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+            )
+        },
+    ]
+
+    /*----------------- handle download xl --------*/
+    const handleDownloadExcel = async () => {
+        try {
+            setProgress1("0%")
+            let grandTotal = {
+                label: "Grand Total",
+                reg_name: "label",      // first col → shows "Grand Total" text
+                ord_val: "sum",
+                tot_cus: "sum",
+                tot_ord_recd: "sum",
+                avg_sku: "avg",         // ← average
+                avg_val: "avg",         // ← average
+                prod_per: "avg",        // ← average
+            };
+            // Build meta object from current filter state
+            const meta = {
+                centered: true,
+                title: "Regionwise Seconday Sales",
+                dateRange: `(${fromDate.format("DD MMM YYYY")} - ${toDate.format("DD MMM YYYY")})`,
+            };
+
+            let payload = {
+                fromDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
+                toDate: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
+            }
+            const res = await axios.post("/getRegionWiseSecSales", payload);
+            let excelData = Array.isArray(res?.data?.data) ? res?.data?.data : [];
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("50%")
+            DownloadCSV(
+                excelData,
+                columns,
+                `Regionwise_Secondary_Sales ${fromDate.format("DD MMM YYYY")}-${toDate.format("DD MMM YYYY")}`,
+                setProgress,
+                enqueueSnackbar,
+                meta,
+                grandTotal,
+            );
+            await new Promise((r) => setTimeout(r, 100));
+            setProgress1("100%")
+        }
+        catch (err) {
+            if (err?.response?.status === 404) {
+                showAlert.error("No Data Available To Export Excel")
+            } else {
+                console.error(err);
+                showAlert.error("Failed to Export Excel")
+            }
+        } finally {
+            setProgress1(null)
+        }
+    }
+
+    return (
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Extract", path: location.pathname },
+            { label: "Regionwise Secondary Sales" },
+        ]}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <Box sx={{ ml: 1.5, mt: 1.5 }}>
+                    <h1 className="mainTitle">Regionwise Secondary Sales</h1>
+                </Box>
+            </Box>
+            <Box sx={headContainer}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="From Date"
+                            format="DD MMM YYYY"
+                            value={fromDate}
+                            onChange={(newValue) => setFromDate(newValue)}
+                            maxDate={toDate ? toDate : null}
+                            slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+                        />
+                    </LocalizationProvider>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="To Date"
+                            format="DD MMM YYYY"
+                            value={toDate}
+                            onChange={(newValue) => settoDate(newValue)}
+                            slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
+                            minDate={fromDate ? fromDate : null}
+                        />
+                    </LocalizationProvider>
+                    <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                    {progress1 ? <CircularProgress progress={progress1} /> :
+                        <span>
+                            <AiOutlineFileExcel onClick={handleDownloadExcel} style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
+                        </span>}
+                </Box>
+            </Box>
+            {/* table */}
+            {showTable && (
+                <Box p={1.5}>
+                    <DataTable sx={{
+                        background: "#fff",
+                        borderRadius: "10px",
+                        boxShadow:
+                            "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+                    }}
+                        data={tableData} columns={columns} loading={loading} grandTotal={true} />
+                </Box>
+            )}
+        </Layout>
+    )
+}
+
+export default RegionWiseSales;

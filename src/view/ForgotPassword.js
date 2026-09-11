@@ -1,42 +1,113 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Box, Card, TextField, Button, Typography } from "@mui/material";
 import useToast from "../utils/useToast";
+import api from "../services/api";
 
 const ForgotPassword = () => {
-  const { userId, userEmail } = useParams();
+  const { resetToken } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState({
+    password: "",
+    confPass: "",
+  });
+
+  useEffect(() => {
+  localStorage.removeItem("session-token");
+  localStorage.removeItem("otp-token");
+  localStorage.removeItem("acc_stat");
+  }, []);
 
   const handleSubmit = async () => {
-    setError("");
+    setError({
+      password: "",
+      confPass: "",
+    });
 
-    if (!password) return setError("Password required");
-    if (password.length < 8) return setError("Minimum 8 characters required");
-    if (!/\d/.test(password)) return setError("At least one number required");
-    if (password !== confirmPassword) return setError("Passwords do not match");
+    if (!password)
+      return setError((prev) => ({ ...prev, password: "Password required" }));
 
-    try {
-      const res = await axios.post("/forgot_pass", {
-        identity: userEmail,
-        password,
-        id: userId,
-      });
+    if (password.length < 8)
+      return setError((prev) => ({
+        ...prev,
+        password: "Minimum 8 characters required",
+      }));
 
-      if (res.data === 1) {
-        toast.success("Password Reset Successfully!");
-        navigate("/Auth");
-      } else {
-        setError("Invalid user");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    if ((password.match(/[a-z]/g) || []).length < 2)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 2 lowercase letters required",
+      }));
+
+    if ((password.match(/[A-Z]/g) || []).length < 2)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 2 uppercase letters required",
+      }));
+
+    if ((password.match(/\d/g) || []).length < 1)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 1 digit required",
+      }));
+
+    if ((password.match(/[^A-Za-z0-9]/g) || []).length < 1)
+      return setError((prev) => ({
+        ...prev,
+        password: "At least 1 special character required",
+      }));
+
+    if (/\s/.test(password))
+      return setError((prev) => ({
+        ...prev,
+        password: "Spaces are not allowed",
+      }));
+
+    if (!confirmPassword)
+      return setError((prev) => ({
+        ...prev,
+        confPass: "Confirm Password required",
+      }));
+
+    if (password !== confirmPassword)
+      return setError((prev) => ({
+        ...prev,
+        confPass: "Passwords do not match",
+      }));
+
+   try {
+  let payload = { password };
+
+  const res = await fetch(`${process.env.REACT_APP_API_URL}/forgot_pass`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Authorization: `Bearer ${resetToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (data === 1) {
+  toast.success("Password Reset Successfully!");
+  navigate("/Auth");
+  } else if (data && typeof data === "object" && data.success === false) {
+    toast.error(data.message || "Something went wrong");
+  } else if (data === "0") {
+    toast.error("Invalid password format");
+  } else {
+    toast.error("Invalid user or reset link expired");
+  }
+} catch (err) {
+  console.error(err);
+  toast.error("Something went wrong. Please try again.");
+}
   };
 
   return (
@@ -83,7 +154,11 @@ const ForgotPassword = () => {
         >
           <b>Please Note:</b>
           <br />
-          Password must be 8–32 characters and include at least one number
+          <span style={{ fontSize: "9px" }}>
+            Password must be at least 8 characters and include at least 2
+            lowercase letters, 2 uppercase letters, 1 digit, and 1 special
+            character (no spaces).
+          </span>
         </Typography>
 
         <TextField
@@ -92,7 +167,12 @@ const ForgotPassword = () => {
           type="password"
           label="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            const onlyText = e.target.value.replace(/\s+/g, "");
+            setPassword(onlyText);
+          }}
+          error={!!error.password}
+          helperText={error.password}
           sx={{ mb: 2 }}
         />
 
@@ -102,15 +182,14 @@ const ForgotPassword = () => {
           type="password"
           label="Confirm Password"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) => {
+            const onlyText = e.target.value.replace(/\s+/g, "");
+            setConfirmPassword(onlyText);
+          }}
+          error={!!error.confPass}
+          helperText={error.confPass}
           sx={{ mb: 2 }}
         />
-
-        {error && (
-          <Typography color="error" variant="body2" sx={{ mb: 1 }}>
-            {error}
-          </Typography>
-        )}
 
         <Button
           fullWidth
