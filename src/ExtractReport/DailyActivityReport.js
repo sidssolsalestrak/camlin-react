@@ -16,7 +16,7 @@ import { useLocation, useParams } from "react-router-dom";
 import DataTable from "../utils/dataTable";
 import { IoLocationSharp } from "react-icons/io5";
 import { FaPlus } from "react-icons/fa";
-import { FaAndroid } from "react-icons/fa";
+import { IoLogoAndroid } from "react-icons/io";
 import { FaApple } from "react-icons/fa";
 import { BeatMapExpansion } from "./BeatMapExpansion";
 import { AllLocationsMap } from "./BeatMapExpansion";
@@ -108,7 +108,7 @@ export default function DailyActivityReport() {
             let activityRes = Array.isArray(response.data.data) ? response.data.data : [];
             let finalactivityRes = activityRes.map((val, index) => ({
                 ...val,
-                app_type: val.app_type === 1 ? 'Android' : 'IOS',
+                app_type: Number(val.app_type) === 1 ? 'Android' : 'IOS',
                 sl_no: index + 1,
                 sec_pct: val.sec_tgt_val && val.sec_tgt_val > 0
                 ? Number(((val.sec_ach_val / val.sec_tgt_val) * 100).toFixed(2))
@@ -302,13 +302,13 @@ export default function DailyActivityReport() {
                             </Box>
                         </Tooltip>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.1 }}>
                             <Typography sx={{ fontSize: '10px', color: '#00AF00' }}>
                                 {params.row.app_version}
                             </Typography>
-                            {params.row.app_stat === 1
-                                ? params.row.app_type === 1
-                                    ? <FaAndroid color="#00AF00" />
+                            {Number(params.row.app_stat) === 1
+                                ? params.row.app_type === 'Android'
+                                    ? <IoLogoAndroid color="#00AF00" size={15} />
                                     : <FaApple color="#00AF00" />
                                 : null
                             }
@@ -420,16 +420,39 @@ export default function DailyActivityReport() {
                 );
             }
         },
-        {
+       {
             field: "sec_pct",
             headerName: "%age",
             showTotal: true,
+            footerValue: (data) => {
+            const totalAch = data.reduce((sum, row) => {
+                if (row._isSubtotal) return sum;
+                return sum + (Number(row.sec_ach_val) || 0);
+            }, 0);
+            
+            const totalTgt = data.reduce((sum, row) => {
+                if (row._isSubtotal) return sum;
+                return sum + (Number(row.sec_tgt_val) || 0);
+            }, 0);
+            
+            const totalPct = totalTgt > 0 ? (totalAch / totalTgt) * 100 : 0;
+            
+            return totalPct.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+            },
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value > 0
-                ? params.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : '-'}</Typography>
+                <Typography sx={{ textAlign: 'right' }}>
+                {params.value > 0
+                    ? params.value.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })
+                    : '-'}
+                </Typography>
             )
-        },
+            },
         {
             field: "__expand__",
             headerName: "  ",
@@ -484,11 +507,9 @@ export default function DailyActivityReport() {
         { field: "prod_call_new", headerName: "Prod.Calls", type: 'number', showTotal: true },
     ];
 
-    const handleDownloadExcel = async () => {
+   const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
-            // Uses the export-only fetch so the visible DataTable's loading
-            // state / data are never touched by this action.
             const freshData = await fetchReportDataForExport();
             const dashIfEmptyFields = [
                 "tot_cus",
@@ -520,7 +541,20 @@ export default function DailyActivityReport() {
                 Type: `Type-${typeLabel}`,
             };
 
-            console.log("safe columns in excel", safeColumns);
+            // ── Pre-calculate sec_pct total before passing to DownloadCSV ──
+            const totalAch = exportData.reduce((sum, row) => {
+                return sum + (Number(row.sec_ach_val) || 0);
+            }, 0);
+            
+            const totalTgt = exportData.reduce((sum, row) => {
+                return sum + (Number(row.sec_tgt_val) || 0);
+            }, 0);
+            
+            const totalPct = totalTgt > 0 ? (totalAch / totalTgt) * 100 : 0;
+            const formattedPct = totalPct.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
 
             let grandTotal = {
                 label: "Total",
@@ -530,8 +564,9 @@ export default function DailyActivityReport() {
                 prod_call: "sum",
                 sec_tgt_val: "sum",
                 sec_ach_val: "sum",
-                sec_pct: "sum"
+                sec_pct: formattedPct  // ← Pass calculated string, not function
             };
+            console.log("grand total which pass for excel",grandTotal)
 
             DownloadCSV(exportData, safeColumns, "Daily Activity Report", setProgress, toast, meta, grandTotal);
             await new Promise((r) => setTimeout(r, 100));

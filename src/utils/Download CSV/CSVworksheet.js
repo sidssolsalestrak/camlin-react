@@ -65,6 +65,12 @@ self.onmessage = function (e) {
       filteredColumns.forEach((col) => {
         const agg = config[col.field] ?? "skip";
 
+        // ── If agg is already a pre-calculated string value, use it directly ──
+        if (typeof agg === "string" && !["label", "none", "skip", "sum", "avg"].includes(agg)) {
+          totals[col.field] = agg;
+          return;
+        }
+
         // ── object-based aggregation, e.g. weighted ratio between two other fields ──
         if (agg && typeof agg === "object") {
           if (agg.type === "ratio") {
@@ -107,7 +113,7 @@ self.onmessage = function (e) {
           totals[col.field] = parseFloat(sum.toFixed(2));
         } else if (agg === "avg") {
           const avg = numbers.length > 0 ? sum / numbers.length : 0;
-          const rounded = parseFloat(avg.toFixed(2)); // always 2 decimal places
+          const rounded = parseFloat(avg.toFixed(2));
           totals[col.field] = rounded === 0 ? "-" : rounded;
         }
       });

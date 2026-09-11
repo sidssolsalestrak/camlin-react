@@ -313,9 +313,9 @@ function PrimarySalesTransact() {
                     <Grid container spacing={1.5} alignItems="flex-end">
 
                         <Grid size={{ xs: 12, md: 3 }}>
-                            <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Month</Typography>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
+                                    label="Month"
                                     views={["year", "month"]}
                                     openTo="month"
                                     value={dateselect}
