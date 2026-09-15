@@ -340,7 +340,7 @@ const StockAndSalesReport = () => {
         { field: "stk_code", headerName: `${stkLabel} Code`, filterable: true },
         { field: "stk_name", headerName: `${stkLabel} Name`, width: 150, filterable: true },
         { field: "city_name", headerName: "City", filterable: true },
-        { field: "state_name", headerName: "State", filterable: true },
+        { field: "state_name", headerName: "State", filterable: true,width:100 },
         { field: "cat_name", headerName: catLabel, filterable: true },
         { field: "sub_name", headerName: "Range", filterable: true },
         { field: "code", headerName: "SKU Code", filterable: true },

@@ -502,9 +502,21 @@ export default function DailyActivityReport() {
     const secondTableCol = [
         { field: "sl_no", headerName: "SI" },
         { field: "brand_name", headerName: "Focus Range" },
-        { field: "tgt_val_num", headerName: "Tgt. Rs.", type: 'number', showTotal: true },
-        { field: "ach_val_num", headerName: "Ach. Rs.", type: 'number', showTotal: true },
-        { field: "prod_call_new", headerName: "Prod.Calls", type: 'number', showTotal: true },
+        { field: "tgt_val", headerName: "Tgt. Rs.", type: 'number', showTotal: true,
+            renderCell:(params)=>(
+                <Typography>{params.row. tgt_val_num}</Typography>
+            )
+         },
+        { field: "ach_val", headerName: "Ach. Rs.", type: 'number', showTotal: true,
+          renderCell:(params)=>(
+                <Typography>{params.row. ach_val_num}</Typography>
+            )
+         },
+        { field: "prod_call", headerName: "Prod.Calls", type: 'number', showTotal: true,
+          renderCell:(params)=>(
+                <Typography>{params.row.prod_call_new}</Typography>
+            )
+         },
     ];
 
    const handleDownloadExcel = async () => {

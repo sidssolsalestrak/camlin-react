@@ -24,7 +24,7 @@ const getXAxisLabelMaxLength = (labelCount) => {
 };
 
 const getXAxisInterval = (labelCount) => {
-    const maxVisibleLabels = 22;
+    const maxVisibleLabels = 24;
     if (labelCount <= maxVisibleLabels) return 0;
     return Math.ceil(labelCount / maxVisibleLabels) - 1;
 };

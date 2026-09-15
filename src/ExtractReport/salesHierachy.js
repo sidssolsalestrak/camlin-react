@@ -261,6 +261,7 @@ export default function SalesHierachy() {
         {
             field: "ter_name",
             headerName: territoryLabel,
+            truncateTooltip: true,
         },
         {
             field: "rsm_code",

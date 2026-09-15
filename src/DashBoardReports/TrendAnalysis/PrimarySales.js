@@ -86,13 +86,9 @@ function PrimarySales({ enType }) {
         loadMasterPanel();
     }, []);
 
-    // ✅ FIX: useRef instead of useState — no re-render on progress update
     const progressRef = useRef(null);
     const setProgress = (val) => { progressRef.current = val; };
 
-    // ✅ FIX: yr now derives from the URL param (decodeYear), which only
-    // changes after handleLoad/handleApply navigate — NOT from the live
-    // selYear picker value. So headers/title/excel only change after Load.
     const loadedYear = useMemo(() => (decodeYear ? dayjs(decodeYear) : dayjs()), [decodeYear]);
     const yr = loadedYear.format("YYYY");
 
@@ -305,7 +301,6 @@ function PrimarySales({ enType }) {
     const newPath = buildNavPath();
 
     if (newPath === location.pathname) {
-        // URL won't change, so the route-driven useEffect won't fire — fetch directly
         fetchAnalysisData();
     } else {
         setLoading(true);
@@ -482,9 +477,11 @@ function PrimarySales({ enType }) {
 
     }, [rawData, decodegroupBy, decodeYear]);
 
-    const fmt = (val) => {
+    const fmt = (val, forceFix = false) => {
         const num = Number(val);
-        return (!val || num === 0) ? "-" : num;
+        if (!val || num === 0) return "-";
+        if (forceFix && selRepType === 2) return num.toFixed(2);
+        return num;
     };
 
     const fmtSaliency = (val) => (!val || Number(val) === 0 || val === "0.00") ? "-" : Number(val);
@@ -496,39 +493,38 @@ function PrimarySales({ enType }) {
         return {};
     };
 
-       const getLabel = (list, selectedId, labelKey, prefix, idKey = "id") => {
-                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
-                const match = list.find((item) => String(item[idKey]) === String(selectedId));
-                if (!match) return `${prefix} All`;
-                const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
-                return `${prefix} ${label}`;
-            };
+    const getLabel = (list, selectedId, labelKey, prefix, idKey = "id") => {
+        if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
+        const match = list.find((item) => String(item[idKey]) === String(selectedId));
+        if (!match) return `${prefix} All`;
+        const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
+        return `${prefix} ${label}`;
+    };
 
     const handleDownLoadExcel = async () => {
         try {
-         
-    const excelTableData = tableData.map(row => {
-    const updated = { ...row };
+            const excelTableData = tableData.map(row => {
+                const updated = { ...row };
 
-    MONTHS.forEach((_, i) => {
-        const valKey = `m_val_${i}`;
-        const qtyKey = `m_qty_${i}`;
-        updated[valKey] = (!updated[valKey] || Number(updated[valKey]) === 0) ? "-" : updated[valKey];
-        updated[qtyKey] = (!updated[qtyKey] || Number(updated[qtyKey]) === 0) ? "-" : updated[qtyKey];
-    });
+                MONTHS.forEach((_, i) => {
+                    const valKey = `m_val_${i}`;
+                    const qtyKey = `m_qty_${i}`;
+                    updated[valKey] = (!updated[valKey] || Number(updated[valKey]) === 0) ? "-" : updated[valKey];
+                    updated[qtyKey] = (!updated[qtyKey] || Number(updated[qtyKey]) === 0) ? "-" : updated[qtyKey];
+                });
 
-    updated.total_val = (!updated.total_val || Number(updated.total_val) === 0) ? "-" : updated.total_val;
-    updated.total_qty = (!updated.total_qty || Number(updated.total_qty) === 0) ? "-" : updated.total_qty;
+                updated.total_val = (!updated.total_val || Number(updated.total_val) === 0) ? "-" : updated.total_val;
+                updated.total_qty = (!updated.total_qty || Number(updated.total_qty) === 0) ? "-" : updated.total_qty;
 
-    updated.saliency_val = (!updated.saliency_val || Number(updated.saliency_val) === 0 || updated.saliency_val === "0.00") ? "-" : Number(updated.saliency_val);
-    updated.saliency_qty = (!updated.saliency_qty || Number(updated.saliency_qty) === 0 || updated.saliency_qty === "0.00") ? "-" : Number(updated.saliency_qty);
+                updated.saliency_val = (!updated.saliency_val || Number(updated.saliency_val) === 0 || updated.saliency_val === "0.00") ? "-" : Number(updated.saliency_val);
+                updated.saliency_qty = (!updated.saliency_qty || Number(updated.saliency_qty) === 0 || updated.saliency_qty === "0.00") ? "-" : Number(updated.saliency_qty);
 
-    updated._grandTotal = row._rowType === "grand_total";
-    updated._zoneTotal = row._rowType === "zone_subtotal";
-    updated._isSubtotal = row._rowType === "reg_subtotal";
+                updated._grandTotal = row._rowType === "grand_total";
+                updated._zoneTotal = row._rowType === "zone_subtotal";
+                updated._isSubtotal = row._rowType === "reg_subtotal";
 
-    return updated;
-    });
+                return updated;
+            });
 
             const filters = [
                 { label: `Trend Analysis Data FY-${yr}`, bold: true, sz: 13 },
@@ -572,7 +568,8 @@ function PrimarySales({ enType }) {
             headerName: `${m}-${yr}`,
             renderCell: ({ row }) => {
                 const v = selRepType === 1 ? row[`m_qty_${i}`] : row[`m_val_${i}`];
-                return <Box sx={{ textAlign: "center" }}>{fmt(v)}</Box>;
+                const forceFix = row._rowType !== "data";
+                return <Box sx={{ textAlign: "center" }}>{fmt(v, forceFix)}</Box>;
             }
         })),
         {
@@ -580,7 +577,7 @@ function PrimarySales({ enType }) {
             headerName: "Total",
             renderCell: ({ row }) => {
                 const v = selRepType === 1 ? row.total_qty : row.total_val;
-                return <Box sx={{ textAlign: "center" }}>{fmt(v)}</Box>;
+                return <Box sx={{ textAlign: "center" }}>{fmt(v, true)}</Box>;
             }
         },
         {
@@ -592,8 +589,6 @@ function PrimarySales({ enType }) {
             }
         },
     ];
-
-    console.log("selected category id",selCategory)
 
     return (
         <Layout breadcrumb={[
