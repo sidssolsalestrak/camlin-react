@@ -20,29 +20,31 @@ import { Download } from "../../utils/downloadExcel/Download";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
 
-// NOTE: btoa/atob are plain base64, not encryption — swap these for your
-// app's real encode/decode helper if one already exists elsewhere.
-const encodeParam = (val) => {
-    if (val === null || val === undefined || val === "") return "";
-    try {
-        return btoa(String(val));
-    } catch {
-        return "";
-    }
-};
 
-const decodeParam = (val) => {
-    if (!val) return "";
-    try {
-        return atob(val);
-    } catch {
-        return "";
-    }
-};
 
 function SalesAnalysisReport() {
     const { encYear, enType, enSubCat } = useParams();
     const navigate = useNavigate();
+
+    // NOTE: btoa/atob are plain base64, not encryption — swap these for your
+    // app's real encode/decode helper if one already exists elsewhere.
+    const encodeParam = (val) => {
+        if (val === null || val === undefined || val === "") return "";
+        try {
+            return btoa(String(val));
+        } catch {
+            return "";
+        }
+    };
+
+    const decodeParam = (val) => {
+        if (!val) return "";
+        try {
+            return atob(val);
+        } catch {
+            return "";
+        }
+    };
 
     const [selYear, setSelYear] = useState(() => {
         const decoded = decodeParam(encYear);
