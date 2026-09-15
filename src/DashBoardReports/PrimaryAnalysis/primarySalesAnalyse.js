@@ -67,6 +67,12 @@ function PrimarySalesAnalze() {
         </span>
     );
 
+    const ageNegative=(val) => (
+        <span style={{ color: "inherit" }}>
+            {zeroToNull(val)}
+        </span>
+    );
+
     const bold = (val) => <strong>{zeroToNull(val)}</strong>;
 
     // name field per type — stays in sync with selType via useMemo
@@ -324,7 +330,7 @@ function PrimarySalesAnalze() {
                 {
                     field: "percentage",
                     headerName: "%age",
-                    renderCell: (params) => redIfNegative(params.row?.percentage ?? params.percentage),
+                    renderCell: (params) => ageNegative(params.row?.percentage ?? params.percentage),
                 },
             ]
         },

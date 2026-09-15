@@ -601,7 +601,7 @@ function OrderFrequencyReport() {
                         <PiWarningCircleLight size={80} color="#F8BB86" />
                     </Box>
                     <Typography sx={{ color: '#797979', fontWeight: 500, fontSize: '1.2rem', textAlign: 'center' }}>
-                        You can View Report only {regionLabel}wise!. Please Select {regionLabel}. For All Consolidated Report Please Use Excel Export Option.
+                        You can View Report only {regionLabel}wise!. Please Select {zoneLabel} & {regionLabel}. For All Consolidated Report Please Use Excel Export Option.
                     </Typography>
                 </DialogContent>
                 <DialogActions>
