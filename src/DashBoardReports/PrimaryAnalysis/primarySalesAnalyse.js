@@ -28,6 +28,7 @@ function PrimarySalesAnalze() {
     const decodeCatType = enCatType !== 'undefined' && enCatType ? atob(enCatType) : 4
     const [selMonth, setSelMonth] = useState(decodeEnMonth);
     const [selType, setSelType] = useState(decodeCatType);
+    const [maxDate,setMaxDate]=useState(null)
     const [progress, setProgress] = useState(null);
     const [allPrimaryData, setAllPrimaryData] = useState([]);
     const [graphdataDialog, setGraphDialog] = useState(false)
@@ -76,6 +77,13 @@ function PrimarySalesAnalze() {
                     : "cat_name"
     ), [selType,decodeCatType]);
 
+    // header label per type — derived from decodeCatType (URL param), so it only
+    // updates after "Load" is clicked, in sync with nameField/data — not live
+    // as the dropdown changes like selTypeName does
+    const loadedTypeName = useMemo(() => (
+        allTypeNames.find(t => t.value == decodeCatType)?.label ?? "Category Wise"
+    ), [decodeCatType]);
+
     const showConfirmationDialog = (config) => {
         setConfirmationDialog(prev => ({ ...prev, ...config, open: true }))
     }
@@ -112,18 +120,21 @@ function PrimarySalesAnalze() {
             setShowTable(true)
         }
         fetchSaleAnalysisData()
-    }, [enMonth, enCatType, location.pathname])
+    }, [enMonth, enCatType])
 
 
     const fetchSaleAnalysisData = async () => {
         try {
-            setLoading(true)
+
             const payload = { month: selMonth, selType, groupName: selTypeName };
+            setLoading(true)
             const response = await api.post("/monthlySalesDashboard", payload);
             const primaryres = Array.isArray(response.data.primarydata)
                 ? response.data.primarydata
                 : [];
             const primaryGraphRes = Array.isArray(response.data.primaryGraph) ? response.data.primaryGraph : []
+            let maxDateRes=Array.isArray(response.data.maxDate)?response.data.maxDate:null
+            setMaxDate(maxDateRes)
             setAllGraphData(primaryGraphRes)
             const mapped = primaryres.map(row => {
                 const sale_qty = Number(row.sale_qty) || 0;
@@ -189,13 +200,19 @@ function PrimarySalesAnalze() {
     };
 
     const selectedMonth = dayjs(decodeEnMonth);
+    const maxDateVal =
+    Array.isArray(maxDate) && maxDate[0]?.maxdate &&
+    maxDate[0].maxdate !== '0000-00-00 00:00:00'
+        ? maxDate[0].maxdate
+        : null;
 
     if (now.format('MM-YYYY') === selectedMonth.format('MM-YYYY')) {
-        dateLabel = ' /  as of ' + selectedMonth.format('DD MMM YYYY HH:mm a');
+        dateLabel = maxDateVal
+            ? ' /  as of ' + dayjs(maxDateVal).format('DD MMM YYYY hh:mm a')
+            : ' /  as of ' + now.format('DD MMM YYYY hh:mm a');
     } else {
-        dateLabel = ' /  as of ' + selectedMonth.endOf('month').format('DD MMM YYYY HH:mm a');
+        dateLabel = ' /  as of ' + selectedMonth.endOf('month').format('DD MMM YYYY') + ' 00:00 am';
     }
-
     const renderPrimarySalesAnalyse = async () => {
         setModifyLoading(true)
         try {
@@ -222,26 +239,32 @@ function PrimarySalesAnalze() {
     }
 
     const handleLoad = () => {
-        setShowTable(true)
+        setShowTable(true);
         try {
             const encMonth = btoa(selMonth ? selMonth.format("YYYY-MM") : dayjs().format("YYYY-MM"));
-            const enType = btoa(selType)
-            navigate(`/dashboard/primarysalesview/${encMonth}/${enType}`)
+            const enType = btoa(selType);
 
+            // If the URL params won't change, navigate() won't re-trigger
+            // the useEffect([enMonth, enCatType]) — so fetch manually instead.
+            if (encMonth === enMonth && enType === enCatType) {
+                fetchSaleAnalysisData();
+            } else {
+                setLoading(true);
+                navigate(`/dashboard/primarysalesview/${encMonth}/${enType}`);
+            }
+        } catch (err) {
+            console.log("navigation Error", err);
         }
-        catch (err) {
-            console.log("navigation Error", err)
-        }
-    }
+    };
 
 
     const column = useMemo(() => [
         {
             field: nameField,
-            headerName: `${selTypeName} Sales`,
+            headerName: `${loadedTypeName} Sales`,
             renderHeader: () => (
                 <Typography sx={{ textAlign: "left", fontWeight: 600 }}>
-                    {selTypeName} Sales
+                    {loadedTypeName} Sales
                 </Typography>
             ),
             renderCell: (params) => {
@@ -255,7 +278,7 @@ function PrimarySalesAnalze() {
             subColumns: [
                 {
                     field: nameField,
-                    headerName: `${selTypeName?.split(' ')[0]} Name`,
+                    headerName: `${loadedTypeName?.split(' ')[0]} Name`,
                     renderCell: (params) => {
                         const row = params?.row ?? params;
                         return (
@@ -290,7 +313,7 @@ function PrimarySalesAnalze() {
                 },
                 {
                     field: "lym_sale_qty",
-                    headerName: `${dayjs(selMonth).subtract(1, "year").format("MMM YYYY")}`,
+                    headerName: `${dayjs(decodeEnMonth,'MMM YYYY').subtract(1, "year").format("MMM YYYY")}`,
                     renderCell: (params) => zeroToNull(params.row?.lym_sale_qty ?? params.lym_sale_qty),
                 },
                 {
@@ -341,7 +364,7 @@ function PrimarySalesAnalze() {
                 },
             ]
         }
-    ], [nameField, decodeCatType, selMonth]);
+    ], [nameField, loadedTypeName, decodeCatType, decodeEnMonth ]);
 
 
     const excelColumn = [
@@ -405,6 +428,7 @@ function PrimarySalesAnalze() {
     }
 
     console.log("All primary Data", allPrimaryData);
+    console.log("decode en month",decodeEnMonth)
 
     return (
         <Layout breadcrumb={[
@@ -514,10 +538,8 @@ function PrimarySalesAnalze() {
                                     }}>
                                 <Typography sx={{ fontStyle: 'italic', textAlign: 'center',pt:2 }}>{`* Qty in Pcs${dateLabel}`}</Typography>
                                 <DataTable
-                                    searchable={false}
                                     columns={column}
                                     data={allPrimaryData}
-                                    showHeader={false}
                                     noDataMessage={`No Data Available for ${selectedMonth.format('MMM YYYY')}`}
                                     getRowClassName={(row) => row.isTotal ? "total-row" : ""}
                                     loading={loading}

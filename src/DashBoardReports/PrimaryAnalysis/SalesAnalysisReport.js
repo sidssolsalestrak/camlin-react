@@ -1,5 +1,6 @@
 // SalesAnalysisReport.jsx
 import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../../layout";
 import api from "../../services/api";
 import {
@@ -19,10 +20,44 @@ import { Download } from "../../utils/downloadExcel/Download";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
 
+
+
 function SalesAnalysisReport() {
-    const [selYear, setSelYear] = useState(dayjs());
-    const [selType, setSelType] = useState(2);
-    const [selSubCat, setSelSubCat] = useState(0);
+    const { encYear, enType, enSubCat } = useParams();
+    const navigate = useNavigate();
+
+    // NOTE: btoa/atob are plain base64, not encryption — swap these for your
+    // app's real encode/decode helper if one already exists elsewhere.
+    const encodeParam = (val) => {
+        if (val === null || val === undefined || val === "") return "";
+        try {
+            return btoa(String(val));
+        } catch {
+            return "";
+        }
+    };
+
+    const decodeParam = (val) => {
+        if (!val) return "";
+        try {
+            return atob(val);
+        } catch {
+            return "";
+        }
+    };
+
+    const [selYear, setSelYear] = useState(() => {
+        const decoded = decodeParam(encYear);
+        return decoded ? dayjs(`${decoded}-01-01`) : dayjs();
+    });
+    const [selType, setSelType] = useState(() => {
+        const decoded = decodeParam(enType);
+        return decoded ? Number(decoded) : 2;
+    });
+    const [selSubCat, setSelSubCat] = useState(() => {
+        const decoded = decodeParam(enSubCat);
+        return decoded ? Number(decoded) : 0;
+    });
     const [allSubCat, setAllSubCat] = useState([]);
     const [tableData, setTableData] = useState([]);   // flat pivoted rows
     const [regions, setRegions] = useState([]);   // [{reg_id, regName}]
@@ -43,6 +78,15 @@ function SalesAnalysisReport() {
             setMasterPanel(data);
         };
         loadMasterPanel();
+    }, []);
+
+    // Auto-load if the URL already carries filter params (e.g. a shared /
+    // bookmarked link opened directly).
+    useEffect(() => {
+        if (encYear || enType || enSubCat) {
+            handleLoad();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchSubCats = async () => {
@@ -140,6 +184,16 @@ function SalesAnalysisReport() {
     };
 
     const handleLoad = async () => {
+        const year = selYear.format('YYYY');
+
+        // Keep the URL in sync with the current filters so the view is
+        // shareable/bookmarkable. `replace: true` avoids stacking a new
+        // history entry on every Load click.
+        navigate(
+            `/dashboard/salesanalysis/${encodeParam(year)}/${encodeParam(selType)}/${encodeParam(selSubCat)}`,
+            { replace: true }
+        );
+
         setShowTable(true)
         setTableTitle(`${selType == 3 ? "SKU WISE" : "PRODUCT CATEGORY WISE"} PRIMARY SALES ANALYSIS`);
         setNameHeader(selType == 3 ? "SKU" : (masterPanel["BRND"] || "Brand"));
@@ -148,7 +202,6 @@ function SalesAnalysisReport() {
             setTableData([]);
             setRegions([]);
 
-            const year = selYear.format('YYYY');
             const dt = dayjs(`${year}-01-01`);
             const currentYear = dt.format('YYYY');
             const nextYear = dt.add(1, 'year').format('YYYY');
@@ -237,6 +290,21 @@ function SalesAnalysisReport() {
             {
                 field: "label",
                 headerName: nameHeader,
+                renderCell: (params) => {
+                    const row = params?.row ?? params;
+                    return (
+                        <Typography
+                            sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                            title={row.label}
+                        >
+                            {row.label}
+                        </Typography>
+                    );
+                },
             },
 
             ...regions.map((region) => {

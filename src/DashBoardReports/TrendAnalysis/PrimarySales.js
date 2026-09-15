@@ -118,6 +118,7 @@ function PrimarySales({ enType }) {
             handleReset();
             return;
         }
+        setinitialLoad(true)
         fetchAnalysisData();
     }, [enyear, enType, engroupBy, enreportType,
         enZone, enRegion, enArea, enterritory,
@@ -299,7 +300,18 @@ function PrimarySales({ enType }) {
         return `/reports/trendanalysis/${entype}/${encYear}/${engrp}/${enreptype}/${enZoneE}/${enRegionE}/${enAreaE}/${enTerE}/${enDistE}/${enCatE}/${enSubCatE}/${enProdE}`;
     };
 
-    const handleLoad = () => navigate(buildNavPath());
+   const handleLoad = () => {
+    setinitialLoad(true);
+    const newPath = buildNavPath();
+
+    if (newPath === location.pathname) {
+        // URL won't change, so the route-driven useEffect won't fire — fetch directly
+        fetchAnalysisData();
+    } else {
+        setLoading(true);
+        navigate(newPath);
+    }
+    };
 
     const handleApply = () => {
         setFiltersOpen(false);
@@ -700,7 +712,6 @@ function PrimarySales({ enType }) {
                         <DataTable
                             data={tableData}
                             columns={COLUMNS}
-                            showHeader={false}
                             hideSubHeader
                             rowStyle={rowStyle}
                             loading={loading}
