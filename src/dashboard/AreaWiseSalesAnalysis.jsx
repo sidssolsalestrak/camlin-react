@@ -29,6 +29,8 @@ const AreaWiseSalesAnalysis = () => {
     const location = useLocation();
     const [progress, setProgress] = useState(null);
     const [year, setYear] = useState(dayjs());
+    // of shifting live as the DatePicker value changes
+    const [loadedYear, setLoadedYear] = useState(dayjs());
     const [tableData, settableData] = useState([]);
     const [loading, setloading] = useState(false)
     const showAlert = useToast();
@@ -83,6 +85,7 @@ const AreaWiseSalesAnalysis = () => {
 
     const handleLoad = async () => {
         setshowTable(true)
+        setLoadedYear(year)
         try {
             setloading(true)
             let payload = {
@@ -107,8 +110,8 @@ const AreaWiseSalesAnalysis = () => {
         }
     }
 
-    const yy = year ? dayjs(year).format("YY") : "";
-    const nextYY = year ? dayjs(year).add(1, "year").format("YY") : "";
+    const yy = loadedYear ? dayjs(loadedYear).format("YY") : "";
+    const nextYY = loadedYear ? dayjs(loadedYear).add(1, "year").format("YY") : "";
 
     const columns = [
         { field: "area_name", headerName: masterPanel["AREA"] || "Area", filterable: true, },
@@ -247,7 +250,7 @@ const AreaWiseSalesAnalysis = () => {
                             slotProps={{ textField: { size: "small", sx: { maxWidth: 150 } } }}
                         />
                     </LocalizationProvider>
-                    <Button variant='contained' onClick={handleLoad}>Load</Button>
+                    <Button variant='contained' disabled={loading} onClick={handleLoad}>Load</Button>
                     {progress ? <CircularProgressLoading progress={progress} /> :
                         <span onClick={handleDownloadExcel}>
                             <AiOutlineFileExcel style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />

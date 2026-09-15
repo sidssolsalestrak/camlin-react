@@ -38,6 +38,7 @@ import {
     FaSpinner,
     FaBars,
     FaFilePdf,
+    FaRegFilePdf,
     FaRegImage,
     FaFileExcel,
     FaMinusSquare,
@@ -889,7 +890,7 @@ function DataSubmissionStatus() {
         if (fileType === 2)
             return (
                 <span style={{ cursor: "pointer" }} onClick={(e) => { if (docName !== "") handleClick(e); }}>
-                    <FaFilePdf  style={{ color: "#e90505", fontSize: 14 }} />
+                    <FaRegFilePdf style={{ color: "#e90505", fontSize: 15 }} />
                 </span>
             );
         if (fileType === 3)
