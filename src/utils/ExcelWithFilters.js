@@ -98,10 +98,10 @@ const styleDataCells = (ws, dataStartRow, dataEndRow, totalCols, borderStyle, ma
   }
 };
 
-const setColumnWidths = (ws, headers, maxContentLengths) => {
+const setColumnWidths = (ws, headers, maxContentLengths,fieldIds) => {
   ws["!cols"] = headers.map((header, index) => {
     const maxLength = Math.max(header.length, maxContentLengths[index] || 0);
-    const cap = header === "PRODUCT NAME" ? 50 : 30; 
+    const cap = fieldIds[index] === "prod_name" ? 50 : 30; 
     return { wch: Math.min(Math.max(maxLength + 4, 12), cap) };
   });
 };
@@ -201,7 +201,7 @@ export const excelWithFilters = async (tableData, tableColumns, fileName, filter
         };
       }
     });
-    setColumnWidths(ws, headers, maxContentLengths);
+    setColumnWidths(ws, headers, maxContentLengths,fieldIds);
     setRowHeights(ws, mergedTitleRows, formattedData);
 
     await new Promise((r) => setTimeout(r, 200));

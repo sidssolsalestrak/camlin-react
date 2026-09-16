@@ -1238,6 +1238,25 @@ export default function Dashboard() {
     navigate(`/mobile/Orders?${params}`)
   }
 
+  const fetchDayWiseDataForExport = useCallback(async () => {
+    if (!dayWiseDate) return [];
+    try {
+      const res = await api.post("/dashboard/activityDashboard", {
+        crDate: dayWiseDate.format("YYYY-MM-DD"),
+        frmDate: dayWiseDate.format("YYYY-MM-DD"),
+        activityType: 1,
+        activityBreakUp,
+        empType,
+        cusType,
+        value: 0, // ← always "show all" for export, ignore showAllReported toggle
+      });
+      return res.data?.activityData || [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  }, [dayWiseDate, activityBreakUp, empType, cusType]);
+
   const handlePrimarySalesNavigate = () => {
     let selMonth = dayjs();
     let selType = 4
@@ -1608,10 +1627,11 @@ export default function Dashboard() {
                   setExporting(true);
                   try {
                     if (filterType === "0") {
-                      // Day Wise export — single selected day, day-wise sample styling
+                      const exportData = await fetchDayWiseDataForExport();
                       exportDayWiseExcel(
-                        dayWiseData,
+                        exportData,
                         dayWiseDate ? dayWiseDate.format("DD MMM YYYY") : "",
+                        dayWiseDate ? dayWiseDate.isSame(dayjs(), "day") : false,
                       );
                     } else {
                       // Cumulative export — unchanged
