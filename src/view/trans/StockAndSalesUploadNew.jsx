@@ -545,7 +545,7 @@ const StockAndSalesUploadNew = () => {
                     {/* ── Autocomplete Distributor ── */}
                     <Autocomplete
                         size="small"
-                        sx={{ width: 220 }}
+                        sx={{ width: 240 }}
                         options={distOptions}
                         getOptionLabel={(option) =>
                             option.id === "0"

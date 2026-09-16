@@ -307,14 +307,14 @@ const SubmissionStatusTableComponent = ({
     const renderUplTypeIcon = useCallback((uplType) => {
         if (uplType === 2) return (
             <Tooltip title="Website">
-                <span style={{ display: "inline-flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center",marginLeft:'2px' }}>
                     <FaDesktop style={{ color: "#585757", fontSize: 13 }} />
                 </span>
             </Tooltip>
         );
         if (uplType === 1) return (
             <Tooltip title="App">
-                <span style={{ display: "inline-flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center",marginLeft:'2px'  }}>
                     <FaMobileAlt style={{ color: "#585757", fontSize: 13 }} />
                 </span>
             </Tooltip>

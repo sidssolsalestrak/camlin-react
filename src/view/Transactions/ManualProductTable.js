@@ -19,49 +19,10 @@ import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 
-/**
- * ManualProductTable
- * -------------------
- * Purpose-built replacement for <DataTable/> when `manualMode` is active.
- *
- * Why this exists: manual-entry mode can load the entire product catalog
- * for a distributor, and every qty edit lived in the parent's `tableData`
- * state — so every keystroke re-rendered every mounted row. This component
- * fixes that by:
- *   1. Paginating like DataTable does, so only `rowsPerPage` rows are ever
- *      mounted at once (default 50, configurable).
- *   2. Giving each qty <TextField> its own local keystroke state, only
- *      pushing the committed value up to the parent on blur / after a
- *      short debounce — typing in one row never touches the others.
- *   3. Skipping DataTable's per-cell overhead (tooltip-length probing,
- *      sticky-column math, columnBgColors reduce) that manual mode never
- *      needed in the first place.
- *
- * Props
- *  - rows:          groupedRows array (includes `_rowType: "cat_header"`
- *                    and `_isGrandTotal` marker rows)
- *  - onQtyChange:    (rowKey, value) => void
- *  - tglVal:         0 | 1 — "all products" vs "with values" toggle state
- *  - onToggleAll:    change handler for that toggle
- *  - masterPanel:    label overrides ({ PROD: "SKU", ... })
- *  - loading:        boolean
- *  - defaultPageSize: initial rows-per-page (default 50)
- *  - pageSizeOptions: rows-per-page choices (default [25, 50, 100, 200, 500])
- *
- *  NOTE: Closing Qty is always editable — the field is never disabled or
- *  set read-only, regardless of any `editable` prop passed down.
- */
-
 const pageSizeOptionsDefault = [25, 50, 100, 200, 500];
 
-// Width of the Closing Qty column — kept as a single constant so the header
-// cell and every data-row cell always stay pixel-aligned.
 const QTY_COL_WIDTH = 260;
 
-// Same mapping-status colors/logic as the original manualColumns in
-// UploadClosing.jsx — manual rows are direct catalog entries, so this is
-// almost always green, but a row can still show semi/unmapped/invalid if
-// it came in with those flags set (e.g. re-opened after a partial map).
 const MAP_COLORS = {
   mapped: "#16a34a",
   semi: "#f97316",
@@ -98,11 +59,8 @@ const QtyInput = React.memo(function QtyInput({ rowKey, value, onCommit }) {
   const [local, setLocal] = useState(value === 0 ? "" : (value ?? ""));
   const debounceRef = useRef(null);
 
-  // Only resync from parent when the row identity changes (new row swapped
-  // into this slot), never on every parent re-render.
   useEffect(() => {
     setLocal(value === 0 ? "" : (value ?? ""));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowKey]);
 
   useEffect(() => () => {
@@ -251,17 +209,39 @@ function ManualProductTable({
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows;
     const term = search.toLowerCase().trim();
-    // Category headers / grand total always pass through; data rows are filtered.
-    return rows.filter((r) => {
-      if (r._rowType === "cat_header" || r._isGrandTotal) return true;
+
+    const matched = rows.filter((r) => {
+      if (r._rowType === "cat_header" || r._isGrandTotal) return false;
       const hay = `${r.prod_code ?? ""} ${r.prod_name ?? ""} ${
         r.cat_code_1 ?? ""
       }`.toLowerCase();
       return hay.includes(term);
     });
+
+    const result = [];
+    let lastCat = null;
+
+    rows.forEach((r) => {
+      if (r._rowType === "cat_header") {
+        lastCat = r;
+        return;
+      }
+      if (r._isGrandTotal) {
+        if (matched.length > 0) result.push(r);
+        return;
+      }
+      if (matched.includes(r)) {
+        if (lastCat && !result.includes(lastCat)) {
+          result.push(lastCat);
+        }
+        result.push(r);
+        lastCat = null;
+      }
+    });
+
+    return result;
   }, [rows, search]);
 
-  // Reset to page 1 whenever the underlying data or search changes.
   useEffect(() => {
     setPage(0);
   }, [rows.length, search]);
@@ -288,7 +268,6 @@ function ManualProductTable({
         boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
       }}
     >
-      {/* Toolbar: rows-per-page + entries count + search */}
       <Box
         sx={{
           p: "10px 0px",
@@ -372,7 +351,6 @@ function ManualProductTable({
         />
       </Box>
 
-      {/* Column header — toggle sits in a flex row next to "Closing Qty" */}
       <Box
         sx={{
           display: "flex",
@@ -432,7 +410,6 @@ function ManualProductTable({
         </Box>
       </Box>
 
-      {/* Body — only the current page's rows are mounted */}
       <Box>
         {loading ? (
           <Box sx={{ p: 4, textAlign: "center" }}>
@@ -457,7 +434,6 @@ function ManualProductTable({
         )}
       </Box>
 
-      {/* Footer pagination */}
       <Box
         sx={{
           borderTop: "1px solid #e5e7eb",
