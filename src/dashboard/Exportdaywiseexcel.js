@@ -32,7 +32,10 @@
  *    through zeroTonull (0/blank -> "-").
  *  - B'days: raw pass-through — literal "0" stays "0", NOT converted to
  *    "-" (confirmed from reference: every row shows "0", never "-").
- *  - No title row, no totals row — the reference file has neither.
+ *  - Region subtotal rows: inserted whenever reg_id changes (and once
+ *    more after the last row) — mirrors DayWiseDashboard.jsx's `rows`
+ *    useMemo exactly, including the isViewingToday-dependent distance
+ *    accumulation (raw sum vs truncated sum).
  */
 
 import dayjs from "dayjs";
@@ -111,17 +114,114 @@ const buildRowCells = (sale) => {
     `</tr>`;
 };
 
+// ── Region-total helpers (mirrors DayWiseDashboard.jsx's `rows` useMemo) ──
+
+const emptyTotals = () => ({
+  dist: 0,
+  hcp: 0,
+  ret: 0,
+  prodHcp: 0,
+  prodRet: 0,
+  event: 0,
+  samp: 0,
+  joint: 0,
+  bday: 0,
+  ord: 0,
+  ordVal: 0,
+  survey: 0,
+});
+
+const roundTotal = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : v;
+};
+
+const calcProdPct = (prodCount, totalCount) => {
+  if (Number(prodCount) > 0) {
+    return { pct: Math.round((Number(prodCount) / Number(totalCount)) * 100), suffix: "%" };
+  }
+  return { pct: "", suffix: "" };
+};
+
+// Region subtotal row. The 20-column table's first 10 columns (Name,
+// Designation, Area, App Status, App Version, Stat, Start, Last Call,
+// Beat Planned, Beat Working) collapse into one label cell — same idea as
+// the colspan=6 collapse used for the on-screen version of this row.
+const buildRegionTotalRow = (regName, tot) => {
+  const hcpPct = calcProdPct(tot.prodHcp, tot.hcp);
+  const retPct = calcProdPct(tot.prodRet, tot.ret);
+  return `<tr class="totTr">` +
+    `<td colspan="10" style="text-align:left;">${escapeHtml(regName)}</td>` +
+    `<td width="5%">${tot.dist ? tot.dist.toFixed(2) : "-"}</td>` +
+    `<td width=10%><b>${zeroTonull(tot.hcp)}</b> | <b>${zeroTonull(tot.ret)}</b></td>` +
+    `<td width=10%><b>${zeroTonull(hcpPct.pct)}${hcpPct.suffix}</b> | <b>${zeroTonull(retPct.pct)}${retPct.suffix}</b></td>` +
+    `<td width="5%">${zeroTonull(tot.event)}</td>` +
+    `<td width="5%">${zeroTonull(tot.samp)}</td>` +
+    `<td width="5%">${zeroTonull(tot.joint)}</td>` +
+    `<td width="5%">${zeroTonull(tot.bday)}</td>` +
+    `<td width="5%">${zeroTonull(tot.ord)}</td>` +
+    `<td width="5%">${zeroTonull(roundTotal(tot.ordVal))}</td>` +
+    `<td width="5%">${zeroTonull(tot.survey)}</td>` +
+    `</tr>`;
+};
+
+// Builds all body rows, interleaving a region-subtotal row every time
+// reg_id changes (and once more after the loop for the final region) —
+// same accumulate/reset logic as DayWiseDashboard.jsx's `rows` useMemo.
+const buildRowsHtml = (activityData, isViewingToday) => {
+  if (!activityData.length) {
+    return `<tr><td colspan="20" align="center">No data found</td></tr>`;
+  }
+
+  const parts = [];
+  let regId = "";
+  let regName = "";
+  let tot = emptyTotals();
+
+  activityData.forEach((sale, idx) => {
+    if (idx > 0 && regId !== sale.reg_id) {
+      parts.push(buildRegionTotalRow(regName, tot));
+      tot = emptyTotals();
+    }
+
+    parts.push(buildRowCells(sale));
+
+    tot.dist += isViewingToday
+      ? (Number(sale.dist_kms) || 0)
+      : Math.trunc(Number(sale.dist_kms) || 0);
+    tot.hcp += Number(sale.hcp_call) || 0;
+    tot.ret += Number(sale.ret_call) || 0;
+    tot.prodHcp += Number(sale.hcp_prod_call) || 0;
+    tot.prodRet += Number(sale.ret_prod_call) || 0;
+    tot.event += Number(sale.tot_event) || 0;
+    tot.samp += Number(sale.tot_samp) || 0;
+    tot.joint += Number(sale.tot_jnt) || 0;
+    tot.bday += Number(sale.tot_dob_anniv) || 0;
+    tot.ord += Number(sale.tot_ord) || 0;
+    tot.ordVal += Number(sale.tot_ord_val) || 0;
+    tot.survey += Number(sale.tot_cs) || 0;
+
+    regId = sale.reg_id;
+    regName = sale.reg_name;
+  });
+
+  parts.push(buildRegionTotalRow(regName, tot));
+
+  return parts.join("");
+};
+
 /**
  * Build the exact HTML document (same tag structure/classes/ids as the
  * reference PHP export) and trigger a browser download as .xls.
  *
- * @param {Array} activityData  Day-wise rows (dayWiseData state from Dashboard.jsx)
- * @param {string} dateLabel    Formatted date, used only for the filename, e.g. "31-Aug-2026"
+ * @param {Array} activityData    Day-wise rows (dayWiseData state from Dashboard.jsx)
+ * @param {string} dateLabel      Formatted date, used only for the filename, e.g. "31-Aug-2026"
+ * @param {boolean} isViewingToday  Whether the selected day-wise date is today — controls
+ *                                  whether region distance totals are raw-summed or truncated-summed,
+ *                                  matching DayWiseDashboard.jsx's on-screen logic.
  */
-export function exportDayWiseExcel(activityData = [], dateLabel = "") {
-  const rowsHtml = activityData.length
-    ? activityData.map(buildRowCells).join("")
-    : `<tr><td colspan="20" align="center">No data found</td></tr>`;
+export function exportDayWiseExcel(activityData = [], dateLabel = "", isViewingToday = false) {
+  const rowsHtml = buildRowsHtml(activityData, isViewingToday);
 
   const html =
     `<style type="text/css">` +
