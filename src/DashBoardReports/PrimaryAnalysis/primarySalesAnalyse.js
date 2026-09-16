@@ -546,6 +546,7 @@ function PrimarySalesAnalze() {
                                 <DataTable
                                     columns={column}
                                     data={allPrimaryData}
+                                    showHeader={false}
                                     noDataMessage={`No Data Available for ${selectedMonth.format('MMM YYYY')}`}
                                     getRowClassName={(row) => row.isTotal ? "total-row" : ""}
                                     loading={loading}
