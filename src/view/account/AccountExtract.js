@@ -183,7 +183,7 @@ function AccountExtract() {
 
       const meta = {
         "": `${masterPanel["ACCM"] || "Account"} Master Extract (${AccName})`,
-        "Date": dayjs().format("DD MMM YYYY")
+        Date: `Date:${dayjs().format("DD MMM YYYY")}`
       }
       DownloadCSV(
         FormattedData,
