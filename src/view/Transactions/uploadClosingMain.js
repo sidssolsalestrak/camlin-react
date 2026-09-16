@@ -65,6 +65,7 @@ import useToast from "../../utils/useToast";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { getMasterPanel } from "../../services/masterPanelService";
 import ManualProductTable from "./ManualProductTable";
+import { FaFilePdf } from "react-icons/fa6";
 
 function UploadClosing() {
   const {
@@ -2381,12 +2382,11 @@ function UploadClosing() {
                       height: 33,
                     }}
                   >
-                    <FaFile size={30} />
+                    {fileType === 2 ? <Box sx={{width:25, height: 25}}><FaFilePdf size={24} /></Box> : <FaFile size={30} />}
                   </IconButton>
                 </Tooltip>
               </Grid>
             )}
-
             {Number(checking) !== 2 &&
               !hasExistingData &&
               !rawMode &&
