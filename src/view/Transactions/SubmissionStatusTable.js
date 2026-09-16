@@ -441,13 +441,14 @@ const SubmissionStatusTableComponent = ({
             return row._closeDate ?? formatCellData(row[field], field);
         }
 
-        if (field === "process_stat" && stkGroup === 1 && row._rowType === "data") {
+       if (field === "process_stat" && stkGroup === 1 && row._rowType === "data") {
+            const isConfirmationDue = row.process_stat === 1 && row.prod_unmap_cnt === 0 && row.qty_map_cnt === 0;
             return (
                 <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: 0.3, alignItems: "center" }}>
                     {renderStatusCell(row)}
                     {Number(row.base_data_stat) === 1 && row.process_stat !== 2 && row.process_stat !== 3 && (
                         <Tooltip title="Reject">
-                            <span style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: "10px", height: "10px", border:"0.1px solid red", borderRadius: "3px"}} onClick={() => onReject?.(row.primary_id)}>
+                            <span style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: "10px", height: "10px", border:"0.1px solid red", borderRadius: "3px", marginTop: isConfirmationDue ? "13px" : "0px",marginLeft:isConfirmationDue ? "-19px" : "0px" }} onClick={() => onReject?.(row.primary_id)}>
                                 <FaMinus style={{ color: "red", fontSize: 6 }} />
                             </span>
                         </Tooltip>
