@@ -25,7 +25,6 @@ export function exportCallSummaryExcel(profile, activitySummary = [], fileName =
     { label: "Free", width: "5%", align: "center" },
     { label: "Samples", width: "5%", align: "center" },
     { label: "Remarks", width: "10%", align: "center" },
-    { label: "Display", width: "5%", align: "center" },
   ];
 
   const theadHtml = `
@@ -76,7 +75,6 @@ export function exportCallSummaryExcel(profile, activitySummary = [], fileName =
             <td style="text-align:center;">${zeroTonull(key.free_qty)}</td>
             <td style="text-align:center;">${zeroTonull(key.samp_qty)}</td>
             <td class="noborderRight">${esc(key.call_rem)}</td>
-            <td style="text-align:center;">${esc(key.display_count)}</td>
           </tr>`;
         })
         .join("")
