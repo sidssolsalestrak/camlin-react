@@ -1452,7 +1452,7 @@ function UploadClosing() {
   const filteredRows = useMemo(() => {
     let rows = tableData;
     if (activeFilter === "mapped")
-      rows = rows.filter((r) => r.prod_map_stat !== 1 && r.qty_map_stat !== 1);
+     rows = rows.filter((r) => isRowMapped(r));
     if (activeFilter === "semi")
       rows = rows.filter((r) => r.prod_map_stat === 1 && r.pn);
     if (activeFilter === "unmapped")
