@@ -136,12 +136,15 @@ const AddCompetitor = ({ selectedBrand, compModalOpen, setCompModalOpen, onSave,
 
     // Get available competitors for a specific select
     const getAvailableCompetitors = (row, currentField) => {
-        return compMas.map(c => ({
+    console.log("compmas data",compMas)
+    console.log("row data which passes",row)
+    return compMas
+        .filter(c => c.prod_id === row.pid)
+        .map(c => ({
             ...c,
             disabled: isCompetitorDisabled(row, c.id, currentField)
         }));
     };
-
     // Check if quantity field should be disabled
     const isQtyDisabled = (row, field) => {
         const compField = field.replace('_qty', '');
