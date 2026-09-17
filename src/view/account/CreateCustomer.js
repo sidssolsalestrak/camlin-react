@@ -1740,6 +1740,7 @@ const onUpdateClick = () => {
         
          </Box>
        {/*------------  Competitor Mapping ------------------------ */}
+       {form.cusType === "1" &&
        <CompetitorMappping
             brandData={brandData}
             setBrandData={setBrandData}
@@ -1750,7 +1751,7 @@ const onUpdateClick = () => {
               setSelectedBrand(brand);   // track which brand was clicked
               setCompModalOpen(true);
             }}
-          />
+          />}
       {/*------------ contact info ------------------------ */}
       <ContactInfo
         fieldConfig={fieldConfig}
