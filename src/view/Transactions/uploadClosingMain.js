@@ -253,7 +253,7 @@ function UploadClosing() {
       if (!mappedNow && !r.pn) unmapped++;
       if (!mappedNow && r.pn) semi++;
       if (r.qty_map_stat === 1) invalid++;
-      if (mappedNow) mapped++;
+      if (mappedNow && r.qty_map_stat !== 1) mapped++;
       totalQty += Number(r.prod_qty) || 0;
     });
     return { mapped, semi, unmapped, invalid, total: tableData.length, totalQty };
