@@ -637,15 +637,18 @@ const onUpdateClick = () => {
     fetchRepIncharge(); 
   };
 
-  useEffect(()=>{
-    let fetchBrandData=async()=>{
+  useEffect(() => {
+    let fetchBrandData = async () => {
       try {
-        let  brandsRes=await api.post('/getBrands',{ doctorId: decodedID > 0 ? decodedID : 0 })
+        const endpoint = isTemp ? "/getBrandsTemp" : "/getBrands";
+        const param = isTemp ? { tempId: decodedID } : { doctorId: decodedID > 0 ? decodedID : 0 };
+        
+        let brandsRes = await api.post(endpoint, param);
         const brandsRaw = brandsRes.data.data || [];
         const mappedBrands = brandsRaw.map(b => ({
           subCatId: String(b.id),
           name: b.sub_name,
-          focus: b.foc? 1 : 0,
+          focus: b.foc ? 1 : 0,
           reminder: b.rem ? 1 : 0,
           competition: 0,
           compCount: 0,
@@ -654,9 +657,9 @@ const onUpdateClick = () => {
       } catch (err) {
         console.error("fetchBrandData error", err);
       }
-    }
-    fetchBrandData()
-  },[decodedID])
+    };
+    fetchBrandData();
+  }, [decodedID, isTemp]);
 
   const handleRegionChange = async (val) => {
     // find zone_id from the selected region
@@ -1021,11 +1024,13 @@ const onUpdateClick = () => {
         // ── 5. Load all dependent dropdowns in parallel
         let loadedBrandData = [];
         if (d.reg_id) {
+          const brandsEndpoint = isTemp ? "/getBrandsTemp" : "/getBrands";
+          const brandsPayload = isTemp ? { tempId: decodedID } : { doctorId: decodedID > 0 ? decodedID : 0 };
           const [repRes, repPosRes, distRes, brandsRes, freqRes] = await Promise.all([
             api.post("/getRepIncharge", { regId: String(d.reg_id), requestType: String(d.cus_type_id) }),
             api.post("/getRepInchargePos", { regId: String(d.reg_id) }),
             api.post("/getDistributor", { regId: String(d.reg_id) }),
-            api.post("/getBrands", { doctorId: decodedID > 0 ? decodedID : 0 }),
+            api.post(brandsEndpoint, brandsPayload),
             api.post("/getCustomerFreq"),
           ]);
 
@@ -1058,7 +1063,7 @@ const onUpdateClick = () => {
               api.post("/getCompModal", {
                 subcat_id: brand.subCatId,
                 cus_id: decodedID || 0,
-                temp_id: 0,
+                temp_id: isTemp ? decodedID :0,
               })
             );
             const compResponses = await Promise.all(compRequests);
@@ -1824,7 +1829,7 @@ const onUpdateClick = () => {
   compModalOpen={compModalOpen}
   setCompModalOpen={setCompModalOpen}
   cusId={decodedID || 0}
-  tempId={0}
+  tempId={isTemp?decodedID : 0}
   existingRows={competitorRows.filter(r => r.subcat_id === selectedBrand?.subCatId)}
   onSave={async (saveData) => {
     const editedRows = saveData.rows;
@@ -1855,7 +1860,7 @@ const onUpdateClick = () => {
         api.post("/getCompModal", {
           subcat_id: brand.subCatId,
           cus_id: decodedID || 0,
-          temp_id: 0,
+          temp_id: isTemp?decodedID:0,
         })
       );
       

@@ -300,21 +300,29 @@ const StockAndSalesUploadNew = () => {
             headerName: "UOM",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
-                        {value}
-                    </Typography>
+                <TextField
+                    size="small"
+                    value={value ?? ""}
+                    sx={cellSx(true)}
+                    InputProps={{ readOnly: true }}
+                    inputProps={{ style: { textAlign: "center", color: "black" } }}
+                />
                 ),
-        },
-        {
+            },
+            {
             field: "stk_price",
             headerName: "MRP",
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
-                        {FormatCurrency(value)}
-                    </Typography>
+                <TextField
+                    size="small"
+                    value={FormatCurrency(value)}
+                    sx={cellSx(true)}
+                    InputProps={{ readOnly: true }}
+                    inputProps={{ style: { textAlign: "center", color: "black" } }}
+                />
                 ),
-        },
+            },
         {
             field: "open_qty",
             headerName: "OPENING STOCK (O)",
