@@ -456,7 +456,7 @@ function DataSubmissionStatus() {
     }
 
     const filters = [
-        { label: `Month - ${dayjs(selMonth).format("MMM YYYY")}`, bold: false, sz: 10 },
+        { label: `Month : ${dayjs(selMonth).format("MMM YYYY")}`, bold: false, sz: 10 },
         { label: `${masterPanel["ZONE"] || "Zone"} : ${getLabel(allZone, selZone, "zone_name")}`, bold: false, sz: 10 },
         { label: `${masterPanel["REGN"] || "Region"} : ${getLabel(allRegion, selRegion, "reg_name")}`, bold: false, sz: 10 },
         { label: `${masterPanel["AREA"] || "Area"} : ${getLabel(allArea, selArea, "area_name")}`, bold: false, sz: 10 },
