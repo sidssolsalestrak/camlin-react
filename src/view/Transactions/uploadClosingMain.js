@@ -2419,6 +2419,7 @@ function UploadClosing() {
                       variant="caption"
                       fontSize={12}
                       fontWeight={500}
+                      sx={{ml:2}}
                     >
                       STATUS:
                     </Typography>
@@ -2497,8 +2498,8 @@ function UploadClosing() {
                         {processStat}
                       </Typography>
                     )}
-                    {isRejected && masId &&  tableData.length === 0 && (
-                      <Grid size={{ xs: 12, sm: "auto",ml:2 }}>
+                   {(isPending || isRejected) && masId && tableData.length === 0 && (
+                      <Grid size={{ xs: 12, sm: "auto", ml: 2 }}>
                         <Button
                           size="small"
                           variant="outlined"

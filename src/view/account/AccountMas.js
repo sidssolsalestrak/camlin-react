@@ -246,10 +246,17 @@ function AccountMas() {
       row.rsm_user_id == loggedInUserId ||
       row.sh_user_id == loggedInUserId;
 
-    const isFinalApprover = loggedInUserType == 2 || loggedInUserType == 3;
+    const isAdminFinalApprover = loggedInUserType == 2 || loggedInUserType == 3;
+    const isFinalApprover = isAdminFinalApprover || isManagerLevelApprover;
 
     if (Number(accStat) === 2) {
-      // Checker → manager-level approval only, and only while it's still pending
+      // Checker → manager-level approval only.
+      // A pure manager-level approver can only act while it's still pending.
+      // A manager who is ALSO a final approver (admin userType 2/3) can act
+      // regardless of mgr_approved_stat, since they're a final approver too.
+      if (isManagerLevelApprover && isAdminFinalApprover) {
+        return true;
+      }
       return isManagerLevelApprover && row.mgr_approved_stat == 0;
     }
 
@@ -434,7 +441,7 @@ function AccountMas() {
                 <span>
                   {row.mgr_full_name} Approved.
                   <br />
-                  ZM/NSM Pending
+                  Admin Approval Pending
                 </span>
               );
             } else {
