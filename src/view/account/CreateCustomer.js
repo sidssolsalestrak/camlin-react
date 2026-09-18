@@ -1824,147 +1824,42 @@ const onUpdateClick = () => {
         loading={submitting}
         confirmColor={confirm.confirmColor}
       />
+           <AddCompetitor
+        selectedBrand={selectedBrand}
+        compModalOpen={compModalOpen}
+        setCompModalOpen={setCompModalOpen}
+        cusId={decodedID || 0}
+        tempId={isTemp ? decodedID : 0}
+        existingRows={competitorRows.filter(r => r.subcat_id === selectedBrand?.subCatId)}
+        onSave={(saveData) => {
+          const editedRows = saveData.rows;
+          console.log("Edited rows from Add Competitor:", editedRows);
 
-      <AddCompetitor
-  selectedBrand={selectedBrand}
-  compModalOpen={compModalOpen}
-  setCompModalOpen={setCompModalOpen}
-  cusId={decodedID || 0}
-  tempId={isTemp?decodedID : 0}
-  existingRows={competitorRows.filter(r => r.subcat_id === selectedBrand?.subCatId)}
-  onSave={async (saveData) => {
-    const editedRows = saveData.rows;
-    console.log("Edited rows from Add Competitor:", editedRows);
-    if (!decodedID || decodedID === "0") {
-   // New record path
-    const rowsWithSubcat = editedRows.map(r => ({
-      ...r,
-      subcat_id: selectedBrand?.subCatId || 0,
-    }));
-
-    setCompetitorRows(prev => {
-      const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
-      return [...filtered, ...rowsWithSubcat];
-    });
-
-    setBrandData(prev => prev.map(b =>
-      b.subCatId === selectedBrand?.subCatId
-        ? { ...b, compCount: rowsWithSubcat.filter(rowHasData).length }   // ← filtered
-        : b
-    ));
-    return;
-  }
-    
-    try {
-      // ✅ Fetch data for ALL brands/subcategories
-      const allBrandRequests = brandData.map(brand => 
-        api.post("/getCompModal", {
-          subcat_id: brand.subCatId,
-          cus_id: decodedID || 0,
-          temp_id: isTemp?decodedID:0,
-        })
-      );
-      
-      const allBrandResponses = await Promise.all(allBrandRequests);
-      
-      // ✅ Combine all existing data from all brands
-      let allExistingRows = [];
-      
-      allBrandResponses.forEach((res, index) => {
-        const brand = brandData[index];
-        const backendProducts = res.data.data?.products || [];
-        
-        const rowsForThisBrand = backendProducts
-          .filter(p => {
-            // Only keep rows that have data
-            return (
-              Number(p.prod_qty) > 0 ||
-              Number(p.comp_id_1) > 0 ||
-              Number(p.comp_id_2) > 0 ||
-              Number(p.comp_id_3) > 0 ||
-              Number(p.oth_qty) > 0 ||
-              (p.other_name && p.other_name.trim() !== '')
-            );
-          })
-          .map(p => ({
-            pid: p.pid,
-            subcat_id: brand.subCatId,
-            prod_qty: p.prod_qty || 0,
-            comp_id_1: p.comp_id_1 ? String(p.comp_id_1) : "0",
-            comp_id_1_qty: p.comp_id_1_qty || 0,
-            comp_id_2: p.comp_id_2 ? String(p.comp_id_2) : "0",
-            comp_id_2_qty: p.comp_id_2_qty || 0,
-            comp_id_3: p.comp_id_3 ? String(p.comp_id_3) : "0",
-            comp_id_3_qty: p.comp_id_3_qty || 0,
-            other_name: p.other_name || "",
-            oth_qty: p.oth_qty || 0,
+          // ── saveData.rows is already the complete, authoritative set for this
+          //    brand (AddCompetitor built it by merging server data with any
+          //    unsaved local edits when the modal opened). No need to re-fetch
+          //    from the server here — doing so previously re-pulled stale/zeroed
+          //    data for products not yet submitted to the backend and could drop
+          //    an edited product depending on how the merge matched pids.
+          //    Same logic now handles both the new-record and existing-customer
+          //    cases, since neither needs a server round-trip at this point. ──
+          const rowsWithSubcat = editedRows.map(r => ({
+            ...r,
+            subcat_id: selectedBrand?.subCatId || 0,
           }));
-        
-        allExistingRows = [...allExistingRows, ...rowsForThisBrand];
-      });
-      
-      console.log("All existing rows from all brands:", allExistingRows);
-      
-      // ✅ Get existing rows for the current brand only
-      const existingForThisBrand = allExistingRows.filter(
-        r => r.subcat_id === selectedBrand?.subCatId
-      );
-      
-      // ✅ Merge: update edited rows, keep untouched ones
-      const mergedRows = existingForThisBrand.map(existingRow => {
-        const editedRow = editedRows.find(e => e.pid === existingRow.pid);
-        if (editedRow) {
-          // This product was edited, use new data
-          return { ...editedRow, subcat_id: selectedBrand?.subCatId || 0 };
-        }
-        // This product wasn't touched, keep existing
-        return existingRow;
-      });
-      
-      // ✅ Add any completely new products (not in existing)
-      editedRows.forEach(editedRow => {
-        if (!existingForThisBrand.find(e => e.pid === editedRow.pid)) {
-          mergedRows.push({ ...editedRow, subcat_id: selectedBrand?.subCatId || 0 });
-        }
-      });
-      
-      console.log("Merged rows for current brand:", mergedRows);
-      
-      // ✅ Update state: keep other brands' data, update current brand
-      setCompetitorRows(prev => {
-        const otherBrands = allExistingRows.filter(
-          r => r.subcat_id !== selectedBrand?.subCatId
-        );
-        return [...otherBrands, ...mergedRows];
-      });
-      
-      setBrandData(prev => prev.map(b =>
-        b.subCatId === selectedBrand?.subCatId
-          ? { ...b, compCount: mergedRows.filter(rowHasData).length }
-          : b
-      ));
-      
-    } catch (err) {
-      console.error("Error fetching existing competitor data:", err);
-      // Fallback: just use edited rows
-      const rowsWithSubcat = editedRows.map(r => ({
-        ...r,
-        subcat_id: selectedBrand?.subCatId || 0,
-      }));
-      
-      setCompetitorRows(prev => {
-        const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
-        return [...filtered, ...rowsWithSubcat];
-      });
-      
-      setBrandData(prev => prev.map(b =>
-        b.subCatId === selectedBrand?.subCatId
-          ? { ...b, compCount: editedRows.length }
-          : b
-      ));
-    }
-  }}
-/>
+
+          setCompetitorRows(prev => {
+            const filtered = prev.filter(r => r.subcat_id !== selectedBrand?.subCatId);
+            return [...filtered, ...rowsWithSubcat];
+          });
+
+          setBrandData(prev => prev.map(b =>
+            b.subCatId === selectedBrand?.subCatId
+              ? { ...b, compCount: rowsWithSubcat.filter(rowHasData).length }
+              : b
+          ));
+        }}
+      />
     </Layout>
   );
 }
