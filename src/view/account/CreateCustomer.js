@@ -150,7 +150,7 @@ function CreateCustomer() {
     region: "0",
     adoption: "",
     loyaltyType: "", 
-    loyalty:"1",
+    loyalty:"",
     dobNA:true,
     anniversaryNA:true,
     competitorPref: "",
@@ -209,7 +209,7 @@ function CreateCustomer() {
       potentiality: formVal.potentiality || "",
       loyalty: formVal.loyalty || "",
       loyaltyType: formVal.loyaltyType || "",
-      frequency: formVal.frequency || "48",
+      frequency: formVal.frequency || "",
       keyOpinionLeader: formVal.keyOpinionLeader !==null && formVal.keyOpinionLeader!==undefined ? String(formVal.keyOpinionLeader):"0" ,
       adoption: formVal.adoption || "",
       marketingTools: [...(formVal.marketingTools || [])].sort(), 
@@ -563,6 +563,36 @@ const onUpdateClick = () => {
     }
   }, [])
 
+  useEffect(() => {
+    console.log("freq option chng pass")
+      if (frequencyOptions.length > 0 && (!form.frequency || form.frequency === "")) {
+        if (!decodedID || decodedID === "0") {
+          setForm(prev => ({ ...prev, frequency: String(frequencyOptions[0].no_freq_visit) }));
+        }
+      }
+  }, [frequencyOptions,form.cusType]);
+
+      // Auto-select first option for Loyalty Class (uses potentialityOptions, same as the dropdown)
+  useEffect(() => {
+    if (potentialityOptions.length > 0 && (!form.loyalty || form.loyalty === "")) {
+      if (!decodedID || decodedID === "0") {
+        const defaultLoyalty = form.cusType === "2"
+          ? "4"
+          : String(potentialityOptions[0].id);
+        setForm(prev => ({ ...prev, loyalty: defaultLoyalty }));
+      }
+    }
+   }, [potentialityOptions, form.cusType]);
+
+      // Auto-select first option for Potentiality Class
+    useEffect(() => {
+      if (potentialityOptions.length > 0 && (!form.potentiality || form.potentiality === "")) {
+        if (!decodedID || decodedID === "0") {
+          setForm(prev => ({ ...prev, potentiality: String(potentialityOptions[0].id) }));
+        }
+      }
+    }, [potentialityOptions,form.cusType]);
+
   const loadDropdowns = async () => {
     try {
       const res = await api.post("/cusTypeMas");
@@ -623,7 +653,7 @@ const onUpdateClick = () => {
     setForm((f) => ({
     ...f, cusType: val,
     gender: "1", agegroup: "1", pharmaType: 1, practiceType: "",
-    potentiality: "1", loyalty: "1", loyaltyType: "", frequency: "",  // ← "1" not ""
+    potentiality: "1", loyalty: "", loyaltyType: "", frequency: "",  // ← "1" not ""
     retailerType: "1",dobNA:true,anniversaryNA:true
     }));
     setFieldErrors((prev) => ({ ...prev, cusType: "" }));
@@ -799,12 +829,14 @@ const onUpdateClick = () => {
 
     // Auto-select first option for Loyalty Type
     useEffect(() => {
+    
       if (loyaltyTypeOptions.length > 0 && (!form.loyaltyType || form.loyaltyType === "")) {
         if (!decodedID || decodedID === "0") {
           setForm(prev => ({ ...prev, loyaltyType: String(loyaltyTypeOptions[0].id) }));
         }
       }
-    }, [loyaltyTypeOptions]);
+    }, [loyaltyTypeOptions,form.cusType]);
+    console.log("loylaty option which passes",loyaltyTypeOptions)
 
   const handleRepChange = async (idx, repId, isPos = false) => {
     const updated = clinics.map((c, i) => {
@@ -931,7 +963,7 @@ const onUpdateClick = () => {
       region: "0",
       adoption: "", 
       loyaltyType: "",
-      loyalty:'1',
+      loyalty:'',
       dobNA:true,
       anniversaryNA:true,
       competitorPref: "",
@@ -994,8 +1026,8 @@ const onUpdateClick = () => {
           email: d.email || "",
           sendEmail: String(d.email_stat || "0"),
           potentiality: String(d.p_class_id || "1"),
-          loyalty: String(d.l_class_id || "1"),
-          loyaltyType: String(d.loyality_id || "0"),
+          loyalty: String(d.l_class_id || ""),
+          loyaltyType: String(d.loyality_id || ""),
           frequency: String(d.cus_visit_freq || ""),
           keyOpinionLeader: d.kol_stat !== null && d.kol_stat !== undefined
           ? String(d.kol_stat)
@@ -1555,7 +1587,7 @@ const onUpdateClick = () => {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Potentiality Class"]?.label || "Potentiality Class"}
-                value={form.potentiality || "1"}
+                value={form.potentiality || ""}
                 onChange={(e) => {
                   setForm({ ...form, potentiality: String(e.target.value) })
                   setFieldErrors((prev) => ({ ...prev, potentiality: "" }));
@@ -1594,7 +1626,7 @@ const onUpdateClick = () => {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Loyalty Class"].label || "Loyalty Class"}
-                value={form.loyalty || 1}
+                value={form.loyalty || ""}
                 onChange={(e) =>
                   setForm({ ...form, loyalty: String(e.target.value) })
                 }
@@ -1610,7 +1642,7 @@ const onUpdateClick = () => {
             <Grid size={{ xs: 12, md: 3 }}>
               <CommonAppSelect
                 label={fieldConfig["Visit Frequency/Year"]?.label || "Visit Frequency / Year"}
-                value={form.frequency || "48"}
+                value={form.frequency || ""}
                 onChange={(e) =>
                   setForm({ ...form, frequency: String(e.target.value) })
                 }

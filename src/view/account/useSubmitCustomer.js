@@ -239,10 +239,10 @@ if (noAccountOwner) {
 
       customerPotentiality: form.potentiality || "0",
       customerFrequency: form.frequency || "0",
-      customeLoyalty: form.loyalty || "0",
-      customeLoyaltyType: form.loyaltyType || "0",
-      customerKOL: form.keyOpinionLeader || "1",
-      adoption: form.adoption || "0",
+      customeLoyalty: form.loyalty || "4",
+      customeLoyaltyType: form.loyaltyType || "1",
+      customerKOL: form.keyOpinionLeader || "0",
+      adoption: form.adoption || "1",
 
       customeCompetitorPref: form.competitorPref || "",
       customeMarketingTools: Array.isArray(form.marketingTools) ? form.marketingTools : [],

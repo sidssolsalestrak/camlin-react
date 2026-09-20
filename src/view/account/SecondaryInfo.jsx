@@ -70,7 +70,6 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                                         })
                                     }
                                     format="DD MMM YYYY"
-                                    views={["day", "month", "year"]}
                                     disabled={form.dobNA}
                                     slotProps={{ textField: { size: "small", fullWidth: true } }}
                                 />
@@ -108,7 +107,6 @@ const SecondaryInfo = ({ fieldConfig, form, setForm, isHcpField, marketingOption
                                         })
                                     }
                                     format="DD MMM YYYY"
-                                    views={["day", "month", "year"]}
                                     disabled={form.anniversaryNA}
                                     slotProps={{ textField: { size: "small", fullWidth: true } }}
                                 />
