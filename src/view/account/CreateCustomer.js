@@ -1247,7 +1247,7 @@ const onUpdateClick = () => {
     getEditData();
   }, [decodedID,location.pathname]);
 
-  const ALLOWED_USER_TYPES = [2, 6, 8, 15];
+  const ALLOWED_USER_TYPES = [1,2,3, 6, 8,10,12,13,14, 15,16];
 
   // In CreateCustomer.jsx
   const handleOpenMap = () => {

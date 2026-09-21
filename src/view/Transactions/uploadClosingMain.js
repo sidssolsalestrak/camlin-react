@@ -1270,6 +1270,11 @@ function UploadClosing() {
 
   const handleManualInsert = () => {
     if (!validateQuantities(tableData)) return;
+    const hasQty = tableData.some((r) => Number(r.prod_qty) > 0);
+    if (!hasQty) {
+      toast.error("Please add at least one quantity");
+      return;
+    }
     setConfirm({
       open: true,
       title: "Confirmation",
@@ -1302,8 +1307,11 @@ function UploadClosing() {
           });
           if (res.data?.inserted_id) setMasId(res.data.inserted_id);
           setTglVal(1);
-          if (res.data.inserted_id) {
+          if (res.data.inserted_id && res.data.success) {
             toast.success(res.data.message);
+          }
+          else{
+            toast.error(res.data.message ||"something went wrong try again!")
           }
           await loadDesListData();
         } catch (err) {
