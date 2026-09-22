@@ -493,7 +493,7 @@ const PrimaryOrder = () => {
                     </Grid>
                     <Grid size={{ xs: 3, sm: 3, md: 1, lg: 1 }}>
                         {!extractPath && (
-                            <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                            <Button variant='contained' color="primary" onClick={handleLoad} disabled={loading}>Load</Button>
                         )}
                     </Grid>
                     <Grid size={{ xs: 3, sm: 3, md: 1, lg: 1 }}>

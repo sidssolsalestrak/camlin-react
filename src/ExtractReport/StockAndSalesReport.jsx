@@ -560,7 +560,7 @@ const StockAndSalesReport = () => {
                         </FormControl>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.8, lg: 0.8 }}>
-                        <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                        <Button variant='contained' color="primary" onClick={handleLoad} disabled={loading}>Load</Button>
                     </Grid>
                 </Grid>
             </Box>

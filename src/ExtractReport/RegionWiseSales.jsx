@@ -276,7 +276,7 @@ const RegionWiseSales = () => {
                             minDate={fromDate ? fromDate : null}
                         />
                     </LocalizationProvider>
-                    <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                    <Button variant='contained' color="primary" onClick={handleLoad} disabled={loading}>Load</Button>
                     {progress1 ? <CircularProgress progress={progress1} /> :
                         <span>
                             <AiOutlineFileExcel onClick={handleDownloadExcel} style={{ color: "green", cursor: "pointer", height: "30px", width: "30px" }} />
