@@ -48,6 +48,10 @@ const decode = (str) => {
     try { return atob(padded); } catch { return ""; }
 };
 
+const MAX_REPORT_DAYS = 7;
+const exceedsRange = (from, to) =>
+    dayjs(to).diff(dayjs(from), "day") >= MAX_REPORT_DAYS;
+
 const OrderReport = () => {
     const extractPath = useMatch("/reports/pcm_kam_new");
     const location = useLocation();
@@ -79,6 +83,7 @@ const OrderReport = () => {
     const [regionData, setregionData] = useState([]);
     const [area, setarea] = useState([])
     const [stkData, setstkData] = useState([])
+    const [psmData, setpsmData] = useState([])
     const [formData, setformData] = useState({
         type: "1",
         groupBy: "1",
@@ -150,6 +155,25 @@ const OrderReport = () => {
         }
     }
 
+    /*----------fetch PSM---------*/
+   const fetchPSM = async () => {
+    try {
+        const res = await axios.post("/getPsmList", {
+            area_id: formData.area,
+            dateselect: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
+            dateselectTo: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
+        });
+        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+        setpsmData(data);
+        setformData((prev) =>
+            data.some((p) => String(p.id) === String(prev.PSM)) ? prev : { ...prev, PSM: "0" }
+        );
+    } catch (error) {
+        setpsmData([]);
+        setformData((prev) => ({ ...prev, PSM: "0" }));
+    }
+}
+
     /*----------fetch stockist---------*/
     const fetchStk = async () => {
         try {
@@ -166,8 +190,8 @@ const OrderReport = () => {
     }
 
     const handleLoad = () => {
-        if (dayjs(fromDate).format("YYYY-MMM-DD") !== dayjs(toDate).format("YYYY-MMM-DD")) {
-            showAlert.error("More than one day report can be generated using Excel");
+        if (exceedsRange(fromDate, toDate)) {
+            showAlert.error("Report can be viewed for a maximum of one week. Use Excel export for a longer period.");
             return;
         }
         let params = new URLSearchParams();
@@ -220,13 +244,25 @@ const OrderReport = () => {
         } else {
             setarea([])
             setstkData([])
+            setpsmData([])
             setformData((prev) => ({
                 ...prev,
                 area: "0",
-                Stockist: "0"
+                Stockist: "0",
+                PSM: "0"
             }))
         }
     }, [formData?.region]);
+
+    // Area changes -> load PSM (same as PHP)
+    useEffect(() => {
+    if (formData?.area > 0) {
+        fetchPSM();
+    } else {
+        setpsmData([]);
+        setformData((prev) => ({ ...prev, PSM: "0" }));
+    }
+}, [formData?.area, fromDate, toDate]);
 
     const columns = [
         {
@@ -565,8 +601,8 @@ const OrderReport = () => {
         if (!extractPath) {
             setshowTable(true)
         }
-        if (dayjs(fromDate).format("YYYY-MMM-DD") !== dayjs(toDate).format("YYYY-MMM-DD")) {
-            showAlert.error("More than one day report can be generated using Excel");
+        if (frm && to && exceedsRange(frm, to)) {
+            showAlert.error("Report can be viewed for a maximum of one week. Use Excel export for a longer period.");
             return;
         }
         try {
@@ -879,6 +915,11 @@ const OrderReport = () => {
                             <Select value={formData.PSM} onChange={(e) => handleChange("PSM", e.target.value)} id='PSM' label={psmLabel} MenuProps={menuStyle}
                                 labelId="PSM" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
+                                {psmData?.map((val) => (
+                                    <MenuItem key={val.id} value={val.id}>
+                                        {val?.emp_code ? `${val.emp_code} - ${val.sr_name}` : val.sr_name}
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
 
