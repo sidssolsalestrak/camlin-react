@@ -675,7 +675,7 @@ function PrimarySales({ enType }) {
                             </Grid>
                             <Grid size={{ md:1.5, lg:1, xs: 4,sm:2 }}>
                             <Button variant="contained" onClick={handleLoad} disabled={loading}>
-                                {loading ? "Loading..." : "Load"}
+                               Load
                             </Button>
                             </Grid>
                             <Grid size={{ md:1.5, lg:1, xs: 4,sm:2 }}>

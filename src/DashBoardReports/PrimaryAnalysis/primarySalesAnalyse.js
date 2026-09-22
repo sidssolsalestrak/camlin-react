@@ -124,8 +124,8 @@ function PrimarySalesAnalze() {
         console.log("fetching Sales Analysis Data")
         if (enMonth) {
             setShowTable(true)
+            fetchSaleAnalysisData()
         }
-        fetchSaleAnalysisData()
     }, [enMonth, enCatType])
 
 
@@ -505,7 +505,7 @@ function PrimarySalesAnalze() {
 
                             {/* Load button */}
                             <Grid size={{ md: 1.5, lg: 1, xs: 3.5, sm: 1.5 }}>
-                                <Button onClick={() => handleLoad()} variant="contained">
+                                <Button disabled={loading} onClick={() => handleLoad()} variant="contained">
                                     Load
                                 </Button>
                             </Grid>
