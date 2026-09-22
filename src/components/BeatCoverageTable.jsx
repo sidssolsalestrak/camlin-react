@@ -1,17 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
-  Table,
-  TableBody,
   TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableFooter,
   Paper,
   Typography,
   Box,
   CircularProgress,
 } from "@mui/material";
+import { TableVirtuoso } from "react-virtuoso";
 import {
   buildMonthNames,
   groupBeatCoverageRows,
@@ -23,8 +18,10 @@ const QUARTER_END_MONTHS = [3, 6, 9, 12];
 const HEADER_BG = "#F6F5F2";
 const HEADER_TEXT = "#A09D97";
 const BORDER = "1px solid rgba(0,0,0,0.08)";
-const QTR_BORDER = "1px solid rgba(0,0,0,0.15)"; // slightly stronger for quarter separators
+const QTR_BORDER = "1px solid rgba(0,0,0,0.15)";
 
+// Static style objects (not recreated per cell) — merged via plain JS object
+// spread only once per row type, not per render of the whole table.
 const cellBase = {
   fontSize: "12px",
   color: "#343A40",
@@ -43,6 +40,9 @@ const headerCellBase = {
   whiteSpace: "nowrap",
 };
 
+const qtrBorder = (mthNo) =>
+  QUARTER_END_MONTHS.includes(mthNo) ? { borderRight: QTR_BORDER } : {};
+
 const BeatCoverageTable = ({
   rawData,
   yr,
@@ -57,271 +57,294 @@ const BeatCoverageTable = ({
     return { monthNames, displayRows, grandTotals };
   }, [rawData, yr]);
 
-  const qtrBorder = (mthNo) =>
-    QUARTER_END_MONTHS.includes(mthNo) ? { borderRight: QTR_BORDER } : {};
+  const monthEntries = useMemo(() => Object.entries(monthNames), [monthNames]);
+
+  // ---- Fixed table header, rendered once, sticky via TableVirtuoso's own
+  //      sticky-header support (fixedHeaderContent) ----
+  const fixedHeaderContent = useCallback(
+    () => (
+      <>
+        <tr>
+          <TableCell
+            rowSpan={2}
+            sx={{
+              ...headerCellBase,
+              position: "sticky",
+              top: 0,
+              zIndex: 5,
+              borderRight: BORDER,
+              background: HEADER_BG,
+            }}
+          >
+            SI
+          </TableCell>
+          <TableCell
+            rowSpan={2}
+            sx={{
+              ...headerCellBase,
+              position: "sticky",
+              top: 0,
+              zIndex: 5,
+              width: "18%",
+              background: HEADER_BG,
+            }}
+          >
+            Sales Person
+          </TableCell>
+          <TableCell
+            rowSpan={2}
+            sx={{
+              ...headerCellBase,
+              position: "sticky",
+              top: 0,
+              zIndex: 5,
+              width: "15%",
+              background: HEADER_BG,
+            }}
+          >
+            {areaLabel}
+          </TableCell>
+          <TableCell
+            rowSpan={2}
+            sx={{
+              ...headerCellBase,
+              position: "sticky",
+              top: 0,
+              zIndex: 5,
+              width: "15%",
+              background: HEADER_BG,
+            }}
+          >
+            {beatLabel}
+          </TableCell>
+          {[1, 2, 3, 4].map((q) => (
+            <TableCell
+              key={q}
+              colSpan={3}
+              align="center"
+              sx={{
+                ...headerCellBase,
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+                borderLeft: BORDER,
+                borderRight: q !== 4 ? QTR_BORDER : "none",
+                background: HEADER_BG,
+              }}
+            >
+              Qtr {q}
+            </TableCell>
+          ))}
+        </tr>
+        <tr>
+          {monthEntries.map(([mthNo, label]) => (
+            <TableCell
+              key={mthNo}
+              align="center"
+              sx={{
+                ...headerCellBase,
+                position: "sticky",
+                top: 33,
+                zIndex: 5,
+                borderLeft: BORDER,
+                background: HEADER_BG,
+                ...qtrBorder(Number(mthNo)),
+              }}
+            >
+              {label}
+            </TableCell>
+          ))}
+        </tr>
+      </>
+    ),
+    [monthEntries, areaLabel, beatLabel],
+  );
+
+  // ---- Per-row renderer — only called for rows currently in viewport ----
+  const itemContent = useCallback(
+    (idx, row) => {
+      if (row.type === "groupTotal") {
+        return (
+          <>
+            <TableCell
+              colSpan={4}
+              align="right"
+              sx={{
+                ...cellBase,
+                fontWeight: 600,
+                backgroundColor: "#f8f8f8",
+                borderTop: BORDER,
+              }}
+            >
+              Total {row.label}
+            </TableCell>
+            {Object.entries(row.totals).map(([mthNo, val]) => (
+              <TableCell
+                key={mthNo}
+                align="center"
+                sx={{
+                  ...cellBase,
+                  fontWeight: 600,
+                  backgroundColor: "#f8f8f8",
+                  borderTop: BORDER,
+                  ...qtrBorder(Number(mthNo)),
+                }}
+              >
+                {val}
+              </TableCell>
+            ))}
+          </>
+        );
+      }
+
+      return (
+        <>
+          <TableCell sx={cellBase}>{row.si ?? ""}</TableCell>
+          <TableCell sx={cellBase}>
+            {row.si != null && (
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    color: "#133bde",
+                    cursor: "pointer",
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                >
+                  {row.sr_name}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "11px",
+                    fontStyle: "italic",
+                    color: "#9ca3af",
+                  }}
+                  title={row.hq_name}
+                >
+                  HQ:{row.hq_name}
+                </Typography>
+              </Box>
+            )}
+          </TableCell>
+          <TableCell sx={cellBase}>{row.area_name ?? ""}</TableCell>
+          <TableCell sx={cellBase}>{row.beat_name}</TableCell>
+          {Object.entries(row.months).map(([mthNo, val]) => (
+            <TableCell
+              key={mthNo}
+              align="center"
+              sx={{ ...cellBase, ...qtrBorder(Number(mthNo)) }}
+            >
+              {val}
+            </TableCell>
+          ))}
+        </>
+      );
+    },
+    [],
+  );
+
+  const fixedFooterContent = useCallback(() => {
+    if (loading || displayRows.length === 0) return null;
+    return (
+      <tr>
+        <TableCell
+          colSpan={4}
+          align="right"
+          sx={{
+            ...cellBase,
+            fontWeight: 600,
+            backgroundColor: "#f9fafb",
+            borderTop: "1px solid #d1d5db",
+            position: "sticky",
+            bottom: 0,
+          }}
+        >
+          Grand Total
+        </TableCell>
+        {Object.entries(grandTotals).map(([mthNo, val]) => (
+          <TableCell
+            key={mthNo}
+            align="center"
+            sx={{
+              ...cellBase,
+              fontWeight: 600,
+              backgroundColor: "#f9fafb",
+              borderTop: "1px solid #d1d5db",
+              position: "sticky",
+              bottom: 0,
+              ...qtrBorder(Number(mthNo)),
+            }}
+          >
+            {typeof val === "number" ? val.toFixed(2) : val}
+          </TableCell>
+        ))}
+      </tr>
+    );
+  }, [loading, displayRows.length, grandTotals]);
+
+  if (loading) {
+    return (
+      <Paper elevation={0} sx={{ background: "#fff", py: 4, textAlign: "center" }}>
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
+  if (displayRows.length === 0) {
+    return (
+      <Paper elevation={0} sx={{ background: "#fff", py: 4, textAlign: "center" }}>
+        <Typography variant="body2" sx={{ color: "#9ca3af" }}>
+          No data available
+        </Typography>
+      </Paper>
+    );
+  }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        background: "#fff",
-      }}
-    >
-      <TableContainer
-        sx={{
-          maxHeight: 850,
-          overflow: "auto",
-          scrollbarWidth: "thin",
-          scrollbarColor: "#c1c1c1 #f1f1f1",
-          "&::-webkit-scrollbar": { width: 6, height: 6 },
-          "&::-webkit-scrollbar-track": {
-            backgroundColor: "#f1f1f1",
-            borderRadius: 8,
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#c1c1c1",
-            borderRadius: 8,
-          },
-          "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
+    <Paper elevation={0} sx={{ background: "#fff" }}>
+      <TableVirtuoso
+        style={{ height: 850 }}
+        data={displayRows}
+        components={{
+          Scroller: React.forwardRef((props, ref) => (
+            <div
+              {...props}
+              ref={ref}
+              style={{
+                ...props.style,
+                scrollbarWidth: "thin",
+              }}
+            />
+          )),
+          Table: (props) => (
+            <table
+              {...props}
+              style={{ borderCollapse: "collapse", width: "100%" }}
+            />
+          ),
+          TableHead: React.forwardRef((props, ref) => (
+            <thead {...props} ref={ref} style={{ zIndex: 5 }} />
+          )),
+          TableRow: (props) => (
+            <tr
+              {...props}
+              style={{
+                backgroundColor: "#ffffff",
+              }}
+            />
+          ),
+          TableBody: React.forwardRef((props, ref) => (
+            <tbody {...props} ref={ref} />
+          )),
+          TableFoot: React.forwardRef((props, ref) => (
+            <tfoot {...props} ref={ref} />
+          )),
         }}
-      >
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell
-                rowSpan={2}
-                sx={{
-                  ...headerCellBase,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
-                  borderRight: BORDER,
-                }}
-              >
-                SI
-              </TableCell>
-              <TableCell
-                rowSpan={2}
-                sx={{
-                  ...headerCellBase,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
-                  width: "18%",
-                }}
-              >
-                Sales Person
-              </TableCell>
-              <TableCell
-                rowSpan={2}
-                sx={{
-                  ...headerCellBase,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
-                  width: "15%",
-                }}
-              >
-                {areaLabel}
-              </TableCell>
-              <TableCell
-                rowSpan={2}
-                sx={{
-                  ...headerCellBase,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
-                  width: "15%",
-                }}
-              >
-                {beatLabel}
-              </TableCell>
-              {[1, 2, 3, 4].map((q) => (
-                <TableCell
-                  key={q}
-                  colSpan={3}
-                  align="center"
-                  sx={{
-                    ...headerCellBase,
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 5,
-                    borderLeft: BORDER,
-                    borderRight: q !== 4 ? QTR_BORDER : "none",
-                  }}
-                >
-                  Qtr {q}
-                </TableCell>
-              ))}
-            </TableRow>
-            <TableRow>
-              {Object.entries(monthNames).map(([mthNo, label]) => (
-                <TableCell
-                  key={mthNo}
-                  align="center"
-                  sx={{
-                    ...headerCellBase,
-                    position: "sticky",
-                    top: 33, // adjust to match actual row-1 rendered height
-                    zIndex: 5,
-                    borderLeft: BORDER,
-                    ...qtrBorder(Number(mthNo)),
-                  }}
-                >
-                  {label}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={16}
-                  align="center"
-                  sx={{ py: 4, border: "none" }}
-                >
-                  <Typography variant="body2" sx={{ color: "#9ca3af" }}>
-                    <CircularProgress />
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : displayRows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={16}
-                  align="center"
-                  sx={{ py: 4, border: "none" }}
-                >
-                  <Typography variant="body2" sx={{ color: "#9ca3af" }}>
-                    No data available
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayRows.map((row, idx) =>
-                row.type === "groupTotal" ? (
-                  <TableRow key={`total-${idx}`}>
-                    <TableCell
-                      colSpan={4}
-                      align="right"
-                      sx={{
-                        ...cellBase,
-                        fontWeight: 600,
-                        backgroundColor: "#f8f8f8",
-                        borderTop: BORDER,
-                      }}
-                    >
-                      Total {row.label}
-                    </TableCell>
-                    {Object.entries(row.totals).map(([mthNo, val]) => (
-                      <TableCell
-                        key={mthNo}
-                        align="center"
-                        sx={{
-                          ...cellBase,
-                          fontWeight: 600,
-                          backgroundColor: "#f8f8f8",
-                          borderTop: BORDER,
-                          ...qtrBorder(Number(mthNo)),
-                        }}
-                      >
-                        {val}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ) : (
-                  <TableRow
-                    key={`row-${idx}`}
-                    sx={{
-                      "& td": { backgroundColor: "#ffffff" },
-                      "&:hover td": { backgroundColor: "#FAFAF8" },
-                    }}
-                  >
-                    <TableCell sx={cellBase}>{row.si ?? ""}</TableCell>
-                    <TableCell sx={cellBase}>
-                      {row.si != null && (
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontSize: "12px",
-                              color: "#133bde",
-                              cursor: "pointer",
-                              "&:hover": { textDecoration: "underline" },
-                            }}
-                          >
-                            {row.sr_name}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: "11px",
-                              fontStyle: "italic",
-                              color: "#9ca3af",
-                            }}
-                            title={row.hq_name}
-                          >
-                            HQ:{row.hq_name}
-                          </Typography>
-                        </Box>
-                      )}
-                    </TableCell>
-                    <TableCell sx={cellBase}>{row.area_name ?? ""}</TableCell>
-                    <TableCell sx={cellBase}>{row.beat_name}</TableCell>
-                    {Object.entries(row.months).map(([mthNo, val]) => (
-                      <TableCell
-                        key={mthNo}
-                        align="center"
-                        sx={{ ...cellBase, ...qtrBorder(Number(mthNo)) }}
-                      >
-                        {val}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ),
-              )
-            )}
-          </TableBody>
-
-          {(!loading && displayRows.length > 0) && (
-            <TableFooter>
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  align="right"
-                  sx={{
-                    ...cellBase,
-                    fontWeight: 600,
-                    backgroundColor: "#f9fafb",
-                    borderTop: "1px solid #d1d5db",
-                    position: "sticky",
-                    bottom: 0,
-                  }}
-                >
-                  Grand Total
-                </TableCell>
-                {Object.entries(grandTotals).map(([mthNo, val]) => (
-                  <TableCell
-                    key={mthNo}
-                    align="center"
-                    sx={{
-                      ...cellBase,
-                      fontWeight: 600,
-                      backgroundColor: "#f9fafb",
-                      borderTop: "1px solid #d1d5db",
-                      position: "sticky",
-                      bottom: 0,
-                      ...qtrBorder(Number(mthNo)),
-                    }}
-                  >
-                    {typeof val === "number" ? val.toFixed(2) : val}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
-      </TableContainer>
+        fixedHeaderContent={fixedHeaderContent}
+        fixedFooterContent={fixedFooterContent}
+        itemContent={itemContent}
+        increaseViewportBy={{ top: 200, bottom: 400 }}
+      />
     </Paper>
   );
 };
