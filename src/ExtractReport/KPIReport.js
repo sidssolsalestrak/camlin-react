@@ -492,7 +492,7 @@ function KPIReport() {
                                     />
                                 </LocalizationProvider>
                             </FormControl>
-                            <Button variant="contained" onClick={fetchKpiReport}>Load</Button>
+                            <Button variant="contained" disabled={tableload} onClick={fetchKpiReport}>Load</Button>
                             <Button onClick={() => handleDownloadExcel()} color="warning" variant="contained">Excel</Button>
                         </Box>
 

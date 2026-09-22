@@ -626,7 +626,7 @@ export default function SalesHierachy() {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            {URL !== 'active_sales_new' && <Grid size={{ md: 1.3, lg: 1, xs: 4, sm: 2 }}> <Button variant="contained" sx={{ mt: 0.1 }} onClick={() => handleLoad()} >
+                            {URL !== 'active_sales_new' && <Grid size={{ md: 1.3, lg: 1, xs: 4, sm: 2 }}> <Button variant="contained" disabled={tableloading} sx={{ mt: 0.1 }} onClick={() => handleLoad()} >
                                 Load
                             </Button>
                             </Grid>

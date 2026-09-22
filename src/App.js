@@ -340,7 +340,7 @@ function App() {
               element={<DailyActivityReport />}
             />
             <Route
-              path="/reports/getfieldActivity"
+              path="/reports/getfieldActivity/:frmdt?/:toDt?/:status?/:type?"
               element={<DailyActivityReport />}
             />
             <Route

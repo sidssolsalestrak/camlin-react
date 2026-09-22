@@ -220,7 +220,6 @@ export default function DayWiseSalesChart({
                             stroke="var(--color-text-tertiary)"
                             strokeDasharray="4 4"
                             label={{
-                                value: "Today",
                                 position: "top",
                                 fontSize: 11,
                                 fill: "var(--color-text-tertiary)",

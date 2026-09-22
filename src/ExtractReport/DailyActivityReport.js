@@ -12,7 +12,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import DataTable from "../utils/dataTable";
 import { IoLocationSharp } from "react-icons/io5";
 import { FaPlus } from "react-icons/fa";
@@ -27,7 +27,20 @@ import { getMasterPanel } from "../services/masterPanelService";
 
 
 export default function DailyActivityReport() {
-    const { frmdt, todt, status, type } = useParams();
+    // NOTE: route param is `:toDt` (case-sensitive), so it must be destructured as `toDt`
+    const { frmdt, toDt, status, type } = useParams();
+    const navigate = useNavigate();
+
+    // atob throws on malformed input, so a hand-edited URL won't crash the page
+    const decodeParam = (val) => {
+        if (val === undefined || val === null) return null;
+        try { return atob(val); } catch { return null; }
+    };
+    const decodedFrmDt = decodeParam(frmdt);
+    const decodedToDt = decodeParam(toDt);
+    const decodedStatus = decodeParam(status);
+    const decodedType = decodeParam(type);
+
     const [fromDate, setFromDate] = useState(dayjs().startOf('month'));
     const [toDate, setToDate] = useState(dayjs());
     const [reportStat, setReportStat] = useState("1");
@@ -72,10 +85,6 @@ export default function DailyActivityReport() {
     const pendingRows = allReportData.filter(r => r.ord_stat !== 0);
 
     useEffect(() => {
-        fetchReportData();
-    }, [fromDate, toDate, reportStat, typeStat]);
-
-    useEffect(() => {
         const token = localStorage.getItem("session-token");
         if (token) {
             try {
@@ -95,14 +104,18 @@ export default function DailyActivityReport() {
     // ─── Main fetch used by the visible DataTable ───────────────────────────
     // Drives allReportData / tableLoad / coordinates. Do NOT reuse this for
     // one-off actions like Excel export — it will reload the on-screen table.
-    const fetchReportData = async () => {
+    //
+    // Filters are passed in as arguments (instead of read from state) because
+    // it is called right after the URL params are applied, and state updates
+    // are async — reading state here would send the previous values.
+    const fetchReportData = async (from, to, rStat, tStat) => {
         try {
             setTableLoad(true)
             let payload = {
-                from_call_date: fromDate.format('YYYY-MM-DD'),
-                to_call_date: toDate.format('YYYY-MM-DD'),
-                report_type: reportStat,
-                order_stat: typeStat
+                from_call_date: from.format('YYYY-MM-DD'),
+                to_call_date: to.format('YYYY-MM-DD'),
+                report_type: rStat,
+                order_stat: tStat
             };
             let response = await api.post("/getFieldVisit", payload);
             let activityRes = Array.isArray(response.data.data) ? response.data.data : [];
@@ -132,6 +145,49 @@ export default function DailyActivityReport() {
             setTableLoad(false)
         }
     };
+
+    // ─── Load from URL params ────────────────────────────────────────────────
+    // Runs whenever the URL params change (Load click, page refresh, shared link).
+    // Restores the filter UI from the URL and fetches the report.
+    useEffect(() => {
+        if (URL === 'getfieldActivity_new') return;
+        if (!decodedFrmDt || !decodedToDt) return;
+
+        const from = dayjs(decodedFrmDt);
+        const to = dayjs(decodedToDt);
+        if (!from.isValid() || !to.isValid()) return;
+
+        const rStat = ["0", "1"].includes(decodedStatus) ? decodedStatus : "1";
+        const tStat = ["0", "1"].includes(decodedType) ? decodedType : "0";
+
+        // restore the filter UI from the URL
+        setFromDate(from);
+        setToDate(to);
+        setReportStat(rStat);
+        setTypeStat(tStat);
+
+        fetchReportData(from, to, rStat, tStat);
+    }, [frmdt, toDt, status, type]);
+
+    // ─── Load button handler ─────────────────────────────────────────────────
+    // Puts the filters in the URL; the effect above does the actual fetch.
+    const handleLoad = () => {
+        if (!fromDate?.isValid() || !toDate?.isValid()) {
+            toast.warning("Please select valid dates");
+            return;
+        }
+
+        const target = `/reports/getfieldActivity/${btoa(fromDate.format('YYYY-MM-DD'))}/${btoa(toDate.format('YYYY-MM-DD'))}/${btoa(reportStat)}/${btoa(typeStat)}`;
+
+        // Navigating to the exact same URL doesn't change the params, so the effect
+        // wouldn't re-run. Fetch directly so Load still refreshes the data.
+        if (location.pathname === target) {
+            fetchReportData(fromDate, toDate, reportStat, typeStat);
+        } else {
+            navigate(target);
+        }
+    };
+    // ────────────────────────────────────────────────────────────────────────
 
     // ─── Export-only fetch ───────────────────────────────────────────────────
     // Same request/shape as fetchReportData, but intentionally does NOT touch
@@ -679,6 +735,17 @@ export default function DailyActivityReport() {
                                     </Select>
                                 </FormControl>
                             </Grid>
+                            {/* ── Load button: puts filters in the URL, which triggers the fetch ── */}
+                            {URL !== 'getfieldActivity_new' && <Grid size={{ md: 1.5, lg: 1, xs: 6, sm: 3 }}>
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    onClick={handleLoad}
+                                    disabled={tableLoad}
+                                >
+                                    Load
+                                </Button>
+                            </Grid>}
                             <Grid size={{ md: 1, lg: 0.5, xs: 3, sm: 2 }}>
                                 {progress1 ? (
                                     <CircularProgress progress={progress1} />
@@ -742,7 +809,8 @@ export default function DailyActivityReport() {
                 />
 
                 {/* ── Submit Button (visible only for allowed user types on Pending tab) ── */}
-                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && Number(typeStat) === 1) && URL !== 'getfieldActivity_new' && (
+                {/* ── Submit Button (only for allowed user types, and only when the loaded (URL) type is Pending) ── */}
+                {([1, 2, 3, 12, 13, 14].includes(Number(userType)) && decodedType === "1") && URL !== 'getfieldActivity_new' && (
                     <Button
                         variant="contained"
                         sx={{ ml: 3, mt: 1 }}

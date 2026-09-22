@@ -292,7 +292,7 @@ function DataSubmissionLog() {
                                 </FormControl>
                             </Grid>
                             <Grid size={{ md: 1.5, lg: 1, xs: 4, sm: 1.5 }}>
-                                <Button onClick={() => handleSubmit()} variant="contained">Load</Button>
+                                <Button onClick={() => handleSubmit()} disabled={tableload} variant="contained">Load</Button>
                             </Grid>
                             <Grid size={{ md: 0.5, lg: 0.5, xs: 3, sm: 1 }}>
                                 {progress ? <CircularProgress progress={progress} /> :
