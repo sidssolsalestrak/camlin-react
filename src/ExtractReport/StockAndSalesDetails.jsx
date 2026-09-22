@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress as MuiCircularProgress } from '@mui/material'
 import CircularProgress from '../utils/CircularProgressLoading';
 import { AiOutlineFileExcel } from 'react-icons/ai';
 import { useLocation } from 'react-router-dom';
@@ -27,6 +27,7 @@ const StockAndSalesDetails = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [progress, setProgress] = useState(null);
   const [progress1, setProgress1] = useState(null);
+  const [pageLoading, setPageLoading] = useState(false);
   const [fromDate, setFromDate] = useState(dayjs().subtract(2, "month").startOf("month"));
   const [toDate, settoDate] = useState(dayjs().endOf("month"));
   const showAlert = useToast();
@@ -49,6 +50,9 @@ const StockAndSalesDetails = () => {
   }, []);
 
   /*----------------- handle download xl --------*/
+  // This page is export-only (no on-screen table), so pageLoading drives a
+  // full-page Backdrop spinner for the whole request/build, in addition to
+  // the small progress1 icon indicator.
   const handleDownloadExcel = async () => {
     try {
       if (toDate.diff(fromDate, 'month', true) > 3) {
@@ -58,6 +62,7 @@ const StockAndSalesDetails = () => {
 
       let tableData = [];
       setProgress1("0%");
+      setPageLoading(true);
       try {
         const payload = {
           startDate: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
@@ -121,6 +126,7 @@ const StockAndSalesDetails = () => {
       setProgress1(null);
     } finally {
       setProgress1(null);
+      setPageLoading(false);
     }
   };
 
@@ -130,6 +136,12 @@ const StockAndSalesDetails = () => {
       { label: "Extract", path: location.pathname },
       { label: "Stock & Sales Details" },
     ]}>
+      <Backdrop
+        open={pageLoading}
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
+        <MuiCircularProgress color="inherit" />
+      </Backdrop>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <Box sx={{ ml: 1.5, mt: 1.5 }}>
           <h1 className="mainTitle">Stock & Sales Details</h1>

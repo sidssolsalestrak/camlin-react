@@ -8,7 +8,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material';
+import { Backdrop, Box, Button, CircularProgress as MuiCircularProgress, FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material';
 import Layout from '../../layout';
 import axios from "../../services/api";
 import DataTable from '../../utils/dataTable';
@@ -73,6 +73,7 @@ const PrimaryOrder = () => {
     const { enqueueSnackbar } = useSnackbar();
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
     const showAlert = useToast();
     const [formData, setformData] = useState({
         zone: "0",
@@ -366,24 +367,31 @@ const PrimaryOrder = () => {
     };
 
     /*----------------- handle download xl --------*/
+    // On the primary_order_new route (extractPath) the DataTable isn't
+    // rendered (showTable stays false), so `loading` has no visible effect
+    // there. pageLoading drives a full-page Backdrop spinner specifically
+    // for that route while the export fetch/build runs.
     const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
+            if (extractPath) setPageLoading(true)
             const getLabel = (list, selectedId, labelKey, prefix) => {
-                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix} All`;
+                if (!selectedId || selectedId === 0 || selectedId === "0") return `${prefix}: All`;
                 const match = list.find((item) => String(item.id) === String(selectedId));
-                if (!match) return `${prefix} All`;
+                if (!match) return `${prefix}: All`;
                 const label = typeof labelKey === "function" ? labelKey(match) : match[labelKey];
-                return `${prefix} ${label}`;
+                return `${prefix}: ${label}`;
             };
 
             const meta = {
-                Month: `Month - ${dayjs(month).format("MMM YYYY")}`,
+                Month: `Month : ${dayjs(month).format("MMM YYYY")}`,
                 zoneLabel: getLabel(zoneData, formData.zone, "zone_name", zoneLabel),
                 regionLabel: getLabel(regionData, formData.region, "reg_name", regionLabel),
                 areaLabel: getLabel(area, formData.area, "area_name", areaLabel),
                 distributorLabel: getLabel(allDistributor, formData.distributor, (item) => `${item.stk_code} - ${item.stk_name}`, distributorLabel),
             };
+
+            console.log("meta data for Excel", getLabel(zoneData, formData.zone, "zone_name", zoneLabel))
 
             // ── Fetch fresh data for extractPath, use state for report path ────────
             let sourceData = tableData;
@@ -409,6 +417,7 @@ const PrimaryOrder = () => {
             }
         } finally {
             setProgress1(null)
+            if (extractPath) setPageLoading(false)
         }
     };
 
@@ -420,6 +429,14 @@ const PrimaryOrder = () => {
             { label: extractPath ? "Extract" : "Report", path: location.pathname },
             { label: "Primary Order" },
         ]}>
+            {extractPath && (
+                <Backdrop
+                    open={pageLoading}
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                >
+                    <MuiCircularProgress color="inherit" />
+                </Backdrop>
+            )}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
                     <h1 className="mainTitle">Primary Order</h1>
