@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Button } from '@mui/material'
+import { Box, Button, Backdrop, CircularProgress as MuiCircularProgress } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -57,6 +57,7 @@ const RegionWiseSales = () => {
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
     const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
     const [toDate, settoDate] = useState(dayjs().endOf("month"));
 
@@ -192,6 +193,7 @@ const RegionWiseSales = () => {
 
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
+        setPageLoading(true);
         try {
             setProgress1("0%")
             let grandTotal = {
@@ -240,6 +242,7 @@ const RegionWiseSales = () => {
             }
         } finally {
             setProgress1(null)
+            setPageLoading(false);
         }
     }
 
@@ -249,6 +252,12 @@ const RegionWiseSales = () => {
             { label: "Extract", path: location.pathname },
             { label: "Regionwise Secondary Sales" },
         ]}>
+            <Backdrop
+                open={pageLoading}
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            >
+                <MuiCircularProgress color="inherit" />
+            </Backdrop>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
                     <h1 className="mainTitle">Regionwise Secondary Sales</h1>

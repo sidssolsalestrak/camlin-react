@@ -169,6 +169,10 @@ function AccountExtract() {
   }, [params]);
 
   const handleDownloadCSV = async () => {
+    if ((!selectedRegion || !selectedAccType) && URL !== 'extract_new') {
+      toast.error(`Please select ${masterPanel["ZONE"] || "Zone"} and ${masterPanel["ACCM"] || "Account"} Type`);
+      return;
+    }
     try {
       setProgress1(true)
       let FormattedData = tableData.map((val) => ({

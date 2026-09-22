@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../layout'
-import { Box } from '@mui/material'
+import { Backdrop, Box, CircularProgress as MuiCircularProgress } from '@mui/material'
 import CircularProgress from '../utils/CircularProgressLoading';
 import { AiOutlineFileExcel } from 'react-icons/ai';
 import { useLocation } from 'react-router-dom';
@@ -27,6 +27,7 @@ const StockAndSalesSummary = () => {
     const { enqueueSnackbar } = useSnackbar();
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
     const [year, setYear] = useState(dayjs());
     const showAlert = useToast();
     const [masterPanel, setMasterPanel] = useState({});
@@ -51,10 +52,14 @@ const StockAndSalesSummary = () => {
     }, []);
 
     /*----------------- handle download xl --------*/
+    // This page is export-only (no on-screen table), so pageLoading drives a
+    // full-page Backdrop spinner for the whole request/build, in addition to
+    // the small progress1 icon indicator.
     const handleDownloadExcel = async () => {
         try {
             let tableData = [];
             setProgress1("0%");
+            setPageLoading(true);
             try {
                 const payload = { year: year ? dayjs(year).format("YYYY") : "" };
                 const res = await axios.post("/stk_sales_summary_excel", payload);
@@ -138,6 +143,7 @@ const StockAndSalesSummary = () => {
             setProgress1(null);
         } finally {
             setProgress1(null);
+            setPageLoading(false);
         }
     };
 
@@ -147,6 +153,12 @@ const StockAndSalesSummary = () => {
             { label: "Extract", path: location.pathname },
             { label: "Stock & Sales Summary" },
         ]}>
+            <Backdrop
+                open={pageLoading}
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            >
+                <MuiCircularProgress color="inherit" />
+            </Backdrop>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
                     <h1 className="mainTitle">Stock & Sales Summary</h1>

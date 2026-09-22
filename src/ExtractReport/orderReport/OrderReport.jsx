@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../../layout'
-import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select } from '@mui/material'
+import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Backdrop, CircularProgress as MuiCircularProgress } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs from 'dayjs'
@@ -77,6 +77,7 @@ const OrderReport = () => {
     const [loading, setloading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
     const [fromDate, setFromDate] = useState(dayjs());
     const [toDate, settoDate] = useState(dayjs());
     const [zoneData, setzoneData] = useState([]);
@@ -698,6 +699,7 @@ const OrderReport = () => {
             return;
         }
         setProgress1(true);
+        if (extractPath) setPageLoading(true);
         try {
             const res = await axios.post("/getPcmKam", {
                 frm: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
@@ -800,6 +802,7 @@ const OrderReport = () => {
             }
         } finally {
             setProgress1(false);
+            if (extractPath) setPageLoading(false);
         }
     };
 
@@ -809,6 +812,14 @@ const OrderReport = () => {
             { label: extractPath ? "Extract" : "Report", path: location.pathname },
             { label: "Order Report" },
         ]}>
+            {extractPath && (
+                <Backdrop
+                    open={pageLoading}
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                >
+                    <MuiCircularProgress color="inherit" />
+                </Backdrop>
+            )}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box sx={{ ml: 1.5, mt: 1.5 }}>
                     <h1 className="mainTitle">Order Report</h1>
