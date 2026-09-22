@@ -14,6 +14,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import { Download } from "../utils/downloadExcel/Download";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
+import ConfirmationDialog from '../utils/confirmDialog';
 
 export default function OutletCount() {
     const { enzone, enRegion, enArea, enSo } = useParams();
@@ -44,6 +45,7 @@ export default function OutletCount() {
     const [progress, setProgress] = useState(null);
     const [allOutLets, setAlltotOutlets] = useState([]);
     const [showTable, setShowTable] = useState(false)
+    const [modifyLoading,setModifyLoading]=useState(false)
 
     const toast = useToast();
     const [masterPanel, setMasterPanel] = useState({});
@@ -53,6 +55,34 @@ export default function OutletCount() {
     const regionLabel = masterPanel["REGN"] || "Region";
     const beatLabel = masterPanel["BEAT"] || "Beat";
     const territoryLabel = masterPanel["TERR"] || "Territory";
+
+    const [confirmationDialog, setConfirmationDialog] = useState({
+            open: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+            loading: false,
+            confirmText: "Confirm",
+            cancelText: "Cancel",
+            confirmColor: "primary"
+    });
+
+    const showConfirmationDialog = (config) => {
+        setConfirmationDialog({
+            ...confirmationDialog,
+            ...config,
+            open: true,
+        });
+    };
+
+    const closeConfirmationDialog = () => {
+        setConfirmationDialog({
+            ...confirmationDialog,
+            open: false,
+            loading: false,
+        });
+    };
+
 
     useEffect(() => {
         const loadMasterPanel = async () => {
@@ -373,7 +403,18 @@ export default function OutletCount() {
         if (areaId) fetchSoList(selZone, selRegion, areaId);
     };
 
+   let handleRenderDialog=async()=>{
+             showConfirmationDialog({
+            title:"Render Location" ,
+            message:"Are you sure want to Render Location?",
+            confirmText: "Yes",
+            confirmColor: "primary",
+            onConfirm: handleRenderLocation,
+        });
+   }
+
     const handleRenderLocation = async () => {
+        setModifyLoading(true)
         try {
             let response = await api.post("/render_loc_map");
             if (response.data.status === 200) {
@@ -383,6 +424,10 @@ export default function OutletCount() {
             }
         } catch (err) {
             toast.error("Unable to Render");
+        }
+        finally{
+            closeConfirmationDialog()
+            setModifyLoading(false)
         }
     };
 
@@ -534,14 +579,14 @@ export default function OutletCount() {
                             </FormControl>
                         </Grid>
                         <Grid size={{ md: 1.2, lg: 0.9, xs: 3.5, sm: 1.4 }}>
-                            <Button variant="contained" fullWidth onClick={encodeAndNavigate}>Load</Button>
+                            <Button variant="contained" disabled={loading} fullWidth onClick={encodeAndNavigate}>Load</Button>
                         </Grid>
                         <Grid size={{ md: 2.5, lg: 1.5, xs: 8, sm: 3.1 }}>
                             <Button variant="contained" fullWidth onClick={() => setMapOpen(true)}>Location Map</Button>
                         </Grid>
                         {Number(userType) < 4 && (
                             <Grid size={{ md: 3, lg: 1.9, xs: 8, sm: 3.3 }}>
-                                <Button variant="contained" fullWidth color="warning" onClick={handleRenderLocation}>
+                                <Button variant="contained" fullWidth color="warning" disabled={modifyLoading} onClick={handleRenderDialog}>
                                     Render Location
                                 </Button>
                             </Grid>
@@ -581,6 +626,17 @@ export default function OutletCount() {
                     />
                 </Box>}
             </Box>
+             <ConfirmationDialog
+                            open={confirmationDialog.open}
+                            onClose={closeConfirmationDialog}
+                            onConfirm={confirmationDialog.onConfirm}
+                            title={confirmationDialog.title}
+                            message={confirmationDialog.message}
+                            confirmText={confirmationDialog.confirmText}
+                            cancelText={confirmationDialog.cancelText}
+                            loading={modifyLoading}
+                            confirmColor={confirmationDialog.confirmColor}
+            />
 
             <OutletCountMap
                 open={mapOpen}

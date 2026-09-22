@@ -552,7 +552,7 @@ function OrderFrequencyReport() {
                         </FormControl>
                     </Grid>
                     <Grid size={{ md: 1.3, lg: 1, xs: 3, sm: 2 }}>
-                        <Button onClick={encodeAndNavigate} variant="contained" sx={{ width: '2rem' }}>
+                        <Button onClick={encodeAndNavigate} disabled={loading} variant="contained" sx={{ width: '2rem' }}>
                             Load
                         </Button>
                     </Grid>

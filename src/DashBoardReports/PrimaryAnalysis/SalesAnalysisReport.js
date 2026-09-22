@@ -1,5 +1,5 @@
 // SalesAnalysisReport.jsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../../layout";
 import api from "../../services/api";
@@ -20,7 +20,12 @@ import { Download } from "../../utils/downloadExcel/Download";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
 
-
+// Defined once at module level so the object identity never changes between renders.
+const tableSx = {
+    backgroundColor: "#fff",
+    borderRadius: "10px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
+};
 
 function SalesAnalysisReport() {
     const { encYear, enType, enSubCat } = useParams();
@@ -440,6 +445,38 @@ function SalesAnalysisReport() {
         return colors;
     }, [regions]);
 
+    // Stable callback so DataTable doesn't see a new function on every render.
+    const getRowClassName = useCallback((row) => (row.isTotal ? "total-row" : ""), []);
+
+    // Table + charts are memoized: changing a filter dropdown (selYear / selType /
+    // selSubCat) does not touch any dependency below, so React skips this subtree.
+    // They only re-render after Load, when the data actually changes.
+    const results = useMemo(
+        () =>
+            showTable && (
+                <>
+                    <DataTable
+                        searchable={false}
+                        columns={columns}
+                        data={tableData}
+                        getRowClassName={getRowClassName}
+                        tableTitle={tableTitle}
+                        showTableTitle={true}
+                        showHeader={false}
+                        sx={tableSx}
+                        columnBgColors={columnBgColors}
+                        loading={loading}
+                    />
+                    <SalesAnalysisCharts
+                        regions={regions}
+                        tableData={tableData}
+                        years={years}
+                    />
+                </>
+            ),
+        [showTable, columns, tableData, getRowClassName, tableTitle, columnBgColors, loading, regions, years]
+    );
+
     const handleDownLoadExcel = async () => {
         const safeColumns = excelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
         const dynamicTitle = `${Number(selType === 2) ? "PRODUCT CATEGORY WISE" : Number(selType === 3) ? "SKU WISE" : "MONTH WISE"}PRIMARY SALES ANALYSIS`;
@@ -544,32 +581,8 @@ function SalesAnalysisReport() {
                         </Grid>
                     </Box>
 
-                    {/* ── Single DataTable with all regions as column groups ── */}
-                    {showTable && (
-                        <DataTable
-                            searchable={false}
-                            columns={columns}
-                            data={tableData}
-                            getRowClassName={(row) => row.isTotal ? "total-row" : ""}
-                            tableTitle={tableTitle}
-                            showTableTitle={true}
-                            showHeader={false}
-                            sx={{
-                                backgroundColor: "#fff",
-                                borderRadius: "10px",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)",
-                            }}
-                            columnBgColors={columnBgColors}
-                            loading={loading}
-
-                        />)}
-                    {showTable && (
-                        <SalesAnalysisCharts
-                            regions={regions}
-                            tableData={tableData}
-                            years={years}
-                        />
-                    )}
+                    {/* ── DataTable + charts (memoized, only update after Load) ── */}
+                    {results}
                 </Box>
             </Box>
         </Layout>
