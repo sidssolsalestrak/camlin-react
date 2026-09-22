@@ -3,19 +3,19 @@ import React from 'react'
 import { useState } from 'react'
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
 }
 
-const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, original }) => {
-    const validateUser = (value) => {
-        const regex = /^[a-zA-Z0-9_]*$/;
-        return regex.test(value);
-    };
+const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, original ,userLabel}) => {
+    // const validateUser = (value) => {
+    //     const regex = /^[a-zA-Z0-9_]*$/;
+    //     return regex.test(value);
+    // };
 
     const validatePassword = (value) => {
-        const regex = /^[^\s]{8,}$/;
+        const regex = /^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}$/;
         return regex.test(value);
     };
 
@@ -23,27 +23,33 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
             <Typography sx={style}>Salestrak Login Credentials</Typography>
             <TextField value={formData.userID}
-                onChange={(e) => handleChangeForm("userID", e.target.value)}
-                size='small' placeholder='Enter User ID' required
-                variant='outlined' label="User ID" fullWidth
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("userID", onlyText)
+                }}
+                size='small' placeholder={`Enter ${userLabel} ID`} required
+                variant='outlined' label={`${userLabel} ID`} fullWidth
                 error={!!errors.userID}
                 helperText={errors.userID}
-                onBlur={(e) => {
-                    if (!validateUser(e.target.value)) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            userID: "Invalid User Name"
-                        }));
-                    } else {
-                        setErrors((prev) => ({
-                            ...prev,
-                            userID: ""
-                        }));
-                    }
-                }}
+            // onBlur={(e) => {
+            //     if (!validateUser(e.target.value)) {
+            //         setErrors((prev) => ({
+            //             ...prev,
+            //             userID: "Invalid User Name"
+            //         }));
+            //     } else {
+            //         setErrors((prev) => ({
+            //             ...prev,
+            //             userID: ""
+            //         }));
+            //     }
+            // }}
             />
             <TextField value={formData.password} type='password' required
-                onChange={(e) => handleChangeForm("password", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("password", onlyText)
+                }}
                 size='small' placeholder='Enter Password'
                 variant='outlined' label="Password" fullWidth
                 error={!!errors.password}
@@ -53,7 +59,7 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                         if (!validatePassword(e.target.value)) {
                             setErrors((prev) => ({
                                 ...prev,
-                                password: "Should be Min 8 Characters"
+                                password: "Min 8 chars, 2 lowercase, 2 uppercase, 1 digit, 1 special char required"
                             }));
                         } else {
                             setErrors((prev) => ({
@@ -65,7 +71,10 @@ const SalestrakCredential = ({ formData, handleChangeForm, errors, setErrors, or
                 }}
             />
             <TextField value={formData.confirmPassword} type='password' required
-                onChange={(e) => handleChangeForm("confirmPassword", e.target.value)}
+                onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    handleChangeForm("confirmPassword", onlyText)
+                }}
                 size='small' placeholder='Confirm Password'
                 variant='outlined' label="Confirm Password" fullWidth
                 error={!!errors.confirmPassword}

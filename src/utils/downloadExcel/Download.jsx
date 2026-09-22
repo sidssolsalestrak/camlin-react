@@ -7,7 +7,8 @@ export const Download = async (
   setProgress,
   showAlert,
   moduleType = "",
-  additionalData = {}
+  additionalData = {},
+  grandTotal = false,
 ) => {
   if (!Array.isArray(data) || data.length === 0) {
     showAlert.error("NO DATA AVAILABLE TO EXPORT")
@@ -22,7 +23,7 @@ export const Download = async (
   const safeColumns = cleanColumns(columns);
 
   const worker = new Worker(new URL("./xlsxWorker.js", import.meta.url));
-  worker.postMessage({ data, columns: safeColumns, filename, moduleType, additionalData });
+  worker.postMessage({ data, columns: safeColumns, filename, moduleType, additionalData, grandTotal, });
 
   worker.onmessage = async (e) => {
     const { status, buffer, error, filename: name } = e.data;

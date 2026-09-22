@@ -1,0 +1,25 @@
+.muiBox {
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #e6e6e6;
+}
+
+.bodyDiv {
+  border-top: 3px solid #3c8dbc !important;
+  background: #ffffff;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  border-radius: 3px;
+  background-clip: padding-box;
+
+  padding: 0 20px 20px 20px;
+}
+
+.headerName {
+  min-height: 50px;
+  padding: 10px 0px;
+  font-size: 1.5rem !important;
+  color: #026cb6;
+  font-weight: 500;
+}
