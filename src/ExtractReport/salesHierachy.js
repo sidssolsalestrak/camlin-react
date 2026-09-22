@@ -3,7 +3,8 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Grid,
+    Backdrop, CircularProgress as MuiCircularProgress
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
@@ -26,6 +27,7 @@ export default function SalesHierachy() {
     const [userError, setUserError] = useState(false)
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
     const [allHierachyData, setAllHeirachyData] = useState([])
     const [tableloading, settableloading] = useState(false);
     const { zoneid, regionid, usertypeId, userid, distributorid } = useParams()
@@ -414,9 +416,12 @@ export default function SalesHierachy() {
         navigate(`/reports/active_sales/${btoa(selZone || 0)}/${btoa(selRegion || 0)}/${btoa(selUserType || 0)}/${btoa(selUsers?.id || 0)}/${btoa(selDistributor || 0)}`)
     }
 
+    
     const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
+            if (URL === 'active_sales_new') setPageLoading(true)
+
             if (selUsers?.id === 0 && selUserType > 0) {
                 setUserError(true)
                 toast.warning("Please Select User to Load")
@@ -477,6 +482,7 @@ export default function SalesHierachy() {
             console.log("Download excel err", err)
         } finally {
             setProgress1(null)
+            if (URL === 'active_sales_new') setPageLoading(false)
         }
     }
     console.log("All Heirachy Data", allHierachyData)
@@ -491,6 +497,14 @@ export default function SalesHierachy() {
                 { label: "Extract", path: URL !== 'active_sales_new' ? "/reports/active_sales" : "/reports/active_sales_new" },
                 { label: "Sales Hierachy" }
             ]}>
+            {URL === 'active_sales_new' && (
+                <Backdrop
+                    open={pageLoading}
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                >
+                    <MuiCircularProgress color="inherit" />
+                </Backdrop>
+            )}
             <Box p={0.5}>
                 <Box
                     p={2}

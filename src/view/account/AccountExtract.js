@@ -9,7 +9,8 @@ import {
   MenuItem,
   TextField,
   Autocomplete,
-  IconButton, Button
+  IconButton, Button,
+  Backdrop, CircularProgress as MuiCircularProgress
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../services/api";
@@ -38,6 +39,7 @@ function AccountExtract() {
   const [selectedUser, setSelectedUser] = useState(0);
   const [progress, setProgress] = useState(null);
   const [progress1, setProgress1] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -200,10 +202,16 @@ function AccountExtract() {
     }
   }
 
+  // ---------------- EXTRACT (extract_new route) EXCEL EXPORT ----------------
+  // On the extract_new route the DataTable isn't rendered, so the regular
+  // `loading` state has no visible effect there. pageLoading drives a
+  // full-page Backdrop spinner specifically for that route while the
+  // extract request/build runs.
   const handleExtractCSV = async () => {
 
     try {
       setProgress1(true)
+      setPageLoading(true)
       let payload = {
         country: selectedRegion,
         accType: selectedAccType,
@@ -244,6 +252,7 @@ function AccountExtract() {
       console.log("Extract CSV Error", err)
     } finally {
       setProgress1(false)
+      setPageLoading(false)
     }
   }
 
@@ -342,6 +351,14 @@ function AccountExtract() {
         { label: `${masterPanel["ACCM"] || "Account"} Master Extract`, path: location.pathname },
       ]}
     >
+      {URL === 'extract_new' && (
+        <Backdrop
+          open={pageLoading}
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        >
+          <MuiCircularProgress color="inherit" />
+        </Backdrop>
+      )}
       <Box
         p={2}
         sx={{ borderRadius: 1 }}
@@ -362,7 +379,7 @@ function AccountExtract() {
           <Grid container spacing={2}>
             {/* ZONE */}
             <Grid size={{ xs: 12, md: 2, lg: 2 }}>
-              <FormControl required fullWidth size="small">
+              <FormControl required={URL !== 'extract_new'} fullWidth size="small">
                 <InputLabel>{masterPanel["ZONE"] || "Zone"}</InputLabel>
                 <Select
                   value={selectedRegion}

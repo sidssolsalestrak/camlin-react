@@ -3,7 +3,8 @@ import Layout from "../layout";
 import api from "../services/api";
 import useToast from "../utils/useToast";
 import {
-    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Checkbox, Tooltip, Grid
+    Box, Typography, Button, Tabs, Tab, TextField, FormControl, Select, MenuItem, InputLabel, IconButton, Autocomplete, Checkbox, Tooltip, Grid,
+    Backdrop, CircularProgress as MuiCircularProgress
 } from "@mui/material";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
@@ -50,6 +51,7 @@ export default function DailyActivityReport() {
     const [userId, setUserId] = useState("");
     const [progress, setProgress] = useState(null);
     const [progress1, setProgress1] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
     const [coordinates, setCoordinates] = useState([]);
     const [mapOpen, setMapOpen] = useState(false);
     const [userType, setUserType] = useState(null);
@@ -575,9 +577,16 @@ export default function DailyActivityReport() {
          },
     ];
 
+   // ─── Excel export handler ────────────────────────────────────────────────
+   // On the getfieldActivity_new route the DataTable isn't rendered, so
+   // tableLoad has no visible effect there. pageLoading drives a full-page
+   // Backdrop spinner specifically for that route while the export
+   // request/build runs; other routes keep using the small progress1 icon
+   // indicator only.
    const handleDownloadExcel = async () => {
         try {
             setProgress1("0%")
+            if (URL === 'getfieldActivity_new') setPageLoading(true)
             const freshData = await fetchReportDataForExport();
             const dashIfEmptyFields = [
                 "tot_cus",
@@ -643,6 +652,7 @@ export default function DailyActivityReport() {
             console.log("excelDownload error", err);
         } finally {
             setProgress1(null)
+            if (URL === 'getfieldActivity_new') setPageLoading(false)
         }
     };
     console.log("selected rows", selectedRows)
@@ -655,6 +665,14 @@ export default function DailyActivityReport() {
                 { label: "Daily Activity", path: "/reports/getfieldActivity_new" }
             ]}
         >
+            {URL === 'getfieldActivity_new' && (
+                <Backdrop
+                    open={pageLoading}
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                >
+                    <MuiCircularProgress color="inherit" />
+                </Backdrop>
+            )}
             <Box p={0.5}>
                 <Box p={2} sx={{ borderRadius: 1 }} display="flex" flexDirection="column" gap={2}>
                     <Box>
