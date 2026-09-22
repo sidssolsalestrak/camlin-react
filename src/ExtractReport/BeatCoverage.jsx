@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, createFilterOptions } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -32,6 +32,16 @@ const menuStyle = {
     }
 }
 
+// Stable references (defined once, outside the component)
+const ALL_USER = { id: 0, u_name: "All" };
+const userFilterOptions = createFilterOptions({ limit: 100 }); // render max 100 options at a time
+
+// Memoized: only re-renders when its own props change, NOT on every filter change
+const MemoBeatCoverageTable = React.memo(BeatCoverageTable);
+
+const isAbort = (e) =>
+    e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError";
+
 const encode = (val) => btoa(String(val || ""))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -53,16 +63,16 @@ const BeatCoverage = () => {
     const toast = useToast();
     const { enqueueSnackbar } = useSnackbar();
 
-    let decodedYr = decode(searchParams.get('yr'));
-    let decodedZone = decode(searchParams.get('zone'));
-    let decodedRegion = decode(searchParams.get('region'));
-    let decodedUser = decode(searchParams.get('user'));
+    const decodedYr = decode(searchParams.get('yr'));
+    const decodedZone = decode(searchParams.get('zone'));
+    const decodedRegion = decode(searchParams.get('region'));
+    const decodedUser = decode(searchParams.get('user'));
 
     const [month, setMonth] = useState(dayjs().startOf("year"));
     const [formData, setFormData] = useState({
         zone: "0",
         region: "0",
-        User: { id: 0, u_name: "All" },
+        User: ALL_USER,
     })
     const [zoneData, setzoneData] = useState([]);
     const [regionData, setregionData] = useState([]);
@@ -82,6 +92,13 @@ const BeatCoverage = () => {
     const userLabel = masterPanel["USER"] || "Users";
     const beatLabel = masterPanel["BEAT"] || "Beat";
 
+    // Year the TABLE data belongs to (from the URL / last Load), NOT the draft picker value.
+    // Using `month` here made the table re-render/re-pivot every time the picker changed.
+   const [appliedYr, setAppliedYr] = useState(decodedYr || dayjs().format("YYYY"));
+
+    // Dropdown options: built once per user-list change instead of on every render
+    const userOptions = useMemo(() => [ALL_USER, ...user], [user]);
+
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();
@@ -97,45 +114,23 @@ const BeatCoverage = () => {
         }))
     }
 
-    const fetchZone = async () => {
-        try {
-            const res = await axios.post("/getReportsZone");
-            const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
-            setzoneData(data);
-        } catch (error) {
-            console.error(error);
-            setzoneData([])
-        }
-    }
+    // One state update per interaction (instead of 3 separate handleChange calls)
+    const handleZoneChange = (e) => {
+        isInteractiveChange.current = true;
+        setFormData((prev) => ({ ...prev, zone: e.target.value, region: "0", User: ALL_USER }));
+    };
 
-    const fetchRegion = async () => {
-        try {
-            let response = await axios.post("/extractRegionList", { zone_id: formData.zone })
-            setregionData(Array.isArray(response.data.data) ? response.data.data : [])
-        } catch (err) {
-            console.log("fetchRegion error", err)
-            setregionData([])
-        }
-    }
+    const handleRegionChange = (e) => {
+        isInteractiveChange.current = true;
+        setFormData((prev) => ({ ...prev, region: e.target.value, User: ALL_USER }));
+    };
 
-    const fetchSSUserList = async () => {
-        try {
-            let payload = {
-                zone_id: formData.zone,
-                reg_id: formData.region,
-                user_type: 8,
-            }
-            let response = await axios.post("/getExtractSSUserList", payload)
-            let userListRes = Array.isArray(response.data.data) ? response.data.data : []
-            setuser(userListRes)
-        }
-        catch (err) {
-            console.log("fetch user list err", err)
-            setuser([])
-        }
-    }
+    const handleUserChange = (event, newValue) => {
+        isInteractiveChange.current = true;
+        handleChange("User", newValue || ALL_USER);
+    };
 
-    const fetchBeatCoverageReport = async ({ yr, zone, reg, usr }) => {
+    const fetchBeatCoverageReport = async ({ yr, zone, reg, usr, signal }) => {
         try {
             setloading(true);
             const payload = {
@@ -144,10 +139,12 @@ const BeatCoverage = () => {
                 reg_id: reg,
                 user_id: usr ?? 0,
             }
-            let response = await axios.post("/view_beat_coverage_report", payload);
+            let response = await axios.post("/view_beat_coverage_report", payload, { signal });
             let res = Array.isArray(response.data.data) ? response.data.data : [];
             settableData(res);
+            setAppliedYr(yr);
         } catch (err) {
+            if (isAbort(err)) return; // a newer request replaced this one
             if (err?.response?.status === 404) {
                 toast.warning("No Data Available")
             } else {
@@ -156,35 +153,72 @@ const BeatCoverage = () => {
             }
             settableData([]);
         } finally {
-            setloading(false);
+            if (!signal?.aborted) setloading(false);
         }
     }
 
+    // Zones: load once
     useEffect(() => {
-        fetchZone();
+        const ctrl = new AbortController();
+        (async () => {
+            try {
+                const res = await axios.post("/getReportsZone", {}, { signal: ctrl.signal });
+                setzoneData(Array.isArray(res?.data?.data) ? res.data.data : []);
+            } catch (error) {
+                if (isAbort(error)) return;
+                console.error(error);
+                setzoneData([]);
+            }
+        })();
+        return () => ctrl.abort();
     }, [])
 
+    // Regions: when zone changes (stale responses are cancelled)
     useEffect(() => {
-        if (formData?.zone > 0) {
-            fetchRegion();
-        } else {
-            setregionData([])
-            handleChange("region", "0")
+        if (!(Number(formData.zone) > 0)) {
+            setregionData([]);
+            return;
         }
-    }, [formData?.zone]);
+        const ctrl = new AbortController();
+        (async () => {
+            try {
+                const response = await axios.post("/extractRegionList", { zone_id: formData.zone }, { signal: ctrl.signal });
+                setregionData(Array.isArray(response.data.data) ? response.data.data : []);
+            } catch (err) {
+                if (isAbort(err)) return;
+                console.log("fetchRegion error", err);
+                setregionData([]);
+            }
+        })();
+        return () => ctrl.abort();
+    }, [formData.zone]);
 
+    // Users: when zone/region change. Resetting User to "All" is done in the change handlers.
     useEffect(() => {
-        setuser([]);
-        handleChange("User", { id: 0, u_name: "All" });
-        if (formData.region > 0 && (formData.zone > 0)) {
-            handleChange("User", { id: 0, u_name: "All" })
-            fetchSSUserList();
-        } else {
-            setuser([])
-            handleChange("User", { id: 0, u_name: "All" })
+        if (!(Number(formData.zone) > 0 && Number(formData.region) > 0)) {
+            setuser([]);
+            return;
         }
+        const ctrl = new AbortController();
+        (async () => {
+            try {
+                const payload = {
+                    zone_id: formData.zone,
+                    reg_id: formData.region,
+                    user_type: 8,
+                };
+                const response = await axios.post("/getExtractSSUserList", payload, { signal: ctrl.signal });
+                setuser(Array.isArray(response.data.data) ? response.data.data : []);
+            } catch (err) {
+                if (isAbort(err)) return;
+                console.log("fetch user list err", err);
+                setuser([]);
+            }
+        })();
+        return () => ctrl.abort();
     }, [formData.zone, formData.region]);
 
+    // URL -> form + report load (runs only when the URL params change, i.e. on Load / back / refresh)
     useEffect(() => {
         isInteractiveChange.current = false;
         setMonth(decodedYr ? dayjs(decodedYr, "YYYY") : dayjs().startOf("year"));
@@ -194,17 +228,22 @@ const BeatCoverage = () => {
             User:
                 decodedUser && String(prev.User?.id) === String(decodedUser)
                     ? prev.User
-                    : { id: 0, u_name: "All" },
+                    : ALL_USER,
         }));
         if (!decodedYr && !decodedZone && !decodedRegion && !decodedUser) return;
+
+        const ctrl = new AbortController();
         fetchBeatCoverageReport({
             yr: decodedYr ? decodedYr : dayjs().format("YYYY"),
             zone: decodedZone,
             reg: decodedRegion,
             usr: decodedUser,
-        })
+            signal: ctrl.signal,
+        });
+        return () => ctrl.abort();
     }, [decodedYr, decodedZone, decodedRegion, decodedUser])
 
+    // Restore selected user from URL once the user list arrives
     useEffect(() => {
         if (decodedUser && user.length > 0 && !isInteractiveChange.current) {
             const found = user.find((u) => String(u.id) === String(decodedUser));
@@ -212,14 +251,29 @@ const BeatCoverage = () => {
         }
     }, [user, decodedUser]);
 
-    const handleLoad = () => {
-        let params = new URLSearchParams();
-        if (month) params.append('yr', encode(month.format("YYYY")));
-        if (formData.zone > 0) params.append('zone', encode(formData.zone));
-        if (formData.region > 0) params.append('region', encode(formData.region));
-        if (formData.User?.id > 0) params.append('user', encode(formData.User.id));
-        navigate(`/reports/beat_coverage?${params.toString()}`)
+   const handleLoad = () => {
+    const params = new URLSearchParams();
+    params.append('yr', encode(month.format("YYYY")));
+    if (formData.zone > 0) params.append('zone', encode(formData.zone));
+    if (formData.region > 0) params.append('region', encode(formData.region));
+    if (formData.User?.id > 0) params.append('user', encode(formData.User.id));
+
+    const search = `?${params.toString()}`;
+
+    setloading(true);   // spinner shows on the same click
+    settableData([]);   // drop old rows so nothing heavy re-renders
+
+    if (search === location.search) {
+        fetchBeatCoverageReport({
+            yr: decodedYr,
+            zone: decodedZone,
+            reg: decodedRegion,
+            usr: decodedUser,
+        });
+    } else {
+        navigate(`/reports/beat_coverage${search}`);
     }
+};
 
     const buildPayload = () => ({
         yr: month ? month.format("YYYY") : dayjs().format("YYYY"),
@@ -228,14 +282,15 @@ const BeatCoverage = () => {
         user_id: formData.User?.id ? formData.User.id : "",
     });
 
-    const exportColumns = [
+    const pickerYr = month ? month.format('YYYY') : dayjs().format('YYYY');
+    const exportColumns = useMemo(() => ([
         { field: 'sr_name', headerName: 'Sales Person' },
         { field: 'hq_name', headerName: 'HQ' },
         { field: 'area_name', headerName: areaLabel },
         { field: 'beat_name', headerName: beatLabel },
-        ...Object.values(buildMonthNames(month ? month.format('YYYY') : dayjs().format('YYYY')))
+        ...Object.values(buildMonthNames(pickerYr))
             .map((label) => ({ field: label, headerName: label })),
-    ];
+    ]), [pickerYr, areaLabel, beatLabel]);
 
     const handleDownloadExcel = async () => {
         try {
@@ -247,7 +302,7 @@ const BeatCoverage = () => {
             await new Promise((r) => setTimeout(r, 100));
             setProgress1("50%");
 
-            const yr = month ? month.format('YYYY') : dayjs().format('YYYY');
+            const yr = pickerYr;
             const excelRows = buildExportRows(rawData, yr);
             const grandTotalRow = buildGrandTotalRow(rawData, yr);
 
@@ -302,12 +357,7 @@ const BeatCoverage = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <FormControl size="small" fullWidth>
                             <InputLabel id="zone">{zoneLabel}</InputLabel>
-                            <Select value={formData.zone} onChange={(e) => {
-                                isInteractiveChange.current = true;
-                                handleChange("region", "0")
-                                handleChange("User", { id: 0, u_name: "All" })
-                                handleChange("zone", e.target.value)
-                            }}
+                            <Select value={formData.zone} onChange={handleZoneChange}
                                 id='zone' label={zoneLabel} MenuProps={menuStyle} labelId="zone" variant="outlined" >
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {zoneData?.map((val) => (
@@ -320,11 +370,7 @@ const BeatCoverage = () => {
                         <FormControl size="small" fullWidth>
                             <InputLabel id="Region">{regionLabel}</InputLabel>
                             <Select id='Region' label={regionLabel} MenuProps={menuStyle}
-                                value={formData.region} onChange={(e) => {
-                                    isInteractiveChange.current = true;
-                                    handleChange("User", { id: 0, u_name: "All" })
-                                    handleChange("region", e.target.value)
-                                }}
+                                value={formData.region} onChange={handleRegionChange}
                                 labelId="Region" variant="outlined">
                                 <MenuItem style={{ fontSize: "11px" }} value="0">All</MenuItem>
                                 {regionData?.map((val) => (
@@ -335,13 +381,11 @@ const BeatCoverage = () => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 1.9, lg: 1.9 }}>
                         <Autocomplete
-                            options={[{ id: 0, u_name: "All" }, ...user]}
+                            options={userOptions}
+                            filterOptions={userFilterOptions}
                             getOptionLabel={(option) => option?.u_name ?? ""}
-                            value={formData.User || null}  // ← Allow null
-                            onChange={(event, newValue) => {
-                                isInteractiveChange.current = true;
-                                handleChange("User", newValue)
-                            }}
+                            value={formData.User || null}
+                            onChange={handleUserChange}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -350,8 +394,8 @@ const BeatCoverage = () => {
                                 />
                             )}
                             isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                            clearOnBlur={false}  // ← Don't auto-reset on blur
-                            disableClearable={false}  // ← Allow X button
+                            clearOnBlur={false}
+                            disableClearable={false}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.8, lg: 0.8 }}>
@@ -370,9 +414,9 @@ const BeatCoverage = () => {
             </Box>
             {(decodedYr || decodedZone || decodedRegion || decodedUser) && (
                 <Box p={1.5} sx={headContainer}>
-                    <BeatCoverageTable
+                    <MemoBeatCoverageTable
                         rawData={tableData}
-                        yr={month ? month.format('YYYY') : dayjs().format('YYYY')}
+                        yr={appliedYr}
                         loading={loading}
                         areaLabel={areaLabel}
                         beatLabel={beatLabel}
