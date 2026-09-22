@@ -399,7 +399,7 @@ const BeatCoverage = () => {
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.8, lg: 0.8 }}>
-                        <Button variant='contained' color="primary" onClick={handleLoad}>Load</Button>
+                        <Button variant='contained' color="primary" onClick={handleLoad} disabled={loading}>Load</Button>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 0.6, lg: 0.6 }} sx={{ display: 'flex', alignItems: 'center' }}>
                         {progress1 ? (

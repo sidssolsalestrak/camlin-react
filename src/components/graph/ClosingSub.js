@@ -9,9 +9,22 @@ const subFont = { fontSize: "12px" }
 
 
 const CustomPieShape = (props) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, name } = props;
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, name, percentage } = props;
 
-    if (name === 'Received') {
+    // A slice with no angular width has nothing to draw. Guard against it
+    // directly (rather than relying on the caller never passing value=0)
+    // so a near-zero sector never renders as a stray sliver/pill shape,
+    // which is what cornerRadius does to a tiny-but-nonzero arc.
+    if (startAngle === endAngle) {
+        return null;
+    }
+
+    // Only draw the red cap dot when there's a meaningfully visible
+    // "Received" slice. With e.g. received=1 / total=389, percentage
+    // rounds to 0 and the arc is ~0.9deg — effectively invisible — so
+    // drawing the dot just leaves a stray red blob with no arc to
+    // anchor it to. Skip it in that case.
+    if (name === 'Received' && percentage > 0) {
         const cornerRadius = 5; // must match cornerRadius on <Pie>
         const toRad = (angle) => (angle * Math.PI) / 180;
         const midRadius = (innerRadius + outerRadius) / 2;
@@ -78,11 +91,22 @@ const ClosingSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
     const { total, received, rateScore } = summary;
     const percentage = total > 0 ? Math.round((received / total) * 100) : 0;
 
+    // NOTE: percentage is attached to each data entry so Recharts spreads
+    // it onto the props object passed into CustomPieShape (along with
+    // name, cx, cy, etc). This lets the shape decide whether the slice is
+    // large enough to warrant drawing the red cap dot.
+    //
+    // When the rounded percentage is 0 (e.g. received=2 / total=744 →
+    // 0.27% → "0%"), don't give the "Received" slice a nonzero value at
+    // all. Otherwise Recharts still draws a real, near-zero-width sector
+    // for it, and with cornerRadius that tiny sector renders as a stray
+    // rounded sliver/line rather than disappearing — even though the
+    // shape's own startAngle===endAngle guard catches the true zero case.
     const chartData = total > 0 ? [
-        { name: 'Received', value: received, color: '#1565C0' },
-        { name: 'Remaining', value: total - received, color: '#fafafa' },
+        { name: 'Received', value: percentage > 0 ? received : 0, color: '#1565C0', percentage },
+        { name: 'Remaining', value: percentage > 0 ? total - received : total, color: '#fafafa', percentage },
     ] : [
-        { name: 'Empty', value: 1, color: '#ECECEC' }
+        { name: 'Empty', value: 1, color: '#ECECEC', percentage: 0 }
     ];
     const lastMonthEnd = dayjs(month).subtract(1, "month").endOf("month");
 

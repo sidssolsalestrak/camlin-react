@@ -948,7 +948,7 @@ const OrderReport = () => {
                     </Grid>
                     <Grid size={{ xs: 5, sm: 6, md: 2, lg: 2 }}>
                         {!extractPath && (
-                            <Button variant='contained' color="primary" onClick={handleLoad}>Search</Button>
+                            <Button variant='contained' color="primary" onClick={handleLoad} disabled={loading}>Search</Button>
                         )}
                     </Grid>
                     <Grid size={{ xs: 7, sm: 6, md: 2, lg: 2 }}>
