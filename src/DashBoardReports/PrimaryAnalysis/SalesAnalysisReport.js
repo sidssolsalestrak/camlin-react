@@ -563,7 +563,7 @@ function SalesAnalysisReport() {
                                     onClick={handleLoad}
                                     disabled={loading}
                                 >
-                                    {loading ? "Loading…" : "Load"}
+                                   Load
                                 </Button>
                             </Grid>
 
