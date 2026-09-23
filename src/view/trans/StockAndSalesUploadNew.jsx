@@ -44,7 +44,7 @@ const safeDecode = (val) => {
 const cellSx = (readOnly = false) => ({
     '& .MuiInputBase-root': {
         height: 32,
-        minWidth: '5rem',
+        minWidth: '3.5rem',
         ...(readOnly ? { backgroundColor: '#EEEEEE' } : {})
     },
     '& .MuiInputBase-input': { padding: '4px 8px' },
@@ -280,6 +280,7 @@ const StockAndSalesUploadNew = () => {
         {
             field: "prod_code",
             headerName: `${(masterPanel["PROD"] || "PRODUCT").toUpperCase()} CODE`,
+            width: 50,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header"
                     ? <strong>{row.cat_name}</strong>
@@ -288,9 +289,16 @@ const StockAndSalesUploadNew = () => {
         {
             field: "prod_name",
             headerName: "NAME",
+             width: 80,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                    <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
+                    <Typography  sx={{
+        color: '#212121',
+        width: 80,
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
+        lineHeight: 1.3,
+    }}>
                         {value}
                     </Typography>
                 ),
@@ -298,34 +306,30 @@ const StockAndSalesUploadNew = () => {
         {
             field: "prod_uom",
             headerName: "UOM",
+             width: 50,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                <TextField
-                    size="small"
-                    value={value ?? ""}
-                    sx={cellSx(true)}
-                    InputProps={{ readOnly: true }}
-                    inputProps={{ style: { textAlign: "center", color: "black" } }}
-                />
+                 <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
+                        {value}
+                    </Typography>
                 ),
             },
             {
             field: "stk_price",
             headerName: "MRP",
+             width: 50,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
-                <TextField
-                    size="small"
-                    value={FormatCurrency(value)}
-                    sx={cellSx(true)}
-                    InputProps={{ readOnly: true }}
-                    inputProps={{ style: { textAlign: "center", color: "black" } }}
-                />
+                 <Typography sx={{ whiteSpace: "nowrap", color: '#212121' }}>
+                        {FormatCurrency(value)}
+                    </Typography>
                 ),
             },
         {
             field: "open_qty",
             headerName: "OPENING STOCK (O)",
+             type: "alignCenter",
+            width: 100,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
                     <TextField size="small" value={value ?? 0} sx={cellSx()}
@@ -337,6 +341,8 @@ const StockAndSalesUploadNew = () => {
         {
             field: "pur_qty",
             headerName: "PRIMARY QTY (P)",
+             type: "alignCenter",
+            width: 100,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
                     <TextField size="small" value={value ?? 0} sx={cellSx()}
@@ -348,6 +354,8 @@ const StockAndSalesUploadNew = () => {
         {
             field: "tot_qty",
             headerName: "TOTAL STOCK (T=O+P)",
+             type: "alignCenter",
+            width: 100,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
                     <TextField size="small" value={value ?? 0} sx={cellSx(true)}
@@ -358,6 +366,8 @@ const StockAndSalesUploadNew = () => {
         {
             field: "sec_qty",
             headerName: "SEC. SALES (S=T-C)",
+             type: "alignCenter",
+            width: 100,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
                     <TextField size="small" value={value ?? 0} sx={cellSx(true)}
@@ -368,6 +378,8 @@ const StockAndSalesUploadNew = () => {
         {
             field: "physical_qty",
             headerName: "CLOSING QTY (C)",
+             type: "alignCenter",
+            width: 100,
             renderCell: ({ row, value }) =>
                 row._rowType === "cat_header" ? null : (
                     <TextField size="small" value={value ?? 0} sx={cellSx()}
