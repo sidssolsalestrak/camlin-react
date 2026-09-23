@@ -479,7 +479,7 @@ function UploadClosing() {
     setInputCount((c) => c + 1);
   };
 
-  const handleImport = async () => {
+    const handleImport = async () => {
     if (!selDesName || selDesName === "0") {
       toast.error(`Please select a ${masterPanel["STKS"] || "Distributor"}.`);
       return;
@@ -501,10 +501,32 @@ function UploadClosing() {
     form.append("des_name", desName);
     form.append("des_code", desCode);
     form.append("selected_mnt", parseMonth(selMonth));
+
     setLoading(true);
     setLoadingType("import");
+
+    let res; // hoisted so it's visible in `finally`
+    let isPolling = false;
+
     try {
-      const res = await api.post("/upload_to_s3", form);
+      res = await api.post("/upload_to_s3", form);
+
+      if (res.data?.process_stat === 4) {
+        isPolling = true;
+        setTimeout(async () => {
+          try {
+            await loadDesListData();
+          } catch (err) {
+            console.error("import (delayed poll):", err);
+            toast.error("something went wrong, Try again!");
+          } finally {
+            setLoading(false);
+            setLoadingType(null);
+          }
+        }, 6000);
+        return;
+      }
+
       setManualMode(false);
       setFiles([]);
 
@@ -518,8 +540,10 @@ function UploadClosing() {
       await loadDesListData();
       toast.error("something went wrong, Try again!");
     } finally {
-      setLoading(false);
-      setLoadingType(null);
+      if (!isPolling) {
+        setLoading(false);
+        setLoadingType(null);
+      }
     }
   };
 
