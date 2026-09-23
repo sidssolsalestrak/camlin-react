@@ -1454,7 +1454,7 @@ function UploadClosing() {
   const hasExistingData = Boolean(masId);
   const showDistributorTerritory = Boolean(selDesName) && selDesName !== "0";
   const hasPreviewFiles = imgData.length > 0;
-  const shouldShowSkeleton = loading && ["import", "manual", "rawSubmit", "save", "manualInsert", "confirm"].includes(loadingType);
+  const shouldShowSkeleton = loading && ["manual", "rawSubmit", "save", "manualInsert", "confirm"].includes(loadingType);
   const shouldShowSpinner = loading && !shouldShowSkeleton;
 
   const filteredRows = useMemo(() => {
