@@ -775,7 +775,7 @@ export default function DailyActivityReport() {
                             </Grid>
                             <Grid size={{ md: 3, lg: 2, xs: 12, sm: 3 }}>
                                 {URL !== 'getfieldActivity_new' && (
-                                    <Button sx={{ mt: 0.2 }} variant="contained" onClick={() => setMapOpen(true)}>
+                                    <Button sx={{ mt: 0.2,textWrap:'nowrap' }} variant="contained" onClick={() => setMapOpen(true)}>
                                         View all Location
                                     </Button>
                                 )}
