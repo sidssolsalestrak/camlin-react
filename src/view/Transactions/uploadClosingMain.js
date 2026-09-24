@@ -523,7 +523,7 @@ function UploadClosing() {
             setLoading(false);
             setLoadingType(null);
           }
-        }, 6000);
+        }, 8000);
         return;
       }
 
