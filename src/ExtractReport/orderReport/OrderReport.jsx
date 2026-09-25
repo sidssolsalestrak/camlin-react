@@ -515,20 +515,20 @@ const OrderReport = () => {
             headerName: "Ord. Qty",
             filterable: true,
             showTotal: true,
-            type: "alignCenter",
+            type:"alignright",
         },
         {
             field: "prod_free",
             headerName: "Free Qty",
             filterable: true,
             showTotal: true,
-            type: "alignCenter",
+            type:"alignright",
         },
         {
             field: "disc_per",
             headerName: "Disc. %",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.disc_per)}</span>
             ),
@@ -552,7 +552,7 @@ const OrderReport = () => {
             field: "retail_price",
             headerName: "Rate",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.retail_price)}</span>
             ),
@@ -573,7 +573,7 @@ const OrderReport = () => {
             headerName: "Ord. Value",
             filterable: true,
             showTotal: true,
-            type: "alignCenter",
+            type:"alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.ord_value)}</span>
             )
@@ -583,7 +583,7 @@ const OrderReport = () => {
             headerName: "Offer Value",
             filterable: true,
             showTotal: true,
-            type: "alignCenter",
+            type:"alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.disc_value)}</span>
             )

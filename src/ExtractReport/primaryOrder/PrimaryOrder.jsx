@@ -295,6 +295,7 @@ const PrimaryOrder = () => {
             field: "ord_date",
             headerName: "Order Date",
             filterable: true,
+            type:"alignright",
         },
         {
             field: "distributor",
@@ -316,13 +317,13 @@ const PrimaryOrder = () => {
             field: "ord_qty",
             headerName: "Total Ord. Qty",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
         },
         {
             field: "ord_val",
             headerName: "Total Ord.Value",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
         },
     ]
 

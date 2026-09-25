@@ -56,21 +56,21 @@ const PopUpTable = ({ open, setOpen, rowData,distributorLabel,userLabel,prod }) 
             field: "prod_price",
             headerName: `${distributorLabel} Price (PTS)`,
             filterable: true,
-            type: "alignCenter"
+            type:"alignright",
         },
         {
             field: "prod_qty",
             headerName: "Qty",
             filterable: true,
             showTotal: true,
-            type: "alignCenter"
+            type:"alignright",
         },
         {
             field: "prod_val",
             headerName: "Total Value",
             filterable: true,
             showTotal: true,
-            type: "alignCenter"
+            type:"alignright",
         },
     ]
 
@@ -85,7 +85,7 @@ const PopUpTable = ({ open, setOpen, rowData,distributorLabel,userLabel,prod }) 
                         marginTop: "20px",
                     },
                     "& .MuiDialog-paper": {
-                        maxWidth: "700px",
+                        maxWidth: "720px",
                         width: "100%",
                     },
                 }}>
@@ -130,7 +130,7 @@ const PopUpTable = ({ open, setOpen, rowData,distributorLabel,userLabel,prod }) 
                             <span style={subTitle}>{" "}{rowData?.stk_code} - {rowData?.stk_name}</span>
                         </Box>
                     </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", mt: 0.5, mb: 0.5 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", mt: 0.5, mb: 0.5,mr:0.5}}>
                         <DataTable
                             data={tableData}
                             columns={columns}

@@ -197,7 +197,7 @@ export default function OutletCount() {
             field: "_name",
             headerName: zoneLabel,
             renderHeader: () => (<Typography sx={{ textAlign: 'start', ml: 2 }}>{zoneLabel}</Typography>),
-            width: 500,
+            width: 480,
             renderCell: ({ row }) => {
                 if (row._rowType === "subheader") return (
                     <Box display="flex" gap={1} alignItems="center" sx={{ width: "100%" }}>
@@ -227,7 +227,7 @@ export default function OutletCount() {
                         <Typography sx={{ width: 140, fontSize: 12 }}>{row.ter_name || "-"}</Typography>
                         <Typography
                             onClick={() => handleBeatClick(row)}
-                            sx={{ width: 100, fontSize: 12, textDecoration: "underline", cursor: "pointer", textWrap: 'nowrap' }}
+                            sx={{ width: 260, fontSize: 12, textDecoration: "underline", cursor: "pointer", textWrap: 'wrap' }}
                         >
                             {row.beat_name || "-"}
                         </Typography>
@@ -238,8 +238,8 @@ export default function OutletCount() {
         {
             field: "tot_cus",
             headerName: "Outlets",
-            width: 100,
-            renderHeader: () => (<Typography sx={{ textAlign: 'start' }}>Outlets</Typography>),
+            width: 90,
+            type:"alignright",
             renderCell: ({ row }) => {
                 if (row._rowType === "subheader") return (
                     <Typography sx={{ fontWeight: 700, fontSize: 12, color: "#555", textAlign: "right", width: "100%" }}>
@@ -248,7 +248,7 @@ export default function OutletCount() {
                 );
                 return (
                     <Typography sx={{
-                        textAlign: "center",
+                        textAlign: "right",
                         fontWeight: row._rowType !== "rep" ? 700 : 400,
                         fontSize: 12,
                         width: "100%"
@@ -261,12 +261,12 @@ export default function OutletCount() {
         {
             field: "_expand",
             headerName: "",
-            width: 50,
+            width: 70,
             renderCell: ({ row }) => {
                 if (row._rowType === "zone") {
                     const isOpen = expandedZones.has(row._zoneId);
                     return (
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleZone(row._zoneId); }} sx={{ color: "#2e7d32", p: 0.5 }}>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleZone(row._zoneId); }} sx={{ color: "#2e7d32", p: 0.5,ml:5 }}>
                             {isOpen ? <FaMinus size={14} /> : <FaPlus size={14} />}
                         </IconButton>
                     );
@@ -274,7 +274,7 @@ export default function OutletCount() {
                 if (row._rowType === "region") {
                     const isOpen = expandedRegs.has(row._regKey);
                     return (
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleReg(row._zoneId, row._regId); }} sx={{ color: "#2e7d32", p: 0.5 }}>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleReg(row._zoneId, row._regId); }} sx={{ color: "#2e7d32", p: 0.5,ml:5 }}>
                             {isOpen ? <FaMinus size={14} /> : <FaPlus size={14} />}
                         </IconButton>
                     );

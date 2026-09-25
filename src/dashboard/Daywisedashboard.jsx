@@ -209,16 +209,16 @@ export default function DayWiseDashboard({
               <TableCell sx={styles.theads}>Last Call</TableCell>
               <TableCell sx={styles.theads}>Beat Planned</TableCell>
               <TableCell sx={styles.theads}>Beat Working</TableCell>
-              <TableCell sx={styles.theads}>Distance(Kms)</TableCell>
-              <TableCell sx={styles.theads}>Total Calls</TableCell>
-              <TableCell sx={styles.theads}>Productive</TableCell>
-              <TableCell sx={styles.theads}>Events</TableCell>
-              <TableCell sx={styles.theads}>Samples</TableCell>
-              <TableCell sx={styles.theads}>Joint Work</TableCell>
-              <TableCell sx={styles.theads}>B'days</TableCell>
-              <TableCell sx={styles.theads}>Qty</TableCell>
-              <TableCell sx={styles.theads}>Values(Lacs)</TableCell>
-              <TableCell sx={styles.theads}>Survey</TableCell>
+              <TableCell align="right" sx={styles.theads}>Distance(Kms)</TableCell>
+              <TableCell align="right" sx={styles.theads}>Total Calls</TableCell>
+              <TableCell align="right" sx={styles.theads}>Productive</TableCell>
+              <TableCell align="right" sx={styles.theads}>Events</TableCell>
+              <TableCell align="right" sx={styles.theads}>Samples</TableCell>
+              <TableCell align="right" sx={styles.theads}>Joint Work</TableCell>
+              <TableCell align="right" sx={styles.theads}>B'days</TableCell>
+              <TableCell align="right" sx={styles.theads}>Qty</TableCell>
+              <TableCell align="right" sx={styles.theads}>Values(Lacs)</TableCell>
+              <TableCell align="right" sx={styles.theads}>Survey</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -246,20 +246,20 @@ export default function DayWiseDashboard({
                   return (
                     <TableRow key={row.key}>
                       <TableCell colSpan={6} sx={styles.regionTotal}>{regName}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{tot.dist ? tot.dist.toFixed(2) : "-"}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>
+                      <TableCell align="right" sx={styles.regionTotal}>{tot.dist ? tot.dist.toFixed(2) : "-"}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>
                         <b>{zeroTonullVal(tot.hcp)}</b> | <b>{zeroTonullVal(tot.ret)}</b>
                       </TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>
+                      <TableCell align="right" sx={styles.regionTotal}>
                         <b>{zeroTonullVal(hcpPct.pct)}{hcpPct.suffix}</b> | <b>{zeroTonullVal(retPct.pct)}{retPct.suffix}</b>
                       </TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.event)}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.samp)}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.joint)}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.bday)}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.ord)}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(roundTotal(tot.ordVal))}</TableCell>
-                      <TableCell align="center" sx={styles.regionTotal}>{zeroTonullVal(tot.survey)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.event)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.samp)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.joint)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.bday)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.ord)}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(roundTotal(tot.ordVal))}</TableCell>
+                      <TableCell align="right" sx={styles.regionTotal}>{zeroTonullVal(tot.survey)}</TableCell>
                     </TableRow>
                   );
                 }
@@ -353,22 +353,22 @@ export default function DayWiseDashboard({
                         )}
                       </Box>
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">{zeroTonullVal(sale.dist_kms)}</TableCell>
-                    <TableCell sx={styles.dataCell} align="center">
+                    <TableCell sx={styles.dataCell} align="right">{zeroTonullVal(sale.dist_kms)}</TableCell>
+                    <TableCell sx={styles.dataCell} align="right">
                       <b>{zeroTonullVal(sale.hcp_call)}</b> | <b>{zeroTonullVal(sale.ret_call)}</b>
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">
+                    <TableCell sx={styles.dataCell} align="right">
                       <b>{zeroTonullVal(hcpProdCall)}{perHcpProdCall}</b> | <b>{zeroTonullVal(retProdCall)}{perRetProdCall}</b>
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">{zeroTonullVal(sale.tot_event)}</TableCell>
+                    <TableCell sx={styles.dataCell} align="right">{zeroTonullVal(sale.tot_event)}</TableCell>
                     <TableCell
                       sx={{ ...styles.dataCell, ...(onSampleDetailClick ? styles.clickable : {}) }}
-                      align="center"
+                      align="right"
                       onClick={() => onSampleDetailClick && onSampleDetailClick(sale)}
                     >
                       {zeroTonullVal(sale.tot_samp)}
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">
+                    <TableCell sx={styles.dataCell} align="right">
                       {zeroTonullVal(sale.tot_jnt)}{" "}
                       {Number(sale.tot_jnt) > 0 && (
                         <i
@@ -378,22 +378,22 @@ export default function DayWiseDashboard({
                         />
                       )}
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">{zeroTonullVal(sale.tot_dob_anniv)}</TableCell>
+                    <TableCell sx={styles.dataCell} align="right">{zeroTonullVal(sale.tot_dob_anniv)}</TableCell>
                     <TableCell
                       sx={{ ...styles.dataCell, ...(onOrderDetailClick ? styles.clickable : {}) }}
-                      align="center"
+                      align="right"
                       onClick={() => onOrderDetailClick && onOrderDetailClick(sale)}
                     >
                       {zeroTonullVal(sale.tot_ord)}
                     </TableCell>
                     <TableCell
                       sx={{ ...styles.dataCell, ...(onOrderDetailClick ? styles.clickable : {}) }}
-                      align="center"
+                      align="right"
                       onClick={() => onOrderDetailClick && onOrderDetailClick(sale)}
                     >
                       {zeroTonullVal(sale.tot_ord_val)}
                     </TableCell>
-                    <TableCell sx={styles.dataCell} align="center">{zeroTonullVal(sale.tot_cs)}</TableCell>
+                    <TableCell sx={styles.dataCell} align="right">{zeroTonullVal(sale.tot_cs)}</TableCell>
                   </TableRow>
                 );
               })

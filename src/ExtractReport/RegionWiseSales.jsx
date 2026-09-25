@@ -133,7 +133,7 @@ const RegionWiseSales = () => {
             field: "ord_val",
             headerName: "Total Secondary MTD",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
@@ -143,7 +143,7 @@ const RegionWiseSales = () => {
             field: "tot_cus",
             headerName: "Total Mapped Master outlets",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
@@ -153,7 +153,7 @@ const RegionWiseSales = () => {
             field: "tot_ord_recd",
             headerName: "Total outlets billed",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
@@ -163,7 +163,7 @@ const RegionWiseSales = () => {
             field: "avg_sku",
             headerName: "Average SKU per order",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
@@ -173,7 +173,7 @@ const RegionWiseSales = () => {
             field: "avg_val",
             headerName: "Average order value per order",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
@@ -183,7 +183,7 @@ const RegionWiseSales = () => {
             field: "prod_per",
             headerName: "Productivity %",
             filterable: true,
-            type: "alignCenter",
+            type:"alignright",
             showAverageTotal: true,
             renderCell: (params) => (
                 <span>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>

@@ -117,34 +117,39 @@ const AreaWiseSalesAnalysis = () => {
         { field: "area_name", headerName: masterPanel["AREA"] || "Area", filterable: true, },
         {
             field: "m1_sale", headerName: `Apr-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m2_sale", headerName: `May-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m3_sale", headerName: `Jun-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m4_sale", headerName: `Jul-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m5_sale", headerName: `Aug-${yy}`, width: 100, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return (
                     <span style={{
@@ -156,72 +161,72 @@ const AreaWiseSalesAnalysis = () => {
                         {params?.value}
                     </span>
                 );
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m6_sale", headerName: `Sep-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m7_sale", headerName: `Oct-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m8_sale", headerName: `Nov-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m9_sale", headerName: `Dec-${yy}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m10_sale", headerName: `Jan-${nextYY}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m11_sale", headerName: `Feb-${nextYY}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "m12_sale", headerName: `Mar-${nextYY}`, filterable: true,
+            type:"alignright",
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={renderCellStyle}>{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
+                return <span >{params?.value == 0 ? "-" : FormatCurrency(params?.value)}</span>
             }
         },
         {
             field: "total", headerName: "Total", filterable: true, width: 150,
+            type:"alignright",
             cellSx: { padding: 0, position: "relative" },
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    paddingLeft: "6px",
-                    backgroundColor: !params?.row?._isSubtotal ? "#f1fde7" : null,
-                    width: "100%"
-                }}>
+                return <span style={{marginRight:'3px'}}>
                     {params?.value == 0 ? "-" : FormatCurrency(params?.value)}
                 </span>
             }

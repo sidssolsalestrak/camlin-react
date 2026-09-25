@@ -381,7 +381,7 @@ function UploadClosing() {
 
   const loadDesListData = useCallback(async () => {
     const desId = selDesName.split("|")[0];
-    if (!desId || desId === "0") return;
+    if (!desId || desId === "0") return false;
     const reqId = ++latestReqRef.current;
     setLoading(true);
     setLoadingType("fetch");
@@ -393,11 +393,13 @@ function UploadClosing() {
         btn_val: reqBtnVal,
         tgl_val: tglVal,
       });
-      if (reqId !== latestReqRef.current) return;
+      if (reqId !== latestReqRef.current) return true;
       setManualMode(false);
       handleApiResponse(res.data);
+      return true
     } catch (err) {
       console.error("fetchDesList:", err);
+      return false;
     } finally {
       setLoading(false);
       setLoadingType(null);
@@ -515,9 +517,14 @@ function UploadClosing() {
         isPolling = true;
         setTimeout(async () => {
           try {
-            await loadDesListData();
+            const ok = await loadDesListData();
+            if (!ok) {
+              setProcessStat(4);   // shows "In Pending" status + hides Import / Add Manual
+              setFiles([]);        // optional: clear the stale selected files
+            }
           } catch (err) {
             console.error("import (delayed poll):", err);
+            setProcessStat(4);
             toast.error("something went wrong, Try again!");
           } finally {
             setLoading(false);
@@ -2200,7 +2207,7 @@ function UploadClosing() {
                 )}
               </Box>
             </Grid>
-            {Number(checking) !== 2 && !hasExistingData && !manualMode && (
+            {Number(checking) !== 2 && !hasExistingData && !manualMode && !isRawPending && (
               <>
                 <Grid size={{ xs: 12, sm: "auto" }}>
                   <Box
@@ -2380,7 +2387,7 @@ function UploadClosing() {
                 ))}
               </>
             )}
-            {Number(checking) !== 2 && !hasExistingData && !manualMode && (
+            {Number(checking) !== 2 && !hasExistingData && !manualMode && !isRawPending && (
               <Grid size={{ xs: 12, sm: "auto" }} sx={{mt:2}}>
                 <Button
                   variant="contained"
@@ -2423,6 +2430,7 @@ function UploadClosing() {
               !hasExistingData &&
               !rawMode &&
               !manualMode &&
+              !isRawPending &&
               !files.length > 0 && (
                 <Grid size={{ xs: 12, sm: "auto" }}>
                   <Button
@@ -2530,7 +2538,8 @@ function UploadClosing() {
                         {processStat}
                       </Typography>
                     )}
-                   {(isPending || isRejected) && masId && tableData.length === 0 && (
+                   {(isPending || isRejected || isRawPending) && tableData.length === 0 && (
+                    (isRawPending || masId) && (
                       <Grid size={{ xs: 12, sm: "auto", ml: 2 }}>
                         <Button
                           size="small"
@@ -2541,7 +2550,8 @@ function UploadClosing() {
                           Abort
                         </Button>
                       </Grid>
-                    )}
+                    )
+                 )}
                 </Box>
               </Grid>
             )}
@@ -2901,7 +2911,7 @@ function UploadClosing() {
           </Box>
         )}
 
-        {!loading && !showTable && !rawMode && Boolean(selDesName) && selDesName !== "0" && (
+        {!loading && !showTable && !rawMode && Boolean(selDesName) && selDesName !== "0" && !isRawPending && (
           <Paper
             elevation={0}
             sx={{

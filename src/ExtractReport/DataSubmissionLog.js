@@ -168,7 +168,8 @@ function DataSubmissionLog() {
         return {
             field: `month_${i + 1}`,
             headerName: monthName,
-            width: 90
+            width: 90,
+            type:"alignright"
         };
     });
 

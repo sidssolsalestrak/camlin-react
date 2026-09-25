@@ -81,7 +81,7 @@ const SubmissionRow = React.memo(
                     <TableCell
                         key={`${row.id}-${col.field}`}
                         align={
-                            col.type === "number" || col.type === "currency"
+                            col.type === "number" || col.type === "currency" || col.field === "create_dt"
                                 ? "right"
                                 : col.field === "stk_name"
                                     ? "left"
@@ -730,10 +730,13 @@ const SubmissionStatusTableComponent = ({
                                     );
                                 }
 
+                                const isRightAlignCol = col.type === "number" || col.type === "currency" || col.field === "create_dt";
+                                const headerAlign = isRightAlignCol ? "right" : col.field === "stk_name" ? "left" : "center";
+
                                 return (
                                     <TableCell
                                         key={i}
-                                        align={col.field === "stk_name" ? "left" : "center"}
+                                        align={headerAlign}
                                         sx={{
                                             color: "#A09D97",
                                             borderBottom: "1px solid rgba(0,0,0,0.08)",
@@ -749,7 +752,7 @@ const SubmissionStatusTableComponent = ({
                                         }}
                                     >
                                         {typeof headerContent === "string" ? (
-                                            <Typography sx={{ fontSize: 11, textAlign: col.field === "stk_name" ? "left" : "center" }}>{headerContent}</Typography>
+                                            <Typography sx={{ fontSize: 11, textAlign: headerAlign }}>{headerContent}</Typography>
                                         ) : (
                                             headerContent
                                         )}

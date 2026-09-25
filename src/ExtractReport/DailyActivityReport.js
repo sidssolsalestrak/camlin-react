@@ -428,34 +428,38 @@ export default function DailyActivityReport() {
             headerName: "Total Outlets",
             width: 40,
             showTotal: true,
+            type:"alignright",
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+                <Typography >{params.value ? params.value : '-'}</Typography>
             )
         },
         {
             field: "tot_call",
             headerName: "Total Calls",
             showTotal: true,
+            type:"alignright",
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+                <Typography >{params.value ? params.value : '-'}</Typography>
             )
         },
         {
             field: "prod_call",
             headerName: "Productive Calls",
             showTotal: true,
+            type:"alignright",
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>{params.value ? params.value : '-'}</Typography>
+                <Typography >{params.value ? params.value : '-'}</Typography>
             )
         },
         {
             field: "sec_tgt_val",
             headerName: "Sec. Target Rs.",
             showTotal: true,
+            type:"alignright",
             renderCell: (params) => {
                 const num = Number(params.value);
                 return (
-                    <Typography sx={{ textAlign: 'right' }}>
+                    <Typography >
                         {num > 0
                             ? num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                             : '-'}
@@ -467,10 +471,11 @@ export default function DailyActivityReport() {
             field: "sec_ach_val",
             headerName: "Sec.Achieved Rs.",
             showTotal: true,
+            type:"alignright",
             renderCell: (params) => {
                 const num = Number(params.value);
                 return (
-                    <Typography sx={{ textAlign: 'right' }}>
+                    <Typography >
                         {num > 0
                             ? num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                             : '-'}
@@ -482,6 +487,7 @@ export default function DailyActivityReport() {
             field: "sec_pct",
             headerName: "%age",
             showTotal: true,
+            type:"alignright",
             footerValue: (data) => {
             const totalAch = data.reduce((sum, row) => {
                 if (row._isSubtotal) return sum;
@@ -501,7 +507,7 @@ export default function DailyActivityReport() {
             });
             },
             renderCell: (params) => (
-                <Typography sx={{ textAlign: 'right' }}>
+                <Typography >
                 {params.value > 0
                     ? params.value.toLocaleString("en-IN", {
                         minimumFractionDigits: 2,
