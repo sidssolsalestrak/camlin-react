@@ -45,6 +45,7 @@ const styles = {
     verticalAlign: "top",
   },
   center: { textAlign: "center" },
+  right: { textAlign: "right" },
 };
 
 /**
@@ -109,20 +110,20 @@ export default function CallSummaryTable({
         <Table size="small" sx={{ borderCollapse: "collapse" }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={styles.theads}>Sl</TableCell>
+              <TableCell sx={styles.theads} align="right">Sl</TableCell>
               <TableCell sx={styles.theads} align="center">Date</TableCell>
               <TableCell sx={styles.theads} align="center">
                 Customer Name / Class
               </TableCell>
               <TableCell sx={styles.theads} align="center">Call time</TableCell>
-              <TableCell sx={styles.theads} align="center">Detailing</TableCell>
+              <TableCell sx={styles.theads} align="right">Detailing</TableCell>
               <TableCell sx={styles.theads} align="center">Joint Work</TableCell>
-              <TableCell sx={styles.theads} align="center">Market Input</TableCell>
-              <TableCell sx={styles.theads} align="center">Orders</TableCell>
-              <TableCell sx={styles.theads} align="center">Free</TableCell>
-              <TableCell sx={styles.theads} align="center">Samples</TableCell>
+              <TableCell sx={styles.theads} align="right">Market Input</TableCell>
+              <TableCell sx={styles.theads} align="right">Orders</TableCell>
+              <TableCell sx={styles.theads} align="right">Free</TableCell>
+              <TableCell sx={styles.theads} align="right">Samples</TableCell>
               <TableCell sx={styles.theads} align="center">Remarks</TableCell>
-              <TableCell sx={styles.theads} align="center">Display</TableCell>
+              <TableCell sx={styles.theads} align="right">Display</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -163,9 +164,9 @@ export default function CallSummaryTable({
                     : key.call_time;
                 return (
                   <TableRow key={key.call_id ?? idx}>
-                    <TableCell sx={styles.dataCell}>
+                    <TableCell sx={{ ...styles.dataCell, ...styles.right }}>
                       {idx + 1}
-                      <Box sx={{ mt: 0.5, display: "flex", gap: 1, flexDirection: "column" }}>
+                      <Box sx={{ mt: 0.5, display: "flex", gap: 1, flexDirection: "column", alignItems: "flex-end" }}>
                         <i
                           className="fa fa-plus-circle"
                           title="Add Joint Work"
@@ -214,7 +215,7 @@ export default function CallSummaryTable({
                       {key.beat_name}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{callTime}</TableCell>
-                    <TableCell sx={{ ...styles.dataCell, wordWrap: "break-word" }}>
+                    <TableCell sx={{ ...styles.dataCell, ...styles.right, wordWrap: "break-word" }}>
                       {key.clm_secs}
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.jnt_user}</TableCell>
@@ -222,7 +223,7 @@ export default function CallSummaryTable({
                       onClick={onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? () => onSampleDetailsClick(key.call_id, srId, key.cus_id) : undefined}
                       sx={{
                         ...styles.dataCell,
-                        ...styles.center,
+                        ...styles.right,
                         cursor: onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? "pointer" : "default",
                         "&:hover": onSampleDetailsClick && Number(key.market_ip_qty) > 0 ? { textDecoration: "underline" } : {},
                       }}
@@ -234,7 +235,7 @@ export default function CallSummaryTable({
                       onClick={onOrderDetailsClick && Number(key.ord_qty) > 0 ? () => onOrderDetailsClick(key.call_id, srId, key.cus_id) : undefined}
                       sx={{
                         ...styles.dataCell,
-                        ...styles.center,
+                        ...styles.right,
                         color: "#133BDE",
                         cursor: onOrderDetailsClick && Number(key.ord_qty) > 0 ? "pointer" : "default",
                         "&:hover": onOrderDetailsClick && Number(key.ord_qty) > 0 ? { textDecoration: "underline" } : {},
@@ -247,7 +248,7 @@ export default function CallSummaryTable({
                       onClick={onOrderDetailsClick && Number(key.free_qty) > 0 ? () => onOrderDetailsClick(key.call_id, srId, key.cus_id) : undefined}
                       sx={{
                         ...styles.dataCell,
-                        ...styles.center,
+                        ...styles.right,
                         color: "#133BDE",
                         cursor: onOrderDetailsClick && Number(key.free_qty) > 0 ? "pointer" : "default",
                         "&:hover": onOrderDetailsClick && Number(key.free_qty) > 0 ? { textDecoration: "underline" } : {},
@@ -260,7 +261,7 @@ export default function CallSummaryTable({
                       onClick={onSampleDetailsClick && Number(key.samp_qty) > 0 ? () => onSampleDetailsClick(key.call_id, srId, key.cus_id) : undefined}
                       sx={{
                         ...styles.dataCell,
-                        ...styles.center,
+                        ...styles.right,
                         color: "#133BDE",
                         cursor: onSampleDetailsClick && Number(key.samp_qty) > 0 ? "pointer" : "default",
                         "&:hover": onSampleDetailsClick && Number(key.samp_qty) > 0 ? { textDecoration: "underline" } : {},
@@ -270,7 +271,7 @@ export default function CallSummaryTable({
                     </TableCell>
                     <TableCell sx={styles.dataCell}>{key.call_rem}</TableCell>
                     <TableCell
-                      sx={{ ...styles.dataCell, ...styles.center, cursor: onViewDisplayBreakup ? "pointer" : "default",color:'#133BDE' }}
+                      sx={{ ...styles.dataCell, ...styles.right, cursor: onViewDisplayBreakup ? "pointer" : "default",color:'#133BDE' }}
                       onClick={
                         onViewDisplayBreakup ? () => onViewDisplayBreakup(key.call_id) : undefined
                       }

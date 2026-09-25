@@ -325,8 +325,9 @@ const UploadBilling = () => {
         {
             field: 'prod_qty',
             headerName: 'Prod Qty',
+            type:'alignright',
             renderCell: (row) => (
-                <Typography sx={{ textAlign: 'right' }}>{row.value}</Typography>
+                <Typography >{row.value}</Typography>
             )
         }
     ]

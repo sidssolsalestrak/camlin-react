@@ -305,31 +305,37 @@ function PrimarySalesAnalze() {
                 {
                     field: "sale_qty",
                     headerName: "Sales",
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.sale_qty ?? params.sale_qty),
                 },
                 {
                     field: "free_qty",
                     headerName: "Free",
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.free_qty ?? params.free_qty),
                 },
                 {
                     field: "totalqty",
                     headerName: "Total",
+                    type:"alignright",
                     renderCell: (params) => bold(params.row?.totalqty ?? params.totalqty),
                 },
                 {
                     field: "lym_sale_qty",
                     headerName: `${dayjs(decodeEnMonth,'MMM YYYY').subtract(1, "year").format("MMM YYYY")}`,
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.lym_sale_qty ?? params.lym_sale_qty),
                 },
                 {
                     field: "growthqty",
                     headerName: "Growth Qty",
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.growthqty ?? params.growthqty),
                 },
                 {
                     field: "percentage",
                     headerName: "%age",
+                    type:"alignright",
                     renderCell: (params) => ageNegative(params.row?.percentage ?? params.percentage),
                 },
             ]
@@ -341,31 +347,38 @@ function PrimarySalesAnalze() {
                 {
                     field: "fy_sale_qty",
                     headerName: "Sales",
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.fy_sale_qty ?? params.fy_sale_qty),
                 },
                 {
                     field: "fy_free_qty",
                     headerName: "Free",
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.fy_free_qty ?? params.fy_free_qty),
                 },
                 {
                     field: "fytotalqty",
                     headerName: "Total",
+                    type:"alignright",
                     renderCell: (params) => bold(params.row?.fytotalqty ?? params.fytotalqty),
                 },
                 {
                     field: "ly_sale_qty",
                     headerName: `FY ${dayjs(selMonth).subtract(1, "year").format("YYYY")}`,
+                    type:"alignright",
                     renderCell: (params) => zeroToNull(params.row?.ly_sale_qty ?? params.ly_sale_qty),
                 },
                 {
                     field: "fyGrowthqty",
                     headerName: "Growth Qty",
+                    type:"alignright",
+                    
                     renderCell: (params) => zeroToNull(params.row?.fyGrowthqty ?? params.fyGrowthqty),
                 },
                 {
                     field: "fypercentage",
                     headerName: "%age",
+                    type:"alignright",
                     renderCell: (params) => redIfNegative(params.row?.fypercentage ?? params.fypercentage),
                 },
             ]

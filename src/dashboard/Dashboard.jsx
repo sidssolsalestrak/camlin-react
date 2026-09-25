@@ -333,7 +333,7 @@ function OrderDetailTable({ data, prodLabel }) {
     {
       field: "ord_qty",
       headerName: `${prodLabel} Qty`,
-      type: "alignCenter",
+      type: "alignright",
       width: 140,
       valueFormatter: zeroTonull,
       showTotal: true,
@@ -342,7 +342,7 @@ function OrderDetailTable({ data, prodLabel }) {
     {
       field: "free_qty",
       headerName: `${prodLabel} Free`,
-      type: "alignCenter",
+      type: "alignright",
       width: 140,
       valueFormatter: zeroTonull,
       showTotal: true,
@@ -351,7 +351,7 @@ function OrderDetailTable({ data, prodLabel }) {
     {
       field: "prod_val",
       headerName: `${prodLabel} Value`,
-      type: "alignCenter",
+      type: "alignright",
       width: 140,
       valueFormatter: zeroTonull,
       showTotal: true,

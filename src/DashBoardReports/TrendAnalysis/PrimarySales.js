@@ -566,26 +566,29 @@ function PrimarySales({ enType }) {
         ...MONTHS.map((m, i) => ({
             field: `m_val_${i}`,
             headerName: `${m}-${yr}`,
+            type:'alignright',
             renderCell: ({ row }) => {
                 const v = selRepType === 1 ? row[`m_qty_${i}`] : row[`m_val_${i}`];
                 const forceFix = row._rowType !== "data";
-                return <Box sx={{ textAlign: "center" }}>{fmt(v, forceFix)}</Box>;
+                return <Box sx={{ textAlign: "right" }}>{fmt(v, forceFix)}</Box>;
             }
         })),
         {
             field: "total_val",
             headerName: "Total",
+            type:"alignright",
             renderCell: ({ row }) => {
                 const v = selRepType === 1 ? row.total_qty : row.total_val;
-                return <Box sx={{ textAlign: "center" }}>{fmt(v, true)}</Box>;
+                return <Box sx={{ textAlign: "right" }}>{fmt(v, true)}</Box>;
             }
         },
         {
             field: "saliency_val",
             headerName: "Saliency",
+            type:"alignright",
             renderCell: ({ row }) => {
                 const v = selRepType === 1 ? row.saliency_qty : row.saliency_val;
-                return <Box sx={{ textAlign: "center" }}>{fmtSaliency(v)}</Box>;
+                return <Box sx={{ textAlign: "right" }}>{fmtSaliency(v)}</Box>;
             }
         },
     ];

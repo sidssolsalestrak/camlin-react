@@ -627,6 +627,7 @@ const DataTable = ({
                   key={i}
                   colSpan={col.subColumns?.length || 1}
                   align={
+                    col.type === "alignright"?"right":
                     col.subColumns
                       ? "center"
                       : col.type === "number" || col.type === "currency"
@@ -704,6 +705,7 @@ const DataTable = ({
                     col.subColumns.map((sub, si) => (
                       <TableCell
                         key={`${pi}-${si}`}
+                        align={sub.type === "alignright" ? "right" : "left"}
                         sx={{
                           minWidth: sub.width,
                           width: sub.width,
@@ -989,7 +991,7 @@ const DataTable = ({
                               ["number", "currency", "date"].includes(col.type)
                                 ? "right"
                                 : col.type === "alignCenter"
-                                  ? "center"
+                                  ? "center" : col.type === "alignright"? "right"
                                   : "left"
                             }
                             sx={{

@@ -305,6 +305,7 @@ function OrderFrequencyReport() {
         loadedType && {
             field: 'call_date',
             headerName: 'Order Month',
+            type:"alignright",
             renderCell: (row) => (
                 <Typography>{row.value ? dayjs(row.value).format("DD MMM YYYY") : ''}</Typography>
             )

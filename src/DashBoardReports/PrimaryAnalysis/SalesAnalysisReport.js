@@ -347,7 +347,7 @@ function SalesAnalysisReport() {
                             headerName: "Growth",
                             renderCell: (params) => {
                                 const row = params?.row ?? params;
-                                return (<Typography sx={{ textAlign: 'center' }}>{zeroToNull(row[`${key}_growth`])}</Typography>);
+                                return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row[`${key}_growth`])}</Typography>);
                             },
                         },
                     ]
@@ -362,6 +362,7 @@ function SalesAnalysisReport() {
                     {
                         field: "all_fy1",
                         headerName: fyLabel1,
+                        type:"alignright",
                         renderCell: (params) => {
                             const row = params?.row ?? params;
                             return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy1)}</Typography>);
@@ -370,6 +371,7 @@ function SalesAnalysisReport() {
                     {
                         field: "all_fy2",
                         headerName: fyLabel2,
+                        type:"alignright",
                         renderCell: (params) => {
                             const row = params?.row ?? params;
                             return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy2)}</Typography>);
@@ -378,6 +380,7 @@ function SalesAnalysisReport() {
                     {
                         field: "all_fy3",
                         headerName: fyLabel3,
+                        type:"alignright",
                         renderCell: (params) => {
                             const row = params?.row ?? params;
                             return (<Typography sx={{ textAlign: 'right' }}>{zeroToNull(row.all_fy3)}</Typography>);
@@ -389,7 +392,7 @@ function SalesAnalysisReport() {
                         type: "number",
                         renderCell: (params) => {
                             const row = params?.row ?? params;
-                            return (<Typography sx={{ textAlign: 'center' }}>{zeroToNull(Number(row.all_growth).toLocaleString("en-IN", {
+                            return (<Typography >{zeroToNull(Number(row.all_growth).toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                             }))}</Typography>);

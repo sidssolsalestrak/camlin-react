@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Layout from '../layout'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { Autocomplete, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -336,7 +336,9 @@ const StockAndSalesReport = () => {
 
     const columns = [
         { field: "zone_name", headerName: zoneLabel, filterable: true },
-        { field: "reg_name", headerName: regionLabel, filterable: true },
+        { field: "reg_name", headerName: regionLabel, filterable: true,renderCell:(params)=>(
+            <Typography sx={{textWrap:'nowrap'}}>{params.value}</Typography>
+        ) },
         { field: "stk_code", headerName: `${stkLabel} Code`, filterable: true },
         { field: "stk_name", headerName: `${stkLabel} Name`, width: 150, filterable: true },
         { field: "city_name", headerName: "City", filterable: true },
@@ -347,8 +349,9 @@ const StockAndSalesReport = () => {
         { field: "prod_name", headerName: "SKU Name", filterable: true },
         {
             field: "prod_price", headerName: "SKU Rate", filterable: true, width: 100,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>
+                <span >
                     {typeof params?.value === "string" && isNaN(params?.value)
                         ? <strong>{params.value}</strong>
                         : params?.value === 0 ? "-"
@@ -359,62 +362,72 @@ const StockAndSalesReport = () => {
         },
         {
             field: "open_qty", headerName: "Opening Qty", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "open_val", headerName: "Opening Value", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "pur_qty", headerName: "Pri.Qty", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "pur_val", headerName: "Pri.Value", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "tot_qty", headerName: "Total", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "sec_qty", headerName: "Secondary Qty", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "sec_val", headerName: "Secondary Value", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "physical_qty", headerName: "Closing Qty", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "cls_val", headerName: "Closing Stock Value", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
+                <span >{params?.value === 0 ? "-" : FormatCurrency(params?.value)}</span>
             )
         },
         {
             field: "create_dt", headerName: "Closing Submission Date", filterable: true,
+            type:"alignright",
             renderCell: (params) => (
-                <span style={renderCellStyle}>{params?.value ? dayjs(params?.value).format("DD MMM YYYY") : null}</span>
+                <span >{params?.value ? dayjs(params?.value).format("DD MMM YYYY") : null}</span>
             )
         },
     ]
