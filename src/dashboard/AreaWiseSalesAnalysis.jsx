@@ -226,7 +226,7 @@ const AreaWiseSalesAnalysis = () => {
             cellSx: { padding: 0, position: "relative" },
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={{marginRight:'3px'}}>
+                return <span style={{marginRight:'3px',backgroundColor: !params?.row?._isSubtotal ? "#f1fde7" : null}}>
                     {params?.value == 0 ? "-" : FormatCurrency(params?.value)}
                 </span>
             }
