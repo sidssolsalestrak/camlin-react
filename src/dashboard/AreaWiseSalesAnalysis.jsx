@@ -226,7 +226,7 @@ const AreaWiseSalesAnalysis = () => {
             cellSx: { padding: 0, position: "relative" },
             renderCell: (params) => {
                 if (params?.row?._isGroupHeader) return null;
-                return <span style={{marginRight:'3px',backgroundColor: !params?.row?._isSubtotal ? "#f1fde7" : null}}>
+                return <span style={{marginRight:'3px'}}>
                     {params?.value == 0 ? "-" : FormatCurrency(params?.value)}
                 </span>
             }
@@ -279,6 +279,9 @@ const AreaWiseSalesAnalysis = () => {
                         showHeader={false}
                         showTableTitle={true}
                         tableTitle={`${masterPanel["AREA"] || "Area"} Wise Primary Sales Review`}
+                        columnBgColors={{
+                              "total":"#f1fde7"
+                        }}
                         rowStyle={(row) => {
                             if (row._isGroupHeader) return {
                                 "& td": {
