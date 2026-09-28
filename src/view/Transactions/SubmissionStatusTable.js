@@ -161,7 +161,7 @@ const SubmissionStatusTableComponent = ({
 
         if (stkGroup === 1) {
             if (areaGroup === 1) {
-                cols.push({ field: "area_name", headerName: masterPanel["AREA"] || "Area", width: 120 });
+                cols.push({ field: "area_name", headerName: masterPanel["AREA"] || "Area", width: 140 });
             }
             if (terGroup === 1) {
                 cols.push({ field: "ter_name", headerName: masterPanel["TERR"] || "Territory", width: 120 });
