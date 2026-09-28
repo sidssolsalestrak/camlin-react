@@ -379,12 +379,17 @@ function UploadClosing() {
     })();
   }, []);
 
-  const loadDesListData = useCallback(async () => {
+  const loadDesListData = useCallback(async (opts = {}) => {
+    const { manageLoading = true } = opts;
     const desId = selDesName.split("|")[0];
     if (!desId || desId === "0") return false;
     const reqId = ++latestReqRef.current;
-    setLoading(true);
-    setLoadingType("fetch");
+
+    if (manageLoading) {
+      setLoading(true);
+      setLoadingType("fetch");
+    }
+
     try {
       const res = await api.post("/getDesList", {
         des_name_id: desId,
@@ -393,16 +398,24 @@ function UploadClosing() {
         btn_val: reqBtnVal,
         tgl_val: tglVal,
       });
-      if (reqId !== latestReqRef.current) return true;
+
+      if (reqId !== latestReqRef.current) return null; // superseded
+
+      if (Number(res.data?.process_stat) === 4 && res.data?.result == null) {
+        return false; // still processing
+      }
+
       setManualMode(false);
       handleApiResponse(res.data);
-      return true
+      return true;
     } catch (err) {
       console.error("fetchDesList:", err);
       return false;
     } finally {
-      setLoading(false);
-      setLoadingType(null);
+      if (manageLoading) {
+        setLoading(false);
+        setLoadingType(null);
+      }
     }
   }, [selDesName, selMonth, handleApiResponse, reqProcStat, reqBtnVal, tglVal]);
 
@@ -514,26 +527,44 @@ function UploadClosing() {
       res = await api.post("/upload_to_s3", form);
 
       if (res.data?.process_stat === 4) {
-        isPolling = true;
-        setTimeout(async () => {
-          try {
-            const ok = await loadDesListData();
-            if (!ok) {
-              setProcessStat(4);   // shows "In Pending" status + hides Import / Add Manual
-              setFiles([]);        // optional: clear the stale selected files
-            }
-          } catch (err) {
-            console.error("import (delayed poll):", err);
-            setProcessStat(4);
-            toast.error("something went wrong, Try again!");
-          } finally {
-            setLoading(false);
-            setLoadingType(null);
-          }
-        }, 8000);
-        return;
-      }
+      isPolling = true;
+      setLoading(true);
+      setLoadingType("fetch"); // or a dedicated "polling" type if you want distinct UI
+      (async () => {
+        const MAX_ATTEMPTS = 3;
+        const RETRY_INTERVAL = 4000;
+        let ok = false;
 
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+          for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+              ok = await loadDesListData({ manageLoading: false }); // no per-attempt flicker
+            } catch (err) {
+              console.error(`import (poll attempt ${attempt}):`, err);
+              ok = false;
+            }
+
+            if (ok === true) break;
+
+            if (attempt < MAX_ATTEMPTS) {
+              await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
+            }
+          }
+
+          if (ok !== true) {
+            setProcessStat(4);
+            setFiles([]);
+            toast.error("something went wrong, Try again!");
+          }
+        } finally {
+          // loading only clears once, after all attempts are done
+          setLoading(false);
+          setLoadingType(null);
+        }
+      })();
+      return;
+    }
       setManualMode(false);
       setFiles([]);
 
