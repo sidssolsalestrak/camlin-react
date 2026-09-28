@@ -227,7 +227,7 @@ export default function OutletCount() {
                         <Typography sx={{ width: 140, fontSize: 12 }}>{row.ter_name || "-"}</Typography>
                         <Typography
                             onClick={() => handleBeatClick(row)}
-                            sx={{ width: 260, fontSize: 12, textDecoration: "underline", cursor: "pointer", textWrap: 'wrap' }}
+                            sx={{ width: 240, fontSize: 12, textDecoration: "underline", cursor: "pointer", textWrap: 'wrap' }}
                         >
                             {row.beat_name || "-"}
                         </Typography>
@@ -603,7 +603,7 @@ export default function OutletCount() {
                     </Grid>
                 </Box>
 
-                {showTable && <Box sx={{ p: 1.5, width: { lg: '70%', xs: '100%', md: '100%' } }}>
+                {showTable && <Box sx={{ p: 1.5, width: { lg: '75%', xs: '100%', md: '100%' } }}>
                     <DataTable
                         data={tableData}
                         columns={COLUMNS}
