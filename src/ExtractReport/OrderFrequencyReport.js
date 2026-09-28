@@ -424,6 +424,7 @@ function OrderFrequencyReport() {
 
     const handleDownloadExcel = async () => {
         try {
+            setProgress("0%")
             const excelData = await fetchDayWiseReportExcel();
             const safeColumns = ExcelColumns.map(({ renderCell, renderHeader, ...rest }) => rest);
             DownloadCSV(excelData, safeColumns, "Order_Frequency_Report", setProgress, toast);
