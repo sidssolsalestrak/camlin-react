@@ -7,6 +7,11 @@ import {
   Paper,
   Divider,
   Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
@@ -35,6 +40,31 @@ function Login() {
   const [userId, setUserId] = useState("");
   const [emailMob, setEmailMob] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 🔹 PASSWORD EXPIRY DIALOG STATE
+  const [pwdDialog, setPwdDialog] = useState({
+    open: false,
+    mode: null, // "warning" | "expired"
+    message: "",
+    pendingLogin: null, // holds { token } so we can proceed on "No" for warning mode
+  });
+  const [confirmingLogin, setConfirmingLogin] = useState(false);
+
+  const resetFields = () => {
+    setEmail("");
+    setPassword("");
+    setEmailMob("");
+    setOtpInput("");
+    setOtpSent(false);
+    setUserId("");
+    setSessionId("");
+  };
+
+  const goToStep = (newStep) => {
+    resetFields();
+    setStep(newStep);
+  };
 
   const createQr = async () => {
     const res = await api.post("/createQrSession");
@@ -93,14 +123,96 @@ function Login() {
 
       if (data.success) {
         if (data.success_login) {
+          // 🔹 EXPIRING SOON — ask user, don't navigate yet
+          if (data.password_expiring_soon) {
+            setPwdDialog({
+              open: true,
+              mode: "warning",
+              message:
+                data.message ||
+                "Your password will expire soon. Do you want to reset it now?",
+              pendingLogin: { token: data.token },
+            });
+            return;
+          }
+
           toast.success("Login Successful");
           localStorage.setItem("session-token", data.token || "");
           navigate("/dashboard");
+        } else if (data.otp_verify) {
+          toast.success("Please Enter assigned OTP");
+          localStorage.setItem("otp-token", data.otptoken);
+          navigate("/otp_validate");
         } else {
           navigate("/dashboard");
         }
       } else {
-        toast.error("Username / Password incorrect!");
+        // 🔹 HARD EXPIRED — no "No" option, must reset
+        if (data.isPassWordExpired) {
+          setPwdDialog({
+            open: true,
+            mode: "expired",
+            message:
+              data.message ||
+              "Your password has expired. You must reset it to continue.",
+            pendingLogin: null,
+          });
+          return;
+        }
+        toast.error(data.message || "Username / Password incorrect!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+  };
+
+  // 🔹 DIALOG HANDLERS
+  const handleDialogResetNow = () => {
+    setPwdDialog((prev) => ({ ...prev, open: false }));
+    navigate("/passexpReset", { state: { identity: email } });
+  };
+
+  const handleDialogContinue = async () => {
+    
+    const token = pwdDialog.pendingLogin?.token;
+
+    if (token) {
+      localStorage.setItem("session-token", token);
+    }
+
+    setConfirmingLogin(true);
+    try {
+      if (token) {
+        await api.post("/confirm-login");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmingLogin(false);
+    }
+
+    setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
+    toast.success("Login Successful");
+    navigate("/dashboard");
+  };
+
+  const handleForgotSubmit = async () => {
+    if (!email) {
+      toast.error("Please Enter Register Email Id");
+      return;
+    }
+
+    try {
+      const res = await api.post("/check_email_id", {
+        email: email,
+      });
+
+      if (String(res.data).trim() !== "") {
+        toast.success("An email was sent to the Registered email address");
+        navigate("/Auth");
+      } else {
+        toast.error("Email Id Not Registered");
       }
     } catch (err) {
       console.error(err);
@@ -146,7 +258,19 @@ function Login() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && otpInput.length === 4 && !isLoading) {
+      handleVerifyOtp();
+    }
+  };
+
   const handleVerifyOtp = async () => {
+    if (otpInput.length !== 4) {
+      toast.error("Please Enter a Valid 4-digit OTP");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const res = await api.post("/verify_otp", {
         user_id: btoa(userId),
@@ -156,14 +280,51 @@ function Login() {
       const data = res.data;
 
       if (data.stat === 200 && data.success) {
+        // 🔹 SAME EXPIRY HANDLING FOR OTP PATH
+        if (data.password_expiring_soon) {
+          setPwdDialog({
+            open: true,
+            mode: "warning",
+            message:
+              data.message ||
+              "Your password will expire soon. Do you want to reset it now?",
+            pendingLogin: { token: data.token },
+          });
+          return;
+        }
+
         localStorage.setItem("session-token", data.token);
         navigate("/dashboard");
-      } else {
-        toast.error(data.message);
+        return;
       }
+
+      if (data.isPassWordExpired) {
+        setPwdDialog({
+          open: true,
+          mode: "expired",
+          message:
+            data.message ||
+            "Your password has expired. You must reset it to continue.",
+          pendingLogin: null,
+        });
+        return;
+      }
+
+      // account blocked — no point letting them retry here
+      if (data.message?.toLowerCase().includes("blocked")) {
+        toast.error(data.message);
+        goToStep("login");
+        return;
+      }
+
+      // wrong OTP — clear the field so they can re-enter cleanly
+      toast.error(data.message || "Invalid OTP");
+      setOtpInput("");
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -219,7 +380,10 @@ function Login() {
                 sx={{ mb: 1.5 }}
                 label="User Name"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/^\s+|\s+$/g, "");
+                  setEmail(onlyText);
+                }}
               />
 
               <TextField
@@ -230,7 +394,10 @@ function Login() {
                 size="small"
                 sx={{ mb: 1.5 }}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const onlyText = e.target.value.replace(/\s+/g, "");
+                  setPassword(onlyText);
+                }}
               />
             </Box>
 
@@ -246,7 +413,7 @@ function Login() {
             <Link
               component="button"
               sx={{ display: "block", mt: 0.5 }}
-              onClick={() => setStep("forgot")}
+              onClick={() => goToStep("forgot")}
             >
               Forgot Password
             </Link>
@@ -255,21 +422,15 @@ function Login() {
               sx={{ display: "flex", mt: 2, justifyContent: "space-around" }}
             >
               <Typography>
-                <Link component="button" onClick={() => setStep("otp")}>
+                <Link component="button" onClick={() => goToStep("otp")}>
                   Log in via OTP
-                  {/* <Box
-                    component="img"
-                    src={otpIcon}
-                    alt="logo"
-                    sx={{ height: 40 }}
-                  /> */}
                 </Link>
               </Typography>
 
               <Typography>
                 <Link
                   component="button"
-                  onClick={() => setStep("qr")}
+                  onClick={() => goToStep("qr")}
                   sx={{ display: "flex" }}
                 >
                   Login via QR
@@ -298,7 +459,10 @@ function Login() {
               size="small"
               sx={{ mt: 1, mb: 1 }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                const onlyText = e.target.value.replace(/\s+/g, "");
+                setEmail(onlyText);
+              }}
             />
 
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -306,7 +470,7 @@ function Login() {
                 variant="contained"
                 color="success"
                 sx={{ width: "45%" }}
-                onClick={() => setStep("login")}
+                onClick={() => goToStep("login")}
               >
                 BACK
               </Button>
@@ -315,10 +479,7 @@ function Login() {
                 variant="contained"
                 color="success"
                 sx={{ width: "45%" }}
-                onClick={() => {
-                  // call your forgot API here
-                  console.log("Submit forgot password");
-                }}
+                onClick={() => handleForgotSubmit()}
               >
                 SUBMIT
               </Button>
@@ -338,7 +499,10 @@ function Login() {
                   size="small"
                   sx={{ mt: 1, mb: 1 }}
                   value={emailMob}
-                  onChange={(e) => setEmailMob(e.target.value)}
+                  onChange={(e) => {
+                    const onlyText = e.target.value.replace(/\s+/g, "");
+                    setEmailMob(onlyText);
+                  }}
                 />
 
                 <Button
@@ -353,14 +517,53 @@ function Login() {
               </>
             ) : (
               <>
+                <Typography
+                  color="gray"
+                  sx={{ paddingTop: "0.5rem", fontSize: "1.1rem", opacity: "0.9" }}
+                >
+                  Enter 4 digit Assigned OTP
+                </Typography>
                 <TextField
                   fullWidth
-                  label="Enter OTP"
                   variant="outlined"
                   size="small"
-                  sx={{ mt: 1, mb: 1 }}
+                  inputMode="numeric"
+                  autoFocus
+                  inputProps={{
+                    pattern: "[0-9]*",
+                    maxLength: 4,
+                  }}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      fontSize: "1.5rem",
+                      textAlign: "center",
+                      letterSpacing: "0.5rem",
+                      height: "1.8rem",
+                    },
+                    "& .MuiInputLabel-root": {
+                      fontSize: "1.2rem",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "white",
+                      borderRadius: "0px",
+                      "& fieldset": {
+                        border: "none",
+                      },
+                      "&:hover fieldset": {
+                        border: "none",
+                      },
+                    },
+                    border: "1.5px solid rgba(27, 159, 166, 1)",
+                    mb: 1.5,
+                    mt: 1,
+                    backgroundColor: "white",
+                  }}
                   value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    setOtpInput(value);
+                  }}
+                  onKeyDown={handleKeyDown}
                 />
 
                 <Button
@@ -369,13 +572,14 @@ function Login() {
                   color="success"
                   sx={{ mt: 1 }}
                   onClick={handleVerifyOtp}
+                  disabled={isLoading}
                 >
-                  Verify OTP
+                  {isLoading ? "Verifying..." : "Verify OTP"}
                 </Button>
               </>
             )}
 
-            <Button sx={{ mt: 1 }} onClick={() => setStep("login")}>
+            <Button sx={{ mt: 1 }} onClick={() => goToStep("login")}>
               Back
             </Button>
           </>
@@ -396,18 +600,47 @@ function Login() {
                   <QRCodeCanvas value={sessionId} size={200} />
                 </Box>
                 <Typography mt={2}>Expires in: {timer}s</Typography>
-                <Button sx={{ mt: 2 }} onClick={() => setStep("login")}>
-                  Back
-                </Button>
               </>
             )}
 
-            <Button sx={{ mt: 2 }} onClick={() => setStep("login")}>
+            <Button sx={{ mt: 2 }} onClick={() => goToStep("login")}>
               Back
             </Button>
           </>
         )}
       </Paper>
+
+      {/* ================= PASSWORD EXPIRY DIALOG ================= */}
+      <Dialog
+        open={pwdDialog.open}
+        onClose={() => {
+          // Block dismiss-by-backdrop when expired (must choose reset)
+          if (pwdDialog.mode !== "expired") {
+            setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
+          }
+        }}
+      >
+        <DialogTitle>
+          {pwdDialog.mode === "expired" ? "Password Expired" : "Password Expiring Soon"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>{pwdDialog.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          {pwdDialog.mode === "warning" && (
+            <Button
+              onClick={handleDialogContinue}
+              color="inherit"
+              disabled={confirmingLogin}
+            >
+              {confirmingLogin ? "Please wait..." : "No, Later"}
+            </Button>
+          )}
+          <Button onClick={handleDialogResetNow} variant="contained" color="success" autoFocus>
+            Yes, Reset Now
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

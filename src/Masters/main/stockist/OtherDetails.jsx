@@ -2,9 +2,10 @@ import { Autocomplete, Box, FormControl, FormControlLabel, FormLabel, InputLabel
 import React, { useEffect } from 'react'
 import { useState } from 'react'
 import axios from "../../../services/api";
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const style = {
-    color: "#026CB6",
+    color: "#1a1917",
     fontSize: "18.2px",
     fontWeight: 500,
 }
@@ -29,11 +30,32 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     const [city, setcity] = useState([])
     const [stockCat, setstockCat] = useState([])
     const [matGroup, setmatGroup] = useState([])
+    const [masterPanel, setMasterPanel] = useState({});
+
+    // labels derived from masterPanel with fallbacks
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+    const userLabel = masterPanel["USER"] || "Users";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    const resetFields = (fields) => {
+        fields.forEach((field) => handleChangeForm(field, field === "user" ? [] : ""));
+    };
 
     /*------------ get zone data ---------- */
     const fetchZone = async () => {
         try {
-            const res = await axios.get("/zoneNames");
+            const res = await axios.post("/getReportsZone");
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setzoneData(data);
         } catch (error) {
@@ -45,7 +67,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     /*------------ get region data ---------- */
     const fetchRegion = async () => {
         try {
-            let response = await axios.post("/getRegionList", { zone_id: formData.zone })
+            let response = await axios.post("/extractRegionList", { zone_id: formData.zone })
             setregionData(Array.isArray(response.data.data) ? response.data.data : [])
         } catch (err) {
             console.log("fetchRegion error", err)
@@ -58,9 +80,9 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
         try {
             let payload = {
                 reg_id: formData.region,
-                zone_id: null
+                zone_id: formData.zone
             }
-            const res = await axios.post("/get_arealist", payload);
+            const res = await axios.post("/AreaAm", payload);
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setarea(data);
         } catch (error) {
@@ -72,7 +94,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     /*---------- fetch teritory---------*/
     const fetchTeritoy = async () => {
         try {
-            const res = await axios.post("/getTerriTb", { area_id: formData.area });
+            const res = await axios.post("/getStockistTerritory", { area_id: formData.area });
             const data = Array.isArray(res?.data?.data) ? res?.data?.data : []
             setteritory(data);
         } catch (error) {
@@ -187,6 +209,14 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             fetchRegion();
             fetchState();
             fetchUser();
+        } else {
+            // zone got cleared/reset from outside — wipe all dependents
+            setregionData([]);
+            setarea([]);
+            setteritory([]);
+            setUser([]);
+            setstate([]);
+            setcity([]);
         }
     }, [formData?.zone]);
 
@@ -208,6 +238,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
     useEffect(() => {
         if (formData?.supplied_Type > 0) {
             fetchSuppliedTo();
+        } else {
+            setsupplied_by([]);
         }
     }, [formData?.supplied_Type]);
 
@@ -222,9 +254,19 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, margin: 1, p: 1 }}>
             <Typography sx={style}>Other Details</Typography>
             <FormControl fullWidth size="small" required>
-                <InputLabel id="zone">Zone</InputLabel>
-                <Select value={formData.zone} id='zone' label="Zone" error={!!errors.zone} MenuProps={menuStyle}
-                    labelId="zone" variant="outlined" onChange={(e) => handleChangeForm("zone", e.target.value)}>
+                <InputLabel id="zone">{zoneLabel}</InputLabel>
+                <Select value={formData.zone} id='zone' label={zoneLabel} error={!!errors.zone} MenuProps={menuStyle}
+                    labelId="zone" variant="outlined"
+                    onChange={(e) => {
+                        handleChangeForm("zone", e.target.value);
+                        resetFields(["region", "area", "teritory", "user", "state", "city"]);
+                        setregionData([]);
+                        setarea([]);
+                        setteritory([]);
+                        setUser([]);
+                        setstate([]);
+                        setcity([]);
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {zoneData?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.zone_name}</MenuItem>
@@ -234,9 +276,15 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Region">Region</InputLabel>
-                <Select value={formData.region} id='Region' label="Region" error={!!errors.region} MenuProps={menuStyle}
-                    labelId="Region" variant="outlined" onChange={(e) => handleChangeForm("region", e.target.value)}>
+                <InputLabel id="Region">{regionLabel}</InputLabel>
+                <Select value={formData.region} id='Region' label={regionLabel} error={!!errors.region} MenuProps={menuStyle}
+                    labelId="Region" variant="outlined"
+                    onChange={(e) => {
+                        handleChangeForm("region", e.target.value);
+                        resetFields(["area", "teritory"]);
+                        setarea([]);
+                        setteritory([]);
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {regionData?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.reg_name}</MenuItem>
@@ -246,9 +294,14 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Area">Area</InputLabel>
-                <Select value={formData.area} id='Area' label="Area" error={!!errors.area} MenuProps={menuStyle}
-                    labelId="Area" variant="outlined" onChange={(e) => handleChangeForm("area", e.target.value)}>
+                <InputLabel id="Area">{areaLabel}</InputLabel>
+                <Select value={formData.area} id='Area' label={areaLabel} error={!!errors.area} MenuProps={menuStyle}
+                    labelId="Area" variant="outlined"
+                    onChange={(e) => {
+                        handleChangeForm("area", e.target.value);
+                        resetFields(["teritory"]);
+                        setteritory([]);
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {area?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.area_name}</MenuItem>
@@ -258,8 +311,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-                <InputLabel id="Territory">Territory</InputLabel>
-                <Select value={formData.teritory} id='Territory' label="Territory" error={!!errors.teritory} MenuProps={menuStyle}
+                <InputLabel id="Territory">{territoryLabel}</InputLabel>
+                <Select value={formData.teritory} id='Territory' label={territoryLabel} error={!!errors.teritory} MenuProps={menuStyle}
                     labelId="Territory" variant="outlined" onChange={(e) => handleChangeForm("teritory", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {teritory?.map((val) => (
@@ -280,7 +333,7 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
                     renderInput={(params) => (
                         <TextField
                             {...params}
-                            label="User *"
+                            label={`${userLabel} *`}
                             size="small"
                             error={!!errors.user}
                             helperText={errors?.user}
@@ -292,7 +345,12 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             <FormControl fullWidth size="small" required>
                 <InputLabel id="SuppliedType">Supplied Type</InputLabel>
                 <Select value={formData.supplied_Type} id='SuppliedType' label="Supplied Type" error={!!errors.supplied_Type} MenuProps={menuStyle}
-                    labelId="SuppliedType" variant="outlined" onChange={(e) => handleChangeForm("supplied_Type", e.target.value)}>
+                    labelId="SuppliedType" variant="outlined"
+                    onChange={(e) => {
+                        handleChangeForm("supplied_Type", e.target.value);
+                        resetFields(["supplied_By"]);
+                        setsupplied_by([]);
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {supplied_type?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.stk_type_name}</MenuItem>
@@ -316,7 +374,12 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             <FormControl fullWidth size="small" required>
                 <InputLabel id="State">State</InputLabel>
                 <Select value={formData.state} id='State' label="State" error={!!errors.state} MenuProps={menuStyle}
-                    labelId="State" variant="outlined" onChange={(e) => handleChangeForm("state", e.target.value)}>
+                    labelId="State" variant="outlined"
+                    onChange={(e) => {
+                        handleChangeForm("state", e.target.value);
+                        resetFields(["city"]);
+                        setcity([]);
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {state?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.state_name}</MenuItem>
@@ -328,7 +391,11 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             <FormControl fullWidth size="small" required>
                 <InputLabel id="City">City</InputLabel>
                 <Select value={formData.city} id='City' label="City" error={!!errors.city} MenuProps={menuStyle}
-                    labelId="City" variant="outlined" onChange={(e) => handleChangeForm("city", e.target.value)}>
+                    labelId="City" variant="outlined" onChange={(e) => {
+                        const selectedCity = city.find((val) => val.id === e.target.value);
+                        handleChangeForm("city", e.target.value);
+                        handleChangeForm("cityName", selectedCity?.city_name || "");
+                    }}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {city?.map((val) => (
                         <MenuItem key={val.id} value={val.id}>{val?.city_name}</MenuItem>
@@ -338,8 +405,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" >
-                <InputLabel id="category">Stockist Category</InputLabel>
-                <Select value={formData.category} id='category' label="Stockist Category" MenuProps={menuStyle}
+                <InputLabel id="category">{stkLabel} Category</InputLabel>
+                <Select value={formData.category} id='category' label={`${stkLabel} Category`} MenuProps={menuStyle}
                     labelId="category" variant="outlined" onChange={(e) => handleChangeForm("category", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {stockCat?.map((val) => (
@@ -349,8 +416,8 @@ const OtherDetails = ({ formData, handleChangeForm, errors, defaultUserId }) => 
             </FormControl>
 
             <FormControl fullWidth size="small" >
-                <InputLabel id="matrixGroup">Stockist Matrix Group</InputLabel>
-                <Select value={formData.matrixGroup} id='matrixGroup' label="Stockist Matrix Group" MenuProps={menuStyle}
+                <InputLabel id="matrixGroup">{stkLabel} Matrix Group</InputLabel>
+                <Select value={formData.matrixGroup} id='matrixGroup' label={`${stkLabel} Matrix Group`} MenuProps={menuStyle}
                     labelId="matrixGroup" variant="outlined" onChange={(e) => handleChangeForm("matrixGroup", e.target.value)}>
                     <MenuItem style={{ fontSize: "11px" }} value="">Select</MenuItem>
                     {matGroup?.map((val) => (

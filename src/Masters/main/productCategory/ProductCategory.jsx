@@ -8,12 +8,13 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import DataTable from '../../../utils/dataTable';
 import axios from "../../../services/api";
-import EditIcon from "@mui/icons-material/Edit";
+import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import useToast from "../../../utils/useToast";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const menuStyle = {
@@ -27,10 +28,43 @@ const menuStyle = {
 const ProductCategory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [tableData, settableData] = useState([]);
     const [brandData, setbrandData] = useState([]);
     const [value, setValue] = React.useState('1');
     const [loading, setLoading] = useState(true)
+    const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
+
+    const brandLabel = masterPanel["BRND"] || "Brand";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        const resolveAccStat = async () => {
+            try {
+                const res = await axios.post("/getAccStat", {
+                    menu_url: "masters/cat",
+                });
+
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        resolveAccStat();
+    }, []);
     /*---------- form fields ---------*/
     const [formData, setFormData] = useState({
         brand: "",
@@ -39,6 +73,7 @@ const ProductCategory = () => {
     })
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
+        brand: "",
         catcode: "",
         catname: ""
     })
@@ -85,14 +120,16 @@ const ProductCategory = () => {
         setConfirmationDialog({
             ...confirmationDialog,
             open: false,
+            loading: false,
         });
     };
 
     const showSubmitConfirmation = () => {
         if (!validations()) return;
+        const label = masterPanel["PCAT"] || "Product Category";
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Category`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Product Category?`,
+            title: `${decodedId ? "Edit" : "Add"} ${label}`,
+            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
             confirmText: decodedId ? "Update" : "Add",
             confirmColor: "primary",
             onConfirm: () => !decodedId ? onSubmit() : onEdit(),
@@ -102,7 +139,7 @@ const ProductCategory = () => {
     const showDeleteConfirmation = (row) => {
         showConfirmationDialog({
             title: `Delete Category`,
-            message: `Are you sure you want to delete this Product Category?`,
+            message: `Are you sure you want to delete this record?`,
             confirmText: "Yes",
             confirmColor: "primary",
             onConfirm: () => deleteCat(row),
@@ -118,17 +155,31 @@ const ProductCategory = () => {
             categoryName: ""
         }
         if (!formData.brand) {
-            newValidations.brand = "The Brand field is required";
+            newValidations.brand = `The ${brandLabel} field is required`;
             isValid = false;
         }
-        if (!formData.categoryCode) {
-            newValidations.categoryCode = "The Category Code field is required";
+
+        const label = masterPanel["PCAT"] || "Product Category";
+
+        if (!formData.categoryCode || formData.categoryCode.trim() === "") {
+            newValidations.categoryCode = `The ${label} Code field is required`;
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryCode)) {
+            newValidations.categoryCode = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
-        if (!formData.categoryName) {
-            newValidations.categoryName = "The Category Name field is required";
+
+        if (!formData.categoryName || formData.categoryName.trim() === "") {
+            newValidations.categoryName = `The ${label} Name field is required`;
+            isValid = false;
+        } else if (formData.categoryName.trim().length < 3) {
+            newValidations.categoryName = `${label} Name must be at least 3 characters`;
+            isValid = false;
+        } else if (/[^a-zA-Z0-9_\-\/ ]/.test(formData.categoryName)) {
+            newValidations.categoryName = "Only letters, numbers, underscore, hyphen, forward slash and spaces are allowed";
             isValid = false;
         }
+
         setValidations(newValidations)
         return isValid;
     }
@@ -136,32 +187,28 @@ const ProductCategory = () => {
     /*---------- form submit ---------*/
     const onSubmit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 brand_id: formData.brand,
                 cat_code: formData.categoryCode,
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/addCat", payload)
-            console.log("adding category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Added Product Category")
+                showAlert.success(`${masterPanel["PCAT"] || "Product Category"} Added Successfully`)
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 fetchTableData();
                 resetValidations();
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ brand: "", categoryCode: val?.message || "", categoryName: "" });
-                } else {
-                    setValidations({ brand: "", categoryCode: "", categoryName: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to ADD Product Category")
+                showAlert.error(`Failed to ADD ${masterPanel["PCAT"] || "Product Category"}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -171,6 +218,7 @@ const ProductCategory = () => {
     /*---------- form edit submit ---------*/
     const onEdit = async () => {
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             let payload = {
                 id: decodedId,
                 brand_id: formData.brand,
@@ -180,26 +228,21 @@ const ProductCategory = () => {
                 cat_name: formData.categoryName
             }
             const res = await axios.post("/editCat", payload)
-            console.log("updating category:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully updated Product Category")
+                showAlert.success(`${masterPanel["PCAT"] || "Product Category"} Updated Successfully`)
                 setFormData({ brand: "", categoryCode: "", categoryName: "" });
                 setValue('1')
                 navigate(`/masters/cat`)
-            }else {
+            } else {
                 showAlert.error(res?.data?.message)
             }
         } catch (error) {
             if (error?.response?.status === 400) {
                 let val = error?.response?.data || "";
-                if (val?.type === 1) {
-                    setValidations({ brand: "", categoryCode: val?.message || "", categoryName: "" });
-                } else {
-                    setValidations({ brand: "", categoryCode: "", categoryName: val?.message || "" });
-                }
+                showAlert.error(val?.message || "Validation failed")
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update Product Category")
+                showAlert.error(`Failed to Update ${masterPanel["PCAT"] || "Product Category"}`)
             }
         } finally {
             closeConfirmationDialog();
@@ -238,6 +281,7 @@ const ProductCategory = () => {
                     categoryName: data[0]?.cat_name || ""
                 });
                 setoriginal({
+                    brand: data[0]?.brand_id || "",
                     catcode: data[0]?.cat_code || "",
                     catname: data[0]?.cat_name || ""
                 })
@@ -252,10 +296,10 @@ const ProductCategory = () => {
     const deleteCat = async (row) => {
         let id = row?.row?.id
         try {
+            setConfirmationDialog(prev => ({ ...prev, loading: true }));
             const res = await axios.post(`/deleteCat/${id}`);
-            console.log("delete res:", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Deleted Product Category")
+                showAlert.success(`Successfully Deleted ${masterPanel["PCAT"] || "Product Category"}`)
                 fetchTableData();
             }
         } catch (error) {
@@ -272,33 +316,42 @@ const ProductCategory = () => {
             field: "index",
             headerName: "#",
             filterable: true,
+            sortable: true
         },
         {
             field: "brand_name",
-            headerName: "Brand",
+            headerName: brandLabel,
             filterable: true,
+            sortable: true
         },
         {
             field: "cat_code",
-            headerName: "Category Code",
+            headerName: `${masterPanel["PCAT"] || "Product Category"} Code`,
             filterable: true,
+            sortable: true
         },
         {
             field: "cat_name",
-            headerName: "Category",
+            headerName: masterPanel["PCAT"] || "Product Category",
             filterable: true,
+            sortable: true
         }, {
             field: "",
             headerName: "Action",
             filterable: true,
+            sortable: true,
             renderCell: (row) => (
                 <>
-                    <IconButton size="small" color="primary" onClick={() => editdata(row)}>
-                        <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => showDeleteConfirmation(row)}>
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='updateBtn' size="small" onClick={() => editdata(row)}>
+                            <MdOutlineEdit size={15} />
+                        </IconButton>
+                    )}
+                    {[0, 2].includes(Number(accStat)) && (
+                        <IconButton className='deleteBtn' size="small" onClick={() => showDeleteConfirmation(row)}>
+                            <DeleteIcon size={15} />
+                        </IconButton>
+                    )}
                 </>
             )
         },
@@ -344,7 +397,7 @@ const ProductCategory = () => {
     useEffect(() => {
         if (!decodedId) {
             setFormData({ brand: "", categoryCode: "", categoryName: "" });
-            setoriginal({ catcode: "", catname: "" })
+            setoriginal({ brand: "", catcode: "", catname: "" })
             resetValidations();
             return;
         }
@@ -352,61 +405,92 @@ const ProductCategory = () => {
         getEditData(decodedId);
     }, [decodedId]);
 
+    const isEdited =
+        String(formData.brand) !== String(original.brand) ||
+        formData.categoryCode.trim() !== original.catcode.trim() ||
+        formData.categoryName.trim() !== original.catname.trim();
+
     return (
-        <Layout>
-            <PageHeader title="Product Category" />
-            <Box sx={{ backgroundColor: 'white', m: 2, borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
-                <TabContext value={value}>
-                    {!decodedId ?
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                <Tab sx={tabStyle} label="ADD NEW" value="1" />
-                                <Tab sx={tabStyle} label="VIEW LIST" value="2" />
-                            </TabList>
-                        </Box> :
-                        <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit Product Category Details</Typography>
-                    }
-                    {/*---------------- Add section--------------- */}
-                    <TabPanel value="1">
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <FormControl fullWidth size="small" required>
-                                <InputLabel id="Brand">Brand</InputLabel>
-                                <Select id='Brand-select' label="Brand" labelId="Brand" variant="outlined"
-                                    value={formData.brand} error={!!validation.brand} MenuProps={menuStyle}
-                                    onChange={(e) => formDataChange("brand", e.target.value)}
-                                >
-                                    <MenuItem style={{ fontSize: "11px" }} value="">Select Brand</MenuItem>
-                                    {brandData?.map((item, index) => (
-                                        <MenuItem key={index || item.id} style={{ fontSize: "11px" }} value={item.id}>{item?.brand_name}</MenuItem>
-                                    ))}
-                                </Select>
-                                {validation.brand && <span style={{ color: "#d32f2f", fontSize: "12px", padding: "5px 0px 0px 12px" }}>{validation.brand}</span>}
-                            </FormControl>
-                            <TextField value={formData.categoryCode}
-                                onChange={(e) => formDataChange("categoryCode", e.target.value)}
-                                required size='small'
-                                variant='outlined' label="Product Category Code"
-                                error={!!validation.categoryCode}
-                                helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryCode}</span>} />
-                            <TextField
-                                value={formData.categoryName}
-                                onChange={(e) => formDataChange("categoryName", e.target.value)}
-                                required size='small'
-                                variant='outlined' label="Product Category Name"
-                                error={!!validation.categoryName}
-                                helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "12px" }}>{validation.categoryName}</span>} />
-                        </Box>
-                        <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }} color="primary" variant='contained'>{decodedId ? "Update" : "Submit"}</Button>
-                    </TabPanel>
-                    {/*---------------- View section--------------- */}
-                    <TabPanel value="2">
-                        <DataTable
-                            columns={columns}
-                            data={tableData}
-                            loading={loading}
-                        />
-                    </TabPanel>
-                </TabContext>
+        <Layout breadcrumb={[
+            { label: "Home", path: "/" },
+            { label: "Master", path: location.pathname },
+            { label: "Main", path: location.pathname },
+            { label: masterPanel["PCAT"] ? `${masterPanel["PCAT"]}` : "Product Category" },
+        ]}>
+            <Box
+                p={2}
+                sx={{ borderRadius: 1 }}
+                display="flex"
+                flexDirection="column"
+                gap={2}
+            >
+                <Box>
+                    <h1 className="mainTitle">{masterPanel["PCAT"] || "Product Category"}</h1>
+                </Box>
+                <Box sx={{ backgroundColor: 'white', borderRadius: '6px', minHeight: '30vh', width: { lg: '60%', md: '80%', sm: '90%', xs: '90%' } }}>
+                    <TabContext value={value}>
+                        {!decodedId ?
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    <Tab sx={tabStyle} label="ADD NEW" value="1" />
+                                    <Tab sx={tabStyle} label="VIEW LIST" value="2" />
+                                </TabList>
+                            </Box> :
+                            <Typography sx={{ px: 3, mt: 3, color: '#212121', fontSize: '18px' }}>Edit {masterPanel["PCAT"]} Details</Typography>
+                        }
+                        {/*---------------- Add section--------------- */}
+                        <TabPanel value="1">
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <FormControl fullWidth size="small" required>
+                                    <InputLabel id="Brand">{brandLabel}</InputLabel>
+                                    <Select id='Brand-select' label={brandLabel} labelId="Brand" variant="outlined"
+                                        value={formData.brand} error={!!validation.brand} MenuProps={menuStyle}
+                                        onChange={(e) => formDataChange("brand", e.target.value)}
+                                    >
+                                        <MenuItem style={{ fontSize: "11px" }} value="">Select {brandLabel}</MenuItem>
+                                        {brandData?.map((item, index) => (
+                                            <MenuItem key={index || item.id} style={{ fontSize: "11px" }} value={item.id}>{item?.brand_name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                    {validation.brand && <span style={{ color: "#d32f2f", fontSize: "9.1px", padding: "5px 0px 0px 12px" }}>{validation.brand}</span>}
+                                </FormControl>
+                                <TextField value={formData.categoryCode}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("categoryCode", onlyText)
+                                    }}
+                                    required size='small'
+                                    variant='outlined' label={masterPanel["PCAT"] ? `${masterPanel["PCAT"]} Code` : "Product Category Code"}
+                                    error={!!validation.categoryCode}
+                                    helperText={validation.categoryCode && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryCode}</span>} />
+                                <TextField
+                                    value={formData.categoryName}
+                                    onChange={(e) => {
+                                        const onlyText = e.target.value.replace(/[^a-zA-Z0-9_\-\/ ]/g, "").replace(/^\s+/, "");
+                                        formDataChange("categoryName", onlyText)
+                                    }}
+                                    required size='small'
+                                    variant='outlined' label={masterPanel["PCAT"] ? `${masterPanel["PCAT"]} Name` : "Product Category Name"}
+                                    error={!!validation.categoryName}
+                                    helperText={validation.categoryName && <span style={{ color: "#d32f2f", fontSize: "9px" }}>{validation.categoryName}</span>} />
+                            </Box>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2, textTransform: 'none' }} color="primary" variant='contained'>Create</Button>
+                            )}
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button onClick={() => showSubmitConfirmation()} sx={{ mt: 2, textTransform: 'none' }} color="primary" variant='contained'  disabled={!isEdited}>Update</Button>
+                            )}
+                        </TabPanel>
+                        {/*---------------- View section--------------- */}
+                        <TabPanel value="2" sx={{ padding: 0 }}>
+                            <DataTable
+                                columns={columns}
+                                data={tableData}
+                                loading={loading}
+                            />
+                        </TabPanel>
+                    </TabContext>
+                </Box>
             </Box>
             <ConfirmationDialog
                 open={confirmationDialog.open}
