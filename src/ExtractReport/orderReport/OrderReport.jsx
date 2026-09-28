@@ -720,6 +720,7 @@ const OrderReport = () => {
                     return {
                         ...rest,
                         si_no: index + 1,
+                        create_dt: row?.create_dt ? dayjs(row.create_dt).format("DD MMM YYYY HH:mm a") : "",
                         order_stat: del_stat === 1
                             ? `${row.order_stat} (${del_date ? dayjs(del_date).format("DD MMM YYYY hh:mm A") : ""} by ${del_user || ""})`
                             : row.order_stat,
