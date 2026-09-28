@@ -140,7 +140,7 @@ const BeatCoverageTable = ({
           {monthEntries.map(([mthNo, label]) => (
             <TableCell
               key={mthNo}
-              align="center"
+              align="right" 
               sx={{
                 ...headerCellBase,
                 position: "sticky",
@@ -181,7 +181,7 @@ const BeatCoverageTable = ({
             {Object.entries(row.totals).map(([mthNo, val]) => (
               <TableCell
                 key={mthNo}
-                align="center"
+               align="right" 
                 sx={{
                   ...cellBase,
                   fontWeight: 600,
@@ -231,7 +231,7 @@ const BeatCoverageTable = ({
           {Object.entries(row.months).map(([mthNo, val]) => (
             <TableCell
               key={mthNo}
-              align="center"
+             align="right" 
               sx={{ ...cellBase, ...qtrBorder(Number(mthNo)) }}
             >
               {val}
@@ -264,7 +264,7 @@ const BeatCoverageTable = ({
         {Object.entries(grandTotals).map(([mthNo, val]) => (
           <TableCell
             key={mthNo}
-            align="center"
+            align="right" 
             sx={{
               ...cellBase,
               fontWeight: 600,
