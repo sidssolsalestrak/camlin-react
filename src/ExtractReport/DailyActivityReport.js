@@ -304,7 +304,7 @@ export default function DailyActivityReport() {
         { field: "app_version", headerName: "App Version" },
         { field: "app_type", headerName: "App Type" },
         { field: "call_date", headerName: "Call Date" },
-        { field: "create_dt", headerName: "Received Date", type: "date" },
+        { field: "create_dt", headerName: "Received Date"},
         { field: "report_type", headerName: "Report Type" },
         { field: "beat_work", headerName: `${beatLabel} Name` },
         { field: "tot_cus", headerName: "Total Outlets" },
@@ -611,6 +611,11 @@ export default function DailyActivityReport() {
                         updatedRow[field] = "-";
                     }
                 });
+
+                 updatedRow.create_dt =
+                    row.create_dt && dayjs(row.create_dt).isValid()
+                        ? dayjs(row.create_dt).format("DD MMM YYYY hh:mm A")
+                        : "";
                 return updatedRow;
             });
 
