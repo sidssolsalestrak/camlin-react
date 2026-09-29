@@ -386,12 +386,13 @@ function AccountTransfer() {
                     >
                         <Typography>
                             {params.row.cus_type_id === 1
-                                ? "HCP|"
+                                ? "HCP |"
                                 : params.row.cus_type_id === 2
-                                    ? "Retailer|"
+                                    ? "Retailer |"
                                     : null}
                         </Typography>
-                        <Typography sx={{textWrap:'nowrap'}}>{params.row.full_name}</Typography>
+                        <Typography sx={{ml:0.1}}>{params.row.customer_id?`${params.row.customer_id} | `:''}</Typography>
+                        <Typography sx={{textWrap:'nowrap',ml:0.2}}>  {params.row.full_name}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex' }}>
                         <Typography sx={{textWrap:'nowrap'}}>{params.row.cat_type}-</Typography>
