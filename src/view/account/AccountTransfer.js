@@ -403,6 +403,15 @@ function AccountTransfer() {
             )
         },
         {
+            field:"stk_code",
+            headerName:`${masterPanel["STKS"] || "Distributor"}`,
+            renderCell: (params) =>(
+                <Typography>{params.row.stk_code?`${params.row.stk_code}-`:''}{params.row.stk_name  ?params.row.stk_name:''}</Typography>
+            )
+
+
+        },
+        {
             field: "del_flag",
             headerName: "Status",
             filterable: true,
