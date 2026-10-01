@@ -2569,8 +2569,8 @@ function UploadClosing() {
                         {processStat}
                       </Typography>
                     )}
-                   {(isPending || isRejected || isRawPending) && tableData.length === 0 && (
-                    (isRawPending || masId) && (
+                   {(isPending || isRejected || isRawPending) && tableData.length === 0 &&  !rawMode &&  (
+                    (isRawPending || masId) &&  (
                       <Grid size={{ xs: 12, sm: "auto", ml: 2 }}>
                         <Button
                           size="small"
