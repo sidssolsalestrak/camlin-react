@@ -116,7 +116,7 @@ export function LocationTaggingMap({ initialLat, initialLng, onLocationSelect })
 
   if (loadError) return (
     <Box sx={{ p: 2, color: "red", fontSize: "12px" }}>
-      Failed to load Google Maps: {loadError.message}
+      Failed to load Google Maps
     </Box>
   );
 
