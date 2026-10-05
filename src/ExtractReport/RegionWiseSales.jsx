@@ -65,6 +65,14 @@ const RegionWiseSales = () => {
 
     const regionLabel = masterPanel["REGN"] || "Region";
 
+    const MAX_RANGE_MONTHS = 3;
+
+const isRangeValid = (from, to) => {
+    if (!from || !to) return false;
+    const maxAllowedTo = dayjs(from).add(MAX_RANGE_MONTHS, "month").subtract(1, "day");
+    return !dayjs(to).isAfter(maxAllowedTo, "day");
+};
+
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();
@@ -95,6 +103,10 @@ const RegionWiseSales = () => {
 
     //handle load
     const handleLoad = () => {
+        if (!isRangeValid(fromDate, toDate)) {
+        showAlert.error("Date range cannot exceed 3 months");
+        return;
+    }
         let params = new URLSearchParams();
         if (fromDate) params.append('frmDt', encode(fromDate?.format("DD MMM YYYY")));
         if (toDate) params.append('toDt', encode(toDate?.format("DD MMM YYYY")));
@@ -193,6 +205,10 @@ const RegionWiseSales = () => {
 
     /*----------------- handle download xl --------*/
     const handleDownloadExcel = async () => {
+         if (!isRangeValid(fromDate, toDate)) {
+        showAlert.error("Date range cannot exceed 3 months");
+        return;
+    }
         setPageLoading(true);
         try {
             setProgress1("0%")
