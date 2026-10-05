@@ -81,7 +81,7 @@ export function BeatMapExpansion({ row }) {
 
   if (loadError) return (
     <Box sx={{ p: 2, color: "red", fontSize: "12px" }}>
-      Failed to load Google Maps.
+      Failed to load Google Maps. Error: {loadError.message}
     </Box>
   );
 
