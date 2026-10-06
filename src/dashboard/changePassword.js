@@ -37,8 +37,9 @@ const ChangePassword = () => {
     setConfirmationDialog((prev) => ({ ...prev, open: false, loading: false }));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
     try {
+      let logoutres=await api.post('/logout')
       localStorage.removeItem("session-token");
       toast.success("Logout Successfully");
       navigate("/login");

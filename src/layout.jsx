@@ -380,10 +380,11 @@ const Layout = ({ children, breadcrumb = [] }) => {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
     try {
+      let logoutres=await api.post('/logout')
       localStorage.removeItem("session-token");
-
+     
       console.log("Logout Successfully");
       enqueueSnackbar("Logout Successfully", {
         variant: "success",
