@@ -41,6 +41,15 @@ const decode = (str) => {
     try { return atob(padded); } catch { return ""; }
 };
 
+const MAX_RANGE_MONTHS = 1;
+
+const isRangeValid = (from, to) => {
+  if (!from || !to || !from.isValid() || !to.isValid()) return false;
+  if (dayjs(to).isBefore(from, "day")) return false;
+  const maxAllowedTo = dayjs(from).add(MAX_RANGE_MONTHS, "month").subtract(1, "day");
+  return !dayjs(to).isAfter(maxAllowedTo, "day");
+};
+
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
     m: 1.5, p: 1.5, borderRadius: '10px', boxShadow:
@@ -306,6 +315,10 @@ const OrderApproval = () => {
     }, [decodedFrom, decodedTo, decodedType, decodedRep, decodedStatus, decodedStockist])
 
     const handleSearchClick = () => {
+        if (!isRangeValid(formData.from, formData.to)) {
+    showAlert.error("Date range cannot exceed 1 month");
+    return;
+  }
         let params = new URLSearchParams();
         params.append('from', encode(formData.from.format("YYYY-MM-DD")));
         params.append('to', encode(formData.to.format("YYYY-MM-DD")));
@@ -966,8 +979,10 @@ const OrderApproval = () => {
                                 onChange={(newValue) => handleChange("from", newValue)}
                                 label="From"
                                 format="DD MMM YYYY"
-                                views={["day", "month", "year"]}
+                                 views={["month", "year","day"]}
+                                openTo="day"
                                 slotProps={{ textField: { size: "small", fullWidth: true } }}
+                                maxDate={formData.to ? formData.to : null}
                             />
                         </LocalizationProvider>
                     </Grid>
@@ -978,8 +993,10 @@ const OrderApproval = () => {
                                 onChange={(newValue) => handleChange("to", newValue)}
                                 label="To"
                                 format="DD MMM YYYY"
-                                views={["day", "month", "year"]}
+                                views={["month", "year","day"]}
+                                openTo="day"
                                 slotProps={{ textField: { size: "small", fullWidth: true } }}
+                                minDate={formData.from ? formData.from : null}
                             />
                         </LocalizationProvider>
                     </Grid>
