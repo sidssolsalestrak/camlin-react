@@ -66,6 +66,8 @@ import { getMasterPanel } from "../services/masterPanelService";
 import { GoogleMap, Marker, InfoWindow, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { GOOGLE_MAPS_LIBRARIES } from "../utils/googleMapsConfig";
 import DataTable from "../utils/dataTable";
+import useToast from "../utils/useToast";
+
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
 // matching PHP's `s3_path3 . 'doctor_reporting/' . $photoName` exactly.
@@ -371,6 +373,15 @@ function OrderDetailTable({ data, prodLabel }) {
   );
 }
 
+const MAX_DISPLAY_RANGE_MONTHS = 1;
+
+const isDisplayRangeValid = (from, to) => {
+  if (!from || !to || !from.isValid() || !to.isValid()) return false;
+  if (dayjs(to).isBefore(from, "day")) return false;
+  const maxAllowedTo = dayjs(from).add(MAX_DISPLAY_RANGE_MONTHS, "month").subtract(1, "day");
+  return !dayjs(to).isAfter(maxAllowedTo, "day");
+};
+
 export default function Dashboard() {
   const [widgets, setWidgets] = useState([]);
   const [tabIndex, setTabIndex] = useState(1);
@@ -390,7 +401,7 @@ export default function Dashboard() {
 
   const [bookingYear, setBookingYear] = useState(dayjs().year());
   const [isFlipped, setIsFlipped] = useState(false);
-
+  const showAlert = useToast();
   // ResizeObserver to track actual container width
   const sliderContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(window.innerWidth);
@@ -636,6 +647,10 @@ export default function Dashboard() {
   // "Load" button / toggle change — re-fetches with whatever filters are currently set
   const handleDisplayFilterReload = useCallback(
     (withOnlyOverride) => {
+      if (!isDisplayRangeValid(displayFromDate, displayToDate)) {
+        showAlert.error("Date range cannot exceed 1 month");
+        return;
+      }
       fetchDisplayBreakup(0, {
         frmDt: displayFromDate,
         toDt: displayToDate,
@@ -914,7 +929,7 @@ export default function Dashboard() {
     if (filterType === "0") fetchDayWiseData();
   }, [filterType, fetchDayWiseData]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (refetchTick === 0) return;
     if (filterType === "0") fetchDayWiseData();
   }, [refetchTick]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1393,6 +1408,7 @@ export default function Dashboard() {
                 value={displayFromDate}
                 onChange={(v) => setDisplayFromDate(v)}
                 slotProps={{ textField: { size: "small" } }}
+                maxDate={displayToDate ? displayToDate : null}
               />
               <DatePicker
                 label="To"
@@ -1400,6 +1416,7 @@ export default function Dashboard() {
                 value={displayToDate}
                 onChange={(v) => setDisplayToDate(v)}
                 slotProps={{ textField: { size: "small" } }}
+                minDate={displayFromDate ? displayFromDate : null}
               />
             </LocalizationProvider>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
