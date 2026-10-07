@@ -25,6 +25,7 @@ import { MdOutlineEdit } from "react-icons/md";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import "./AdminPanel.css";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 const ROLES = [
   { value: "0", label: "All" },
@@ -245,7 +246,7 @@ export default function WebMenuMaster() {
   const [roles, setRoles] = useState({});
   const [tableDataLoading, setTableDataLoading] = useState(false);
   const [masterPanel, setMasterPanel] = useState({});
-
+  usePageTitle("Web Menu Master")
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();

@@ -13,6 +13,7 @@ import { Download } from "../../../utils/downloadExcel/Download";
 import CircularProgress from '../../../utils/CircularProgressLoading';
 import { getMasterPanel } from "../../../services/masterPanelService";
 import FormatCurrency from "../../../utils/formatCurrency";
+import usePageTitle from '../../../services/usePageTitle'
 
 const renderCellStyle = { width: "100%", display: "flex", justifyContent: "center" }
 
@@ -66,6 +67,7 @@ const ViewProduct = () => {
     const prodLabel = masterPanel["PROD"] || "Product";
     const subCatLabel = masterPanel["PSUB"] || "Sub Category";
     const stkLabel = masterPanel["STKS"] || "Stockist";
+    usePageTitle(`${prodLabel} View`)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

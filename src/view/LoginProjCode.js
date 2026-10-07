@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
-import SalesTrekimg from "../assets/kc.png";
+import Salestrekimg from '../assets/salestrakimg.png'
 import useToast from "../utils/useToast";
 
 function LoginProjCode() {
@@ -80,9 +80,9 @@ function LoginProjCode() {
             >
                 <Box
                     component="img"
-                    src={SalesTrekimg}
+                    src={ Salestrekimg }
                     alt="logo"
-                    sx={{ height: 40, mb: 2, pl: 5 }}
+                    sx={{ height: 40, mb: 2}}
                 />
                 <Typography variant="h4" sx={{ fontWeight: 500 }}>
                     WELCOME
@@ -102,6 +102,9 @@ function LoginProjCode() {
                         label="Enter Project Code"
                         onChange={(e) => setProjCode(e.target.value)}
                         value={projCode}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSubmit();
+                        }}
 
                     />
                     <Button

@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import axios from "../../services/api";
 import SalesAnalysisBody from './SalesAnalysisBody';
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -40,6 +41,7 @@ const SalesAnalysis = () => {
     const [area, setarea] = useState([]);
     const [state, setstate] = useState([]);
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Sales Analysis")
 
     const handleChange = (name, val) => {
         setFormData((prev) => ({

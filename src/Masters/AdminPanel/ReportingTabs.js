@@ -15,6 +15,7 @@ import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
 import './AdminPanel.css'
+import usePageTitle from "../../services/usePageTitle";
 
 export default function ReportingTabs() {
 
@@ -42,6 +43,7 @@ export default function ReportingTabs() {
     const location = useLocation()
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle(masterPanel["RTAB"] || "Reporting Tabs")
 
     useEffect(() => {
         const loadMasterPanel = async () => {

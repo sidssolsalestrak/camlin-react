@@ -16,6 +16,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import './AdminPanel.css'
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function MenuMaster() {
 
@@ -38,6 +39,7 @@ export default function MenuMaster() {
     const toast = useToast()
     const location = useLocation()
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle(masterPanel["MMAS"] || "Menu Master")
 
     useEffect(() => {
         const loadMasterPanel = async () => {

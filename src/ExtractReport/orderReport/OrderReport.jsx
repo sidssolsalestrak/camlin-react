@@ -15,6 +15,7 @@ import FormatCurrency from '../../utils/formatCurrency';
 import { DownloadCSV } from '../../utils/Download CSV/DownloadCSV';
 import { useSnackbar } from 'notistack'
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle'
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -97,6 +98,7 @@ const OrderReport = () => {
     })
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Order Report")
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";

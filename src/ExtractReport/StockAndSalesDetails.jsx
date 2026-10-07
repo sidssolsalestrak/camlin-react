@@ -13,6 +13,7 @@ import { DownloadCSV } from '../utils/Download CSV/DownloadCSV';
 import axios from "../services/api";
 import useToast from '../utils/useToast';
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle';
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -40,6 +41,7 @@ const StockAndSalesDetails = () => {
   const userLabel = masterPanel["USER"] || "Users";
   const stkLabel = masterPanel["STKS"] || "Distributor";
   const catLabel = masterPanel["PCAT"] || "Category";
+  usePageTitle("Stock & Sales Details")
 
   useEffect(() => {
     const loadMasterPanel = async () => {

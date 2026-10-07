@@ -15,6 +15,7 @@ import { AiOutlineFileExcel } from 'react-icons/ai';
 import { excelWithFilters } from '../utils/ExcelWithFilters';
 import { addSubtotalsSales } from './addSubtotalsSales';
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -84,6 +85,7 @@ const StockAndSalesReport = () => {
     const [usererror, setusererror] = useState("")
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Stock & Sales Report")
 
     // tracks whether the decoded (URL) user has already been auto-applied for the
     // current navigation, so manual userType changes after that don't re-apply it

@@ -15,6 +15,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle'
 
 export default function Beat() {
 
@@ -52,6 +53,7 @@ export default function Beat() {
     const beatLabel = masterPanel["BEAT"] || "Beat";
     const areaLabel = masterPanel["AREA"] || "Area";
     const territoryLabel = masterPanel["TERR"] || "Territory";
+    usePageTitle(beatLabel || "Beat")
 
     const DEFAULT_AREA = { id: "0", area_name: `Select ${areaLabel}` }
     const DEFAULT_TERRITORY = { id: "0", ter_name: `Select ${territoryLabel}` }

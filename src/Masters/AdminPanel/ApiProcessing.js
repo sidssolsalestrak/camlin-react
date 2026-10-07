@@ -11,6 +11,7 @@ import './AdminPanel.css'
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function ApiProcessing() {
     const [tabValue, setTabValue] = useState(0)
@@ -22,6 +23,7 @@ export default function ApiProcessing() {
     const [masterPanel, setMasterPanel] = useState({});
     const toast = useToast()
     const location=useLocation()
+    usePageTitle(masterPanel["APPR"] || "Api Processing")
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
         loading: false, confirmText: "Confirm", cancelText: "Cancel", confirmColor: "primary"

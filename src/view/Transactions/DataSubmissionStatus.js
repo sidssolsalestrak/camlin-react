@@ -61,6 +61,7 @@ import FilePreviewModal from "./FilePreviewModal";
 import { getMasterPanel } from "../../services/masterPanelService";
 import { jwtDecode } from "jwt-decode";
 import SubmissionStatusTable from "./SubmissionStatusTable";
+import usePageTitle from "../../services/usePageTitle";
 
 // ─── Multi-Checkbox Group-By Dropdown ────────────────────────────────────────
 function GroupByDropdown({ groupChecks, onChange, typeId, masterPanel }) {
@@ -256,6 +257,7 @@ function DataSubmissionStatus() {
     const [modifyLoading, setModifyLoading] = useState(false);
     const [userType, setUserType] = useState(null);
     const toast = useToast();
+    usePageTitle("STOCK & SALES DATA STATUS")
 
     // ─── Confirmation Dialog State ────────────────────────────────────────────
     const [confirmationDialog, setConfirmationDialog] = useState({

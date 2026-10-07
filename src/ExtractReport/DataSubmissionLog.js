@@ -15,6 +15,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { Download } from "../utils/downloadExcel/Download";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from "../services/usePageTitle";
 
 function DataSubmissionLog() {
     const { encodeyear, encodezone, encoderegion } = useParams()
@@ -33,6 +34,7 @@ function DataSubmissionLog() {
     const toast = useToast()
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Data Submission Log")
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";

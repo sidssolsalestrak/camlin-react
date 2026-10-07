@@ -15,6 +15,7 @@ import { MdOutlineLoop } from "react-icons/md";
 import ConfirmationDialog from "../utils/confirmDialog";
 import { getMasterPanel } from "../services/masterPanelService";
 import { jwtDecode } from "jwt-decode";
+import usePageTitle from "../services/usePageTitle";
 
 
 function KPIReport() {
@@ -34,6 +35,7 @@ function KPIReport() {
     const [tableload,settableload]=useState(false)
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("KPI Report")
 
     // labels derived from masterPanel with fallbacks
     const areaLabel = masterPanel["AREA"] || "Area";

@@ -16,6 +16,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
 import { getMasterPanel } from "../../../services/masterPanelService";
+import usePageTitle from '../../../services/usePageTitle'
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
@@ -41,6 +42,7 @@ const ProductSubCategory = () => {
     // labels derived from masterPanel with fallbacks
     const subCatLabel = masterPanel["PSUB"] || "Product Sub Category";
     const catLabel = masterPanel["PCAT"] || "Category";
+    usePageTitle(subCatLabel)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

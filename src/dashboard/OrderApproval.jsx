@@ -26,6 +26,7 @@ import { addSubtotalsOrderApproval } from './addSubtotalsOrderApproval';
 import FormatCurrency from '../utils/formatCurrency';
 import { jwtDecode } from "jwt-decode";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle';
 
 const encode = (val) => btoa(String(val || ""))
     .replace(/\+/g, "-")
@@ -144,7 +145,7 @@ const OrderApproval = () => {
     const [remarkText, setRemarkText] = useState('')
     const [counts, setCounts] = useState({ fopcount: 0, podcount: 0 })
     const [deletedLine, setDeletedLine] = useState('')
-
+    usePageTitle("Order approval")
     // ---- Summary totals ----
     const [summaryTotals, setSummaryTotals] = useState({
         orderValue: 0,
@@ -851,6 +852,7 @@ const OrderApproval = () => {
         },
         {
             field: 'totQty', headerName: 'Tot Qty',
+            type:'alignright',
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader) return '';
@@ -859,6 +861,7 @@ const OrderApproval = () => {
         },
         {
             field: 'totFree', headerName: 'Tot Free',
+            type:'alignright',
             renderCell: (params) => {
                 const row = params.row;
                 return (row._isRegionHeader || row._isRepHeader) ? '' : row.totFree;
@@ -866,6 +869,7 @@ const OrderApproval = () => {
         },
         {
             field: 'totVal', headerName: 'Tot Value',
+            type:'alignright',
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader) return '';
@@ -874,6 +878,7 @@ const OrderApproval = () => {
         },
         {
             field: 'totOffer', headerName: 'Tot Offer',
+            type:'alignright',
             renderCell: (params) => {
                 const row = params.row;
                 if (row._isRegionHeader || row._isRepHeader) return '';
@@ -1134,12 +1139,12 @@ const OrderApproval = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>{prodLabel} name</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>PTR</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>MRP</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Qty</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Free</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer(%)</TableCell>
-                                    <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer value</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>PTR</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>MRP</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Qty</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Free</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer(%)</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }}>Offer value</TableCell>
                                     {/* PHP: <td class="ordStat" colspan="2">Action</td> — hidden when del_stat==5 */}
                                     {!deletedLine && (
                                         <TableCell sx={{ bgcolor: '#3f6db3', color: '#fff', fontWeight: 700 }} colSpan={2}>
@@ -1152,12 +1157,12 @@ const OrderApproval = () => {
                                 {summaryLines.map((line) => (
                                     <TableRow key={line.prod_id}>
                                         <TableCell sx={{ fontWeight: 600 }}>{line.code}-{line.prod_name}</TableCell>
-                                        <TableCell>{FormatCurrency(line.prod_ptr)}</TableCell>
-                                        <TableCell>{FormatCurrency(line.prod_mrp)}</TableCell>
-                                        <TableCell>{line.prod_qty}</TableCell>
-                                        <TableCell>{FormatCurrency(line.prod_free)}</TableCell>
-                                        <TableCell>{FormatCurrency(line.prod_disc)}</TableCell>
-                                        <TableCell>{FormatCurrency(line.discount_value)}</TableCell>
+                                        <TableCell align="right" >{FormatCurrency(line.prod_ptr)}</TableCell>
+                                        <TableCell align="right">{FormatCurrency(line.prod_mrp)}</TableCell>
+                                        <TableCell align="right">{line.prod_qty}</TableCell>
+                                        <TableCell align="right">{FormatCurrency(line.prod_free)}</TableCell>
+                                        <TableCell align="right">{FormatCurrency(line.prod_disc)}</TableCell>
+                                        <TableCell align="right">{FormatCurrency(line.discount_value)}</TableCell>
                                         {!deletedLine && (
                                             <TableCell>
                                                 <IconButton size="small" onClick={() => openEditLine(line)}>

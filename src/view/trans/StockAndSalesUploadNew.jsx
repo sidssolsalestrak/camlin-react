@@ -16,6 +16,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
 import { getMasterPanel } from "../../services/masterPanelService";
 import FormatCurrency from "../../utils/formatCurrency";
+import usePageTitle from '../../services/usePageTitle';
 
 const headContainer = {
     background: "#fff",
@@ -71,6 +72,7 @@ const StockAndSalesUploadNew = () => {
     const [masId, setMasId] = useState(0);
     const [loading, setLoading] = useState(false);
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle('Stock and Sales')
 
     const showToggle = formData.Distributor !== "0" && parseInt(formData.Distributor) > 0;
 

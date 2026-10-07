@@ -16,6 +16,7 @@ import PopUpTable from './PopUpTable';
 import { DownloadCSV } from '../../utils/Download CSV/DownloadCSV';
 import { addSubtotalsPrimary } from './addSubtotalsPrimary';
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -86,6 +87,7 @@ const PrimaryOrder = () => {
     const isInitializing = useRef(true);
     const isZoneSelected = decodedZone && decodedZone !== "0";
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Primary Order")
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";

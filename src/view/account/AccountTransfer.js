@@ -21,6 +21,7 @@ import useToast from "../../utils/useToast";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { enqueueSnackbar } from "notistack";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 function AccountTransfer() {
     const [allRegion, setAllRegion] = useState([])
@@ -41,6 +42,7 @@ function AccountTransfer() {
     const location=useLocation()
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle(`${masterPanel["ACCM"] || "Account"} Transfer`)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

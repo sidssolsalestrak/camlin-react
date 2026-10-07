@@ -16,6 +16,7 @@ import { DownloadCSV } from "../utils/Download CSV/DownloadCSV";
 import { PiWarningCircleLight } from "react-icons/pi";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from "../services/usePageTitle";
 
 // ─── Helper: inject zone subtotal rows ───────────────────────────────────────
 const getDataWithZoneTotals = (data) => {
@@ -123,6 +124,7 @@ function OrderFrequencyReport() {
 
     const [masterPanel, setMasterPanel] = useState({});
      const didInitUser = useRef(false);
+     usePageTitle("Order Frequency Report")
 
     // labels derived from masterPanel with fallbacks
     const zoneLabel = masterPanel["ZONE"] || "Zone";

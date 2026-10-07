@@ -25,6 +25,7 @@ import "./AdminPanel.css";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function AppWidgetMaster() {
   const { editwidgetId } = useParams();
@@ -49,6 +50,7 @@ export default function AppWidgetMaster() {
   const location = useLocation();
   const [masterPanel, setMasterPanel] = useState({});
   const [originalWidgetMenu, setOriginalWidgetMenu] = useState([]);
+  usePageTitle(masterPanel["AWMS"] || "App Widget Master")
 
   useEffect(() => {
     const loadMasterPanel = async () => {

@@ -15,6 +15,7 @@ import { useSnackbar } from 'notistack'
 import FormatCurrency from "../utils/formatCurrency";
 import useToast from '../utils/useToast';
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle'
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -62,6 +63,7 @@ const RegionWiseSales = () => {
     const [toDate, settoDate] = useState(dayjs().endOf("month"));
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Regionwise Secondary Sales")
 
     const regionLabel = masterPanel["REGN"] || "Region";
 

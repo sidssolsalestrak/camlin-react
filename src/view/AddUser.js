@@ -28,6 +28,7 @@ import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 import { jwtDecode } from 'jwt-decode'
 import ConfirmationDialog from "../utils/confirmDialog";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from "../services/usePageTitle";
 
 function AddUser() {
   const navigate = useNavigate();
@@ -165,6 +166,7 @@ function AddUser() {
   const territoryLabel = masterPanel["TERR"] || "Territory";
   const desigLabel = masterPanel["DESI"] || "Designation";
   const businessLabel = masterPanel["BUNT"] || "Business Unit";
+  usePageTitle(`${userLabel} Master`)
 
   useEffect(() => {
     const loadMasterPanel = async () => {

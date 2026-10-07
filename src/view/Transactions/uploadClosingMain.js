@@ -66,6 +66,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { getMasterPanel } from "../../services/masterPanelService";
 import ManualProductTable from "./ManualProductTable";
 import { FaFilePdf } from "react-icons/fa6";
+import usePageTitle from "../../services/usePageTitle";
 
 function UploadClosing() {
   const {
@@ -157,6 +158,7 @@ function UploadClosing() {
   const [rawInvalidCell, setRawInvalidCell] = useState(null);
   const suppressTglEffect = useRef(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  usePageTitle("Upload Closing")
 
   // Request-scoped process status / btn val used for /getDesList.
   // Defaults to the values decoded from the nav URL params (raw-mode nav

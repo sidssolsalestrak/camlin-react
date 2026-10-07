@@ -25,6 +25,7 @@ import { FaMinus } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 import CircularProgress from "../utils/CircularProgressLoading";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from "../services/usePageTitle";
 
 
 export default function DailyActivityReport() {
@@ -74,6 +75,7 @@ export default function DailyActivityReport() {
     const { enqueueSnackbar } = useSnackbar();
     const location = useLocation();
     const URL = location.pathname.split('/')[2];
+    usePageTitle("Day Wise Log")
 
     const numericProgress =
         typeof progress === "string" && progress.endsWith("%")

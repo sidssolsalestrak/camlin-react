@@ -8,6 +8,7 @@ import ConfirmationDialog from "../../../utils/confirmDialog";
 import useToast from "../../../utils/useToast";
 import axios from "../../../services/api";
 import { getMasterPanel } from "../../../services/masterPanelService";
+import usePageTitle from '../../../services/usePageTitle'
 
 const headContainer = {
     backgroundColor: 'white', display: "flex", flexDirection: 'column', gap: 2,
@@ -71,6 +72,7 @@ const AddProduct = () => {
     const prodLabel = masterPanel["PROD"] || "Product";
     const subCatLabel = masterPanel["PSUB"] || "Sub Category";
     const stkLabel = masterPanel["STKS"] || "Stockist";
+    usePageTitle(prodLabel)
 
     useEffect(() => {
         const loadMasterPanel = async () => {
