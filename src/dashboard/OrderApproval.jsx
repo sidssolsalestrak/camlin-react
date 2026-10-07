@@ -5,6 +5,7 @@ import {
     Box, FormControl, Grid, InputLabel, MenuItem, Select, Button, Typography,
     Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper,
+    CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -44,10 +45,10 @@ const decode = (str) => {
 const MAX_RANGE_MONTHS = 1;
 
 const isRangeValid = (from, to) => {
-  if (!from || !to || !from.isValid() || !to.isValid()) return false;
-  if (dayjs(to).isBefore(from, "day")) return false;
-  const maxAllowedTo = dayjs(from).add(MAX_RANGE_MONTHS, "month").subtract(1, "day");
-  return !dayjs(to).isAfter(maxAllowedTo, "day");
+    if (!from || !to || !from.isValid() || !to.isValid()) return false;
+    if (dayjs(to).isBefore(from, "day")) return false;
+    const maxAllowedTo = dayjs(from).add(MAX_RANGE_MONTHS, "month").subtract(1, "day");
+    return !dayjs(to).isAfter(maxAllowedTo, "day");
 };
 
 const headContainer = {
@@ -316,9 +317,9 @@ const OrderApproval = () => {
 
     const handleSearchClick = () => {
         if (!isRangeValid(formData.from, formData.to)) {
-    showAlert.error("Date range cannot exceed 1 month");
-    return;
-  }
+            showAlert.error("Date range cannot exceed 1 month");
+            return;
+        }
         let params = new URLSearchParams();
         params.append('from', encode(formData.from.format("YYYY-MM-DD")));
         params.append('to', encode(formData.to.format("YYYY-MM-DD")));
@@ -331,56 +332,40 @@ const OrderApproval = () => {
 
     // ---------------- Excel Export ----------------
     const handleExport = () => {
-        try {
-            setExporting(true);
-            const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
+        const flatData = tableData.filter(row => !row._isRegionHeader && !row._isRepHeader);
 
-            if (flatData.length === 0) {
-                showAlert.warning('No data to export');
-                setExporting(false);
-                return;
-            }
-
-            // Same override as the grid's Status column: force "Deleted" when that filter is active
-            const isDeletedFilter = formData.status === '5';
-            const exportRows = isDeletedFilter
-                ? flatData.map(row => ({ ...row, statusname: 'Deleted' }))
-                : flatData;
-
-            const statusMap = {
-                '1': 'New',
-                '2': 'Approved',
-                '3': 'Pending',
-                '5': 'Deleted',
-                '-3': 'FOP_Request',
-                '-5': 'Giveaway_FOP',
-                '-6': 'Referral_FOP'
-            };
-            const statusLabel = statusMap[formData.status] || 'All';
-
-            exportOrderApprovalToExcel(exportRows, {
-                fromDate: formData.from.format('DD-MMM-YYYY'),
-                toDate: formData.to.format('DD-MMM-YYYY'),
-                status: statusLabel,
-                kamLabel: kamLabel,
-                psmLabel: psmLabel,
-                distributorLabel: distributorLabel,
-                regionLabel: regionLabel,
-                grandTotal: grandTotal,
-                onSuccess: (message) => {
-                    // showAlert.success(message);
-                    setExporting(false);
-                },
-                onError: (message) => {
-                    showAlert.error(message);
-                    setExporting(false);
-                }
-            });
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setExporting(false);
+        if (flatData.length === 0) {
+            showAlert.warning('No data to export');
+            return;
         }
+
+        setExporting(true);
+
+        const isDeletedFilter = formData.status === '5';
+        const exportRows = isDeletedFilter
+            ? flatData.map(row => ({ ...row, statusname: 'Deleted' }))
+            : flatData;
+
+        const statusMap = {
+            '1': 'New', '2': 'Approved', '3': 'Pending', '5': 'Deleted',
+            '-3': 'FOP_Request', '-5': 'Giveaway_FOP', '-6': 'Referral_FOP'
+        };
+
+        exportOrderApprovalToExcel(exportRows, {
+            fromDate: formData.from.format('DD-MMM-YYYY'),
+            toDate: formData.to.format('DD-MMM-YYYY'),
+            status: statusMap[formData.status] || 'All',
+            kamLabel,
+            psmLabel,
+            distributorLabel,
+            regionLabel,
+            grandTotal,
+            onSuccess: () => setExporting(false),
+            onError: (message) => {
+                showAlert.error(message);
+                setExporting(false);
+            },
+        });
     };
 
     // ---------------- Calculate summary totals ----------------
@@ -734,14 +719,9 @@ const OrderApproval = () => {
             });
             if (res.data === 1 || res.data?.success) {
                 showAlert.success(`Updated Successfully`);
-                closeEditLine();
-                const updatedLines = summaryLines.map((l) =>
-                    l.prod_id === editLine.prod_id
-                        ? { ...l, prod_qty: editLine.prod_qty, prod_free: editLine.prod_free, prod_disc: editLine.prod_disc }
-                        : l
-                );
-                setSummaryLines(updatedLines);
-                calculateTotals(updatedLines);
+                closeEditLine();   // closes the edit popup
+                closeSummary();    // closes the product breakup popup
+                approvalSearch();  // refetches the table
             } else {
                 showAlert.error('Unable to Update. Please Try Again!');
             }
@@ -979,7 +959,7 @@ const OrderApproval = () => {
                                 onChange={(newValue) => handleChange("from", newValue)}
                                 label="From"
                                 format="DD MMM YYYY"
-                                 views={["month", "year","day"]}
+                                views={["month", "year", "day"]}
                                 openTo="day"
                                 slotProps={{ textField: { size: "small", fullWidth: true } }}
                                 maxDate={formData.to ? formData.to : null}
@@ -993,7 +973,7 @@ const OrderApproval = () => {
                                 onChange={(newValue) => handleChange("to", newValue)}
                                 label="To"
                                 format="DD MMM YYYY"
-                                views={["month", "year","day"]}
+                                views={["month", "year", "day"]}
                                 openTo="day"
                                 slotProps={{ textField: { size: "small", fullWidth: true } }}
                                 minDate={formData.from ? formData.from : null}
@@ -1055,7 +1035,13 @@ const OrderApproval = () => {
                         </Button>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3, md: 1.5, lg: 1.5 }}>
-                        <Button startIcon={<FileDownloadIcon />} variant="contained" color="primary" onClick={handleExport} disabled={exporting}>
+                        <Button
+                            startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <FileDownloadIcon />}
+                            variant="contained"
+                            color="primary"
+                            onClick={handleExport}
+                            disabled={exporting}
+                        >
                             {exporting ? "Exporting..." : "Export"}
                         </Button>
                     </Grid>
