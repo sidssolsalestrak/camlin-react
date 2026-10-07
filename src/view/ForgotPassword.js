@@ -4,6 +4,7 @@ import axios from "axios";
 import { Box, Card, TextField, Button, Typography } from "@mui/material";
 import useToast from "../utils/useToast";
 import api from "../services/api";
+import usePageTitle from "../services/usePageTitle";
 
 const ForgotPassword = () => {
   const { resetToken } = useParams();
@@ -16,6 +17,7 @@ const ForgotPassword = () => {
     password: "",
     confPass: "",
   });
+  usePageTitle("Reset Password")
 
   useEffect(() => {
   localStorage.removeItem("session-token");

@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import SalesTrekimg from "../assets/kc.png";
 import otpIcon from "../assets/otp_icon.png";
 import useToast from "../utils/useToast";
+import usePageTitle from "../services/usePageTitle";
 
 function Login() {
   const backgroundImage =
@@ -327,6 +328,18 @@ function Login() {
       setIsLoading(false);
     }
   };
+
+   const pageTitle =
+    step === "forgot"
+      ? "Forgot Password"
+      : step === "otp"
+      ? otpSent
+        ? "Verify OTP"
+        : "Login via OTP"
+      : step === "qr"
+      ? "Login via QR"
+      : "Login";
+   usePageTitle(pageTitle);
 
   return (
     <Box
