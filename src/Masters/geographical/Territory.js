@@ -15,6 +15,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle'
 
 export default function Territory() {
 
@@ -44,6 +45,7 @@ export default function Territory() {
 
     const territoryLabel = masterPanel["TERR"] || "Territory";
     const areaLabel = masterPanel["AREA"] || "Area";
+    usePageTitle(territoryLabel)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

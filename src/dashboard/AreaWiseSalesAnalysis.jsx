@@ -15,6 +15,7 @@ import { areaWiseSubTot } from './areaWiseSubTot';
 import useToast from '../utils/useToast';
 import { excelWithFilters } from '../utils/ExcelWithFilters';
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -37,7 +38,7 @@ const AreaWiseSalesAnalysis = () => {
     const [showTable, setshowTable] = useState(false);
 
     const [masterPanel, setMasterPanel] = useState({});
-
+    usePageTitle(`${masterPanel["AREA"] || "Area"} Wise Sales Analysis`)
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();

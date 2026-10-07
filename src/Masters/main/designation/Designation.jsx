@@ -14,6 +14,7 @@ import { MdOutlineEdit } from 'react-icons/md';
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { getMasterPanel } from "../../../services/masterPanelService";
+import usePageTitle from '../../../services/usePageTitle'
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
@@ -29,6 +30,7 @@ const Designation = () => {
 
     // label derived from masterPanel with fallback
     const desigLabel = masterPanel["DESI"] || "Designation";
+    usePageTitle(desigLabel)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

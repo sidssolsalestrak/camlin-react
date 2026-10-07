@@ -19,6 +19,7 @@ import PageHeader from "../../utils/PageHeader";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import { useSnackbar } from "notistack";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle'
 
 
 export default function Zone() {
@@ -41,6 +42,7 @@ export default function Zone() {
   const navigate = useNavigate();
   const location = useLocation()
   const [masterPanel, setMasterPanel] = useState({});
+  usePageTitle(`${masterPanel["ZONE"] || "Zone"}`)
 
   useEffect(() => {
     const loadMasterPanel = async () => {

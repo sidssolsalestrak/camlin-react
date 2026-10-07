@@ -15,6 +15,7 @@ import BeatCoverageTable from '../components/BeatCoverageTable';
 import { useSnackbar } from 'notistack';
 import { buildExportRows, buildMonthNames, buildGrandTotalRow } from '../utils/beatCoverageHelpers';
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from '../services/usePageTitle';
 
 const headContainer = {
     background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -91,6 +92,7 @@ const BeatCoverage = () => {
     const regionLabel = masterPanel["REGN"] || "Region";
     const userLabel = masterPanel["USER"] || "Users";
     const beatLabel = masterPanel["BEAT"] || "Beat";
+    usePageTitle(`${beatLabel} Coverage`)
 
     // Year the TABLE data belongs to (from the URL / last Load), NOT the draft picker value.
     // Using `month` here made the table re-render/re-pivot every time the picker changed.

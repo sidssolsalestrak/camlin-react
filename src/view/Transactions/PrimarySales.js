@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import useToast from "../../utils/useToast";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 function PrimarySalesTransact() {
 
@@ -42,6 +43,7 @@ function PrimarySalesTransact() {
     const [masterPanel, setMasterPanel] = useState({});
     const toast    = useToast();
     const navigate = useNavigate();
+    usePageTitle("PRIMARY SALES")
 
     const menuProps = {
         PaperProps: { style: { maxHeight: 250 } },

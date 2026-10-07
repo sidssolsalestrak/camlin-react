@@ -17,6 +17,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import './AdminPanel.css'
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function EDetailingMaster() {
     const { editEdetailing } = useParams()
@@ -39,6 +40,7 @@ export default function EDetailingMaster() {
     const [editId, setEditId] = useState(null)
     const [loading, setLoading] = useState(false)
     const location = useLocation()
+    usePageTitle("E Detailing Master")
 
     // NEW: separate state for dialog edit row
     const [editSubRow, setEditSubRow] = useState(null)

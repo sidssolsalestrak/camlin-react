@@ -32,6 +32,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { getMasterPanel } from "../services/masterPanelService";
 import { jwtDecode } from 'jwt-decode'
+import usePageTitle from "../services/usePageTitle";
 
 
 function UserList() {
@@ -80,6 +81,7 @@ function UserList() {
   const regLabel = masterPanel["REGN"] || "Region";
   const areaLabel = masterPanel["AREA"] || "Area";
   const territoryLabel = masterPanel["TERR"] || "Territory";
+  usePageTitle(`${userLabel} List`)
 
   // ── Deactivation form state (controlled — mirrors AddUser.jsx) ──
   const [relievingDate, setRelievingDate] = useState("");

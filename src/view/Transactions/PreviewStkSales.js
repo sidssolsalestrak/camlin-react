@@ -11,6 +11,7 @@ import { useNavigate,useLocation } from "react-router-dom";
 import ConfirmationDialog from "../../utils/confirmDialog";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 function PreviewStkSales() {
 
@@ -38,6 +39,7 @@ function PreviewStkSales() {
     const [allPreviewData, setAllPreviewData] = useState([]);
     const location=useLocation()
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("PREVIEW STOCK & SALES")
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,
         title: "",

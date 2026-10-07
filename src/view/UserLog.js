@@ -20,6 +20,7 @@ import useToast from "../utils/useToast";
 import { DownloadNoCell } from ".././utils/xlsnoCellsDownload/DownloadNoCell";
 import { getMasterPanel } from "../services/masterPanelService";
 import { jwtDecode } from "jwt-decode";
+import usePageTitle from "../services/usePageTitle";
 
 function UserLog() {
   const location = useLocation();
@@ -51,6 +52,7 @@ function UserLog() {
   const areaLabel = masterPanel["AREA"] || "Area";
   const territoryLabel = masterPanel["TERR"] || "Territory";
   const desigLabel = masterPanel["DESI"] || "Designation";
+  usePageTitle(`${userLabel} Log`)
 
   useEffect(() => {
     const loadMasterPanel = async () => {

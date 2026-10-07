@@ -19,6 +19,7 @@ import SalesAnalysisCharts from "./SalesAnalyzeChart";
 import { Download } from "../../utils/downloadExcel/Download";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 // Defined once at module level so the object identity never changes between renders.
 const tableSx = {
@@ -74,6 +75,7 @@ function SalesAnalysisReport() {
     const [tableTitle, setTableTitle] = useState("PRODUCT CATEGORY WISE PRIMARY SALES ANALYSIS");
     const [nameHeader, setNameHeader] = useState("Brand");
     const toast = useToast()
+    usePageTitle("Sales Analysis")
 
     useEffect(() => { fetchSubCats(); }, []);
 

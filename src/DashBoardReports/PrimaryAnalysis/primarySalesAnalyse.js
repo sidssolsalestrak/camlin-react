@@ -21,6 +21,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Download } from "../../utils/downloadExcel/Download";
 import { downloadPrimarySalesExcelWithChart } from './DownLoadPrimarySalesExcel'
 import { jwtDecode } from "jwt-decode";
+import usePageTitle from "../../services/usePageTitle";
 
 function PrimarySalesAnalze() {
     const { enMonth, enCatType } = useParams()
@@ -37,6 +38,7 @@ function PrimarySalesAnalze() {
     const [showTable, setShowTable] = useState(false)
     const [userType, setUserType] = useState(null);
     const [loading, setLoading] = useState(false)
+    usePageTitle("Primary Sales Dashboard")
     var now=dayjs()
     var dateLabel=''
     const toast = useToast()

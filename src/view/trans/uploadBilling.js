@@ -20,6 +20,7 @@ import { GrUploadOption } from "react-icons/gr";
 import { FaDownload } from "react-icons/fa";
 import { IoMdCloudUpload } from "react-icons/io";
 import CloseIcon from "@mui/icons-material/Close";
+import usePageTitle from '../../services/usePageTitle';
 
 
 const UploadBilling = () => {
@@ -62,6 +63,7 @@ const UploadBilling = () => {
     const [stockistUploading, setStockistUploading] = useState(false);
     const [billingDateRange, setBillingDateRange] = useState(null)
     const [tempval, setTempVal] = useState(0)
+    usePageTitle("Upload Billing")
 
     const [confirmationDialog, setConfirmationDialog] = useState({
         open: false,

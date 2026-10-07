@@ -23,6 +23,7 @@ import CircularProgress from "../../utils/CircularProgressLoading";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 function AccountExtract() {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ function AccountExtract() {
   const [selactiveStat, setActiveStat] = useState("1")
 
   const [masterPanel, setMasterPanel] = useState({});
+  usePageTitle(`${masterPanel["ACCM"] || "Account"} Master Extract`)
 
   useEffect(() => {
     const loadMasterPanel = async () => {

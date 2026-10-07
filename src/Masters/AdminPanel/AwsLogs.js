@@ -18,6 +18,7 @@ import { FaCheck } from "react-icons/fa";
 import { FaDownload } from "react-icons/fa";
 import './AdminPanel.css'
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function AwsLogs() {
     const { frmDate, processType, userli, processSts } = useParams()
@@ -36,6 +37,7 @@ export default function AwsLogs() {
     const navigate = useNavigate()
     const toast = useToast()
     const location=useLocation()
+    usePageTitle("Process List")
 
     useEffect(() => {
         fetchAllUsers()

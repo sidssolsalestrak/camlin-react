@@ -15,6 +15,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { useCallback } from 'react';
 import { getMasterPanel } from "../../../services/masterPanelService";
+import usePageTitle from '../../../services/usePageTitle'
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const menuStyle = {
@@ -37,6 +38,7 @@ const ProductCategory = () => {
     const [accStat, setAccStat] = useState(null);
 
     const brandLabel = masterPanel["BRND"] || "Brand";
+    usePageTitle(masterPanel["PCAT"] || "Product Category")
 
     useEffect(() => {
         const loadMasterPanel = async () => {

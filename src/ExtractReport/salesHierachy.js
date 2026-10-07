@@ -12,6 +12,7 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import DataTable from "../utils/dataTable";
 import CircularProgress from "../utils/CircularProgressLoading";
 import { getMasterPanel } from "../services/masterPanelService";
+import usePageTitle from "../services/usePageTitle";
 
 export default function SalesHierachy() {
     const [selZone, setSelZone] = useState(0)
@@ -46,6 +47,7 @@ export default function SalesHierachy() {
             : null;
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Sales Hierachy")
 
     // tracks whether the decoded (URL) user has already been auto-applied for the
     // current navigation, so manual selUserType changes after that don't re-apply it

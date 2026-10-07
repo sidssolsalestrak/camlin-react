@@ -21,6 +21,7 @@ import { jwtDecode } from "jwt-decode";
 import useToast from "../../utils/useToast";
 import { getMasterPanel } from "../../services/masterPanelService";
 import ConfirmationDialog from "../../utils/confirmDialog";
+import usePageTitle from "../../services/usePageTitle";
 
 const headContainer = {
   background: "#fff", display: "flex", flexDirection: 'column', gap: 2,
@@ -103,6 +104,7 @@ function CreateCustomer() {
     };
     loadMasterPanel();
   }, []);
+  usePageTitle(`${masterPanel["ACCM"] || "Account"} Master`)
 
   // ---------------- STATE ---------------------------
   const [fieldConfig, setFieldConfig] = useState({});

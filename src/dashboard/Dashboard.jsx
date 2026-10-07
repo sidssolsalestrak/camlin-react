@@ -67,6 +67,7 @@ import { GoogleMap, Marker, InfoWindow, Polyline, useJsApiLoader } from "@react-
 import { GOOGLE_MAPS_LIBRARIES } from "../utils/googleMapsConfig";
 import DataTable from "../utils/dataTable";
 import useToast from "../utils/useToast";
+import usePageTitle from "../services/usePageTitle";
 
 // Equivalent of PHP's `s3_path3` constant — the S3/CDN bucket root only.
 // PhotoRatingBreakup.jsx appends the 'doctor_reporting/' subfolder itself,
@@ -452,6 +453,7 @@ export default function Dashboard() {
   const prodLabel = masterPanel["PROD"] || "Product";
   const psmLabel = masterPanel["PSM"] || "PSM";
   const kamLabel = masterPanel["KAM"] || "KAM";
+  usePageTitle("Dashboard")
 
   useEffect(() => {
     const loadMasterPanel = async () => {

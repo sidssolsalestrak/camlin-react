@@ -13,6 +13,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { MdOutlineEdit } from "react-icons/md";
+import usePageTitle from '../../../services/usePageTitle'
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 const menuStyle = {
@@ -58,6 +59,7 @@ const ProductCategory = () => {
 
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
+    usePageTitle("City")
 
     /*---------- re usable toast ---------*/
     const showAlert = useToast();

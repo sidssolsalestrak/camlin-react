@@ -25,6 +25,7 @@ import { LinearProgress } from "@mui/material";
 import dayjs from "dayjs";
 import "../../assets/css/accountMas.css";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 function AccountMas() {
   const user = getUserFromToken();
@@ -90,11 +91,12 @@ function AccountMas() {
   }, [decodedParams.login_id]);
 
  const title =
-  decodedParams.reqType == 2
+  decodedParams.cusReq == 2
     ? "Approval List"
     : `${masterPanel["ACCM"] || "Account"} Masters`;
   const [regionData, setRegionData] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState(0);
+  usePageTitle(title)
 
   const [userType, setUserType] = useState([]);
   const [selectedUserType, setSelectedUserType] = useState(0);
@@ -957,7 +959,7 @@ const handleRejectAll = () => {
         breadcrumb: [
           { label: "Home", path: "/" },
           { label: masterPanel["ACCM"] || "Account", path: location.pathname },
-          { label: `${masterPanel["ACCM"] || "Account"} List` },
+          { label: title },
         ],
       })}
     >

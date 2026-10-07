@@ -16,6 +16,7 @@ import { useCallback } from 'react';
 import ConfirmationDialog from "../../../utils/confirmDialog";
 import { MdOutlineEdit } from 'react-icons/md';
 import { getMasterPanel } from "../../../services/masterPanelService";
+import usePageTitle from '../../../services/usePageTitle'
 
 const tabStyle = { fontWeight: 600, fontSize: '1.1rem' }
 
@@ -48,6 +49,7 @@ const Department = () => {
 
     // labels derived from masterPanel with fallbacks
     const departmentLabel = masterPanel["DEPT"] || "Department";
+    usePageTitle(departmentLabel)
 
     useEffect(() => {
         const loadMasterPanel = async () => {

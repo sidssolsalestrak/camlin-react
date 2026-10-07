@@ -12,6 +12,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MdOutlineEdit } from "react-icons/md";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from '../../services/usePageTitle'
 
 export default function Region() {
 
@@ -38,6 +39,7 @@ export default function Region() {
     const location = useLocation()
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle(masterPanel["REGN"] || "Region")
 
     useEffect(() => {
         const loadMasterPanel = async () => {

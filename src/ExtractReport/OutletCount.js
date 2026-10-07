@@ -15,6 +15,7 @@ import { Download } from "../utils/downloadExcel/Download";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMasterPanel } from "../services/masterPanelService";
 import ConfirmationDialog from '../utils/confirmDialog';
+import usePageTitle from "../services/usePageTitle";
 
 export default function OutletCount() {
     const { enzone, enRegion, enArea, enSo } = useParams();
@@ -49,6 +50,7 @@ export default function OutletCount() {
 
     const toast = useToast();
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Outlet Count")
 
     const zoneLabel = masterPanel["ZONE"] || "Zone";
     const areaLabel = masterPanel["AREA"] || "Area";

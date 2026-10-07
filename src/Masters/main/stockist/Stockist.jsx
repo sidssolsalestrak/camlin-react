@@ -18,6 +18,7 @@ import { MdOutlineEdit } from 'react-icons/md';
 import { getMasterPanel } from "../../../services/masterPanelService";
 import { Download } from '../../../utils/downloadExcel/Download';
 import CircularProgressLoading from '../../../utils/CircularProgressLoading';
+import usePageTitle from '../../../services/usePageTitle';
 
 const style = {
     color: "#1a1917",
@@ -57,7 +58,7 @@ const Stockist = () => {
     const regionLabel = masterPanel["REGN"] || "Region";
     const areaLabel = masterPanel["AREA"] || "Area";
     const psmlabel = masterPanel["PSM"] || "PSM";
-
+    usePageTitle(stkLabel)
     useEffect(() => {
         const loadMasterPanel = async () => {
             const data = await getMasterPanel();

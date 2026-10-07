@@ -23,6 +23,7 @@ import ConfirmationDialog from "../../utils/confirmDialog";
 import "./AdminPanel.css";
 import { MdOutlineEdit } from "react-icons/md";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 export default function AppVersion() {
   const { editappvid } = useParams();
@@ -49,6 +50,7 @@ export default function AppVersion() {
     appVersion: "",
     appBuild: "",
   });
+  usePageTitle(masterPanel["APVR"] || "App Version")
 
   useEffect(() => {
     const loadMasterPanel = async () => {

@@ -17,6 +17,7 @@ import useToast from "../../utils/useToast";
 import { excelWithFilters } from '../../utils/ExcelWithFilters';
 import { FaRegFileExcel } from "react-icons/fa";
 import { getMasterPanel } from "../../services/masterPanelService";
+import usePageTitle from "../../services/usePageTitle";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -77,6 +78,7 @@ function PrimarySales({ enType }) {
     const [initialLoad,setinitialLoad] =useState(false)
 
     const [masterPanel, setMasterPanel] = useState({});
+    usePageTitle("Trend Analysis")
 
     useEffect(() => {
         const loadMasterPanel = async () => {
