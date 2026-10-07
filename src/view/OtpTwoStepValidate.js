@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import SalesTrekimg from "../assets/kc.png";
 import useToast from "../utils/useToast";
+import usePageTitle from "../services/usePageTitle";
 
 function OtpTwoStepValidate() {
     const backgroundImage =
@@ -21,6 +22,7 @@ function OtpTwoStepValidate() {
     const toast = useToast();
     const [otp, setOtp] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    usePageTitle("Verify OTP")
 
     useEffect(() => {
         const token = localStorage.getItem("otp-token");

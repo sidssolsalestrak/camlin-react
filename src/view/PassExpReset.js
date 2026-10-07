@@ -11,6 +11,7 @@ import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import SalesTrekimg from "../assets/kc.png";
 import useToast from "../utils/useToast";
+import usePageTitle from "../services/usePageTitle";
 
 function PassExpReset() {
     const backgroundImage =
@@ -21,6 +22,7 @@ function PassExpReset() {
     const [newPass, setNewPass] = useState("");
     const [loading, setLoading] = useState(false);
     const toast = useToast();
+    usePageTitle("Reset Password");
 
     const handleSubmit = async () => {
         if (!email || !oldpass || !newPass) {

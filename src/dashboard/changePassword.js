@@ -5,6 +5,7 @@ import useToast from "../utils/useToast";
 import Layout from "../layout";
 import api from "../services/api";
 import ConfirmationDialog from "../utils/confirmDialog";
+import usePageTitle from "../services/usePageTitle";
 
 const ChangePassword = () => {
   const toast = useToast();
@@ -17,6 +18,7 @@ const ChangePassword = () => {
   const [newPasswordError, setNewPasswordError] = useState("");
   const [newPasswordConfirmError, setNewPasswordConfirmError] = useState("");
   const [loading, setLoading] = useState(false);
+  usePageTitle("Change Password")
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
