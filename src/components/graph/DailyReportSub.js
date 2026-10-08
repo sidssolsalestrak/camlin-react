@@ -9,7 +9,7 @@ const fontStyle = { color: "#026CB6", fontSize: "14px" }
 const subFont = { fontSize: "12px", fontWeight: "bold" }
 const subHeader = { display: "flex", justifyContent: "space-between", p: 1 }
 
-const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
+const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id ,enabled = true}) => {
     const [data, setData] = useState([]);
     const [loading, setloading] = useState(false);
     const [hoveredBar, setHoveredBar] = useState(null);
@@ -40,35 +40,38 @@ const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
         setHoveredBar(null);
     };
 
-    const fetchData = async () => {
-        try {
-            setloading(true)
-            let payload = {
-                month: month ? dayjs(month).format("YYYY-MM-DD") : null,
-                zone_id,
-                reg_id,
-                area_id,
-                state_id
-            }
-            const res = await axios.post("/loadGraph3", payload);
-            const data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
-            const formatted = data.map(d => ({
-                ...d,
-                label: dayjs(d.call_date).format("DD MMM"), // +1 day offset for IST
-                tgt_val: parseFloat(d.tgt_val),
-                ach_val: parseFloat(d.ach_val),
-            }));
-            setData(formatted);
-        } catch (error) {
-            console.error(error);
-            setData([])
-        } finally {
-            setloading(false)
+const fetchData = async (signal) => {
+    try {
+        setloading(true)
+        const payload = {
+            month: month ? dayjs(month).format("YYYY-MM-DD") : null,
+            zone_id, reg_id, area_id, state_id
         }
+        const res = await axios.post("/loadGraph3", payload, { signal });
+        if (signal.aborted) return;
+        const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
+        setData(rows.map(d => ({
+            ...d,
+            label: dayjs(d.call_date).format("DD MMM"),
+            tgt_val: parseFloat(d.tgt_val),
+            ach_val: parseFloat(d.ach_val),
+        })));
+    } catch (error) {
+        if (signal.aborted) return;
+        console.error(error);
+        setData([])
+    } finally {
+        if (!signal.aborted) setloading(false)
     }
-    useEffect(() => {
-        fetchData();
-    }, [month, zone_id, reg_id, area_id, state_id])
+}
+
+useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
+}, [enabled, month, zone_id, reg_id, area_id, state_id])
+
     return (
         <Box>
             <Box sx={subHeader}>

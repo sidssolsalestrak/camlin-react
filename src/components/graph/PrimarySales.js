@@ -8,55 +8,59 @@ const fontStyle = { color: "#026CB6", fontSize: "14px" }
 const subFont = { fontSize: "12px", fontWeight: "bold" }
 const subHeader = { display: "flex", justifyContent: "space-between", p: 1 }
 
-const PrimarySales = ({ month, formData }) => {
+const PrimarySales = ({ month, formData,enabled = true, onDone  }) => {
     const [loading, setloading] = useState(false);
     const [data, setData] = useState([]);
 
     let totalSales = data.reduce((sum, d) => sum + parseFloat(d.sale_val), 0).toFixed(2)
 
-    const fetchGraph4Data = async () => {
-        try {
-            setloading(true)
-            let payload = {
-                month: month ? dayjs(month).format("YYYY-MM-DD") : null,
-                zone_id: formData.zone,
-                reg_id: formData.region,
-                area_id: formData.area,
-                state_id: formData.State
-            }
-            const res = await axios.post("/loadGraph1", payload);
-            const apiData = Array.isArray(res?.data?.data) ? res?.data?.data : [];
+const fetchGraph4Data = async (signal) => {
+    try {
+        setloading(true)
+        const payload = {
+            month: month ? dayjs(month).format("YYYY-MM-DD") : null,
+            zone_id: formData.zone,
+            reg_id: formData.region,
+            area_id: formData.area,
+            state_id: formData.State
+        }
+        const res = await axios.post("/loadGraph1", payload, { signal });
+        if (signal.aborted) return;
+        const apiData = Array.isArray(res?.data?.data) ? res?.data?.data : [];
 
-            // Map actual data by day for lookup
-            const dataByDay = {};
-            apiData.forEach(d => {
-                const label = dayjs(d.sale_month).format("DD");
-                dataByDay[label] = parseFloat(d.sale_val) || 0;
-            });
+        const dataByDay = {};
+        apiData.forEach(d => {
+            const label = dayjs(d.sale_month).format("DD");
+            dataByDay[label] = parseFloat(d.sale_val) || 0;
+        });
 
-            // Generate continuous 01 → today (or end of month if past month)
-            const selectedMonth = dayjs(month);
-            const isCurrentMonth = selectedMonth.isSame(dayjs(), 'month');
-            const totalDays = isCurrentMonth ? dayjs().date() - 1 : selectedMonth.daysInMonth();
-            const formatted = Array.from({ length: totalDays }, (_, i) => {
-                const label = String(i + 1).padStart(2, '0');
-                return {
-                    label,
-                    sale_val: dataByDay[label] || 0,
-                };
-            });
+        const selectedMonth = dayjs(month);
+        const isCurrentMonth = selectedMonth.isSame(dayjs(), 'month');
+        const totalDays = isCurrentMonth ? dayjs().date() - 1 : selectedMonth.daysInMonth();
+        const formatted = Array.from({ length: totalDays }, (_, i) => {
+            const label = String(i + 1).padStart(2, '0');
+            return { label, sale_val: dataByDay[label] || 0 };
+        });
 
-            setData(formatted);
-        } catch (error) {
-            console.error(error);
-            setData([])
-        } finally {
+        setData(formatted);
+    } catch (error) {
+        if (signal.aborted) return;
+        console.error(error);
+        setData([])
+    } finally {
+        if (!signal.aborted) {
             setloading(false)
+            onDone?.()
         }
     }
-    useEffect(() => {
-        fetchGraph4Data();
-    }, [month, formData.zone, formData.region, formData.area, formData.State])
+}
+
+useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    fetchGraph4Data(controller.signal);
+    return () => controller.abort();
+}, [enabled, month, formData.zone, formData.region, formData.area, formData.State])
 
     return (
         <Box>
