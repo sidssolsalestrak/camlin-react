@@ -3,6 +3,7 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-map
 import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mui/material";
 import { GoogleMapsOverlay } from "@deck.gl/google-maps";
 import { HeatmapLayer } from "@deck.gl/aggregation-layers";
+import { GOOGLE_MAPS_LIBRARIES } from '../utils/googleMapsConfig'
 
 const LIBRARIES = [];
 
@@ -59,7 +60,7 @@ export function BeatMapExpansion({ row }) {
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_API_KEY,
-    libraries: LIBRARIES,
+    libraries:GOOGLE_MAPS_LIBRARIES ,
   });
 
   const lat = parseFloat(row.latitude);
@@ -148,7 +149,7 @@ export function AllLocationsMap({ coordinates = [], open, onClose }) {
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_API_KEY,
-    libraries: LIBRARIES,
+    libraries:GOOGLE_MAPS_LIBRARIES ,
   });
 
   const validCoords = coordinates.filter(coord => {

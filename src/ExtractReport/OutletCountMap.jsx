@@ -4,6 +4,7 @@ import { Box, Typography, Switch, FormControlLabel, CircularProgress } from "@mu
 import { GoogleMapsOverlay } from "@deck.gl/google-maps";
 import { HeatmapLayer } from "@deck.gl/aggregation-layers";
 import api from "../services/api";
+import { GOOGLE_MAPS_LIBRARIES } from '../utils/googleMapsConfig'
 
 const LIBRARIES = [];
 
@@ -50,7 +51,7 @@ export function OutletCountMap({ open, onClose, selZone, selRegion, selArea, sel
 
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: process.env.REACT_APP_API_KEY,
-        libraries: LIBRARIES,
+        libraries: GOOGLE_MAPS_LIBRARIES ,
     });
 
     // Set marker icon once Maps API is loaded
