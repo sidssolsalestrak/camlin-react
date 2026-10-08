@@ -85,7 +85,7 @@ const Layout = ({ children, breadcrumb = [] }) => {
     // loadChatbot();
   }, []);
 
-  
+
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "session-token" && e.newValue === null) {
@@ -380,11 +380,11 @@ const Layout = ({ children, breadcrumb = [] }) => {
     });
   };
 
-  const handleLogout = async() => {
+  const handleLogout = async () => {
     try {
-      let logoutres=await api.post('/logout')
+      let logoutres = await api.post('/logout')
       localStorage.removeItem("session-token");
-     
+
       console.log("Logout Successfully");
       enqueueSnackbar("Logout Successfully", {
         variant: "success",
@@ -830,9 +830,27 @@ const Layout = ({ children, breadcrumb = [] }) => {
             flexGrow: 1,
             overflow: "auto",
             backgroundColor: "#F6F5F2",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          {children}
+          <Box sx={{ flexGrow: 1 }}>{children}</Box>
+
+          {location.pathname.replace(/\/$/, "") === "/dashboard" && (
+            <Box
+              component="footer"
+              sx={{
+                width: "100%",
+                py: 2,
+                textAlign: "center",
+                bgcolor: "#fff",
+                color: "#000",
+                fontSize: "13px",
+              }}
+            >
+              Powered by Sidssol.
+            </Box>
+          )}
         </Box>
       </Box>
 
