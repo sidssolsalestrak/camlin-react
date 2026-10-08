@@ -24,25 +24,29 @@ function LoginProjCode() {
 
     let handleSubmit = async () => {
         try {
-            if (!projCode || projCode === "") {
+            if (!projCode || projCode.trim() === "") {
                 toast.error("Please Enter Project Code")
                 return
             }
+            const code = projCode?.trim();
             setLoading(true)
             let response = await api.post(
                 `/projectCodeValidation`,
                 {
                     app_version: "",
-                    proj_code: projCode,
+                    proj_code: code,
                     ver_stat: "",
                     email_id: "",
                     app_build: "",
                 }
             );
 
-            if (response?.data?.status && Number(response.data.status) === 200) {
+            if (response?.data?.status && Number(response.data.status) === 200 && response?.data?.site_url) {
                 toast.success(response?.data?.message || "Success")
-                navigate('/login')
+                setTimeout(()=>{
+                    window.location.href = `${response?.data?.site_url}`;
+                },500)
+               
             } else {
                 toast.error(response?.data?.message || "Please Enter Valid Project Code")
             }
@@ -100,12 +104,11 @@ function LoginProjCode() {
                         size="small"
                         sx={{ mb: 1.5 }}
                         label="Enter Project Code"
-                        onChange={(e) => setProjCode(e.target.value)}
                         value={projCode}
+                        onChange={(e) => setProjCode(e.target.value.replace(/^\s+/, ""))}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSubmit();
+                            if (e.key === "Enter" && !loading) handleSubmit();
                         }}
-
                     />
                     <Button
                         variant="contained"
