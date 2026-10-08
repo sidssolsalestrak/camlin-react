@@ -1,5 +1,5 @@
 import { Box, Grid, Typography } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import DataTable from "../../utils/dataTable";
 import DailyReportSub from '../../components/graph/DailyReportSub';
 import dayjs from "dayjs";
@@ -26,34 +26,59 @@ const subFont = { fontSize: "12px", fontWeight: "bold" }
 const SalesAnalysisBody = ({ formData, month }) => {
     const [tableData, setTableData] = useState([])
     const [loading, setloading] = useState(false);
+    const filterKey = [
+        month ? dayjs(month).format("YYYY-MM") : "",
+        formData.zone, formData.region, formData.area, formData.State,
+    ].join("|");
+
+    const keyRef = useRef(filterKey);
+    keyRef.current = filterKey;
+
+    const [done, setDone] = useState({ key: null });
+
+    const markDone = (key, name) => {
+        if (key !== keyRef.current) return; // ignore responses from old filters
+        setDone(prev => ({ ...(prev.key === key ? prev : { key }), [name]: true }));
+    };
+
+    const cur = done.key === filterKey ? done : {};
+    const canLoadGraph1 = !!(cur.g2 && cur.g4);
+    const canLoadGraph3 = !!cur.g1;
 
     const primary = tableData.reduce((sum, d) => sum + parseFloat(d.pur_val), 0).toFixed(2);
     const secondary = tableData.reduce((sum, d) => sum + parseFloat(d.sec_val), 0).toFixed(2);
     const closing = tableData.reduce((sum, d) => sum + parseFloat(d.cls_val), 0).toFixed(2);
 
-    const fetchGraph4Data = async () => {
+    const fetchGraph4Data = async (signal) => {
         try {
             setloading(true)
-            let payload = {
+            const payload = {
                 month: month ? dayjs(month).format("YYYY-MM-DD") : null,
                 zone_id: formData.zone,
                 reg_id: formData.region,
                 area_id: formData.area,
                 state_id: formData.State
             }
-            const res = await axios.post("/loadGraph4", payload);
-            const data = Array.isArray(res?.data?.data) ? res?.data?.data : [];
-            setTableData(data)
+            const res = await axios.post("/loadGraph4", payload, { signal });
+            if (signal.aborted) return;
+            setTableData(Array.isArray(res?.data?.data) ? res.data.data : [])
         } catch (error) {
+            if (signal.aborted) return;
             console.error(error);
             setTableData([])
         } finally {
-            setloading(false)
+            if (!signal.aborted) {
+                setloading(false)
+                markDone(filterKey, "g4")
+            }
         }
     }
+
     useEffect(() => {
-        fetchGraph4Data();
-    }, [month, formData.zone, formData.region, formData.area, formData.State])
+        const controller = new AbortController();
+        fetchGraph4Data(controller.signal);
+        return () => controller.abort();
+    }, [filterKey])
 
     const zeroToNull = (val) =>
         Number(val) === 0 || val === null || val === undefined ? "-" : val?.toFixed(2);
@@ -100,7 +125,9 @@ const SalesAnalysisBody = ({ formData, month }) => {
                 <Grid size={{ xs: 12, sm: 12, md: 4.7, lg: 4.7 }}>
                     <Box sx={subContainer}>
                         <Box>
-                            <PrimarySales month={month} formData={formData} />
+                            <PrimarySales month={month} formData={formData}
+                                enabled={canLoadGraph1}
+                                onDone={() => markDone(filterKey, "g1")} />
                         </Box>
                     </Box>
                 </Grid>
@@ -112,7 +139,9 @@ const SalesAnalysisBody = ({ formData, month }) => {
                                 zone_id={formData.zone || 0}
                                 reg_id={formData.region || 0}
                                 area_id={formData.area || 0}
-                                state_id={formData.State || 0} />
+                                state_id={formData.State || 0}
+                                enabled={true}
+                                onDone={() => markDone(filterKey, "g2")} />
                         </Box>
                     </Box>
                 </Grid>
@@ -124,7 +153,8 @@ const SalesAnalysisBody = ({ formData, month }) => {
                                 zone_id={formData.zone || 0}
                                 reg_id={formData.region || 0}
                                 area_id={formData.area || 0}
-                                state_id={formData.State || 0} />
+                                state_id={formData.State || 0}
+                                enabled={canLoadGraph3} />
                         </Box>
                     </Box>
                 </Grid>

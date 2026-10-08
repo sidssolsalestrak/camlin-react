@@ -48,60 +48,52 @@ const CustomPieShape = (props) => {
     return <Sector {...props} />;
 };
 
-const ClosingSub = ({ month, zone_id, reg_id, area_id, state_id }) => {
+const ClosingSub = ({ month, zone_id, reg_id, area_id, state_id ,enabled = true, onDone}) => {
     const [summary, setSummary] = useState({ total: 0, received: 0, rateScore: 0 });
     const [loading, setLoading] = useState(false);
 
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const payload = {
-                month: month ? dayjs(month).format("YYYY-MM-DD") : null,
-                zone_id,
-                reg_id,
-                area_id,
-                state_id
-            };
-            const res = await axios.post("/loadGraph2", payload);
-            const result = Array.isArray(res?.data?.data) ? res.data.data[0] : null;
+const fetchData = async (signal) => {
+    try {
+        setLoading(true);
+        const payload = {
+            month: month ? dayjs(month).format("YYYY-MM-DD") : null,
+            zone_id, reg_id, area_id, state_id
+        };
+        const res = await axios.post("/loadGraph2", payload, { signal });
+        if (signal.aborted) return;
+        const result = Array.isArray(res?.data?.data) ? res.data.data[0] : null;
 
-            const totStk = Number(result.tot_stk) || 0;
-            const totRecv = Number(result.tot_recv) || 0;
-            const rawScore = Number(result.rate_score) || 0;
+        const totStk = Number(result.tot_stk) || 0;
+        const totRecv = Number(result.tot_recv) || 0;
+        const rawScore = Number(result.rate_score) || 0;
 
-            setSummary({
-                total: totStk,
-                received: totRecv,
-                rateScore: totRecv > 0 ? Math.round(rawScore / totRecv) : 0,
-            });
-        } catch (error) {
-            console.error(error);
-            setSummary({
-                total: 0, received: 0, rateScore: 0
-            })
-        } finally {
+        setSummary({
+            total: totStk,
+            received: totRecv,
+            rateScore: totRecv > 0 ? Math.round(rawScore / totRecv) : 0,
+        });
+    } catch (error) {
+        if (signal.aborted) return;
+        console.error(error);
+        setSummary({ total: 0, received: 0, rateScore: 0 })
+    } finally {
+        if (!signal.aborted) {
             setLoading(false);
+            onDone?.();
         }
-    };
+    }
+};
 
-    useEffect(() => {
-        fetchData();
-    }, [month, zone_id, reg_id, area_id, state_id]); //re-fetch when filters change
+useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
+}, [enabled, month, zone_id, reg_id, area_id, state_id]);
 
     const { total, received, rateScore } = summary;
     const percentage = total > 0 ? Math.round((received / total) * 100) : 0;
 
-    // NOTE: percentage is attached to each data entry so Recharts spreads
-    // it onto the props object passed into CustomPieShape (along with
-    // name, cx, cy, etc). This lets the shape decide whether the slice is
-    // large enough to warrant drawing the red cap dot.
-    //
-    // When the rounded percentage is 0 (e.g. received=2 / total=744 →
-    // 0.27% → "0%"), don't give the "Received" slice a nonzero value at
-    // all. Otherwise Recharts still draws a real, near-zero-width sector
-    // for it, and with cornerRadius that tiny sector renders as a stray
-    // rounded sliver/line rather than disappearing — even though the
-    // shape's own startAngle===endAngle guard catches the true zero case.
     const chartData = total > 0 ? [
         { name: 'Received', value: percentage > 0 ? received : 0, color: '#1565C0', percentage },
         { name: 'Remaining', value: percentage > 0 ? total - received : total, color: '#fafafa', percentage },
