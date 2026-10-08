@@ -1,9 +1,45 @@
-.mainTitle {
-  font-size: 1.3em;
-  line-height: 29px;
-  margin: 0;
-  padding: 0;
-  float: left !important;
-  color: #026cb6;
+.status-chip {
+  font-size: 11px;
   font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* Active */
+.status-chip.active {
+  background: #e8f7f2;
+  color: #1a9e6b;
+}
+
+/* Inactive */
+.status-chip.inactive {
+  background: #fdecea;
+  color: #d32f2f;
+}
+
+.editBtn {
+  background: #eef2fd;
+  color: #2b5ce6;
+}
+
+.dltBtn {
+  background: #fef0ee;
+  color: #d94c30;
+}
+
+.actionBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.dltBtn :hover {
+  background: #fce3df;
 }
