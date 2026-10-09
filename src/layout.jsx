@@ -845,7 +845,7 @@ const Layout = ({ children, breadcrumb = [] }) => {
                 textAlign: "center",
                 bgcolor: "#fff",
                 color: "#000",
-                fontSize: "13px",
+                fontSize: "11.2px",
               }}
             >
               Powered by Sidssol.
