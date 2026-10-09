@@ -166,8 +166,8 @@ const SubmissionStatusTableComponent = ({
             if (terGroup === 1) {
                 cols.push({ field: "ter_name", headerName: masterPanel["TERR"] || "Territory", width: 120 });
             }
-            cols.push({ field: "close_date", headerName: "Month", width: 100 });
-            cols.push({ field: "stk_code", headerName: "Code", width: 80 });
+            cols.push({ field: "close_date", headerName: "Month", width: 65 });
+            cols.push({ field: "stk_code", headerName: "Code", width: 65 });
             cols.push({ field: "stk_name", headerName: `${masterPanel["STKS"] || "Distributor"} Name`, width: 150 });
         } else {
             if (zoneGroup === 1 && regGroup === 0 && areaGroup === 0 && terGroup === 0) {
@@ -199,12 +199,12 @@ const SubmissionStatusTableComponent = ({
 
         if (stkGroup === 1) {
             cols.push({ field: "process_stat", headerName: "Status", width: 100 });
-            cols.push({ field: "rate_score", headerName: "Rating", width: 100 });
+            cols.push({ field: "rate_score", headerName: "Rating", width: 78 });
             cols.push({ field: "err_desc", headerName: "Errors", width: 100 });
             cols.push({ field: "base_data_stat", headerName: "Raw", width: 80 });
             cols.push({ field: "proc_data_stat", headerName: "Processed", width: 90 });
-            cols.push({ field: "pri_stat", headerName: "Primary", width: 80 });
-            cols.push({ field: "create_dt", headerName: "Submission Date", width: 160 });
+            cols.push({ field: "pri_stat", headerName: "Primary", width: 70 });
+            cols.push({ field: "create_dt", headerName: "Submission Date", width: 120 });
             cols.push({ field: "_checkbox", headerName: committedType === 1 ? "Check All" : "Stock & Sales", width: 120 });
             cols.push({ field: "_delete_all", headerName: "Delete", width: 80 });
         }
@@ -337,13 +337,13 @@ const SubmissionStatusTableComponent = ({
         if (fileType === 1)
             return (
                 <span style={{ cursor: "pointer" }} onClick={(e) => { if (docName !== "") handleClick(e); }}>
-                    <FaRegImage style={{ color: "green", fontSize: 15 }} />
+                    <FaRegImage style={{ color: "#16d616", fontSize: 15 }} />
                 </span>
             );
         if (fileType === 2)
             return (
                 <span style={{ cursor: "pointer" }} onClick={(e) => { if (docName !== "") handleClick(e); }}>
-                    <FaRegFilePdf style={{ color: "#e90505", fontSize: 15 }} />
+                    <FaRegFilePdf style={{ color: "#933030", fontSize: 15 }} />
                 </span>
             );
         if (fileType === 3)
@@ -394,19 +394,19 @@ const SubmissionStatusTableComponent = ({
 
         if (row._rowType !== "data" && field === lastGroupField) {
             return (
-                <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", textAlign: "center" }}>
+                <Typography style={{ display: "block", width: "100%", whiteSpace: "nowrap", textAlign: "right",fontWeight:600 }}>
                     {row._label}
-                </strong>
+                </Typography>
             );
         }
 
         if (field === "stk_name" && stkGroup === 1) {
             if (row._rowType === "grand_total")
-                return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
+                return <Typography sx={{ display: "block", width: "100%", whiteSpace: "nowrap", fontSize: 11, textAlign: "right" }}>{row._label}</Typography>;
             if (row._rowType === "zone_subtotal")
-                return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#3a3a3a", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
+                return <Typography sx={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#3a3a3a", fontSize: 11, textAlign: "right" }}>{row._label}</Typography>;
             if (row._rowType === "reg_subtotal")
-                return <strong style={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#555", fontSize: 11, textAlign: "right" }}>{row._label}</strong>;
+                return <Typography sx={{ display: "block", width: "100%", whiteSpace: "nowrap", color: "#555", fontSize: 11, textAlign: "right" }}>{row._label}</Typography>;
             if (row._rowType === "data")
                 return (
                     <Box>
@@ -429,12 +429,12 @@ const SubmissionStatusTableComponent = ({
 
         if (field === "tot_stk") {
             if (row._rowType === "data") return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{Number(row.tot_stk) === 0 ? "-" : row.tot_stk.toLocaleString("en-IN")}</Typography>;
-            return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{Number(row.tot_stk) === 0 ? "-" : row.tot_stk.toLocaleString("en-IN")}</strong>;
+            return <Typography style={{ display: "block", width: "100%", textAlign: "right",fontWeight:600 }}>{Number(row.tot_stk) === 0 ? "-" : row.tot_stk.toLocaleString("en-IN")}</Typography>;
         }
 
         if (field === "tot_recv") {
             if (row._rowType === "data") return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{Number(row.tot_recv) === 0 ? "-" : row.tot_recv.toLocaleString("en-IN")}</Typography>;
-            return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{Number(row.tot_recv) === 0 ? "-" : row.tot_recv.toLocaleString("en-IN")}</strong>;
+            return <Typography style={{ display: "block", width: "100%", textAlign: "right",fontWeight:600 }}>{Number(row.tot_recv) === 0 ? "-" : row.tot_recv.toLocaleString("en-IN")}</Typography>;
         }
 
         if (field === "close_date") {
@@ -464,13 +464,13 @@ const SubmissionStatusTableComponent = ({
 
         if (field === "rate_score" && stkGroup === 1) {
             if (row._rowType === "data") return renderStarRating(row.rate_score, row.process_stat);
-            if (row._avg_rating != null) return <Box sx={{ textAlign: "center" }}><strong>{Number(row._avg_rating) === 0 ? "-" : `${row._avg_rating}%`}</strong></Box>;
+            if (row._avg_rating != null) return <Box sx={{ textAlign: "center" }}><Typography sx={{fontWeight:600}}>{Number(row._avg_rating) === 0 ? "-" : `${row._avg_rating}%`}</Typography></Box>;
             return null;
         }
 
         if ((field === "tot_unproc" || field === "tot_rej" || field === "tot_proc" || field === "tot_pend") && stkGroup !== 1) {
             if (row._rowType === "data") return <Typography sx={{ textAlign: "right", width: "100%", color: "#212121", fontSize: "11px" }}>{Number(row[field]) === 0 ? "-" : row[field].toLocaleString("en-IN")}</Typography>;
-            return <strong style={{ display: "block", width: "100%", textAlign: "right" }}>{Number(row[field]) === 0 ? "-" : row[field].toLocaleString("en-IN")}</strong>;
+            return <Typography style={{ display: "block", width: "100%", textAlign: "right",fontWeight:600 }}>{Number(row[field]) === 0 ? "-" : row[field].toLocaleString("en-IN")}</Typography>;
         }
 
         if (field === "base_data_stat" && stkGroup === 1 && row._rowType === "data") {
@@ -502,7 +502,7 @@ const SubmissionStatusTableComponent = ({
             return (
                 <Tooltip title="View Processed Data">
                     <a href={`/upload_closing/index/${btoa(1)}/${btoa(closeDate)}/${btoa(`${row.stk_id}|${row.stk_name}|${row.stk_code}|${row.ter_name}`)}/${btoa(row.process_stat)}/${btoa(2)}`} target="_blank" rel="noreferrer" style={{ display: "flex", justifyContent: "center" }}>
-                        <FaRegFileAlt style={{ color: "#0614ee", fontSize: 15 }} />
+                        <FaRegFileAlt style={{ color: "#407ba5", fontSize: 15 }} />
                     </a>
                 </Tooltip>
             );
@@ -549,7 +549,7 @@ const SubmissionStatusTableComponent = ({
                         )}
                         <Tooltip title="View Stock & Sales">
                             <a href={`/input/stock_sales/${btoa(closeDate)}/${btoa(row.stk_id)}/${btoa(1)}`} target="_blank" rel="noreferrer" style={{ display: "flex" }}>
-                                <FaRegFileAlt style={{ color: "#0614ee", fontSize: 15 }} />
+                                <FaRegFileAlt style={{ color:"#407ba5", fontSize: 15 }} />
                             </a>
                         </Tooltip>
                     </Box>

@@ -48,7 +48,7 @@ function Login() {
     open: false,
     mode: null, // "warning" | "expired"
     message: "",
-    pendingLogin: null, // holds { token } so we can proceed on "No" for warning mode
+    pendingLogin: null, // holds { type: "session", token } or { type: "otp", otpToken }
   });
   const [confirmingLogin, setConfirmingLogin] = useState(false);
 
@@ -132,7 +132,7 @@ function Login() {
               message:
                 data.message ||
                 "Your password will expire soon. Do you want to reset it now?",
-              pendingLogin: { token: data.token },
+              pendingLogin: { type: "session", token: data.token },
             });
             return;
           }
@@ -141,6 +141,17 @@ function Login() {
           localStorage.setItem("session-token", data.token || "");
           navigate("/dashboard");
         } else if (data.otp_verify) {
+          if (data.password_expiring_soon) {
+            setPwdDialog({
+              open: true,
+              mode: "warning",
+              message:
+                data.message ||
+                "Your password will expire soon. Do you want to reset it now?",
+              pendingLogin: { type: "otp", otpToken: data.otptoken },
+            });
+            return;
+          }
           toast.success("Please Enter assigned OTP");
           localStorage.setItem("otp-token", data.otptoken);
           navigate("/otp_validate");
@@ -170,13 +181,30 @@ function Login() {
 
   // 🔹 DIALOG HANDLERS
   const handleDialogResetNow = () => {
+    const pending = pwdDialog.pendingLogin;
     setPwdDialog((prev) => ({ ...prev, open: false }));
-    navigate("/passexpReset", { state: { identity: email } });
+    navigate("/passexpReset", {
+      state: {
+        identity: email,
+        otpToken: pending?.type === "otp" ? pending.otpToken : undefined,
+      },
+    });
   };
 
   const handleDialogContinue = async () => {
-    
-    const token = pwdDialog.pendingLogin?.token;
+    const pending = pwdDialog.pendingLogin;
+
+    // OTP flow: no session token yet, just go to the OTP page
+    if (pending?.type === "otp") {
+      localStorage.setItem("otp-token", pending.otpToken || "");
+      setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
+      toast.success("Please Enter assigned OTP");
+      navigate("/otp_validate");
+      return;
+    }
+
+    // Normal session flow
+    const token = pending?.token;
 
     if (token) {
       localStorage.setItem("session-token", token);
@@ -289,7 +317,7 @@ function Login() {
             message:
               data.message ||
               "Your password will expire soon. Do you want to reset it now?",
-            pendingLogin: { token: data.token },
+            pendingLogin: { type: "session", token: data.token },
           });
           return;
         }

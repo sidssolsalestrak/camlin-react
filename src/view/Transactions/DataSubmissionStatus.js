@@ -906,9 +906,9 @@ function DataSubmissionStatus() {
 
     // ─── Row style ────────────────────────────────────────────────────────────
     const rowStyle = useCallback((row) => {
-        if (row._rowType === "grand_total")   return { "& td": { backgroundColor: "#d0cece !important", fontWeight: 700 } };
-        if (row._rowType === "zone_subtotal") return { "& td": { backgroundColor: "#f0f0f0 !important", fontWeight: 600 } };
-        if (row._rowType === "reg_subtotal")  return { "& td": { backgroundColor: "#e9e3e3 !important", fontWeight: 550 } };
+        if (row._rowType === "grand_total")   return { "& td": { backgroundColor: "#e9e9e9 !important", fontWeight: 600 } };
+        if (row._rowType === "zone_subtotal") return { "& td": { backgroundColor: "#e9e9e9 !important", fontWeight: 600 } };
+        if (row._rowType === "reg_subtotal")  return { "& td": { backgroundColor: "#e9e9e9 !important", fontWeight: 600 } };
         return {};
     }, []);
 
@@ -1305,7 +1305,7 @@ function DataSubmissionStatus() {
                 </DialogTitle>
                 <Divider />
                 <DialogContent>
-                    <Grid container spacing={0.95}>
+                    <Grid container spacing={0.95} rowSpacing={2.5}>
 
                         <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                             <FormControl sx={{ width: "100%" }}>

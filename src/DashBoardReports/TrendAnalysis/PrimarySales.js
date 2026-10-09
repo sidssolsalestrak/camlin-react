@@ -733,7 +733,7 @@ function PrimarySales({ enType }) {
                     </DialogTitle>
                     <Divider />
                     <DialogContent>
-                        <Grid container spacing={0.95}>
+                        <Grid container spacing={0.95} rowSpacing={2.5}>
                             <Grid size={{ md: 4, lg: 3, xs: 12 }}>
                                 <FormControl sx={{ width: '100%' }}>
                                     <InputLabel id="zone">{masterPanel["ZONE"] || "Zone"}</InputLabel>
