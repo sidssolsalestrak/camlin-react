@@ -544,6 +544,7 @@ export default function Dashboard() {
   const handleJointWorkSaved = useCallback(async () => {
     console.log("joint work save is running", summaryModal)
     if (summaryModal.srId) {
+      setSummaryModal((prev) => ({ ...prev, loading: true }));
       const dt = summaryModal.dt || toDateValue;   // ← use the date the summary was opened with
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
@@ -564,6 +565,7 @@ export default function Dashboard() {
           userJoint: res.data?.userJoint || prev.userJoint,
         }));
       }
+      setSummaryModal((prev) => ({ ...prev, loading: false }));
     }
   }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
 
@@ -722,6 +724,7 @@ export default function Dashboard() {
 
   const handleMarketInputSaved = useCallback(async () => {
     if (summaryModal.srId) {
+      setSummaryModal((prev) => ({ ...prev, loading: true })); 
       const dt = summaryModal.dt || toDateValue;
       const res = await api.post("/dashboard/callSummaryDetails_new", {
         srID: summaryModal.srId,
@@ -743,6 +746,7 @@ export default function Dashboard() {
           getSamples: res.data?.getSamples || prev.getSamples,
         }));
       }
+      setSummaryModal((prev) => ({ ...prev, loading: false })); 
     }
   }, [summaryModal.srId, activityBreakUp, cusType, fromDateValue, toDateValue]);
 
@@ -1360,7 +1364,7 @@ export default function Dashboard() {
           </Box>
           <Divider />
 
-          {summaryModal.loading && summaryModal.activitySummary.length === 0 ? (
+          {summaryModal.loading  ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress />
             </Box>
