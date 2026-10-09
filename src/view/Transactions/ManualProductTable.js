@@ -56,11 +56,12 @@ const MapDot = React.memo(function MapDot({ row }) {
 });
 
 const QtyInput = React.memo(function QtyInput({ rowKey, value, onCommit }) {
-  const [local, setLocal] = useState(value === 0 ? "" : (value ?? ""));
+  const toStr = (v) => (v === 0 || v == null ? "" : String(v));
+  const [local, setLocal] = useState(toStr(value));
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    setLocal(value === 0 ? "" : (value ?? ""));
+    setLocal(toStr(value));
   }, [rowKey]);
 
   useEffect(() => () => {
@@ -88,12 +89,13 @@ const QtyInput = React.memo(function QtyInput({ rowKey, value, onCommit }) {
       onChange={handleChange}
       onBlur={handleBlur}
       inputProps={{
-        style: { textAlign: "center", fontSize: 13 },
+        style: { textAlign: "center", fontSize: 12 },
       }}
       sx={{
         "& .MuiOutlinedInput-root": {
-          fontSize: 13,
-          width: 110,
+          fontSize: 12,
+          width: 100,
+          height:23,
           mx: "auto",
         },
       }}
@@ -110,7 +112,7 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
           alignItems: "center",
           px: 2,
           mx: 1.5,
-          py: 0.75,
+          py: 0.3,
           backgroundColor: "#c0c0c0da",
           fontWeight: 600,
           fontSize: "0.88rem",
@@ -139,8 +141,8 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
           fontWeight: 600,
         }}
       >
-        <Box sx={{ flex: 1, fontSize: 13 }}>GRAND TOTAL (Qty)</Box>
-        <Box sx={{ width: QTY_COL_WIDTH, textAlign: "center", fontSize: 13 }}>
+        <Box sx={{ flex: 1, fontSize: 12 }}>GRAND TOTAL (Qty)</Box>
+        <Box sx={{ width: QTY_COL_WIDTH, textAlign: "center", fontSize: 12 }}>
           {row.prod_qty}
         </Box>
       </Box>
@@ -357,7 +359,7 @@ function ManualProductTable({
           alignItems: "center",
           px: 2,
           mx: 1.5,
-          py: "8px",
+          py:0.75,
           backgroundColor: "#F6F5F2",
           borderBottom: "1px solid rgba(0,0,0,0.08)",
         }}
@@ -386,9 +388,45 @@ function ManualProductTable({
                 All Products
               </Typography>
               <Switch
+                disableRipple
                 checked={tglVal === 1}
                 onChange={onToggleAll}
-                sx={{ transform: "scale(0.7)" }}
+                sx={{
+                  width: 29,
+                  height: 14,
+                  p: 0,
+                  mx: 0.75,
+                  overflow: "visible",
+                  "& .MuiSwitch-switchBase": {
+                    p: 0,
+                    top: 0,
+                    left: 0,
+                    color: "#9e9e9e",
+                    "&.Mui-checked": {
+                      transform: "translateX(15px)",
+                      color: "#1a73e8",
+                      "& + .MuiSwitch-track": {
+                        backgroundColor: "#a8c7fa",
+                        opacity: 1,
+                      },
+                    },
+                  },
+                  "& .MuiSwitch-thumb": {
+                    width: 14,
+                    height: 14,
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                  },
+                  "& .MuiSwitch-track": {
+                    position: "absolute",
+                    top: 2,
+                    left: 0,
+                    width: "100%",
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: "#cfcfcf",
+                    opacity: 1,
+                  },
+                }}
               />
               <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
                 with values

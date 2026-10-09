@@ -867,17 +867,19 @@ function UploadClosing() {
   };
 
   const handleQtyChange = (rowKey, val) => {
+    const clean = String(val ?? "").replace(/\D/g, "");
     setTableData((prev) =>
       prev.map((r) =>
-        r._rowKey === rowKey ? { ...r, prod_qty: val.replace(/\D/g, "") } : r,
+        r._rowKey === rowKey ? { ...r, prod_qty: clean } : r,
       ),
     );
   };
 
   const handleManualQtyChange = (rowKey, val) => {
+    const clean = String(val ?? "").replace(/\D/g, "");
     setTableData((prev) =>
       prev.map((r) =>
-        r._rowKey === rowKey ? { ...r, prod_qty: val.replace(/\D/g, "") } : r,
+        r._rowKey === rowKey ? { ...r, prod_qty: clean } : r,
       ),
     );
   };
@@ -1785,9 +1787,45 @@ function UploadClosing() {
                 All {masterPanel["PROD"] || "Product"}s
               </Typography>
               <Switch
-                size="small"
+                disableRipple
                 checked={tglVal === 1}
                 onChange={handleToggleAllProducts}
+                sx={{
+                  width: 29,
+                  height: 14,
+                  p: 0,
+                  mx: 0.75,
+                  overflow: "visible",
+                  "& .MuiSwitch-switchBase": {
+                    p: 0,
+                    top: 0,
+                    left: 0,
+                    color: "#9e9e9e",
+                    "&.Mui-checked": {
+                      transform: "translateX(15px)",
+                      color: "#1a73e8",
+                      "& + .MuiSwitch-track": {
+                        backgroundColor: "#a8c7fa",
+                        opacity: 1,
+                      },
+                    },
+                  },
+                  "& .MuiSwitch-thumb": {
+                    width: 14,
+                    height: 14,
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                  },
+                  "& .MuiSwitch-track": {
+                    position: "absolute",
+                    top: 2,
+                    left: 0,
+                    width: "100%",
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: "#cfcfcf",
+                    opacity: 1,
+                  },
+                }}
               />
               <Typography
                 variant="caption"
@@ -1819,7 +1857,7 @@ function UploadClosing() {
           return renderRowSkeleton(row);
         }
         return (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "0px" }}>
             <Box
               sx={{
                 display: "flex",
@@ -1834,7 +1872,7 @@ function UploadClosing() {
                   <IconButton
                     size="small"
                     onClick={() => handleOpenMapModal(row)}
-                    sx={{ color: "primary.main", p: "2px" }}
+                    sx={{ color: "primary.main", p: "0px" }}
                   >
                     <LinkIcon sx={{ fontSize: 14 }} />
                   </IconButton>
@@ -1860,7 +1898,7 @@ function UploadClosing() {
                 {row.prod_name}
               </Typography>
               {row.pn && (
-                <Checkbox size="small" defaultChecked sx={{ p: "2px" }} />
+                <Checkbox size="small" defaultChecked sx={{ p: 0}} />
               )}
             </Box>
             {!isApproved ? (
@@ -1893,7 +1931,7 @@ function UploadClosing() {
     {
       field: "prod_qty",
       headerName: "Closing Qty",
-      width: 200,
+      width: 120,
       textAlign: "center",
       renderHeader: () => (
         <Typography
@@ -1945,13 +1983,15 @@ function UploadClosing() {
             value={row.prod_qty ?? ""}
             onChange={(e) => handleQtyChange(row._rowKey, e.target.value)}
             inputProps={{
-              style: { textAlign: "center", fontSize: 13 },
+              style: { textAlign: "center", fontSize: 12 },
             }}
             error={row.qty_map_stat === 1}
             sx={{
               "& .MuiOutlinedInput-root": {
-                fontSize: 13,
+                fontSize: 12,
                 mx: "auto",
+                width: 100,
+                height:23,
               },
             }}
           />
@@ -1960,12 +2000,13 @@ function UploadClosing() {
             value={row.prod_qty}
             size="small"
             inputProps={{
-              style: { textAlign: "center", fontSize: 13 },
+              style: { textAlign: "center", fontSize: 12 },
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                fontSize: 13,
-                width: 110,
+                fontSize: 12,
+                width: 100,
+                height:23,
                 mx: "auto",
               },
             }}
@@ -1996,7 +2037,7 @@ function UploadClosing() {
                     size="small"
                     color="error"
                     onClick={handleDeleteSelected}
-                    sx={{ p: "2px" }}
+                    sx={{ p: 0,ml:3 }}
                   >
                     <FaTrashAlt size={16} />
                   </IconButton>
@@ -2006,7 +2047,7 @@ function UploadClosing() {
                     size="small"
                     checked={selectAll}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    sx={{ p: "2px" }}
+                    sx={{ p: 0 }}
                   />
                 </Tooltip>
               </Box>
@@ -2917,6 +2958,7 @@ function UploadClosing() {
                     "& .grand-total-row:hover": {
                       backgroundColor: "rgba(0,0,0,0.07) !important",
                     },
+                     "& thead th": { py: 0.7, lineHeight: 1.2 },
                   }}
                 />
               )}
