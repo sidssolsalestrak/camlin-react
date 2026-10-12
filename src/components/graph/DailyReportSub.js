@@ -11,7 +11,8 @@ const subHeader = { display: "flex", justifyContent: "space-between", p: 1 }
 
 const DailyReportSub = ({ month, zone_id, reg_id, area_id, state_id ,enabled = true}) => {
     const [data, setData] = useState([]);
-    const [loading, setloading] = useState(false);
+    const [loading, setloading] = useState(true);
+     const showLoader = loading || !enabled;
     const [hoveredBar, setHoveredBar] = useState(null);
     const [hiddenBars, setHiddenBars] = useState(new Set());
 
@@ -85,7 +86,7 @@ useEffect(() => {
                 </Box>
             </Box>
             <Box sx={{ width: '100%', height: 220 }}>
-                {loading ? (
+                {showLoader ? (
                     <Box sx={{
                         display: "flex",
                         justifyContent: "center",

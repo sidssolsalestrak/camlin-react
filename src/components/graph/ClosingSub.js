@@ -50,7 +50,8 @@ const CustomPieShape = (props) => {
 
 const ClosingSub = ({ month, zone_id, reg_id, area_id, state_id ,enabled = true, onDone}) => {
     const [summary, setSummary] = useState({ total: 0, received: 0, rateScore: 0 });
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+ const showLoader = loading || !enabled;
 
 const fetchData = async (signal) => {
     try {
@@ -122,7 +123,7 @@ useEffect(() => {
                 <Typography sx={subFont}><b>Rate Score :</b> {rateScore}%</Typography>
             </Box>
 
-            {loading ? (
+            {showLoader ? (
                 <Box sx={{
                     display: "flex",
                     justifyContent: "center",
@@ -201,7 +202,7 @@ useEffect(() => {
                     </Box>
                 </Box>
             )}
-            {!loading && (
+            {!showLoader && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, mt: -1 }}>
                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', background: '#1565C0' }} />
                     <Typography sx={{ fontSize: '13px' }}>Received</Typography>
