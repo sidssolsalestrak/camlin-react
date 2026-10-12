@@ -25,7 +25,7 @@ const subFont = { fontSize: "12px", fontWeight: "bold" }
 
 const SalesAnalysisBody = ({ formData, month }) => {
     const [tableData, setTableData] = useState([])
-    const [loading, setloading] = useState(false);
+    const [loading, setloading] = useState(true);
     const filterKey = [
         month ? dayjs(month).format("YYYY-MM") : "",
         formData.zone, formData.region, formData.area, formData.State,

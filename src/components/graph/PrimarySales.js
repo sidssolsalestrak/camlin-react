@@ -9,7 +9,8 @@ const subFont = { fontSize: "12px", fontWeight: "bold" }
 const subHeader = { display: "flex", justifyContent: "space-between", p: 1 }
 
 const PrimarySales = ({ month, formData,enabled = true, onDone  }) => {
-    const [loading, setloading] = useState(false);
+    const [loading, setloading] = useState(true);
+      const showLoader = loading || !enabled;
     const [data, setData] = useState([]);
 
     let totalSales = data.reduce((sum, d) => sum + parseFloat(d.sale_val), 0).toFixed(2)
@@ -70,7 +71,7 @@ useEffect(() => {
             </Box>
 
             <Box sx={{ width: '100%', height: 230 }}>
-                {loading ? (
+                {showLoader ? (
                     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200 }}>
                         <CircularProgress enableTrackSlot size={30} />
                     </Box>
