@@ -1,5 +1,5 @@
 import { Box, Grid, Typography } from '@mui/material'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DataTable from "../../utils/dataTable";
 import DailyReportSub from '../../components/graph/DailyReportSub';
 import dayjs from "dayjs";
@@ -31,20 +31,6 @@ const SalesAnalysisBody = ({ formData, month }) => {
         formData.zone, formData.region, formData.area, formData.State,
     ].join("|");
 
-    const keyRef = useRef(filterKey);
-    keyRef.current = filterKey;
-
-    const [done, setDone] = useState({ key: null });
-
-    const markDone = (key, name) => {
-        if (key !== keyRef.current) return; // ignore responses from old filters
-        setDone(prev => ({ ...(prev.key === key ? prev : { key }), [name]: true }));
-    };
-
-    const cur = done.key === filterKey ? done : {};
-    const canLoadGraph1 = !!(cur.g2 && cur.g4);
-    const canLoadGraph3 = !!cur.g1;
-
     const primary = tableData.reduce((sum, d) => sum + parseFloat(d.pur_val), 0).toFixed(2);
     const secondary = tableData.reduce((sum, d) => sum + parseFloat(d.sec_val), 0).toFixed(2);
     const closing = tableData.reduce((sum, d) => sum + parseFloat(d.cls_val), 0).toFixed(2);
@@ -69,7 +55,6 @@ const SalesAnalysisBody = ({ formData, month }) => {
         } finally {
             if (!signal.aborted) {
                 setloading(false)
-                markDone(filterKey, "g4")
             }
         }
     }
@@ -125,9 +110,7 @@ const SalesAnalysisBody = ({ formData, month }) => {
                 <Grid size={{ xs: 12, sm: 12, md: 4.7, lg: 4.7 }}>
                     <Box sx={subContainer}>
                         <Box>
-                            <PrimarySales month={month} formData={formData}
-                                enabled={canLoadGraph1}
-                                onDone={() => markDone(filterKey, "g1")} />
+                            <PrimarySales month={month} formData={formData} />
                         </Box>
                     </Box>
                 </Grid>
@@ -140,8 +123,7 @@ const SalesAnalysisBody = ({ formData, month }) => {
                                 reg_id={formData.region || 0}
                                 area_id={formData.area || 0}
                                 state_id={formData.State || 0}
-                                enabled={true}
-                                onDone={() => markDone(filterKey, "g2")} />
+                                 />
                         </Box>
                     </Box>
                 </Grid>
@@ -154,7 +136,7 @@ const SalesAnalysisBody = ({ formData, month }) => {
                                 reg_id={formData.region || 0}
                                 area_id={formData.area || 0}
                                 state_id={formData.State || 0}
-                                enabled={canLoadGraph3} />
+                                 />
                         </Box>
                     </Box>
                 </Grid>

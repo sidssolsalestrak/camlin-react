@@ -44,11 +44,19 @@ const SalesAnalysis = () => {
     usePageTitle("Sales Analysis")
 
     const handleChange = (name, val) => {
-        setFormData((prev) => ({
-            ...prev,
-            [name]: val
-        }))
-    }
+        setFormData((prev) => {
+            const next = { ...prev, [name]: val };
+
+            if (name === "zone") {
+                next.region = "0";
+                next.area = "0";
+            }
+            if (name === "region") {
+                next.area = "0";
+            }
+            return next;
+        });
+    };
     /*------------ get zone data ---------- */
     const fetchZone = async () => {
         try {
@@ -116,23 +124,21 @@ const SalesAnalysis = () => {
 
     // Zone changes → fetch regions
     useEffect(() => {
-        if (formData?.zone > 0) {
+        if (Number(formData.zone) > 0) {
             fetchRegion();
         } else {
-            setregionData([])
-            handleChange("region", "0")
+            setregionData([]);
         }
-    }, [formData?.zone]);
+    }, [formData.zone]);
 
     // Region changes
     useEffect(() => {
-        if (formData?.region > 0) {
+        if (Number(formData.region) > 0) {
             fetchArea();
         } else {
-            setarea([])
-            handleChange("area", "0")
+            setarea([]);
         }
-    }, [formData?.region]);
+    }, [formData.region]);
 
     return (
         <Layout breadcrumb={[
