@@ -13,6 +13,7 @@ import {
   PaginationItem,
   Stack,
 } from "@mui/material";
+import { TableVirtuoso } from "react-virtuoso";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
@@ -83,69 +84,70 @@ const QtyInput = React.memo(function QtyInput({ rowKey, value, onCommit }) {
   };
 
   return (
-    <TextField
-      size="small"
+    <input
       value={local}
       onChange={handleChange}
       onBlur={handleBlur}
-      inputProps={{
-        style: { textAlign: "center", fontSize: 12 },
-      }}
-      sx={{
-        "& .MuiOutlinedInput-root": {
-          fontSize: 12,
-          width: 100,
-          height:23,
-          mx: "auto",
-        },
+      style={{
+        width: 100,
+        height: 23,
+        boxSizing: "border-box",
+        textAlign: "center",
+        fontSize: 12,
+        fontFamily: "inherit",
+        border: "1px solid rgba(0,0,0,0.23)",
+        borderRadius: 4,
+        padding: "0 8px",
+        background: "transparent",
       }}
     />
   );
 });
 
 const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
+  if (row._rowType === "message") {
+    return (
+      <td colSpan={3} style={{ padding: 32, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          {row.text}
+        </Typography>
+      </td>
+    );
+  }
+
   if (row._rowType === "cat_header") {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          mx: 1.5,
-          py: 0.3,
+      <td
+        colSpan={3}
+        style={{
+          padding: "2px 28px 2px 68px",
           backgroundColor: "#c0c0c0da",
           fontWeight: 600,
           fontSize: "0.88rem",
-          gap: 1,
         }}
       >
-        <Box sx={{ width: 40, flexShrink: 0 }} />
-        <Box sx={{ flex: 1 }}>{row.cat_name}</Box>
-        <Box sx={{ width: QTY_COL_WIDTH, flexShrink: 0 }} />
-      </Box>
+        {row.cat_name}
+      </td>
     );
   }
 
   if (row._isGrandTotal) {
+    const style = {
+      padding: "6px 8px",
+      borderTop: "2px solid rgba(0,0,0,0.12)",
+      backgroundColor: "rgba(0,0,0,0.04)",
+      fontWeight: 600,
+      fontSize: 12,
+    };
     return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          mx: 1.5,
-          py: 0.75,
-          borderTop: "2px solid",
-          borderColor: "divider",
-          backgroundColor: "rgba(0,0,0,0.04)",
-          fontWeight: 600,
-        }}
-      >
-        <Box sx={{ flex: 1, fontSize: 12 }}>GRAND TOTAL (Qty)</Box>
-        <Box sx={{ width: QTY_COL_WIDTH, textAlign: "center", fontSize: 12 }}>
+      <>
+        <td colSpan={2} style={{ ...style, paddingLeft: 28 }}>
+          GRAND TOTAL (Qty)
+        </td>
+        <td style={{ ...style, paddingRight: 28, textAlign: "center" }}>
           {row.prod_qty}
-        </Box>
-      </Box>
+        </td>
+      </>
     );
   }
 
@@ -153,45 +155,116 @@ const ProductRow = React.memo(function ProductRow({ row, onCommitQty }) {
     row.prod_code ? `| ${row.prod_code}` : ""
   } | ${row.prod_name || ""}`;
 
+  const cell = {
+    padding: "6px 8px",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    verticalAlign: "middle",
+  };
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        px: 2,
-        mx: 1.5,
-        py: 0.75,
-        gap: 1,
-        borderBottom: "1px solid rgba(0,0,0,0.08)",
-        "&:hover": { backgroundColor: "#FAFAF8" },
-      }}
-    >
-      <Box sx={{ width: 40, flexShrink: 0 }}>
+    <>
+      <td style={{ ...cell, paddingLeft: 28 }}>
         <Typography variant="caption" color="text.secondary">
           {row._sl}
         </Typography>
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 1 }}>
-        <MapDot row={row} />
-        <Typography
-          variant="body2"
-          noWrap
-          title={label}
-          sx={{ fontSize: 12, color: "#343A40" }}
-        >
-          {label}
-        </Typography>
-      </Box>
-      <Box sx={{ width: QTY_COL_WIDTH, flexShrink: 0, textAlign: "center" }}>
+      </td>
+      <td style={{ ...cell, overflow: "hidden" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+          <MapDot row={row} />
+          <Typography
+            variant="body2"
+            noWrap
+            title={label}
+            sx={{ fontSize: 12, color: "#343A40", minWidth: 0 }}
+          >
+            {label}
+          </Typography>
+        </Box>
+      </td>
+      <td style={{ ...cell, paddingRight: 28, textAlign: "center" }}>
         <QtyInput
           rowKey={row._rowKey}
           value={row.prod_qty}
           onCommit={onCommitQty}
         />
-      </Box>
-    </Box>
+      </td>
+    </>
   );
 });
+
+const VirtuosoScroller = React.forwardRef(function VirtuosoScroller(props, ref) {
+  return (
+    <Box
+      {...props}
+      ref={ref}
+      sx={{
+        overflowX: "hidden",
+        scrollbarWidth: "thin",
+        scrollbarColor: "#c1c1c1 #f1f1f1",
+        "&::-webkit-scrollbar": { width: 6, height: 6 },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor: "#f1f1f1",
+          borderRadius: 8,
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: "#c1c1c1",
+          borderRadius: 8,
+        },
+        "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#a8a8a8" },
+      }}
+    />
+  );
+});
+
+const VirtuosoTable = React.forwardRef(function VirtuosoTable(
+  { children, style, ...props },
+  ref,
+) {
+  return (
+    <table
+      ref={ref}
+      {...props}
+      style={{
+        ...style,
+        width: "100%",
+        tableLayout: "fixed",
+        borderCollapse: "separate",
+        borderSpacing: 0,
+      }}
+    >
+      <colgroup>
+        <col style={{ width: 68 }} />
+        <col />
+        <col style={{ width: QTY_COL_WIDTH + 28 }} />
+      </colgroup>
+      {children}
+    </table>
+  );
+});
+
+const VirtuosoTableRow = React.forwardRef(function VirtuosoTableRow(
+  { item, context, ...props },
+  ref,
+) {
+  const plain =
+    item._rowType === "message" ||
+    item._rowType === "cat_header" ||
+    item._isGrandTotal;
+  return (
+    <Box
+      component="tr"
+      ref={ref}
+      {...props}
+      sx={plain ? {} : { "&:hover": { backgroundColor: "#FAFAF8" } }}
+    />
+  );
+});
+
+const virtuosoComponents = {
+  Scroller: VirtuosoScroller,
+  Table: VirtuosoTable,
+  TableRow: VirtuosoTableRow,
+};
 
 function ManualProductTable({
   rows,
@@ -203,22 +276,26 @@ function ManualProductTable({
   defaultPageSize = 50,
   pageSizeOptions = pageSizeOptionsDefault,
   showToggle = true,
+  maxHeight = "calc(100vh - 280px)",
 }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
+  const virtuosoRef = useRef(null);
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows;
     const term = search.toLowerCase().trim();
 
-    const matched = rows.filter((r) => {
-      if (r._rowType === "cat_header" || r._isGrandTotal) return false;
-      const hay = `${r.prod_code ?? ""} ${r.prod_name ?? ""} ${
-        r.cat_code_1 ?? ""
-      }`.toLowerCase();
-      return hay.includes(term);
-    });
+    const matched = new Set(
+      rows.filter((r) => {
+        if (r._rowType === "cat_header" || r._isGrandTotal) return false;
+        const hay = `${r.prod_code ?? ""} ${r.prod_name ?? ""} ${
+          r.cat_code_1 ?? ""
+        }`.toLowerCase();
+        return hay.includes(term);
+      }),
+    );
 
     const result = [];
     let lastCat = null;
@@ -229,13 +306,11 @@ function ManualProductTable({
         return;
       }
       if (r._isGrandTotal) {
-        if (matched.length > 0) result.push(r);
+        if (matched.size > 0) result.push(r);
         return;
       }
-      if (matched.includes(r)) {
-        if (lastCat && !result.includes(lastCat)) {
-          result.push(lastCat);
-        }
+      if (matched.has(r)) {
+        if (lastCat) result.push(lastCat);
         result.push(r);
         lastCat = null;
       }
@@ -248,10 +323,42 @@ function ManualProductTable({
     setPage(0);
   }, [rows.length, search]);
 
+  useEffect(() => {
+    if (virtuosoRef.current) virtuosoRef.current.scrollTo({ top: 0 });
+  }, [page, rowsPerPage]);
+
   const paginatedRows = useMemo(() => {
     const start = page * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
   }, [filteredRows, page, rowsPerPage]);
+
+  const tableData = useMemo(() => {
+    if (loading) {
+      return [{ _rowKey: "__loading", _rowType: "message", text: "Loading…" }];
+    }
+    if (paginatedRows.length === 0) {
+      return [
+        {
+          _rowKey: "__empty",
+          _rowType: "message",
+          text: search ? "No matching records found" : "No data available",
+        },
+      ];
+    }
+    return paginatedRows;
+  }, [loading, paginatedRows, search]);
+
+  const entryInfo = useMemo(() => {
+    const isEntry = (r) => r._rowType !== "cat_header" && !r._isGrandTotal;
+    const total = filteredRows.filter(isEntry).length;
+    const before = filteredRows.slice(0, page * rowsPerPage).filter(isEntry).length;
+    const inPage = paginatedRows.filter(isEntry).length;
+    return {
+      total,
+      from: inPage > 0 ? before + 1 : before,
+      to: before + inPage,
+    };
+  }, [filteredRows, paginatedRows, page, rowsPerPage]);
 
   const handleCommitQty = useCallback(
     (rowKey, value) => onQtyChange(rowKey, value),
@@ -260,6 +367,14 @@ function ManualProductTable({
 
   const prodLabel = masterPanel["PROD"] || "Product";
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+  const headStyle = {
+    padding: "6px 8px",
+    backgroundColor: "#F6F5F2",
+    borderBottom: "1px solid rgba(0,0,0,0.08)",
+    fontWeight: 400,
+    textAlign: "left",
+  };
 
   return (
     <Paper
@@ -273,7 +388,7 @@ function ManualProductTable({
       <Box
         sx={{
           p: "10px 0px",
-          mx: 1.5,
+          px: 1.5,
           borderBottom: "1px solid",
           borderColor: "divider",
           display: "flex",
@@ -316,11 +431,8 @@ function ManualProductTable({
             whiteSpace: "nowrap",
           }}
         >
-          {filteredRows.length > 0
-            ? `Showing ${page * rowsPerPage + 1} to ${Math.min(
-                (page + 1) * rowsPerPage,
-                filteredRows.length,
-              )} of ${filteredRows.length.toLocaleString()} entries`
+          {entryInfo.total > 0
+            ? `Showing ${entryInfo.from} to ${entryInfo.to} of ${entryInfo.total.toLocaleString()} entries`
             : "Showing 0 to 0 of 0 entries"}
         </Typography>
 
@@ -353,124 +465,104 @@ function ManualProductTable({
         />
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          mx: 1.5,
-          py:0.75,
-          backgroundColor: "#F6F5F2",
-          borderBottom: "1px solid rgba(0,0,0,0.08)",
-        }}
-      >
-        <Box sx={{ width: 40, flexShrink: 0 }}>
-          <Typography sx={{ fontSize: 11, textTransform: "uppercase", color: "#A09D97" }}>
-            #
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 1,
-            minWidth: 0,
-          }}
-        >
-          <Typography sx={{ fontSize: 11, textTransform: "uppercase", color: "#A09D97" }}>
-            {prodLabel} Name
-          </Typography>
-          {showToggle && (
-            <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-              <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
-                All Products
+      <TableVirtuoso
+        ref={virtuosoRef}
+        style={{ height: maxHeight }}
+        data={tableData}
+        components={virtuosoComponents}
+        computeItemKey={(_, row) => row._rowKey}
+        increaseViewportBy={400}
+        fixedHeaderContent={() => (
+          <tr>
+            <th style={{ ...headStyle, paddingLeft: 28 }}>
+              <Typography sx={{ fontSize: 11, textTransform: "uppercase", color: "#A09D97" }}>
+                #
               </Typography>
-              <Switch
-                disableRipple
-                checked={tglVal === 1}
-                onChange={onToggleAll}
+            </th>
+            <th style={headStyle}>
+              <Box
                 sx={{
-                  width: 29,
-                  height: 14,
-                  p: 0,
-                  mx: 0.75,
-                  overflow: "visible",
-                  "& .MuiSwitch-switchBase": {
-                    p: 0,
-                    top: 0,
-                    left: 0,
-                    color: "#9e9e9e",
-                    "&.Mui-checked": {
-                      transform: "translateX(15px)",
-                      color: "#1a73e8",
-                      "& + .MuiSwitch-track": {
-                        backgroundColor: "#a8c7fa",
-                        opacity: 1,
-                      },
-                    },
-                  },
-                  "& .MuiSwitch-thumb": {
-                    width: 14,
-                    height: 14,
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                  },
-                  "& .MuiSwitch-track": {
-                    position: "absolute",
-                    top: 2,
-                    left: 0,
-                    width: "100%",
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: "#cfcfcf",
-                    opacity: 1,
-                  },
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  minWidth: 0,
                 }}
-              />
-              <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
-                with values
+              >
+                <Typography sx={{ fontSize: 11, textTransform: "uppercase", color: "#A09D97" }}>
+                  {prodLabel} Name
+                </Typography>
+                {showToggle && (
+                  <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
+                      All Products
+                    </Typography>
+                    <Switch
+                      disableRipple
+                      checked={tglVal === 1}
+                      onChange={onToggleAll}
+                      sx={{
+                        width: 29,
+                        height: 14,
+                        p: 0,
+                        mx: 0.75,
+                        overflow: "visible",
+                        "& .MuiSwitch-switchBase": {
+                          p: 0,
+                          top: 0,
+                          left: 0,
+                          color: "#9e9e9e",
+                          "&.Mui-checked": {
+                            transform: "translateX(15px)",
+                            color: "#1a73e8",
+                            "& + .MuiSwitch-track": {
+                              backgroundColor: "#a8c7fa",
+                              opacity: 1,
+                            },
+                          },
+                        },
+                        "& .MuiSwitch-thumb": {
+                          width: 14,
+                          height: 14,
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                        },
+                        "& .MuiSwitch-track": {
+                          position: "absolute",
+                          top: 2,
+                          left: 0,
+                          width: "100%",
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: "#cfcfcf",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                    <Typography sx={{ fontSize: 12, color: "#A09D97", whiteSpace: "nowrap" }}>
+                      with values
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </th>
+            <th style={{ ...headStyle, paddingRight: 28, textAlign: "center" }}>
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  color: "#A09D97",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Closing Qty
               </Typography>
-            </Box>
-          )}
-        </Box>
-        <Box sx={{ width: QTY_COL_WIDTH, flexShrink: 0, textAlign: "center" }}>
-          <Typography
-            sx={{
-              fontSize: 11,
-              textTransform: "uppercase",
-              color: "#A09D97",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Closing Qty
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box>
-        {loading ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              Loading…
-            </Typography>
-          </Box>
-        ) : paginatedRows.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              {search ? "No matching records found" : "No data available"}
-            </Typography>
-          </Box>
-        ) : (
-          paginatedRows.map((row) => (
-            <ProductRow
-              key={row._rowKey}
-              row={row}
-              onCommitQty={handleCommitQty}
-            />
-          ))
+            </th>
+          </tr>
         )}
-      </Box>
+        itemContent={(_, row) => (
+          <ProductRow row={row} onCommitQty={handleCommitQty} />
+        )}
+      />
 
       <Box
         sx={{
