@@ -2702,6 +2702,7 @@ function UploadClosing() {
               loading={loading}
               pagination={false}
               searchable={false}
+              stickyHeader={true}
             />
           </Paper>
         )}
@@ -2935,6 +2936,7 @@ function UploadClosing() {
                   loading={loading}
                   editable={manualMode || canEditQty}
                   showToggle={manualMode || isApproved}
+                  defaultPageSize={500}
                 />
               ) : (
                 <DataTable
@@ -2942,9 +2944,10 @@ function UploadClosing() {
                   data={groupedRows}
                   loading={loading}
                   pagination={true}
-                  defaultPageSize={100}
+                  defaultPageSize={500}
                   getRowId={(row) => row._rowKey}
                   rowStyle={rowStyle}
+                  stickyHeader={true}
                   getRowClassName={(params) =>
                     params.row._isGrandTotal ? "grand-total-row" : ""
                   }
