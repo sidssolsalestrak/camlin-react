@@ -843,18 +843,33 @@ const onUpdateClick = () => {
   const handleRepChange = async (idx, repId, isPos = false) => {
     const updated = clinics.map((c, i) => {
       if (i !== idx) return c;
-      return { ...c, [isPos ? "repInchargePOS" : "repIncharge"]: repId };
+      return {
+        ...c,
+        [isPos ? "repInchargePOS" : "repIncharge"]: repId,
+        stkId: "0",          // ← reset distributor
+        beat: "",            // ← reset beat immediately (don't wait for API)
+        beatOptions: [],
+      };
     });
 
-    // ── clear the mandatory error as soon as a value is picked ──
-    setFieldErrors((prev) => ({ ...prev, repIncharge: "" }));
+    // clear mandatory errors tied to the reset fields
+    setFieldErrors((prev) => ({ ...prev, repIncharge: "", stkId: "", beat: "" }));
+
+    // show the reset state right away, so the UI doesn't lag behind the API call
+    setClinics(updated);
 
     try {
       const res = await api.post("/getClinicBeat", { repInchargeId: repId });
-      const opts = (Array.isArray(res.data.data.beats) ? res.data.data.beats : []).map((i) => ({ ...i, id: String(i.id) }));
-      updated[idx] = { ...updated[idx], beatOptions: opts, beat: "" };
-    } catch (err) { console.error(err); }
-    setClinics(updated);
+      const opts = (Array.isArray(res.data.data.beats) ? res.data.data.beats : [])
+        .map((i) => ({ ...i, id: String(i.id) }));
+
+      // use functional update so we don't overwrite with a stale `updated`
+      setClinics((prev) =>
+        prev.map((c, i) => (i === idx ? { ...c, beatOptions: opts, beat: "" } : c))
+      );
+    } catch (err) {
+      console.error(err);
+    }
 };
 
   const fetchAccountOwner = async () => {
