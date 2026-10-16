@@ -710,6 +710,7 @@ const onUpdateClick = () => {
         repInchargePOS: "0",
         beat: "",
         beatOptions: [],
+        stkId: "0",
       }))
     );
 
