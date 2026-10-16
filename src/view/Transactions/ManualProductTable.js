@@ -24,6 +24,11 @@ const pageSizeOptionsDefault = [25, 50, 100, 200, 500];
 
 const QTY_COL_WIDTH = 260;
 
+// Extra px added to the measured height. Virtuoso already includes the fixed
+// header in totalListHeightChanged, so this stays 0. Raise by a few px only
+// if the last row ever gets clipped.
+const HEADER_HEIGHT = 0;
+
 const MAP_COLORS = {
   mapped: "#16a34a",
   semi: "#f97316",
@@ -281,7 +286,10 @@ function ManualProductTable({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultPageSize);
+  const [contentHeight, setContentHeight] = useState(null);
   const virtuosoRef = useRef(null);
+
+  const handleHeightChange = useCallback((h) => setContentHeight(h), []);
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows;
@@ -367,6 +375,13 @@ function ManualProductTable({
 
   const prodLabel = masterPanel["PROD"] || "Product";
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+  // Start at maxHeight so Virtuoso renders rows and can report their height,
+  // then shrink to fit the content (capped at maxHeight).
+  const tableHeight =
+    contentHeight == null
+      ? maxHeight
+      : `min(${contentHeight + HEADER_HEIGHT}px, ${maxHeight})`;
 
   const headStyle = {
     padding: "6px 8px",
@@ -467,7 +482,8 @@ function ManualProductTable({
 
       <TableVirtuoso
         ref={virtuosoRef}
-        style={{ height: maxHeight }}
+        style={{ height: tableHeight }}
+        totalListHeightChanged={handleHeightChange}
         data={tableData}
         components={virtuosoComponents}
         computeItemKey={(_, row) => row._rowKey}

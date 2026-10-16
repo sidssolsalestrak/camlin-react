@@ -166,7 +166,7 @@ const SubmissionStatusTableComponent = ({
             if (terGroup === 1) {
                 cols.push({ field: "ter_name", headerName: masterPanel["TERR"] || "Territory", width: 120 });
             }
-            cols.push({ field: "close_date", headerName: "Month", width: 65 });
+            cols.push({ field: "close_date", headerName: "Month", width: 68 });
             cols.push({ field: "stk_code", headerName: "Code", width: 65 });
             cols.push({ field: "stk_name", headerName: `${masterPanel["STKS"] || "Distributor"} Name`, width: 150 });
         } else {
