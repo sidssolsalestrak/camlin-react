@@ -55,7 +55,7 @@ function OtpTwoStepValidate() {
                 localStorage.setItem("session-token", data.token);
                 localStorage.removeItem("otp-token");
                 toast.success("Login Successful");
-                navigate("/dashboard", { replace: true });
+                navigate("/reports/sec_sales_data", { replace: true });
             } else {
                 toast.error(data.message || "Invalid OTP");
             }

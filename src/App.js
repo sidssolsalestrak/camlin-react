@@ -121,7 +121,7 @@ function App() {
   const rawMenuUrls = localStorage.getItem("menu_urls");
   const menuUrls = rawMenuUrls ? JSON.parse(rawMenuUrls) : [];
 
-  const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview"];
+  const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview", "/reports/sec_sales_data", ];
   const currentPath = location.pathname;
 
   const isAllowed =
