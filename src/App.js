@@ -187,7 +187,7 @@ function App() {
     const token = localStorage.getItem("session-token");
     console.log("public token", token);
 
-    return token ? <Navigate to="/reports/sec_sales_data" replace /> : <Outlet />;
+    return token ? <Navigate to="/dashboard" replace /> : <Outlet />;
   };
 
   return (
