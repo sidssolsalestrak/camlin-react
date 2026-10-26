@@ -96,7 +96,7 @@ function Login() {
       const res = await api.get(`/checkQrSession/${sessionId}`);
       if (res.data.status === "authenticated") {
         localStorage.setItem("session-token", res.data.token);
-        navigate("/dashboard");
+        navigate("/reports/sec_sales_data");
       }
     }, 2000);
 
@@ -139,7 +139,7 @@ function Login() {
 
           toast.success("Login Successful");
           localStorage.setItem("session-token", data.token || "");
-          navigate("/dashboard");
+          navigate("/reports/sec_sales_data");
         } else if (data.otp_verify) {
           if (data.password_expiring_soon) {
             setPwdDialog({
@@ -156,7 +156,7 @@ function Login() {
           localStorage.setItem("otp-token", data.otptoken);
           navigate("/otp_validate");
         } else {
-          navigate("/dashboard");
+          navigate("/reports/sec_sales_data");
         }
       } else {
         // 🔹 HARD EXPIRED — no "No" option, must reset
@@ -223,7 +223,7 @@ function Login() {
 
     setPwdDialog({ open: false, mode: null, message: "", pendingLogin: null });
     toast.success("Login Successful");
-    navigate("/dashboard");
+    navigate("/reports/sec_sales_data");
   };
 
   const handleForgotSubmit = async () => {
@@ -323,7 +323,7 @@ function Login() {
         }
 
         localStorage.setItem("session-token", data.token);
-        navigate("/dashboard");
+        navigate("/reports/sec_sales_data");
         return;
       }
 

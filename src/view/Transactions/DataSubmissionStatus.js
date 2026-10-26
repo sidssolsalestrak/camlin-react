@@ -677,6 +677,11 @@ function DataSubmissionStatus() {
         }
     };
 
+    useEffect(() => {
+  handleLoad();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
     // ─── Filter dialog apply ──────────────────────────────────────────────────
     const handleApply = () => {
         setFiltersOpen(false);
