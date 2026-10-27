@@ -7,7 +7,8 @@ import OtherDetails from './OtherDetails';
 import { ImDownload3 } from "react-icons/im";
 import useToast from "../../../utils/useToast";
 import ConfirmationDialog from "../../../utils/confirmDialog";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { getMasterPanel } from "../../../services/masterPanelService";
 
 const boxStyle = { border: 1, borderColor: "divider", borderRadius: "5px", minHeight: "20vh", p: 1 }
 
@@ -18,35 +19,70 @@ const INITIAL_FORM_STATE = {
     userID: "", password: "", confirmPassword: "", blockStatus: "0",
     //other Details
     zone: "", region: "", area: "", teritory: "", user: [], supplied_Type: "", supplied_By: "", state: "",
-    city: "", category: "", matrixGroup: "",
+    city: "", cityName: "", category: "", matrixGroup: "",
 };
 
 const AddStockist = () => {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const showAlert = useToast();
     const [loading, setloading] = useState(false);
     const [formData, setFormData] = useState(INITIAL_FORM_STATE)
     const [defaultUserId, setDefaultUserId] = useState(null);
+    const [masterPanel, setMasterPanel] = useState({});
+    const [accStat, setAccStat] = useState(null);
+
+    // label derived from masterPanel with fallback
+    const stkLabel = masterPanel["STKS"] || "Stockist";
+    const userLabel = masterPanel["USER"] || "Users";
+    const zoneLabel = masterPanel["ZONE"] || "Zone";
+    const regionLabel = masterPanel["REGN"] || "Region";
+    const areaLabel = masterPanel["AREA"] || "Area";
+    const territoryLabel = masterPanel["TERR"] || "Territory";
+
+    useEffect(() => {
+        const loadMasterPanel = async () => {
+            const data = await getMasterPanel();
+            setMasterPanel(data);
+        };
+        loadMasterPanel();
+    }, []);
+
+    useEffect(() => {
+        const resolveAccStat = async () => {
+            try {
+                const res = await axios.post("/getAccStat", {
+                    menu_url: "masters/stockist",
+                });
+
+                const stat = res.data?.data?.acc_stat;
+                if (stat !== null && stat !== undefined) {
+                    localStorage.setItem("acc_stat", stat);
+                    setAccStat(String(stat));
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        resolveAccStat();
+    }, []);
+
     /*---------- original cat code and name for edit---------*/
     const [original, setoriginal] = useState({
-        userID: "",
+        ...INITIAL_FORM_STATE,
         password: "",
     })
     const [errors, setErrors] = useState({});
     /*---------- decode params ---------*/
     const decodedId = id ? atob(id) : null;
+    const isReactivate = searchParams.get('reactivate') === '1';
 
     /*------------ handle form change ------------*/
     const handleChangeForm = (field, value) => {
-        // Regex: allows only alphabets and numbers
-        const regex = /^[a-zA-Z]*$/;
         //allow only numbers
         const numRegex = /^[0-9]*$/;
-
-        if (field === "name") {
-            if (!regex.test(value)) return; // stop if special char entered
-        }
 
         //allow only numbers
         if (["pin", "phone", "mobile"].includes(field)) {
@@ -59,7 +95,9 @@ const AddStockist = () => {
         }))
 
         // Clear error for this field on change
-        if (errors[field]) {
+        const hasValue = typeof value === "string" ? value.trim() !== "" : Array.isArray(value) ? value.length > 0 : !!value;
+
+        if (errors[field] && hasValue) {
             setErrors((prev) => ({
                 ...prev,
                 [field]: ""
@@ -100,9 +138,11 @@ const AddStockist = () => {
             return;
         }
         showConfirmationDialog({
-            title: `${decodedId ? "Edit" : "Add"} Stockist`,
-            message: `Are you sure you want to ${decodedId ? "Edit" : "Add"} this Stockist?`,
-            confirmText: decodedId ? "Update" : "Add",
+            title: isReactivate ? `Reactivate ${stkLabel}` : `${decodedId ? "Edit" : "Add"} ${stkLabel}`,
+            message: isReactivate
+                ? `Are you sure you want to reactivate this ${stkLabel}?`
+                : `Are you sure you want to ${decodedId ? "Edit" : "Add"} this record?`,
+            confirmText: isReactivate ? "Reactivate" : (decodedId ? "Update" : "Add"),
             confirmColor: "primary",
             onConfirm: () => !decodedId ? handleFormSubmit() : onEdit(),
         });
@@ -125,7 +165,7 @@ const AddStockist = () => {
                 console.log(error);
             }
 
-            setFormData({
+            const editData = {
                 type: data.stk_type_id || "",
                 code: data.stk_code || "",
                 name: data.stk_name || "",
@@ -137,6 +177,7 @@ const AddStockist = () => {
                 email: data.stk_email || "",
                 state: data.state_id || "",
                 city: data.city_id || "",
+                cityName: data.city_name || "",
                 category: data.stk_cat_id || "",
                 matrixGroup: data.stk_matrix_id || "",
                 zone: data.zone_id || "",
@@ -147,14 +188,19 @@ const AddStockist = () => {
                 supplied_By: data.sup_id || "",
                 supplied_Type: data.sup_type_id || "",
                 blockStatus: String(data.stk_stat) || "",
+            };
+
+            setFormData({
+                ...editData,
                 password: "",
                 confirmPassword: "",
                 user: [],
             });
 
             setoriginal({
-                userID: data.stk_login || "",
-                password: data.stk_pwd || "",
+                ...editData,
+                password: data.stk_pwd || "",   // real stored password, for the "did they type a new one" check
+                user: [],                        // placeholder; reconciled once defaultUserId resolves (see step 4)
             });
 
         } catch (error) {
@@ -167,50 +213,52 @@ const AddStockist = () => {
     const validateForm = () => {
         const newErrors = {};
         const validateEmail = (value) => {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(value);
         };
+
         const validateUser = (value) => {
             const regex = /^[a-zA-Z0-9_]*$/;
             return regex.test(value);
         };
+
         const validatePassword = (value) => {
-            const regex = /^[^\s]{8,}$/;
+            const regex = /^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}$/;
             return regex.test(value);
         };
 
         // StockDetails validation
-        if (!formData.type) newErrors.type = "Type is required";
-        if (!formData.name) newErrors.name = "Name is required";
+        if (!formData.type) newErrors.type = "The Type field is required.";
+        if (!formData.code || formData.code.trim() === "") newErrors.code = `${stkLabel} Code is required`;
+        if (!formData.name || formData.name.trim() === "") newErrors.name = `The ${stkLabel} Name field is required.`;
 
-        if (!formData.email) newErrors.email = "Email is required";
+        if (!formData.email || formData.email.trim() === "") newErrors.email = "The Email field is required.";
         else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
 
-        if (!formData.mobile) newErrors.mobile = "Mobile No is required";
+        if (!formData.mobile) newErrors.mobile = "The Mobile No field is required.";
         else if (formData.mobile.length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
 
         // SalestrakCredential validation
-        if (!formData.userID) newErrors.userID = "User ID is required";
-        else if (!validateUser(formData.userID)) newErrors.userID = "Invalid User Name";
+        if (!formData.userID || formData.userID.trim() === "") newErrors.userID = `The ${userLabel} ID field is required.`;
 
         if (!original.password) {
-            if (!formData.password) newErrors.password = "Password is required";
-            else if (!validatePassword(formData.password)) newErrors.password = "Should be Min 8 Characters";
+            if (!formData.password) newErrors.password = "The Password field is required.";
+            else if (!validatePassword(formData.password)) newErrors.password = "Min 8 chars, 2 lowercase, 2 uppercase, 1 digit, 1 special character";
 
-            if (!formData.confirmPassword) newErrors.confirmPassword = "Confirm Password is required";
+            if (!formData.confirmPassword) newErrors.confirmPassword = "The Confirm Password field is required.";
             else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Password didn't Match";
         }
 
         // OtherDetails validation
-        if (!formData.zone) newErrors.zone = "Zone is required";
-        if (!formData.region) newErrors.region = "Region is required";
-        if (!formData.area) newErrors.area = "Area is required";
-        if (!formData.teritory) newErrors.teritory = "Territory is required";
-        if (!formData.user.length > 0) newErrors.user = "User is required";
-        if (!formData.supplied_Type) newErrors.supplied_Type = "Supplied Type is required";
-        if (!formData.supplied_By) newErrors.supplied_By = "Supplied By is required";
-        if (!formData.state) newErrors.state = "State is required";
-        if (!formData.city) newErrors.city = "City is required";
+        if (!formData.zone) newErrors.zone = `The ${zoneLabel} field is required.`;
+        if (!formData.region) newErrors.region = `The ${regionLabel} field is required.`;
+        if (!formData.area) newErrors.area = `The ${areaLabel} field is required.`;
+        if (!formData.teritory) newErrors.teritory = `The ${territoryLabel} field is required.`;
+        if (!formData.user.length > 0) newErrors.user = `The ${userLabel} field is required.`;
+        if (!formData.supplied_Type) newErrors.supplied_Type = "The Supplied Type field is required.";
+        if (!formData.supplied_By) newErrors.supplied_By = "The Supplied By field is required.";
+        if (!formData.state) newErrors.state = "The State field is required.";
+        if (!formData.city) newErrors.city = "The City field is required.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -219,31 +267,32 @@ const AddStockist = () => {
     /*------------ payload for submit and edit ------------*/
     let payload = {
         stk_type_id: formData.type,
-        stk_code: formData.code || 0,
-        stk_name: formData.name,
-        stk_add: formData.Address,
-        stk_cont: formData.contactPerson,
-        stk_pin: formData.pin || 0,
-        stk_tel: formData.phone || 0,
-        stk_mob: formData.mobile,
-        stk_email: formData.email,
+        stk_code: (formData.code || "").toString().trim() || 0,
+        stk_name: (formData.name || "").trim(),
+        stk_add: (formData.Address || "").trim(),
+        stk_cont: (formData.contactPerson || "").trim(),
+        stk_pin: (formData.pin || "").toString().trim() || 0,
+        stk_tel: (formData.phone || "").toString().trim() || 0,
+        stk_mob: (formData.mobile || "").toString().trim(),
+        stk_email: (formData.email || "").trim(),
         state_id: formData.state,
         city_id: formData.city,
-        //city_name,
+        city_name: formData.cityName || "",
         stk_cat_id: formData.category || 0,
         stk_matrix_id: formData.matrixGroup || 0,
         zone_id: formData.zone,
         reg_id: formData.region,
         area_id: formData.area,
         ter_id: formData.teritory,
-        stk_login: formData.userID,
+        stk_login: (formData.userID || "").trim(),
         stk_pwd: formData.password,
         sup_id: formData.supplied_By || 0,
         sup_type_id: formData.supplied_Type || 0,
         stk_stat: formData.blockStatus,
         user: formData.user ? formData.user.map(u => u.id).join(",") : "",
-        password: formData.password ? formData.password : original.password,
+        password: formData.password ? formData.password.trim() : original.password,
         confpassword: formData.confirmPassword,
+        reactivate: isReactivate,
     }
 
     /*------------ form submit ------------*/
@@ -252,9 +301,9 @@ const AddStockist = () => {
             setloading(true);
             payload.original_user = "";
             const res = await axios.post("/create_stockist", payload)
-            console.log("insert res", res);
+            //console.log("insert res", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Created Stockist")
+                showAlert.success(`${stkLabel} added successfully`)
                 setFormData(INITIAL_FORM_STATE)
             }
         } catch (error) {
@@ -263,7 +312,7 @@ const AddStockist = () => {
                 showAlert.error(val?.message || "");
             } else {
                 console.error(error);
-                showAlert.error("Failed to Update")
+                showAlert.error("Failed to add")
             }
         } finally {
             setloading(false);
@@ -280,11 +329,11 @@ const AddStockist = () => {
                 payload.original_name = original.name;
                 payload.original_user = original.userID;
                 payload.original_password = original.password;
+                payload.original_code = original.code;
             }
             const res = await axios.post("/update_stockist", payload)
-            console.log("insert res", res);
             if (res?.data?.success) {
-                showAlert.success("Successfully Updated Stockist")
+                showAlert.success(`${stkLabel} Updated successfully`)
                 navigate(`/masters/stockist`)
             }
         } catch (error) {
@@ -298,8 +347,6 @@ const AddStockist = () => {
         } finally {
             setloading(false);
             closeConfirmationDialog();
-            setFormData(INITIAL_FORM_STATE)
-            getEditData(decodedId);
         }
     }
 
@@ -307,10 +354,31 @@ const AddStockist = () => {
     useEffect(() => {
         if (!decodedId) {
             setFormData(INITIAL_FORM_STATE)
+            setDefaultUserId(null)
+            setErrors({})
             return;
         }
         getEditData(decodedId);
+        setErrors({})
     }, [decodedId]);
+
+    const currentUserIds = (formData.user || []).map(u => u.id).sort().join(",");
+    const originalUserIds = (defaultUserId || []).slice().sort().join(",");
+    const userChanged = currentUserIds === "" ? false : currentUserIds !== originalUserIds;
+
+    const isEdited = isReactivate ? true : (decodedId ? (
+        Object.keys(INITIAL_FORM_STATE).some((key) => {
+            if (["password", "confirmPassword", "user", "cityName"].includes(key)) return false;
+            const cur = formData[key];
+            const orig = original[key];
+            if (typeof cur === "string" && typeof orig === "string") {
+                return cur.trim() !== orig.trim();
+            }
+            return String(cur ?? "") !== String(orig ?? "");
+        })
+        || !!formData.password
+        || userChanged
+    ) : true);
 
     return (
         <Box>
@@ -333,7 +401,8 @@ const AddStockist = () => {
                                 handleChangeForm={handleChangeForm}
                                 errors={errors}
                                 setErrors={setErrors}
-                                original={original} />
+                                original={original}
+                                userLabel={userLabel} />
                         </Box>
                     </Box>
                 </Grid>
@@ -350,10 +419,22 @@ const AddStockist = () => {
                         </Box>
                         {/* submit */}
                         <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", sm: "flex-start", md: "flex-end" }, mt: 3 }}>
-                            <Button startIcon={<ImDownload3 style={{ height: "15px" }} />}
-                                variant='contained' color="primary" onClick={() => showSubmitConfirmation()}>
-                                {decodedId ? "Update" : "Create"}
-                            </Button>
+                            {(!decodedId && [0, 1, 2].includes(Number(accStat))) && (
+                                <Button
+                                    startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                                    onClick={() => showSubmitConfirmation()}
+                                    sx={{ mt: 2 }} color="primary" variant='contained'>
+                                    Create
+                                </Button>
+                            )}
+                            {(decodedId && [0, 2].includes(Number(accStat))) && (
+                                <Button
+                                    startIcon={<ImDownload3 style={{ height: "15px" }} />}
+                                    onClick={() => showSubmitConfirmation()} sx={{ mt: 2 }}
+                                    color="primary" variant='contained' disabled={!isEdited}>
+                                    Update
+                                </Button>
+                            )}
                         </Box>
                     </Box>
                 </Grid>
