@@ -177,7 +177,7 @@ function App() {
   }
 
   if (!isAllowed) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/reports/sec_sales_data" replace />;
   }
 
   return <Outlet />;
@@ -187,7 +187,7 @@ function App() {
     const token = localStorage.getItem("session-token");
     console.log("public token", token);
 
-    return token ? <Navigate to="/dashboard" replace /> : <Outlet />;
+    return token ? <Navigate to="/reports/sec_sales_data" replace /> : <Outlet />;
   };
 
   return (
@@ -391,7 +391,7 @@ function App() {
              <Route path="/upload_closing" element={<UploadClosing />}  />
              <Route path="/input/uploadBilling" element={<UploadBilling />}  />
              <Route path="/change_password"  element={<ChangePassword />}  />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/reports/sec_sales_data" replace />} />
           </Route>
 
           {/* <Route path="/login" element={<Login />} /> */}
