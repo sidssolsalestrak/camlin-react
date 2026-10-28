@@ -96,7 +96,7 @@ const OrderReport = () => {
         Stockist: "0",
         Status: "1"
     })
-
+    const [exportErrors, setExportErrors] = useState({ zone: false, region: false });
     const [masterPanel, setMasterPanel] = useState({});
     usePageTitle("Order Report")
 
@@ -159,23 +159,23 @@ const OrderReport = () => {
     }
 
     /*----------fetch PSM---------*/
-   const fetchPSM = async () => {
-    try {
-        const res = await axios.post("/getPsmList", {
-            area_id: formData.area,
-            dateselect: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
-            dateselectTo: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
-        });
-        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setpsmData(data);
-        setformData((prev) =>
-            data.some((p) => String(p.id) === String(prev.PSM)) ? prev : { ...prev, PSM: "0" }
-        );
-    } catch (error) {
-        setpsmData([]);
-        setformData((prev) => ({ ...prev, PSM: "0" }));
+    const fetchPSM = async () => {
+        try {
+            const res = await axios.post("/getPsmList", {
+                area_id: formData.area,
+                dateselect: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
+                dateselectTo: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
+            });
+            const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+            setpsmData(data);
+            setformData((prev) =>
+                data.some((p) => String(p.id) === String(prev.PSM)) ? prev : { ...prev, PSM: "0" }
+            );
+        } catch (error) {
+            setpsmData([]);
+            setformData((prev) => ({ ...prev, PSM: "0" }));
+        }
     }
-}
 
     /*----------fetch stockist---------*/
     const fetchStk = async () => {
@@ -259,13 +259,13 @@ const OrderReport = () => {
 
     // Area changes -> load PSM (same as PHP)
     useEffect(() => {
-    if (formData?.area > 0) {
-        fetchPSM();
-    } else {
-        setpsmData([]);
-        setformData((prev) => ({ ...prev, PSM: "0" }));
-    }
-}, [formData?.area, fromDate, toDate]);
+        if (formData?.area > 0) {
+            fetchPSM();
+        } else {
+            setpsmData([]);
+            setformData((prev) => ({ ...prev, PSM: "0" }));
+        }
+    }, [formData?.area, fromDate, toDate]);
 
     const columns = [
         {
@@ -517,20 +517,20 @@ const OrderReport = () => {
             headerName: "Ord. Qty",
             filterable: true,
             showTotal: true,
-            type:"alignright",
+            type: "alignright",
         },
         {
             field: "prod_free",
             headerName: "Free Qty",
             filterable: true,
             showTotal: true,
-            type:"alignright",
+            type: "alignright",
         },
         {
             field: "disc_per",
             headerName: "Disc. %",
             filterable: true,
-            type:"alignright",
+            type: "alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.disc_per)}</span>
             ),
@@ -554,7 +554,7 @@ const OrderReport = () => {
             field: "retail_price",
             headerName: "Rate",
             filterable: true,
-            type:"alignright",
+            type: "alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.retail_price)}</span>
             ),
@@ -575,7 +575,7 @@ const OrderReport = () => {
             headerName: "Ord. Value",
             filterable: true,
             showTotal: true,
-            type:"alignright",
+            type: "alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.ord_value)}</span>
             )
@@ -585,7 +585,7 @@ const OrderReport = () => {
             headerName: "Offer Value",
             filterable: true,
             showTotal: true,
-            type:"alignright",
+            type: "alignright",
             renderCell: (params) => (
                 <span>{FormatCurrency(params?.row?.disc_value)}</span>
             )
@@ -700,6 +700,28 @@ const OrderReport = () => {
             showAlert.error("Excel export is allowed only for a maximum of one month.");
             return;
         }
+
+        // more than 1 week -> zone & region mandatory
+        if (exceedsRange(fromDate, toDate)) {
+            const zoneMissing = !formData.zone || formData.zone === "0";
+            const regionMissing = !formData.region || formData.region === "0";
+
+            if (zoneMissing || regionMissing) {
+                setExportErrors({ zone: zoneMissing, region: regionMissing });
+
+                if (zoneMissing && regionMissing) {
+                    showAlert.error(`Please select ${zoneLabel} and ${regionLabel}`);
+                } else if (zoneMissing) {
+                    showAlert.error(`Please select ${zoneLabel}`);
+                } else {
+                    showAlert.error(`Please select ${regionLabel}`);
+                }
+                return;
+            }
+        }
+
+        setExportErrors({ zone: false, region: false });
+
         setProgress1(true);
         if (extractPath) setPageLoading(true);
         try {
@@ -809,6 +831,12 @@ const OrderReport = () => {
         }
     };
 
+    useEffect(() => {
+    if (!exceedsRange(fromDate, toDate)) {
+        setExportErrors({ zone: false, region: false });
+    }
+}, [fromDate, toDate]);
+
     return (
         <Layout breadcrumb={[
             { label: "Home", path: "/" },
@@ -884,7 +912,7 @@ const OrderReport = () => {
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
-                        <FormControl size="small" fullWidth >
+                        <FormControl size="small" fullWidth error={exportErrors.zone}>
                             <InputLabel id="zone">{zoneLabel}</InputLabel>
                             <Select value={formData.zone} onChange={(e) => handleChange("zone", e.target.value)} id='zone' label={zoneLabel} MenuProps={menuStyle}
                                 labelId="zone" variant="outlined" >
@@ -897,7 +925,7 @@ const OrderReport = () => {
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 2, lg: 2 }}>
-                        <FormControl size="small" fullWidth>
+                        <FormControl size="small" fullWidth error={exportErrors.region}>
                             <InputLabel id="Region">{regionLabel}</InputLabel>
                             <Select id='Region' label={regionLabel} MenuProps={menuStyle}
                                 value={formData.region} onChange={(e) => handleChange("region", e.target.value)}
