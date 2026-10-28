@@ -304,7 +304,12 @@ const OrderReport = () => {
         }
     }, [formData?.area, fromDate, toDate]);
 
-    const columns = [
+    // EDIT 1: columns is now built by a function that takes the group.
+    // Inside it, extractPath/formData are shadowed so the existing conditions use grpBy unchanged.
+    const buildColumns = (grpBy) => {
+    const extractPath = true;
+    const formData = { groupBy: grpBy };
+    return [
         {
             field: "si_no",
             headerName: "SI",
@@ -636,6 +641,10 @@ const OrderReport = () => {
             },
         ] : []),
     ]
+    }
+
+    // EDIT 2: table columns use the same value as before (extract page: dropdown, report page: URL)
+    const columns = buildColumns(extractPath ? formData.groupBy : decodedGrpBy);
 
     const fetchTableData = async ({ frm, to, zone, region, area, type, grp, psm, stk, stat }) => {
         if (!extractPath) {
@@ -738,7 +747,6 @@ const OrderReport = () => {
     ])
 
     /*----------------- handle download xl --------*/
-/*----------------- handle download xl --------*/
 const handleDownloadExcel = async () => {
     if (!validateRange("Excel export is allowed only for a maximum of one month.")) return;
 
@@ -761,6 +769,8 @@ const handleDownloadExcel = async () => {
     setProgress1(true);
     if (extractPath) setPageLoading(true);
     try {
+        // EDIT 4: inside the export, use the dropdown group instead of the URL group
+        const decodedGrpBy = formData.groupBy;
         let rawRows;
         if (sameAsTable) {
             rawRows = tableData; // no API call
@@ -811,7 +821,8 @@ const handleDownloadExcel = async () => {
                 }
             ] : []),
         ];
-        const mappedColumns = columns.map(({ renderCell, ...col }) => col);
+        // EDIT 3: build export columns from the dropdown group
+        const mappedColumns = buildColumns(formData.groupBy).map(({ renderCell, ...col }) => col);
         const regionIdx = mappedColumns.findIndex((col) => col.field === "reg_name");
         const exportColumns = regionIdx === -1
             ? [...addColumn, ...mappedColumns]
