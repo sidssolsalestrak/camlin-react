@@ -192,11 +192,34 @@ const OrderReport = () => {
         }
     }
 
-    const handleLoad = () => {
-        if (exceedsRange(fromDate, toDate)) {
-            showAlert.error("Report can be viewed for a maximum of one week. Use Excel export for a longer period.");
-            return;
+    const validateRange = (monthMsg) => {
+    // max 1 month
+    if (dayjs(toDate).diff(dayjs(fromDate), 'month', true) > 1) {
+        showAlert.error(monthMsg);
+        return false;
+    }
+    // more than 1 week -> zone & region mandatory
+    if (exceedsRange(fromDate, toDate)) {
+        const zoneMissing = !formData.zone || formData.zone === "0";
+        const regionMissing = !formData.region || formData.region === "0";
+        if (zoneMissing || regionMissing) {
+            setExportErrors({ zone: zoneMissing, region: regionMissing });
+            if (zoneMissing && regionMissing) {
+                showAlert.error(`Please select ${zoneLabel} and ${regionLabel}`);
+            } else if (zoneMissing) {
+                showAlert.error(`Please select ${zoneLabel}`);
+            } else {
+                showAlert.error(`Please select ${regionLabel}`);
+            }
+            return false;
         }
+    }
+    setExportErrors({ zone: false, region: false });
+    return true;
+};
+
+    const handleLoad = () => {
+        if (!validateRange("Report can be viewed for a maximum of one month.")) return;
         let params = new URLSearchParams();
         if (fromDate) params.append('frm', encode(dayjs(fromDate).format("YYYY-MMM-DD")));
         if (toDate) params.append('to', encode(dayjs(toDate).format("YYYY-MMM-DD")));
@@ -618,10 +641,16 @@ const OrderReport = () => {
         if (!extractPath) {
             setshowTable(true)
         }
-        if (frm && to && exceedsRange(frm, to)) {
-            showAlert.error("Report can be viewed for a maximum of one week. Use Excel export for a longer period.");
-            return;
-        }
+        if (frm && to) {
+    if (dayjs(to).diff(dayjs(frm), 'month', true) > 1) {
+        showAlert.error("Report can be viewed for a maximum of one month.");
+        return;
+    }
+    if (exceedsRange(frm, to) && (!zone || zone === "0" || !region || region === "0")) {
+        showAlert.error(`Please select ${zoneLabel} and ${regionLabel} for a date range of more than one week.`);
+        return;
+    }
+}
         try {
             setloading(true)
             let payload = {
@@ -709,36 +738,33 @@ const OrderReport = () => {
     ])
 
     /*----------------- handle download xl --------*/
-    const handleDownloadExcel = async () => {
-        if (dayjs(toDate).diff(dayjs(fromDate), 'month', true) > 1) {
-            showAlert.error("Excel export is allowed only for a maximum of one month.");
-            return;
-        }
+/*----------------- handle download xl --------*/
+const handleDownloadExcel = async () => {
+    if (!validateRange("Excel export is allowed only for a maximum of one month.")) return;
 
-        // more than 1 week -> zone & region mandatory
-        if (exceedsRange(fromDate, toDate)) {
-            const zoneMissing = !formData.zone || formData.zone === "0";
-            const regionMissing = !formData.region || formData.region === "0";
+    // use table data only if the table is showing the SAME filters currently selected
+    const sameAsTable =
+        !extractPath &&
+        showTable &&
+        tableData.length > 0 &&
+        dayjs(fromDate).isSame(dayjs(decodedFromDt), "day") &&
+        dayjs(toDate).isSame(dayjs(decodedToDt), "day") &&
+        String(formData.zone) === String(decodedZone || "0") &&
+        String(formData.region) === String(decodedReg || "0") &&
+        String(formData.area) === String(decodedArea || "0") &&
+        String(formData.PSM) === String(decodedPSM || "0") &&
+        String(formData.Stockist) === String(decodedStk || "0") &&
+        String(formData.groupBy) === String(decodedGrpBy || "1") &&
+        String(formData.type) === String(decodedType || "1") &&
+        String(formData.Status) === String(decodedStatus || "1");
 
-            if (zoneMissing || regionMissing) {
-                setExportErrors({ zone: zoneMissing, region: regionMissing });
-
-                if (zoneMissing && regionMissing) {
-                    showAlert.error(`Please select ${zoneLabel} and ${regionLabel}`);
-                } else if (zoneMissing) {
-                    showAlert.error(`Please select ${zoneLabel}`);
-                } else {
-                    showAlert.error(`Please select ${regionLabel}`);
-                }
-                return;
-            }
-        }
-
-        setExportErrors({ zone: false, region: false });
-
-        setProgress1(true);
-        if (extractPath) setPageLoading(true);
-        try {
+    setProgress1(true);
+    if (extractPath) setPageLoading(true);
+    try {
+        let rawRows;
+        if (sameAsTable) {
+            rawRows = tableData; // no API call
+        } else {
             const res = await axios.post("/getPcmKam", {
                 frm: fromDate ? dayjs(fromDate).format("YYYY-MM-DD") : "",
                 to: toDate ? dayjs(toDate).format("YYYY-MM-DD") : "",
@@ -751,99 +777,101 @@ const OrderReport = () => {
                 type: formData.type,
                 status: formData.Status,
             });
-
-            let sourceData = Array.isArray(res?.data?.data)
-                ? res?.data?.data?.map((row, index) => {
-                    const { del_date, del_user, del_stat, ...rest } = row;
-                    return {
-                        ...rest,
-                        si_no: index + 1,
-                        create_dt: row?.create_dt ? dayjs(row.create_dt).format("DD MMM YYYY HH:mm a") : "",
-                        order_stat: del_stat === 1
-                            ? `${row.order_stat} (${del_date ? dayjs(del_date).format("DD MMM YYYY hh:mm A") : ""} by ${del_user || ""})`
-                            : row.order_stat,
-                        psm_kam: (row?.emp_code && row.emp_code !== "undefined")
-                            ? `${row.emp_code} - ${row.sr_name}`
-                            : (row?.sr_name || ""),
-                        cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
-                        ord_mode: (row?.ord_type === 2 ? "Direct" : "On Call"),
-                        __isFirstOrder: true
-                    };
-                })
-                : [];
-
-            let addColumn = [
-                ...((extractPath ? formData.groupBy === "1" : decodedGrpBy === "1") ? [
-                    {
-                        field: "emp_code",
-                        headerName: "EMP Code",
-                    }
-                ] : []),
-            ]
-            const mappedColumns = columns.map(({ renderCell, ...col }) => col);
-            const regionIdx = mappedColumns.findIndex((col) => col.field === "reg_name");
-            const exportColumns = regionIdx === -1
-                ? [...addColumn, ...mappedColumns]
-                : [
-                    ...mappedColumns.slice(0, regionIdx + 1),
-                    ...addColumn,
-                    ...mappedColumns.slice(regionIdx + 1),
-                ];
-
-            // Determine active group (extract page uses live formData, report page uses decoded URL param)
-            const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
-
-            // Group 1 ("Order wise") sums raw disc_per / retail_price columns directly,
-            // matching PHP's `if ($group == 1)` branch.
-            // All other groups use the ratio-based disc_per and "-" for retail_price,
-            // matching PHP's `else` branch.
-            const grandTotalConfig = grpBy === "1"
-                ? {
-                    label: "Total",
-                    reg_name: '',
-                    sub_name: "label",
-                    prod_name: "label",
-                    disc_value: "sum",
-                    ord_value: "sum",
-                    retail_price: "sum",
-                    disc_per: "sum",
-                    prod_free: "sum",
-                    prod_qty: "sum",
-                }
-                : {
-                    label: "Total",
-                    reg_name: "label",
-                    sub_name: "label",
-                    prod_name: "label",
-                    disc_value: "sum",
-                    ord_value: "sum",
-                    retail_price: "none",
-                    disc_per: {
-                        type: "ratio",
-                        numerator: "disc_value",
-                        denominator: "ord_value",
-                        multiplier: 100,
-                    },
-                    prod_free: "sum",
-                    prod_qty: "sum",
-                };
-
-            console.log("export columns in order report", exportColumns)
-            console.log("source data in excel", sourceData)
-
-            DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, grandTotalConfig);
-        } catch (err) {
-            if (err?.response?.status === 404) {
-                showAlert.error("No Data Available To Export Excel")
-            } else {
-                console.error(err);
-                showAlert.error("Failed to Export Excel")
-            }
-        } finally {
-            setProgress1(false);
-            if (extractPath) setPageLoading(false);
+            rawRows = Array.isArray(res?.data?.data) ? res.data.data : [];
         }
-    };
+
+        if (rawRows.length === 0) {
+            showAlert.error("No Data Available To Export Excel");
+            return;
+        }
+
+        const sourceData = rawRows.map((row, index) => {
+            const { del_date, del_user, del_stat, ...rest } = row;
+            return {
+                ...rest,
+                si_no: index + 1,
+                create_dt: row?.create_dt ? dayjs(row.create_dt).format("DD MMM YYYY HH:mm a") : "",
+                order_stat: del_stat === 1
+                    ? `${row.order_stat} (${del_date ? dayjs(del_date).format("DD MMM YYYY hh:mm A") : ""} by ${del_user || ""})`
+                    : row.order_stat,
+                psm_kam: (row?.emp_code && row.emp_code !== "undefined")
+                    ? `${row.emp_code} - ${row.sr_name}`
+                    : (row?.sr_name || ""),
+                cusCode: `${row?.cusid}_${row?.cus_sub_id}`,
+                ord_mode: (row?.ord_type === 2 ? "Direct" : "On Call"),
+                __isFirstOrder: true
+            };
+        });
+
+        const addColumn = [
+            ...((extractPath ? formData.groupBy === "1" : decodedGrpBy === "1") ? [
+                {
+                    field: "emp_code",
+                    headerName: "EMP Code",
+                }
+            ] : []),
+        ];
+        const mappedColumns = columns.map(({ renderCell, ...col }) => col);
+        const regionIdx = mappedColumns.findIndex((col) => col.field === "reg_name");
+        const exportColumns = regionIdx === -1
+            ? [...addColumn, ...mappedColumns]
+            : [
+                ...mappedColumns.slice(0, regionIdx + 1),
+                ...addColumn,
+                ...mappedColumns.slice(regionIdx + 1),
+            ];
+
+        // Determine active group (extract page uses live formData, report page uses decoded URL param)
+        const grpBy = extractPath ? formData.groupBy : decodedGrpBy;
+
+        // Group 1 ("Order wise") sums raw disc_per / retail_price columns directly,
+        // matching PHP's `if ($group == 1)` branch.
+        // All other groups use the ratio-based disc_per and "-" for retail_price,
+        // matching PHP's `else` branch.
+        const grandTotalConfig = grpBy === "1"
+            ? {
+                label: "Total",
+                reg_name: '',
+                sub_name: "label",
+                prod_name: "label",
+                disc_value: "sum",
+                ord_value: "sum",
+                retail_price: "sum",
+                disc_per: "sum",
+                prod_free: "sum",
+                prod_qty: "sum",
+            }
+            : {
+                label: "Total",
+                reg_name: "label",
+                sub_name: "label",
+                prod_name: "label",
+                disc_value: "sum",
+                ord_value: "sum",
+                retail_price: "none",
+                disc_per: {
+                    type: "ratio",
+                    numerator: "disc_value",
+                    denominator: "ord_value",
+                    multiplier: 100,
+                },
+                prod_free: "sum",
+                prod_qty: "sum",
+            };
+
+        DownloadCSV(sourceData, exportColumns, `Order_Report`, setProgress, enqueueSnackbar, {}, grandTotalConfig);
+    } catch (err) {
+        if (err?.response?.status === 404) {
+            showAlert.error("No Data Available To Export Excel")
+        } else {
+            console.error(err);
+            showAlert.error("Failed to Export Excel")
+        }
+    } finally {
+        setProgress1(false);
+        if (extractPath) setPageLoading(false);
+    }
+};
 
     useEffect(() => {
     if (!exceedsRange(fromDate, toDate)) {
