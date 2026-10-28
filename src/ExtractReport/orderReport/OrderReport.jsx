@@ -213,11 +213,25 @@ const OrderReport = () => {
 
     //handle change
     const handleChange = (name, value) => {
-        setformData((prev) => ({
-            ...prev,
-            [name]: value
-        }))
+    setformData((prev) => {
+        const next = { ...prev, [name]: value };
+        if (name === "zone") {
+            next.region = "0";
+            next.area = "0";
+            next.Stockist = "0";
+            next.PSM = "0";
+        }
+        if (name === "region") {
+            next.area = "0";
+            next.Stockist = "0";
+            next.PSM = "0";
+        }
+        return next;
+    });
+    if (name === "zone" || name === "region") {
+        setExportErrors((prev) => ({ ...prev, [name]: false }));
     }
+};
 
     //initial render
     useEffect(() => {
