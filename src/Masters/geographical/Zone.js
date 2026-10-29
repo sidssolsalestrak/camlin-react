@@ -138,7 +138,6 @@ export default function Zone() {
         } else {
           toast.error(response.data.message)
         }
-        setEditId(null);
       } else {
         let response = await api.post("/addZone", { newZone: zoneName.trim() });
         if (response.data.success) {
