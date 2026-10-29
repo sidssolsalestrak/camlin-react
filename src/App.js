@@ -79,6 +79,7 @@ import { useLocation } from "react-router-dom";
 import PassExpReset from "./view/PassExpReset";
 import UploadBilling from "./view/trans/uploadBilling";
 import MobileApproval from "./view/account/mobileApproval";
+import MobileFieldReport from "./ExtractReport/Mobile/Dailyreportmobilesummary";
 
 function App() {
    const relatedRoutes = {
@@ -204,6 +205,7 @@ function App() {
               element={<ForgotPassword />}
            />
           <Route path="/mobile/customerApprove/:login_id" element={<MobileApproval />}       />
+          <Route path="/mobile/FieldReport/:from_dt/:to_dt/:user_id/:rep_type/:login_id" element={<MobileFieldReport />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/:token" element={<TokenHandler />} />
             {/* <Route path="/" element={<Dashboard />} /> */}
