@@ -124,7 +124,7 @@ function App() {
   const menuUrls = rawMenuUrls ? JSON.parse(rawMenuUrls) : [];
 
   const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview", "/reports/sec_sales_data", ];
-  const allowPrefixList = ["/mobile/customerApprove"];
+  const allowPrefixList = ["/mobile/customerApprove","/mobile/FieldReport"];
   const currentPath = location.pathname;
 
   const isAllowed =
