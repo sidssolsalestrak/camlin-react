@@ -78,6 +78,7 @@ import OtpTwoStepValidate from "./view/OtpTwoStepValidate";
 import { useLocation } from "react-router-dom";
 import PassExpReset from "./view/PassExpReset";
 import UploadBilling from "./view/trans/uploadBilling";
+import MobileApproval from "./view/account/mobileApproval";
 
 function App() {
    const relatedRoutes = {
@@ -122,6 +123,7 @@ function App() {
   const menuUrls = rawMenuUrls ? JSON.parse(rawMenuUrls) : [];
 
   const allowList = ["/dashboard", "/change_password", "/orderApproval/orders","/mobile/Orders","/dashboard/primarysalesview", "/reports/sec_sales_data", ];
+  const allowPrefixList = ["/mobile/customerApprove"];
   const currentPath = location.pathname;
 
   const isAllowed =
@@ -129,6 +131,7 @@ function App() {
     ? false
      : currentPath.startsWith("/Auth/forgot_paswd/") ||
       allowList.includes(currentPath) ||
+      allowPrefixList.some((p) => currentPath === p || currentPath.startsWith(p + "/")) ||
       menuUrls.some((url) => {
         if (!url || url === "#") return false;
 
@@ -200,6 +203,7 @@ function App() {
               path="/Auth/forgot_paswd/:resetToken"
               element={<ForgotPassword />}
            />
+          <Route path="/mobile/customerApprove/:login_id" element={<MobileApproval />}       />
           <Route element={<ProtectedRoute />}>
             <Route path="/:token" element={<TokenHandler />} />
             {/* <Route path="/" element={<Dashboard />} /> */}
