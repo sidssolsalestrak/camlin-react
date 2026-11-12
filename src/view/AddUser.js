@@ -404,7 +404,7 @@ function AddUser() {
         setLastAppLogin(d.last_app_login || "");
         setAppVersion(d.app_version || "");
         setAuthKey(d.auth_key || "");
-        setOtp(d.otp || "");
+        setOtp(d.app_otp || "");
 
         setAppConfigStatus(d.app_stat || 0);
         setDelFlag(d.del_flag || 0);
